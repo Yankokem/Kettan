@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="kettan.client/kettan.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="Kettan.Server/Kettan.Server.csproj" />
+</Solution>
