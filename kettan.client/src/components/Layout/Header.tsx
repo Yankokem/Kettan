@@ -1,53 +1,209 @@
-import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
+import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip, Typography, InputBase } from '@mui/material';
+import MenuIcon          from '@mui/icons-material/Menu';
+import DarkModeRoundedIcon   from '@mui/icons-material/DarkModeRounded';
+import LightModeRoundedIcon  from '@mui/icons-material/LightModeRounded';
+import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import { useThemeStore } from '../../store/useThemeStore';
+import { useLocation } from '@tanstack/react-router';
 
 interface HeaderProps {
   onDrawerToggle: () => void;
-  drawerWidth: number;
+  drawerWidth: number | string;
 }
+
+const PAGE_TITLES: Record<string, string> = {
+  '/':          'Dashboard',
+  '/orders':    'Order Processing',
+  '/picking':   'Picking & Packing',
+  '/shipping':  'Shipping & Delivery',
+  '/tracking':  'Order Tracking',
+  '/returns':   'Returns Management',
+  '/branches':  'Tenants & Branches',
+  '/inventory': 'Inventory',
+  '/staff':     'HR & Staff',
+  '/users':     'User & Roles',
+  '/reports':   'Finance & Reports',
+};
 
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   const { mode, toggleTheme } = useThemeStore();
-  
+  const location = useLocation();
+  const pageTitle = PAGE_TITLES[location.pathname] ?? 'Kettan';
+
   return (
     <AppBar
       position="fixed"
       elevation={0}
-      className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 text-gray-900 dark:text-white transition-colors"
       sx={{
         width: { sm: `calc(100% - ${drawerWidth}px)` },
-        ml: { sm: `${drawerWidth}px` },
+        ml:    { sm: `${drawerWidth}px` },
+        background: 'rgba(255, 255, 255, 0.90)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #E5E7EB',
+        color: '#111827',
+        transition: 'margin-left 220ms cubic-bezier(0.4,0,0.2,1), width 220ms cubic-bezier(0.4,0,0.2,1)',
+        '.dark &': {
+          background: 'rgba(16, 10, 4, 0.85)',
+          color: '#E8D3A9',
+          borderBottomColor: 'rgba(201,168,77,0.10)',
+        },
       }}
     >
-      <Toolbar className="h-16 px-4 sm:px-6 flex justify-between">
-        <Box className="flex items-center">
+      <Toolbar
+        sx={{
+          height: 64,
+          px: { xs: 2, sm: 3 },
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        {/* Left side */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={onDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ display: { sm: 'none' }, color: '#6B4C2A' }}
           >
             <MenuIcon />
           </IconButton>
+
+          <Box>
+            <Typography
+              sx={{
+                fontSize: 17,
+                fontWeight: 700,
+                color: '#2E1F0C',
+                letterSpacing: '-0.01em',
+                lineHeight: 1.1,
+                '.dark &': { color: '#E8D3A9' },
+              }}
+            >
+              {pageTitle}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: 11,
+                color: '#8C6B43',
+                letterSpacing: '0.04em',
+                '.dark &': { color: 'rgba(201,168,77,0.55)' },
+              }}
+            >
+              Kettan · Café Chain Operations
+            </Typography>
+          </Box>
         </Box>
 
-        <Box className="flex items-center gap-3">
-          <Tooltip title="Toggle theme">
-            <IconButton onClick={toggleTheme} className="text-gray-600 dark:text-gray-300">
-              {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+        {/* Right side */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+
+          {/* Search bar */}
+          <Box
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              gap: 1,
+              background: 'rgba(74,52,24,0.07)',
+              border: '1px solid rgba(201,168,77,0.2)',
+              borderRadius: '8px',
+              px: 1.5,
+              py: 0.6,
+              mr: 0.5,
+              '.dark &': {
+                background: 'rgba(201,168,77,0.07)',
+                borderColor: 'rgba(201,168,77,0.12)',
+              },
+              '&:focus-within': {
+                borderColor: '#C9A84C',
+                background: 'rgba(201,168,77,0.1)',
+              },
+              transition: 'border-color 160ms, background 160ms',
+            }}
+          >
+            <SearchRoundedIcon sx={{ fontSize: 16, color: '#8C6B43', flexShrink: 0 }} />
+            <InputBase
+              placeholder="Search…"
+              inputProps={{ 'aria-label': 'search' }}
+              sx={{
+                fontSize: 13,
+                color: '#2E1F0C',
+                width: 160,
+                '.dark &': { color: '#E8D3A9' },
+                '& ::placeholder': { color: '#B08B5A', opacity: 1 },
+              }}
+            />
+          </Box>
+
+          {/* Notifications */}
+          <Tooltip title="Notifications">
+            <IconButton
+              sx={{
+                color: '#8C6B43',
+                '&:hover': { background: 'rgba(201,168,77,0.1)', color: '#6B4C2A' },
+                transition: 'background 160ms, color 160ms',
+                position: 'relative',
+              }}
+            >
+              <NotificationsNoneRoundedIcon sx={{ fontSize: 20 }} />
+              {/* Notification dot */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: '#C9A84C',
+                  border: '1.5px solid rgba(250,245,233,0.9)',
+                }}
+              />
             </IconButton>
           </Tooltip>
-          
-          <Box className="w-px h-6 bg-gray-300 dark:bg-slate-700 mx-1" />
-          
-          <Tooltip title="Profile">
-             <IconButton className="p-0.5">
-                <Avatar alt="Super Admin" src="" className="w-8 h-8 bg-primary-main" />
-             </IconButton>
+
+          {/* Theme toggle */}
+          <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>
+            <IconButton
+              onClick={toggleTheme}
+              sx={{
+                color: '#8C6B43',
+                '&:hover': { background: 'rgba(201,168,77,0.1)', color: '#6B4C2A' },
+                transition: 'background 160ms, color 160ms',
+              }}
+            >
+              {mode === 'dark'
+                ? <LightModeRoundedIcon sx={{ fontSize: 19 }} />
+                : <DarkModeRoundedIcon  sx={{ fontSize: 19 }} />
+              }
+            </IconButton>
+          </Tooltip>
+
+          {/* Divider */}
+          <Box sx={{ width: 1, height: 24, background: 'rgba(201,168,77,0.2)', mx: 0.5 }} />
+
+          {/* Avatar */}
+          <Tooltip title="Super Admin">
+            <IconButton sx={{ p: 0.3 }}>
+              <Avatar
+                alt="Super Admin"
+                src=""
+                sx={{
+                  width: 32,
+                  height: 32,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #6B4C2A 0%, #C9A84C 100%)',
+                  color: '#FAF5EF',
+                  border: '2px solid rgba(201,168,77,0.3)',
+                }}
+              >
+                SA
+              </Avatar>
+            </IconButton>
           </Tooltip>
         </Box>
       </Toolbar>

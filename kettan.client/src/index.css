@@ -1,15 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
 
+/* ─── Kettan Brand Tokens ──────────────────────────────────────────── */
 @theme {
-  --color-primary-main: #3b82f6;
-  --color-secondary-main: #f43f5e;
+  /* Browns */
+  --color-brown-50:  #FAF5EF;
+  --color-brown-100: #F0E6D3;
+  --color-brown-200: #DEC9A8;
+  --color-brown-300: #C9A87D;
+  --color-brown-400: #B08B5A;
+  --color-brown-500: #8C6B43;
+  --color-brown-600: #6B4C2A;
+  --color-brown-700: #4A3418;
+  --color-brown-800: #2E1F0C;
+  --color-brown-900: #160E04;
+
+  /* Sage greens */
+  --color-sage-50:  #F2F5EE;
+  --color-sage-100: #DCE5D3;
+  --color-sage-200: #B9CBAA;
+  --color-sage-300: #93AF7E;
+  --color-sage-400: #718F58;
+  --color-sage-500: #546B3F;
+  --color-sage-600: #3D5029;
+  --color-sage-700: #293717;
+  --color-sage-800: #162009;
+  --color-sage-900: #0B0F04;
+
+  /* Cream */
+  --color-cream-50:  #FFFDF8;
+  --color-cream-100: #FAF5E9;
+  --color-cream-200: #F2E6CC;
+  --color-cream-300: #E8D3A9;
+  --color-cream-400: #DBBF85;
+
+  /* Gold */
+  --color-gold: #C9A84C;
+
+  /* Aliases (stays in sync with MUI theme) */
+  --color-primary:   #6B4C2A;
+  --color-secondary: #546B3F;
 }
 
+/* ─── Base Resets ───────────────────────────────────────────────────── */
 html, body, #root {
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #F5F5F5;
+  font-family: 'Inter', 'DM Sans', sans-serif;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar            { width: 5px; height: 5px; }
+::-webkit-scrollbar-track      { background: transparent; }
+::-webkit-scrollbar-thumb      { background: #c9a87d; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover{ background: #8c6b43; }
+
+/* ─── Sidebar gradient ──────────────────────────────────────────────── */
+.sidebar-bg {
+  background: linear-gradient(170deg, #3D2B16 0%, #251409 100%);
+}
+
+/* ─── Sidebar active indicator ──────────────────────────────────────── */
+.nav-active-pill {
+  background: linear-gradient(90deg, rgba(201,168,77,0.18) 0%, rgba(201,168,77,0.06) 100%);
+  border-left: 3px solid #C9A84C;
+}
+
+/* ─── Glassmorphism card ────────────────────────────────────────────── */
+.glass-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.dark .glass-card {
+  background: #1F2937;
+  border: 1px solid #374151;
+}
+
+/* ─── Stat card accent bar ──────────────────────────────────────────── */
+.stat-accent-brown::after {
+  content: '';
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, #8C6B43 0%, rgba(201,168,77,0.35) 100%);
+  border-radius: 99px;
+  margin-top: 12px;
+}
+.stat-accent-sage::after {
+  content: '';
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, #718F58 0%, rgba(147,175,126,0.35) 100%);
+  border-radius: 99px;
+  margin-top: 12px;
+}
+.stat-accent-gold::after {
+  content: '';
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, #C9A84C 0%, rgba(222,201,168,0.35) 100%);
+  border-radius: 99px;
+  margin-top: 12px;
+}
+
+/* ─── Smooth transitions ────────────────────────────────────────────── */
+*, *::before, *::after {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Shine animation on logo text ─────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.logo-shimmer {
+  background: linear-gradient(90deg, #C9A87D 20%, #FFF0CC 50%, #C9A87D 80%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* ─── Pulse badge animation ─────────────────────────────────────────── */
+@keyframes pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.7; }
+  100% { transform: scale(1.7);  opacity: 0; }
+}
+.pulse-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
+/* ─── Hover lift ────────────────────────────────────────────────────── */
+.hover-lift {
+  transition: transform 200ms, box-shadow 200ms;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(74, 52, 24, 0.07);
 }

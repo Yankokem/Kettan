@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { Box, Toolbar } from '@mui/material';
 import { Outlet } from '@tanstack/react-router';
-import { Sidebar } from './Sidebar';
+import { Sidebar, DRAWER_WIDTH } from './Sidebar';
 import { Header } from './Header';
-
-const DRAWER_WIDTH = 260;
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -13,20 +11,44 @@ export function AppLayout() {
     setMobileOpen(!mobileOpen);
   };
 
+  const effectiveWidth = DRAWER_WIDTH;
+
   return (
-    <Box className="flex min-h-screen bg-background-default dark:bg-slate-900 transition-colors">
-      <Header onDrawerToggle={handleDrawerToggle} drawerWidth={DRAWER_WIDTH} />
-      
-      <Sidebar mobileOpen={mobileOpen} onDrawerToggle={handleDrawerToggle} />
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        background: '#F5F5F5',
+        '.dark &': { background: '#111827' },
+      }}
+    >
+      <Header onDrawerToggle={handleDrawerToggle} drawerWidth={effectiveWidth} />
+
+      <Sidebar
+        mobileOpen={mobileOpen}
+        onDrawerToggle={handleDrawerToggle}
+      />
 
       <Box
         component="main"
-        className="flex-grow flex flex-col min-w-0"
-        sx={{ width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` } }}
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          width: { sm: `calc(100% - ${effectiveWidth}px)` },
+          transition: 'width 220ms cubic-bezier(0.4,0,0.2,1)',
+        }}
       >
-        <Toolbar className="h-16 shrink-0" /> {/* Spacer for the fixed header */}
-        <Box className="flex-1 p-4 sm:p-8 overflow-auto">
-          <Outlet /> {/* TanStack Router renders children here */}
+        <Toolbar sx={{ height: 64, flexShrink: 0 }} />
+        <Box
+          sx={{
+            flex: 1,
+            p: { xs: 2, sm: 3, md: 3.5 },
+            overflowY: 'auto',
+          }}
+        >
+          <Outlet />
         </Box>
       </Box>
     </Box>
