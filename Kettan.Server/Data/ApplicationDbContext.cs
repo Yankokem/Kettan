@@ -1,16 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using Kettan.Server.Entities;
+using Kettan.Server.Services.Common;
 
 namespace Kettan.Server.Data;
 
 public class ApplicationDbContext : DbContext
 {
-    // Dummy Tenant ID to be used initially before we hook up proper Auth/JWT claims
-    private readonly int _currentTenantId = 1;
+    private readonly ICurrentUserService? _currentUserService;
 
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        ICurrentUserService? currentUserService = null)
         : base(options)
     {
+        _currentUserService = currentUserService;
     }
 
     public DbSet<Tenant> Tenants { get; set; } = null!;
@@ -36,19 +39,20 @@ public class ApplicationDbContext : DbContext
             .IsUnique();
 
         // 1. Global Query Filters for Single-Tenant Data Isolation
-        modelBuilder.Entity<Branch>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        modelBuilder.Entity<Item>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        modelBuilder.Entity<Batch>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        modelBuilder.Entity<InventoryTransaction>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        modelBuilder.Entity<SupplyRequest>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        modelBuilder.Entity<Order>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        modelBuilder.Entity<Shipment>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        modelBuilder.Entity<Return>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        modelBuilder.Entity<OrderAllocation>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        modelBuilder.Entity<SupplyRequestItem>().HasQueryFilter(e => e.TenantId == _currentTenantId);
+        // If TenantId is null (e.g. background job or SuperAdmin), they bypass this global filter.
+        modelBuilder.Entity<Branch>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<Item>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<Batch>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<InventoryTransaction>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<SupplyRequest>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<Order>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<Shipment>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<Return>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<OrderAllocation>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<SupplyRequestItem>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
 
         // Custom filter for User: either they belong to the current tenant, or they are a SuperAdmin (null)
-        modelBuilder.Entity<User>().HasQueryFilter(e => e.TenantId == null || e.TenantId == _currentTenantId);
+        modelBuilder.Entity<User>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == null || e.TenantId == _currentUserService.TenantId);
 
         // 2. Prevent Cascading Deletes to mimic strict enterprise behavior
         foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
