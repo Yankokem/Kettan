@@ -3,10 +3,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Kettan.Server.Entities;
 
-public class OrderAllocation
+public class OrderAllocation : ITenantEntity
 {
     [Key]
     public int AllocationId { get; set; }
+
+    public int TenantId { get; set; }
+
+    [ForeignKey(nameof(TenantId))]
+    public Tenant? Tenant { get; set; }
 
     public int OrderId { get; set; }
 

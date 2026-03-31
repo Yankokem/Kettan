@@ -15,6 +15,14 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+// Seed the database
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    DbInitializer.Initialize(context);
+}
+
 app.UseDefaultFiles();
 app.MapStaticAssets();
 

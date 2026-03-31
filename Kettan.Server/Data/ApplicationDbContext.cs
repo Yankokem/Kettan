@@ -44,7 +44,9 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Order>().HasQueryFilter(e => e.TenantId == _currentTenantId);
         modelBuilder.Entity<Shipment>().HasQueryFilter(e => e.TenantId == _currentTenantId);
         modelBuilder.Entity<Return>().HasQueryFilter(e => e.TenantId == _currentTenantId);
-        
+        modelBuilder.Entity<OrderAllocation>().HasQueryFilter(e => e.TenantId == _currentTenantId);
+        modelBuilder.Entity<SupplyRequestItem>().HasQueryFilter(e => e.TenantId == _currentTenantId);
+
         // Custom filter for User: either they belong to the current tenant, or they are a SuperAdmin (null)
         modelBuilder.Entity<User>().HasQueryFilter(e => e.TenantId == null || e.TenantId == _currentTenantId);
 
