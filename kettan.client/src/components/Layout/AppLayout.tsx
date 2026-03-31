@@ -18,8 +18,7 @@ export function AppLayout() {
       sx={{
         display: 'flex',
         minHeight: '100vh',
-        background: '#F5F5F5',
-        '.dark &': { background: '#111827' },
+        bgcolor: 'background.default',
       }}
     >
       <Header onDrawerToggle={handleDrawerToggle} drawerWidth={effectiveWidth} />

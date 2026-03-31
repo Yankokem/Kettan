@@ -38,11 +38,11 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
       sx={{
         width: { sm: `calc(100% - ${drawerWidth}px)` },
         ml:    { sm: `${drawerWidth}px` },
-        background: 'rgba(255, 255, 255, 0.90)',
+        background: 'rgba(250, 245, 239, 0.85)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid #E5E7EB',
-        color: '#111827',
+        color: 'text.primary',
         transition: 'margin-left 220ms cubic-bezier(0.4,0,0.2,1), width 220ms cubic-bezier(0.4,0,0.2,1)',
         '.dark &': {
           background: 'rgba(16, 10, 4, 0.85)',

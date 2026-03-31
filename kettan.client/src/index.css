@@ -67,6 +67,10 @@ body {
 
 /* ─── Sidebar gradient ──────────────────────────────────────────────── */
 .sidebar-bg {
+  background: linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%);
+}
+
+.dark .sidebar-bg {
   background: linear-gradient(170deg, #3D2B16 0%, #251409 100%);
 }
 
@@ -84,8 +88,8 @@ body {
 }
 
 .dark .glass-card {
-  background: #1F2937;
-  border: 1px solid #374151;
+  background: #1F1B18;
+  border: 1px solid #36312D;
 }
 
 /* ─── Stat card accent bar ──────────────────────────────────────────── */
@@ -125,6 +129,15 @@ body {
   100% { background-position: 200% center; }
 }
 .logo-shimmer {
+  background: linear-gradient(90deg, #6B4C2A 20%, #B08B5A 50%, #6B4C2A 80%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+.dark .logo-shimmer {
   background: linear-gradient(90deg, #C9A87D 20%, #FFF0CC 50%, #C9A87D 80%);
   background-size: 200% auto;
   -webkit-background-clip: text;

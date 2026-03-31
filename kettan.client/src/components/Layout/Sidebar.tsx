@@ -126,7 +126,7 @@ function NavLink({
         sx={{
           minWidth: collapsed ? 0 : 36,
           mr: collapsed ? 0 : 1,
-          color: isActive ? '#C9A84C' : 'rgba(230,210,185,0.65)',
+          color: isActive ? 'primary.main' : 'text.secondary',
           transition: 'color 160ms',
           '& svg': { fontSize: 20 },
         }}
@@ -140,8 +140,8 @@ function NavLink({
             primary={item.text}
             primaryTypographyProps={{
               fontSize: 13.5,
-              fontWeight: isActive ? 600 : 400,
-              color: isActive ? '#E8D3A9' : 'rgba(230,210,185,0.72)',
+              fontWeight: isActive ? 600 : 500,
+              color: isActive ? 'primary.main' : 'text.primary',
               letterSpacing: '0.01em',
               whiteSpace: 'nowrap',
             }}
@@ -166,8 +166,8 @@ function NavLink({
             </Typography>
           )}
           {hasChildren && (open
-            ? <ExpandLessRoundedIcon sx={{ fontSize: 16, color: 'rgba(230,210,185,0.5)', ml: 0.5 }} />
-            : <ExpandMoreRoundedIcon sx={{ fontSize: 16, color: 'rgba(230,210,185,0.5)', ml: 0.5 }} />
+            ? <ExpandLessRoundedIcon sx={{ fontSize: 16, color: 'text.disabled', ml: 0.5 }} />
+            : <ExpandMoreRoundedIcon sx={{ fontSize: 16, color: 'text.disabled', ml: 0.5 }} />
           )}
         </>
       )}
@@ -224,7 +224,7 @@ function SidebarSection({
             fontSize: 10,
             fontWeight: 700,
             letterSpacing: '0.12em',
-            color: 'rgba(201,168,77,0.5)',
+            color: 'text.disabled',
           }}
         >
           {label}
@@ -273,7 +273,8 @@ export function Sidebar({ mobileOpen, onDrawerToggle }: SidebarProps) {
           gap: 1.5,
           cursor: 'pointer',
           userSelect: 'none',
-          borderBottom: '1px solid rgba(201,168,77,0.12)',
+          borderBottom: 1,
+          borderColor: 'divider',
           flexShrink: 0,
         }}
         onClick={() => setCollapsed((c) => !c)}
@@ -313,7 +314,7 @@ export function Sidebar({ mobileOpen, onDrawerToggle }: SidebarProps) {
             <Typography
               sx={{
                 fontSize: 9,
-                color: 'rgba(201,168,77,0.55)',
+                color: 'text.disabled',
                 letterSpacing: '0.14em',
                 fontWeight: 500,
                 textTransform: 'uppercase',
@@ -336,7 +337,7 @@ export function Sidebar({ mobileOpen, onDrawerToggle }: SidebarProps) {
           onNavigate={onDrawerToggle}
         />
 
-        <Box sx={{ mx: 2, my: 1.5, borderTop: '1px solid rgba(201,168,77,0.10)' }} />
+        <Box sx={{ mx: 2, my: 1.5, borderTop: 1, borderColor: 'divider' }} />
 
         <SidebarSection
           label="Additional"
@@ -353,7 +354,8 @@ export function Sidebar({ mobileOpen, onDrawerToggle }: SidebarProps) {
           sx={{
             px: 2,
             py: 1.5,
-            borderTop: '1px solid rgba(201,168,77,0.10)',
+            borderTop: 1,
+            borderColor: 'divider',
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
@@ -375,10 +377,10 @@ export function Sidebar({ mobileOpen, onDrawerToggle }: SidebarProps) {
             <PeopleRoundedIcon sx={{ fontSize: 15, color: '#FAF5EF' }} />
           </Box>
           <Box>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: '#E8D3A9', lineHeight: 1.2 }}>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.primary', lineHeight: 1.2 }}>
               Super Admin
             </Typography>
-            <Typography sx={{ fontSize: 10.5, color: 'rgba(201,168,77,0.55)', letterSpacing: '0.04em' }}>
+            <Typography sx={{ fontSize: 10.5, color: 'text.disabled', letterSpacing: '0.04em' }}>
               admin@kettan.ph
             </Typography>
           </Box>
