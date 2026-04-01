@@ -6,12 +6,13 @@ import { Header } from './Header';
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const effectiveWidth = DRAWER_WIDTH;
+  const effectiveWidth = collapsed ? 64 : DRAWER_WIDTH;
 
   return (
     <Box
@@ -26,6 +27,8 @@ export function AppLayout() {
       <Sidebar
         mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
+        collapsed={collapsed}
+        onCollapseToggle={() => setCollapsed(!collapsed)}
       />
 
       <Box
@@ -36,7 +39,7 @@ export function AppLayout() {
           flexDirection: 'column',
           minWidth: 0,
           width: { sm: `calc(100% - ${effectiveWidth}px)` },
-          transition: 'width 220ms cubic-bezier(0.4,0,0.2,1)',
+          transition: 'width 220ms cubic-bezier(0.4,0,0.2,1), margin 220ms cubic-bezier(0.4,0,0.2,1)',
         }}
       >
         <Toolbar sx={{ height: 64, flexShrink: 0 }} />

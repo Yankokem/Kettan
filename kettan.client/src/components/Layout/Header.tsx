@@ -26,10 +26,17 @@ const PAGE_TITLES: Record<string, string> = {
   '/reports':   'Finance & Reports',
 };
 
+const PAGE_DESCRIPTIONS: Record<string, string> = {
+  '/':          'Kettan · Café Chain Operations',
+  '/branches':  'Manage your operational network and corporate details.',
+  '/staff':     'Manage employee records and role assignments across your network.',
+};
+
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   const { mode, toggleTheme } = useThemeStore();
   const location = useLocation();
   const pageTitle = PAGE_TITLES[location.pathname] ?? 'Kettan';
+  const pageDesc = PAGE_DESCRIPTIONS[location.pathname] ?? 'Kettan · Café Chain Operations';
 
   return (
     <AppBar
@@ -45,9 +52,9 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
         color: 'text.primary',
         transition: 'margin-left 220ms cubic-bezier(0.4,0,0.2,1), width 220ms cubic-bezier(0.4,0,0.2,1)',
         '.dark &': {
-          background: 'rgba(16, 10, 4, 0.85)',
+          background: 'rgba(46, 31, 20, 0.85)',
           color: '#E8D3A9',
-          borderBottomColor: 'rgba(201,168,77,0.10)',
+          borderBottomColor: 'rgba(201,168,77,0.15)',
         },
       }}
     >
@@ -87,13 +94,13 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
             </Typography>
             <Typography
               sx={{
-                fontSize: 11,
+                fontSize: 12,
                 color: '#8C6B43',
-                letterSpacing: '0.04em',
+                letterSpacing: '0.01em',
                 '.dark &': { color: 'rgba(201,168,77,0.55)' },
               }}
             >
-              Kettan · Café Chain Operations
+              {pageDesc}
             </Typography>
           </Box>
         </Box>

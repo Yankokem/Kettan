@@ -1,13 +1,19 @@
 import { Box, Typography, Chip } from '@mui/material';
 import LocalShippingRoundedIcon    from '@mui/icons-material/LocalShippingRounded';
-import Inventory2RoundedIcon       from '@mui/icons-material/Inventory2Rounded';
-import StoreRoundedIcon            from '@mui/icons-material/StoreRounded';
+import SettingsBackupRestoreRoundedIcon from '@mui/icons-material/SettingsBackupRestoreRounded';
+import LocalMallRoundedIcon        from '@mui/icons-material/LocalMallRounded';
 import WarningAmberRoundedIcon     from '@mui/icons-material/WarningAmberRounded';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import RadioButtonCheckedRoundedIcon from '@mui/icons-material/RadioButtonCheckedRounded';
+import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
 
 import { StatCard } from '../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
+import { useAuthStore } from '../../store/useAuthStore';
+import { BranchPerformance } from './components/BranchPerformance';
+import { InventoryAlerts } from './components/InventoryAlerts';
+import { FulfillmentStepper } from './components/FulfillmentStepper';
+import { DashboardChart } from './components/DashboardChart';
 
 // ── Recent Activity Row ────────────────────────────────────────────────────
 interface ActivityItem {
@@ -106,6 +112,9 @@ const activityColumns: ColumnDef<ActivityItem>[] = [
 ];
 
 export function DashboardPage() {
+  const { user } = useAuthStore();
+  const isBranchManager = user?.role === 'BranchManager';
+
   return (
     <Box sx={{ pb: 3 }}>
       {/* Page header */}
@@ -118,10 +127,12 @@ export function DashboardPage() {
             letterSpacing: '-0.02em',
           }}
         >
-          Good morning 👋
+          Good morning, {user?.name?.split(' ')[0] || 'there'} 👋
         </Typography>
         <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.25 }}>
-          Here's what's happening across your café chain today.
+          {isBranchManager 
+            ? "Here's what's happening at your branch today." 
+            : "Here's what's happening across your café chain today."}
         </Typography>
       </Box>
 
@@ -135,29 +146,29 @@ export function DashboardPage() {
         }}
       >
         <StatCard
-          label="Active Branches"
-          value={12}
-          sub="3 pending onboarding"
+          label="Pending Supply Orders"
+          value={14}
+          sub="Requires fulfillment"
           trend="up"
-          trendValue="+2"
-          icon={<StoreRoundedIcon />}
+          trendValue="+3"
+          icon={<LocalMallRoundedIcon />}
           accentClass="stat-accent-brown"
           iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
         />
         <StatCard
-          label="Open Orders"
-          value={47}
-          sub="10 urgent flagged"
+          label="Low Stock Items"
+          value={12}
+          sub="3 at critical levels"
           trend="up"
-          trendValue="+12%"
-          icon={<Inventory2RoundedIcon />}
+          trendValue="+2"
+          icon={<WarningAmberRoundedIcon />}
           accentClass="stat-accent-gold"
           iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
         />
         <StatCard
-          label="Deliveries Today"
-          value={23}
-          sub="18 completed"
+          label="Active Shipments"
+          value={8}
+          sub="In transit today"
           trend="up"
           trendValue="+5"
           icon={<LocalShippingRoundedIcon />}
@@ -165,24 +176,51 @@ export function DashboardPage() {
           iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
         />
         <StatCard
-          label="Low Stock Alerts"
-          value={3}
-          sub="Across 2 branches"
+          label="Pending Returns"
+          value={2}
+          sub="Awaiting review"
           trend="down"
-          trendValue="-1"
-          icon={<WarningAmberRoundedIcon />}
+          trendValue="-2"
+          icon={<SettingsBackupRestoreRoundedIcon />}
           accentClass="stat-accent-brown"
           iconBg="linear-gradient(135deg, #C9A84C 0%, #E8D3A9 100%)"
         />
       </Box>
 
-      {/* ── Recent Activity ── */}
-      <DataTable
-        title="Recent Order Activity"
-        data={RECENT_ACTIVITY}
-        columns={activityColumns}
-        keyExtractor={(row) => row.id}
-      />
+      {/* ── Main Dashboard Grid ── */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        
+        {/* Top Row: Chart & Performance/Stepper */}
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <DashboardChart />
+          </Box>
+          <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
+            {!isBranchManager ? <BranchPerformance /> : <FulfillmentStepper />}
+          </Box>
+        </Box>
+
+        {/* Bottom Row: Activity Table & Alerts */}
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <DataTable
+              title={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ListAltRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                  <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Recent Order Activity</Typography>
+                </Box>
+              }
+              data={isBranchManager ? RECENT_ACTIVITY.slice(0, 4) : RECENT_ACTIVITY}
+              columns={activityColumns}
+              keyExtractor={(row) => row.id}
+            />
+          </Box>
+          <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
+            <InventoryAlerts />
+          </Box>
+        </Box>
+        
+      </Box>
     </Box>
   );
 }

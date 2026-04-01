@@ -11,6 +11,7 @@ import {
   Tooltip,
   Collapse,
 } from '@mui/material';
+import logo from '../../assets/logo.png';
 import DashboardRoundedIcon         from '@mui/icons-material/DashboardRounded';
 import LocalShippingRoundedIcon     from '@mui/icons-material/LocalShippingRounded';
 import Inventory2RoundedIcon        from '@mui/icons-material/Inventory2Rounded';
@@ -24,13 +25,21 @@ import ManageAccountsRoundedIcon    from '@mui/icons-material/ManageAccountsRoun
 import BadgeRoundedIcon             from '@mui/icons-material/BadgeRounded';
 import ExpandMoreRoundedIcon        from '@mui/icons-material/ExpandMoreRounded';
 import ExpandLessRoundedIcon        from '@mui/icons-material/ExpandLessRounded';
-import { Link, useLocation }        from '@tanstack/react-router';
+import LogoutRoundedIcon            from '@mui/icons-material/LogoutRounded';
+import ShoppingCartRoundedIcon      from '@mui/icons-material/ShoppingCartRounded';
+import ScaleRoundedIcon             from '@mui/icons-material/ScaleRounded';
+import AnalyticsRoundedIcon         from '@mui/icons-material/AnalyticsRounded';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import { useAuthStore } from '../../store/useAuthStore';
+import { IconButton } from '@mui/material';
 
 const DRAWER_WIDTH = 268;
 
 interface SidebarProps {
   mobileOpen: boolean;
   onDrawerToggle: () => void;
+  collapsed: boolean;
+  onCollapseToggle: () => void;
 }
 
 interface NavItem {
@@ -38,40 +47,25 @@ interface NavItem {
   icon: React.ReactNode;
   path?: string;
   children?: NavItem[];
-  tag?: string;
-  tagColor?: string;
+  allowedRoles?: string[];
 }
 
-const CORE_NAV: NavItem[] = [
-  { text: 'Dashboard',          icon: <DashboardRoundedIcon />,          path: '/' },
-  {
-    text: 'Order Processing',   icon: <CategoryRoundedIcon />,            path: '/orders',
-    tag: 'OFMS', tagColor: '#C9A84C',
-  },
-  {
-    text: 'Picking & Packing',  icon: <Inventory2RoundedIcon />,          path: '/picking',
-    tag: 'OFMS', tagColor: '#C9A84C',
-  },
-  {
-    text: 'Shipping & Delivery',icon: <LocalShippingRoundedIcon />,       path: '/shipping',
-    tag: 'OFMS', tagColor: '#C9A84C',
-  },
-  {
-    text: 'Order Tracking',     icon: <TrackChangesRoundedIcon />,        path: '/tracking',
-    tag: 'OFMS', tagColor: '#C9A84C',
-  },
-  {
-    text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns',
-    tag: 'OFMS', tagColor: '#C9A84C',
-  },
-];
-
-const ADDITIONAL_NAV: NavItem[] = [
-  { text: 'Tenants & Branches', icon: <StoreRoundedIcon />,            path: '/branches' },
-  { text: 'Inventory',          icon: <Inventory2RoundedIcon />,       path: '/inventory' },
-  { text: 'HR & Staff',         icon: <BadgeRoundedIcon />,            path: '/staff' },
-  { text: 'User & Roles',       icon: <ManageAccountsRoundedIcon />,   path: '/users' },
-  { text: 'Finance & Reports',  icon: <BarChartRoundedIcon />,         path: '/reports' },
+const MAIN_NAV: NavItem[] = [
+  { text: 'Dashboard',          icon: <DashboardRoundedIcon />,          path: '/', allowedRoles: ['SuperAdmin', 'TenantAdmin', 'HqManager', 'HqStaff', 'BranchManager', 'BranchOwner'] },
+  { text: 'Supply Requests',    icon: <ShoppingCartRoundedIcon />,       path: '/supply-requests', allowedRoles: ['BranchManager', 'BranchOwner'] },
+  { text: 'Order Processing',   icon: <CategoryRoundedIcon />,            path: '/orders', allowedRoles: ['HqManager', 'HqStaff', 'TenantAdmin'] },
+  { text: 'Picking & Packing',  icon: <Inventory2RoundedIcon />,          path: '/picking', allowedRoles: ['HqManager', 'HqStaff'] },
+  { text: 'Shipping & Delivery',icon: <LocalShippingRoundedIcon />,       path: '/shipping', allowedRoles: ['HqManager', 'HqStaff'] },
+  { text: 'Order Tracking',     icon: <TrackChangesRoundedIcon />,        path: '/tracking', allowedRoles: ['BranchManager', 'BranchOwner', 'HqStaff', 'HqManager', 'TenantAdmin'] },
+  { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', allowedRoles: ['BranchManager', 'HqStaff', 'HqManager'] },
+  { text: 'Tenants & Branches', icon: <StoreRoundedIcon />,            path: '/branches', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },
+  { text: 'HQ Inventory',       icon: <Inventory2RoundedIcon />,       path: '/inventory', allowedRoles: ['HqManager', 'HqStaff', 'TenantAdmin'] },
+  { text: 'Branch Inventory',   icon: <StoreRoundedIcon />,            path: '/branch-inventory', allowedRoles: ['BranchManager', 'BranchOwner', 'TenantAdmin'] },
+  { text: 'Consumption',        icon: <ScaleRoundedIcon />,            path: '/consumption', allowedRoles: ['BranchManager', 'BranchOwner'] },
+  { text: 'HR & Staff',         icon: <BadgeRoundedIcon />,            path: '/staff', allowedRoles: ['TenantAdmin', 'HqManager', 'BranchManager'] },
+  { text: 'User & Roles',       icon: <ManageAccountsRoundedIcon />,   path: '/users', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },
+  { text: 'Finance & Reports',  icon: <BarChartRoundedIcon />,         path: '/reports', allowedRoles: ['TenantAdmin', 'BranchOwner', 'HqManager'] },
+  { text: 'Platform Analytics', icon: <AnalyticsRoundedIcon />,        path: '/analytics', allowedRoles: ['SuperAdmin'] },
 ];
 
 function NavLink({
@@ -146,25 +140,6 @@ function NavLink({
               whiteSpace: 'nowrap',
             }}
           />
-          {item.tag && (
-            <Typography
-              component="span"
-              sx={{
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                px: 0.75,
-                py: 0.1,
-                borderRadius: '4px',
-                border: `1px solid ${item.tagColor ?? '#C9A84C'}`,
-                color: item.tagColor ?? '#C9A84C',
-                ml: 1,
-                opacity: 0.85,
-              }}
-            >
-              {item.tag}
-            </Typography>
-          )}
           {hasChildren && (open
             ? <ExpandLessRoundedIcon sx={{ fontSize: 16, color: 'text.disabled', ml: 0.5 }} />
             : <ExpandMoreRoundedIcon sx={{ fontSize: 16, color: 'text.disabled', ml: 0.5 }} />
@@ -175,10 +150,16 @@ function NavLink({
   );
 
   const wrapped = item.path ? (
-    <Link to={item.path} className="w-full no-underline" onClick={onClick}>
+    <Box onClick={(e) => e.stopPropagation()}>
+      <Link to={item.path} className="w-full no-underline" onClick={onClick}>
+        {content}
+      </Link>
+    </Box>
+  ) : (
+    <Box onClick={(e) => e.stopPropagation()}>
       {content}
-    </Link>
-  ) : content;
+    </Box>
+  );
 
   return (
     <ListItem disablePadding sx={{ display: 'block' }}>
@@ -199,60 +180,22 @@ function NavLink({
   );
 }
 
-function SidebarSection({
-  label,
-  items,
-  currentPath,
-  collapsed,
-  onNavigate,
-}: {
-  label: string;
-  items: NavItem[];
-  currentPath: string;
-  collapsed: boolean;
-  onNavigate: () => void;
-}) {
-  return (
-    <Box sx={{ mb: 1 }}>
-      {!collapsed && (
-        <Typography
-          variant="overline"
-          sx={{
-            px: 2.5,
-            py: 0.5,
-            display: 'block',
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.12em',
-            color: 'text.disabled',
-          }}
-        >
-          {label}
-        </Typography>
-      )}
-      {collapsed && <Box sx={{ height: 8 }} />}
-      <List disablePadding>
-        {items.map((item) => (
-          <NavLink
-            key={item.text}
-            item={item}
-            currentPath={currentPath}
-            collapsed={collapsed}
-            onClick={onNavigate}
-          />
-        ))}
-      </List>
-    </Box>
-  );
-}
-
-export function Sidebar({ mobileOpen, onDrawerToggle }: SidebarProps) {
+export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggle }: SidebarProps) {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    navigate({ to: '/login' });
+  };
+
+  const navFilter = (item: NavItem) => !item.allowedRoles || (user?.role && item.allowedRoles.includes(user.role));
 
   const drawerContent = (
     <Box
       className="sidebar-bg"
+      onClick={onCollapseToggle}
       sx={{
         height: '100%',
         display: 'flex',
@@ -261,6 +204,7 @@ export function Sidebar({ mobileOpen, onDrawerToggle }: SidebarProps) {
         transition: 'width 220ms cubic-bezier(0.4,0,0.2,1)',
         overflowX: 'hidden',
         overflowY: 'auto',
+        cursor: 'pointer',
       }}
     >
       {/* ── Logo ── */}
@@ -269,83 +213,47 @@ export function Sidebar({ mobileOpen, onDrawerToggle }: SidebarProps) {
           height: 64,
           display: 'flex',
           alignItems: 'center',
-          px: collapsed ? 1.5 : 2.5,
-          gap: 1.5,
-          cursor: 'pointer',
+          justifyContent: 'center',
+          px: collapsed ? 1.5 : 2,
           userSelect: 'none',
           borderBottom: 1,
           borderColor: 'divider',
           flexShrink: 0,
+          overflow: 'hidden',
         }}
-        onClick={() => setCollapsed((c) => !c)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onCollapseToggle();
+        }}
       >
-        {/* Coffee-bean icon mark */}
-        <Box
-          sx={{
-            width: 34,
-            height: 34,
-            borderRadius: '9px',
-            background: 'linear-gradient(135deg, #6B4C2A 0%, #C9A84C 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            boxShadow: '0 2px 8px rgba(201,168,77,0.3)',
-          }}
-        >
-          <Typography sx={{ fontSize: 18, lineHeight: 1, userSelect: 'none' }}>
-            ☕
-          </Typography>
-        </Box>
-        {!collapsed && (
-          <Box>
-            <Typography
-              className="logo-shimmer"
-              sx={{
-                fontSize: 15,
-                fontWeight: 800,
-                letterSpacing: '0.12em',
-                lineHeight: 1.1,
-                textTransform: 'uppercase',
-              }}
-            >
-              Kettan
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: 9,
-                color: 'text.disabled',
-                letterSpacing: '0.14em',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                mt: 0.2,
-              }}
-            >
-              Café Chain Ops
-            </Typography>
-          </Box>
+        {collapsed ? (
+          <img 
+            src="/icon.svg" 
+            alt="Kettan Icon" 
+            style={{ height: 36, width: 36, flexShrink: 0, borderRadius: 8 }} 
+          />
+        ) : (
+          <img 
+            src={logo} 
+            alt="Kettan Logo" 
+            style={{ height: 46, width: 'auto', flexShrink: 0 }} 
+          />
         )}
       </Box>
 
       {/* ── Navigation ── */}
       <Box sx={{ flex: 1, pt: 2, pb: 2 }}>
-        <SidebarSection
-          label="Core Modules"
-          items={CORE_NAV}
-          currentPath={location.pathname}
-          collapsed={collapsed}
-          onNavigate={onDrawerToggle}
-        />
-
-        <Box sx={{ mx: 2, my: 1.5, borderTop: 1, borderColor: 'divider' }} />
-
-        <SidebarSection
-          label="Additional"
-          items={ADDITIONAL_NAV}
-          currentPath={location.pathname}
-          collapsed={collapsed}
-          onNavigate={onDrawerToggle}
-        />
+        <List disablePadding>
+          {MAIN_NAV.filter(navFilter).map((item) => (
+            <NavLink
+              key={item.text}
+              item={item}
+              currentPath={location.pathname}
+              collapsed={collapsed}
+              onClick={onDrawerToggle}
+            />
+          ))}
+        </List>
       </Box>
 
       {/* ── Footer ── */}
@@ -376,14 +284,28 @@ export function Sidebar({ mobileOpen, onDrawerToggle }: SidebarProps) {
           >
             <PeopleRoundedIcon sx={{ fontSize: 15, color: '#FAF5EF' }} />
           </Box>
-          <Box>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.primary', lineHeight: 1.2 }}>
-              Super Admin
+          <Box sx={{ flex: 1, overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <Typography noWrap sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.primary', lineHeight: 1.2 }}>
+              {user?.name || 'Super Admin'}
             </Typography>
-            <Typography sx={{ fontSize: 10.5, color: 'text.disabled', letterSpacing: '0.04em' }}>
-              admin@kettan.ph
+            <Typography noWrap sx={{ fontSize: 10.5, color: 'text.disabled', letterSpacing: '0.04em' }}>
+              {user?.role || 'admin'}
             </Typography>
           </Box>
+          <Tooltip title="Logout" placement="top">
+            <IconButton onClick={(e) => { e.stopPropagation(); handleLogout(); }} size="small" sx={{ color: 'text.secondary', cursor: 'pointer' }}>
+              <LogoutRoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
+      {collapsed && (
+        <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider', display: 'flex', justifyContent: 'center' }}>
+          <Tooltip title="Logout" placement="right">
+            <IconButton onClick={(e) => { e.stopPropagation(); handleLogout(); }} size="small" sx={{ color: 'text.secondary', cursor: 'pointer' }}>
+              <LogoutRoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       )}
     </Box>

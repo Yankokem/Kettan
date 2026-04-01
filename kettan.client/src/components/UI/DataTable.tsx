@@ -9,7 +9,7 @@ export interface ColumnDef<T> {
 }
 
 export interface DataTableProps<T> {
-  title: string;
+  title: React.ReactNode;
   data: T[];
   columns: ColumnDef<T>[];
   keyExtractor: (row: T) => string;
@@ -35,6 +35,9 @@ export function DataTable<T>({ title, data, columns, keyExtractor }: DataTablePr
     <Box
       className="glass-card"
       sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         borderRadius: '14px',
         overflow: 'hidden',
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
