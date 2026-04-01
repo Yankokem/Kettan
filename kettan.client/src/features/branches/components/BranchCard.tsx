@@ -8,6 +8,8 @@ import type { Branch } from '../types';
 
 interface BranchCardProps {
   branch: Branch;
+  onClick?: (id: string | number) => void;
+  alertCount?: number;
 }
 
 const getStatusChip = (status: string) => {
@@ -17,12 +19,12 @@ const getStatusChip = (status: string) => {
   return <Chip label="Setup Pending" size="small" sx={{ height: 22, fontSize: 11, fontWeight: 600, bgcolor: '#F3F4F6', color: '#4B5563', borderRadius: 1 }} />;
 };
 
-export function BranchCard({ branch }: BranchCardProps) {
+export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
   const navigate = useNavigate();
 
   return (
     <Card 
-      onClick={() => navigate({ to: '/branches/$branchId', params: { branchId: branch.id.toString() } })}
+      onClick={() => onClick ? onClick(branch.id) : navigate({ to: '/branches/$branchId', params: { branchId: branch.id.toString() } })}
       elevation={0}
       sx={{
         border: '1px solid',
@@ -50,6 +52,9 @@ export function BranchCard({ branch }: BranchCardProps) {
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {getStatusChip(branch.status)}
+            {alertCount !== undefined && alertCount > 0 && (
+               <Chip label={`${alertCount} Alerts`} size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#FEF2F2', color: '#B91C1C', borderRadius: 1 }} />
+            )}
             <IconButton size="small" sx={{ ml: -0.5, mr: -1, color: 'text.secondary', '&:hover': { color: '#6B4C2A', bgcolor: '#FAF5EF' } }}>
               <MoreVertRoundedIcon fontSize="small" />
             </IconButton>

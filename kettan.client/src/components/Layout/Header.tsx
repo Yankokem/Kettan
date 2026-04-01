@@ -24,6 +24,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/settings/tenant': 'Tenant Profile',
   '/inventory': 'Inventory & Stock',
   '/inventory/add': 'Add Inventory Item',
+  '/branch-inventory': 'Branch Inventory',
   '/staff':     'HR & Staff',
   '/staff/add': 'Add Staff Member',
   '/users':     'User & Roles',
@@ -37,6 +38,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/settings/tenant': 'Manage your organization profile and billing.',
   '/inventory': 'Track warehouse stock, raw ingredients, and reorder levels globally.',
   '/inventory/add': 'Register new coffee, syrups, packaging, or equipment.',
+  '/branch-inventory': 'Monitor and fulfill stock requirements for individual branch locations.',
   '/staff':     'Manage employee records and role assignments across your network.',
   '/staff/add': 'Onboard a new employee to your organization.',
 };

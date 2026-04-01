@@ -32,11 +32,14 @@ import { FilterDropdown } from '../../../components/UI/FilterAndSort';
 
 interface InventoryTableProps {
   items: InventoryItem[];
+  onAddClick?: () => void;
+  onRowClick?: (id: string | number) => void;
+  hideAddButton?: boolean;
 }
 
 type ViewMode = 'default' | 'levels' | 'supply';
 
-export function InventoryTable({ items }: InventoryTableProps) {
+export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = false }: InventoryTableProps) {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [page, setPage] = useState(0);
@@ -135,9 +138,14 @@ export function InventoryTable({ items }: InventoryTableProps) {
             options={viewOptions as any} 
             onChange={(newView: ViewMode) => setViewMode(newView)} 
           />
-          <Button startIcon={<AddRoundedIcon />} onClick={() => navigate({ to: '/inventory/add' })}>
-            Add Stock Item
-          </Button>
+          {!hideAddButton && (
+            <Button 
+              startIcon={<AddRoundedIcon />} 
+              onClick={() => onAddClick ? onAddClick() : navigate({ to: '/inventory/add' })}
+            >
+              Add Stock Item
+            </Button>
+          )}
         </Box>
       </Box>
 
@@ -187,7 +195,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
                 <TableRow 
                   key={item.id}
                   hover
-                  onClick={() => navigate({ to: '/inventory/$itemId', params: { itemId: item.id.toString() } })}
+                  onClick={() => onRowClick ? onRowClick(item.id) : navigate({ to: '/inventory/$itemId', params: { itemId: item.id.toString() } })}
                   sx={{ 
                     cursor: 'pointer',
                     '&:last-child td, &:last-child th': { border: 0 },
