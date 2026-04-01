@@ -1,8 +1,9 @@
 import { Box } from '@mui/material';
+import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import type { StaffMember } from './types';
 import { StaffCard } from './components/StaffCard';
-import { CustomButton } from '../../components/UI/CustomButton';
+import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { Dropdown } from '../../components/UI/Dropdown';
 
@@ -14,6 +15,8 @@ const MOCK_STAFF: StaffMember[] = [
 ];
 
 export function StaffPage() {
+  const navigate = useNavigate();
+
   return (
     <Box sx={{ pb: 3, pt: 1 }}>
       {/* Toolbox: Search / Filters */}
@@ -29,9 +32,9 @@ export function StaffPage() {
           ]} 
         />
 
-        <CustomButton startIcon={<PersonAddAlt1RoundedIcon />}>
-          Invite Staff
-        </CustomButton>
+        <Button startIcon={<PersonAddAlt1RoundedIcon />} onClick={() => navigate({ to: '/staff/add' })}>
+          Add Staff
+        </Button>
       </Box>
       
       {/* Staff Grid */}

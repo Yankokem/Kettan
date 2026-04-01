@@ -3,6 +3,7 @@ import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import { useNavigate } from '@tanstack/react-router';
 import type { Branch } from '../types';
 
 interface BranchCardProps {
@@ -17,8 +18,11 @@ const getStatusChip = (status: string) => {
 };
 
 export function BranchCard({ branch }: BranchCardProps) {
+  const navigate = useNavigate();
+
   return (
-    <Card
+    <Card 
+      onClick={() => navigate({ to: '/branches/$branchId', params: { branchId: branch.id.toString() } })}
       elevation={0}
       sx={{
         border: '1px solid',

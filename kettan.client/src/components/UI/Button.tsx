@@ -1,7 +1,7 @@
-import { Button } from '@mui/material';
-import type { ButtonProps } from '@mui/material';
+import { Button as MuiButton } from '@mui/material';
+import type { ButtonProps as MuiButtonProps } from '@mui/material';
 
-export function CustomButton({ variant = 'contained', sx, ...props }: ButtonProps) {
+export function Button({ variant = 'contained', sx, ...props }: MuiButtonProps) {
   const getStyles = () => {
     if (variant === 'contained') {
       return {
@@ -13,7 +13,7 @@ export function CustomButton({ variant = 'contained', sx, ...props }: ButtonProp
     }
     if (variant === 'outlined') {
       return {
-        color: '#6B4C2A', 
+        color: '#6B4C2A',
         borderColor: 'rgba(107, 76, 42, 0.3)',
         '&:hover': { borderColor: '#6B4C2A', bgcolor: 'rgba(107, 76, 42, 0.04)' },
       };
@@ -22,7 +22,7 @@ export function CustomButton({ variant = 'contained', sx, ...props }: ButtonProp
   };
 
   return (
-    <Button
+    <MuiButton
       variant={variant}
       disableElevation
       sx={{

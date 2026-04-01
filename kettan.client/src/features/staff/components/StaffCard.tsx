@@ -2,6 +2,7 @@ import { Card, Box, Avatar, IconButton, Typography, Chip } from '@mui/material';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import { useNavigate } from '@tanstack/react-router';
 import type { StaffMember } from '../types';
 
 interface StaffCardProps {
@@ -15,8 +16,11 @@ const getRoleChip = (role: string) => {
 };
 
 export function StaffCard({ staff }: StaffCardProps) {
+  const navigate = useNavigate();
+
   return (
     <Card
+      onClick={() => navigate({ to: '/staff/$staffId', params: { staffId: staff.id.toString() } })}
       elevation={0}
       sx={{
         p: 2.5,

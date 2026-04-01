@@ -20,8 +20,12 @@ const PAGE_TITLES: Record<string, string> = {
   '/tracking':  'Order Tracking',
   '/returns':   'Returns Management',
   '/branches':  'Tenants & Branches',
-  '/inventory': 'Inventory',
+  '/branches/add': 'Add New Branch',
+  '/settings/tenant': 'Tenant Profile',
+  '/inventory': 'Inventory & Stock',
+  '/inventory/add': 'Add Inventory Item',
   '/staff':     'HR & Staff',
+  '/staff/add': 'Add Staff Member',
   '/users':     'User & Roles',
   '/reports':   'Finance & Reports',
 };
@@ -29,14 +33,28 @@ const PAGE_TITLES: Record<string, string> = {
 const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/':          'Kettan · Café Chain Operations',
   '/branches':  'Manage your operational network and corporate details.',
+  '/branches/add': 'Register a new branch within the tenant network.',
+  '/settings/tenant': 'Manage your organization profile and billing.',
+  '/inventory': 'Track warehouse stock, raw ingredients, and reorder levels globally.',
+  '/inventory/add': 'Register new coffee, syrups, packaging, or equipment.',
   '/staff':     'Manage employee records and role assignments across your network.',
+  '/staff/add': 'Onboard a new employee to your organization.',
 };
 
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   const { mode, toggleTheme } = useThemeStore();
   const location = useLocation();
-  const pageTitle = PAGE_TITLES[location.pathname] ?? 'Kettan';
-  const pageDesc = PAGE_DESCRIPTIONS[location.pathname] ?? 'Kettan · Café Chain Operations';
+  const getParentResource = (path: string) => {
+    const segments = path.split('/');
+    if (segments.length > 2) {
+      return `/${segments[1]}`;
+    }
+    return path;
+  };
+  
+  const basePath = getParentResource(location.pathname);
+  const pageTitle = PAGE_TITLES[basePath] ?? PAGE_TITLES[location.pathname] ?? 'Kettan';
+  const pageDesc = PAGE_DESCRIPTIONS[basePath] ?? PAGE_DESCRIPTIONS[location.pathname] ?? 'Kettan · Café Chain Operations';
 
   return (
     <AppBar

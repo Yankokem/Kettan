@@ -2,7 +2,7 @@ import { Select, MenuItem, FormControl } from '@mui/material';
 import type { SelectProps } from '@mui/material';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 
-interface DropdownProps extends Omit<SelectProps, 'variant'> {
+export interface DropdownProps extends Omit<SelectProps, 'variant'> {
   options: { value: string | number; label: string }[];
 }
 

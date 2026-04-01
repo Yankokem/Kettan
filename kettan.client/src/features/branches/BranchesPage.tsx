@@ -1,9 +1,10 @@
 import { Box, Typography } from '@mui/material';
+import { useNavigate } from '@tanstack/react-router';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import type { Branch } from './types';
 import { TenantRibbon } from './components/TenantRibbon';
 import { BranchCard } from './components/BranchCard';
-import { CustomButton } from '../../components/UI/CustomButton';
+import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { Dropdown } from '../../components/UI/Dropdown';
 
@@ -16,6 +17,8 @@ const MOCK_BRANCHES: Branch[] = [
 ];
 
 export function BranchesPage() {
+  const navigate = useNavigate();
+
   return (
     <Box sx={{ pb: 3, pt: 1 }}>
       {/* Tenant Profile Overview Ribbon */}
@@ -38,9 +41,9 @@ export function BranchesPage() {
             ]}
           />
 
-          <CustomButton startIcon={<AddRoundedIcon />}>
+          <Button startIcon={<AddRoundedIcon />} onClick={() => navigate({ to: '/branches/add' })}>
             Add Branch
-          </CustomButton>
+          </Button>
         </Box>
       </Box>
       

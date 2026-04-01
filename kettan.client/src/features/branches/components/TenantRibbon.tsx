@@ -1,9 +1,12 @@
 import { Card, Box, Avatar, Typography } from '@mui/material';
+import { useNavigate } from '@tanstack/react-router';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import SettingsApplicationsRoundedIcon from '@mui/icons-material/SettingsApplicationsRounded';
-import { CustomButton } from '../../../components/UI/CustomButton';
+import { Button } from '../../../components/UI/Button';
 
 export function TenantRibbon() {
+  const navigate = useNavigate();
+
   return (
     <Card
       elevation={0}
@@ -39,9 +42,9 @@ export function TenantRibbon() {
           </Box>
         </Box>
       </Box>
-      <CustomButton variant="outlined" startIcon={<SettingsApplicationsRoundedIcon />}>
+      <Button variant="outlined" startIcon={<SettingsApplicationsRoundedIcon />} onClick={() => navigate({ to: '/settings/tenant' })}>
         Tenant Settings
-      </CustomButton>
+      </Button>
     </Card>
   );
 }
