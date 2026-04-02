@@ -23,9 +23,13 @@ export function StatCard({ label, value, sub, trend, trendValue, icon, accentCla
         p: 3,
         display: 'flex',
         flexDirection: 'column',
-        gap: 1,
+        height: '100%',
+        gap: 1.5,
         cursor: 'default',
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+        '&::after': {
+          marginTop: 'auto !important'
+        }
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>

@@ -8,12 +8,9 @@ import {
   TableContainer, 
   TableHead, 
   TableRow, 
-  Paper, 
-  Chip, 
+  Paper,
+  Chip,
   LinearProgress,
-  Pagination,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
@@ -29,6 +26,7 @@ import { SearchInput } from '../../../components/UI/SearchInput';
 import { Button } from '../../../components/UI/Button';
 import { ViewToggle } from '../../../components/UI/ViewToggle';
 import { FilterDropdown } from '../../../components/UI/FilterAndSort';
+import { TablePaginationFooter } from '../../../components/UI/TablePaginationFooter';
 
 interface InventoryTableProps {
   items: InventoryItem[];
@@ -288,54 +286,13 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
         </Table>
       </TableContainer>
       
-      {/* Modern Clickable Pagination */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 3, mb: 1, px: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-              Rows per page:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={handleChangeRowsPerPage}
-              size="small"
-              sx={{ 
-                fontSize: 13,
-                height: 32,
-                '& .MuiSelect-select': { py: 0.5, pl: 1.5, pr: 3, fontWeight: 600 },
-                '& fieldset': { borderColor: 'divider', borderRadius: 2 }
-              }}
-            >
-              <MenuItem value={15} sx={{ fontSize: 13 }}>15</MenuItem>
-              <MenuItem value={25} sx={{ fontSize: 13 }}>25</MenuItem>
-              <MenuItem value={50} sx={{ fontSize: 13 }}>50</MenuItem>
-            </Select>
-          </Box>
-          <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
-            Showing <Typography component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>{Math.min(page * rowsPerPage + 1, filteredItems.length)}</Typography> - <Typography component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>{Math.min((page + 1) * rowsPerPage, filteredItems.length)}</Typography> of <Typography component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>{filteredItems.length}</Typography>
-          </Typography>
-        </Box>
-        <Pagination
-          count={Math.ceil(filteredItems.length / rowsPerPage)}
-          page={page + 1}
-          onChange={handleChangePage}
-          shape="rounded"
-          color="primary"
-          sx={{
-            '& .MuiPaginationItem-root': {
-              fontSize: 13,
-              fontWeight: 600,
-              height: 32,
-              minWidth: 32,
-              color: 'text.secondary',
-              '&.Mui-selected': {
-                color: 'primary.contrastText',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }
-            }
-          }}
-        />
-      </Box>
+      <TablePaginationFooter
+        totalItems={filteredItems.length}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
     </Box>
   );
 }

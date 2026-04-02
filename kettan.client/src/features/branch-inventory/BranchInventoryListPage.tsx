@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Box, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Pagination, Select, MenuItem } from '@mui/material';
+import { Box, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { StatCard } from '../../components/UI/StatCard';
@@ -12,6 +12,9 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { SearchInput } from '../../components/UI/SearchInput';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
+import { TablePaginationFooter } from '../../components/UI/TablePaginationFooter';
 
 // Reusing MOCK_BRANCHES for listing, maybe enriching with inventory stats
 interface BranchInventoryStat extends Branch {
@@ -79,16 +82,6 @@ export function BranchInventoryListPage() {
 
   return (
     <Box sx={{ pb: 3, pt: 1 }}>
-      {/* Header section */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-          Branch Inventory Management
-        </Typography>
-        <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-          Monitor stock levels, track reorder points, and manage fulfillment across all physical retail locations within your tenant.
-        </Typography>
-      </Box>
-
       {/* KPI Stats */}
       <Box sx={{ mb: 4 }}>
         <Grid container spacing={3}>
@@ -96,23 +89,46 @@ export function BranchInventoryListPage() {
             <StatCard 
               label="Monitored Branches" 
               value={activeBranches.toString()} 
+              trend="up"
+              trendValue="1.5%"
               icon={<ViewModuleRoundedIcon />} 
-              accentClass="stat-accent-primary"
-              iconBg="rgba(201, 168, 77, 0.15)"
+              accentClass="stat-accent-gold"
+              iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard 
               label="Branches Low on Stock" 
               value={criticalStockBranches.toString()} 
-              icon={<TuneRoundedIcon />} 
               trend="down"
-              trendValue="Needs attention"
+              trendValue="2.4%"
+              icon={<TuneRoundedIcon />} 
               accentClass="stat-accent-error"
-              iconBg="rgba(239, 68, 68, 0.1)"
+              iconBg="linear-gradient(135deg, #E65C5C 0%, #F89696 100%)"
             />
           </Grid>
-          {/* Add more stats if needed */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard 
+              label="Total Tracked SKUs" 
+              value={MOCK_BRANCH_STATS.reduce((acc, b) => acc + b.totalItems, 0).toString()} 
+              trend="up"
+              trendValue="3.1%"
+              icon={<Inventory2RoundedIcon />} 
+              accentClass="stat-accent-brown"
+              iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard 
+              label="Pending Installations" 
+              value={MOCK_BRANCH_STATS.filter(b => b.status !== 'active').length.toString()} 
+              trend="down"
+              trendValue="1.0%"
+              icon={<HourglassEmptyRoundedIcon />} 
+              accentClass="stat-accent-sage"
+              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+            />
+          </Grid>
         </Grid>
       </Box>
 
@@ -216,51 +232,13 @@ export function BranchInventoryListPage() {
       )}
 
       {/* Pagination Footer */}
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        pt: 2,
-        mt: 2
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Showing {filteredBranches.length > 0 ? page * rowsPerPage + 1 : 0} to {Math.min((page + 1) * rowsPerPage, filteredBranches.length)} of {filteredBranches.length} entries
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" color="text.secondary">Rows per page:</Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={handleChangeRowsPerPage}
-              size="small"
-              sx={{ 
-                height: 32,
-                '& .MuiSelect-select': { py: 0.5, px: 1.5, fontSize: 13, fontWeight: 600 }
-              }}
-            >
-              {[10, 25, 50].map((pageSize) => (
-                <MenuItem key={pageSize} value={pageSize} sx={{ fontSize: 13 }}>
-                  {pageSize}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-        </Box>
-        
-        <Pagination 
-          count={Math.ceil(filteredBranches.length / rowsPerPage)} 
-          page={page + 1} 
-          onChange={handleChangePage} 
-          color="primary"
-          shape="rounded"
-          sx={{
-            '& .MuiPaginationItem-root': {
-              fontWeight: 600,
-              fontSize: 13,
-            }
-          }}
-        />
-      </Box>
+      <TablePaginationFooter
+        totalItems={filteredBranches.length}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
     </Box>
   );
 }

@@ -1,10 +1,12 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import { InventoryTable } from '../inventory/components/InventoryTable';
 import type { InventoryItem } from '../inventory/types';
 import { StatCard } from '../../components/UI/StatCard';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import { BackButton } from '../../components/UI/BackButton';
 
 // Mock Branch Stock
@@ -41,30 +43,53 @@ export function BranchInventoryDetailPage() {
       </Box>
 
       {/* KPI Stats */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-          gap: 3,
-          mb: 4
-        }}
-      >
-        <StatCard
-          label="Total Branch SKUs"
-          value={items.length.toString()}
-          icon={<Inventory2RoundedIcon />}
-          accentClass="stat-accent-primary"
-          iconBg="rgba(201, 168, 77, 0.15)"
-        />
-        <StatCard
-          label="Low Stock SKUs"
-          value={lowStock.toString()}
-          icon={<WarningRoundedIcon />}
-          trend={lowStock > 0 ? "down" : null}
-          trendValue={lowStock > 0 ? "Needs fulfillment" : undefined}
-          accentClass={lowStock > 0 ? 'stat-accent-error' : 'stat-accent-success'}
-          iconBg={lowStock > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'}
-        />
+      <Box sx={{ mb: 4 }}>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Total Branch SKUs"
+              value={items.length.toString()}
+              trend="up"
+              trendValue="1.2%"
+              icon={<Inventory2RoundedIcon />}
+              accentClass="stat-accent-gold"
+              iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Low Stock SKUs"
+              value={lowStock.toString()}
+              trend={lowStock > 0 ? "down" : "up"}
+              trendValue={lowStock > 0 ? "5.0%" : "0.0%"}
+              icon={<WarningRoundedIcon />}
+              accentClass={lowStock > 0 ? 'stat-accent-error' : 'stat-accent-sage'}
+              iconBg={lowStock > 0 ? 'linear-gradient(135deg, #E65C5C 0%, #F89696 100%)' : 'linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)'}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Healthy Stock SKUs"
+              value={(items.length - lowStock).toString()}
+              trend="up"
+              trendValue="2.0%"
+              icon={<CheckCircleOutlineRoundedIcon />}
+              accentClass="stat-accent-sage"
+              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Total Items in Stock"
+              value={items.reduce((acc, curr) => acc + curr.stockCount, 0).toString()}
+              trend="up"
+              trendValue="0.8%"
+              icon={<LocalShippingRoundedIcon />}
+              accentClass="stat-accent-brown"
+              iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+            />
+          </Grid>
+        </Grid>
       </Box>
 
       <InventoryTable 
