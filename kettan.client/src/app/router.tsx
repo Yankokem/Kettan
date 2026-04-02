@@ -13,6 +13,7 @@ import { AddInventoryPage } from '../features/hq-inventory/AddInventoryPage';
 import { InventoryItemProfilePage } from '../features/hq-inventory/InventoryItemProfilePage';
 import { BranchInventoryDetailPage } from '../features/branches/BranchInventoryDetailPage';
 import { CompanyProfilePage } from '../features/company/CompanyProfilePage';
+import { SettingsPage } from '../features/settings/SettingsPage';
 import { useAuthStore } from '../store/useAuthStore';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
@@ -106,6 +107,12 @@ const companyProfileRoute = createRoute({
   component: CompanyProfilePage,
 });
 
+const settingsRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/settings',
+  component: SettingsPage,
+});
+
 // The login route (independent of layout workspace)
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -131,7 +138,8 @@ const routeTree = rootRoute.addChildren([
     addInventoryRoute,
     inventoryProfileRoute,
     branchInventoryDetailRoute,
-    companyProfileRoute
+    companyProfileRoute,
+    settingsRoute
   ]),
   loginRoute
 ]);

@@ -27,7 +27,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/branch-inventory': 'Branch Inventory',
   '/staff':     'HR & Staff',
   '/staff/add': 'Add Staff Member',
-  '/users':     'User & Roles',
+  '/settings':  'Settings',
   '/reports':   'Finance & Reports',
 };
 
@@ -41,6 +41,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/branch-inventory': 'Monitor and fulfill stock requirements for individual branch locations.',
   '/staff':     'Manage employee records and role assignments across your network.',
   '/staff/add': 'Onboard a new employee to your organization.',
+  '/settings':  'System settings, user roles, and platform permissions.',
 };
 
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {

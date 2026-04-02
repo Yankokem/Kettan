@@ -10,7 +10,8 @@ export function BackButton({ to }: BackButtonProps) {
   const navigate = useNavigate();
   return (
     <IconButton
-      onClick={() => navigate({ to: to as any })}
+      // @ts-expect-error tanstack-router dynamic nav
+      onClick={() => navigate({ to })}
       sx={{ 
         width: 40, 
         height: 40,

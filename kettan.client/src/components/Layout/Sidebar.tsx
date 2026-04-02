@@ -63,7 +63,7 @@ const MAIN_NAV: NavItem[] = [
   { text: 'HQ Inventory',       icon: <Inventory2RoundedIcon />,       path: '/hq-inventory', allowedRoles: ['HqManager', 'HqStaff', 'TenantAdmin'] },
   { text: 'Consumption',        icon: <ScaleRoundedIcon />,            path: '/consumption', allowedRoles: ['BranchManager', 'BranchOwner'] },
   { text: 'HR & Staff',         icon: <BadgeRoundedIcon />,            path: '/staff', allowedRoles: ['TenantAdmin', 'HqManager', 'BranchManager'] },
-  { text: 'User & Roles',       icon: <ManageAccountsRoundedIcon />,   path: '/users', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },
+  { text: 'Settings',           icon: <ManageAccountsRoundedIcon />,   path: '/settings', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },
   { text: 'Finance & Reports',  icon: <BarChartRoundedIcon />,         path: '/reports', allowedRoles: ['TenantAdmin', 'BranchOwner', 'HqManager'] },
   { text: 'Platform Analytics', icon: <AnalyticsRoundedIcon />,        path: '/analytics', allowedRoles: ['SuperAdmin'] },
 ];

@@ -33,29 +33,26 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = (event?: React.MouseEvent<HTMLElement>) => {
-    if (event && 'stopPropagation' in event) {
-      event.stopPropagation();
-    }
+  const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
   const handleViewEdit = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
-    handleMenuClose(e);
+    handleMenuClose();
     navigate({ to: '/branches/$branchId', params: { branchId: branch.id.toString() } });
   };
 
   const handleInactive = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
-    handleMenuClose(e);
+    handleMenuClose();
     // Placeholder for set inactive action
     console.log('Set inactive:', branch.id);
   };
 
   const handleArchive = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
-    handleMenuClose(e);
+    handleMenuClose();
     // Placeholder for archive action
     console.log('Archive:', branch.id);
   };
