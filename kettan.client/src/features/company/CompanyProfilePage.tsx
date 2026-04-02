@@ -5,7 +5,7 @@ import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import { Button } from '../../components/UI/Button';
 import { TextField } from '../../components/UI/TextField';
 
-export function TenantProfilePage() {
+export function CompanyProfilePage() {
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header Profile Title */}

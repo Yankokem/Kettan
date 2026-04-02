@@ -8,11 +8,11 @@ import { BranchProfilePage } from '../features/branches/BranchProfilePage';
 import { StaffPage } from '../features/staff/StaffPage';
 import { AddStaffPage } from '../features/staff/AddStaffPage';
 import { StaffProfilePage } from '../features/staff/StaffProfilePage';
-import { InventoryPage } from '../features/inventory/InventoryPage';
-import { AddInventoryPage } from '../features/inventory/AddInventoryPage';
-import { InventoryItemProfilePage } from '../features/inventory/InventoryItemProfilePage';
-import { BranchInventoryDetailPage } from '../features/branch-inventory/BranchInventoryDetailPage';
-import { TenantProfilePage } from '../features/dashboard/TenantProfilePage';
+import { InventoryPage } from '../features/hq-inventory/InventoryPage';
+import { AddInventoryPage } from '../features/hq-inventory/AddInventoryPage';
+import { InventoryItemProfilePage } from '../features/hq-inventory/InventoryItemProfilePage';
+import { BranchInventoryDetailPage } from '../features/branches/BranchInventoryDetailPage';
+import { CompanyProfilePage } from '../features/company/CompanyProfilePage';
 import { useAuthStore } from '../store/useAuthStore';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
@@ -78,19 +78,19 @@ const staffProfileRoute = createRoute({
 
 const inventoryRoute = createRoute({
   getParentRoute: () => layoutRoute,
-  path: '/inventory',
+  path: '/hq-inventory',
   component: InventoryPage,
 });
 
 const addInventoryRoute = createRoute({
   getParentRoute: () => layoutRoute,
-  path: '/inventory/add',
+  path: '/hq-inventory/add',
   component: AddInventoryPage,
 });
 
 const inventoryProfileRoute = createRoute({
   getParentRoute: () => layoutRoute,
-  path: '/inventory/$itemId',
+  path: '/hq-inventory/$itemId',
   component: InventoryItemProfilePage,
 });
 
@@ -100,10 +100,10 @@ const branchInventoryDetailRoute = createRoute({
   component: BranchInventoryDetailPage,
 });
 
-const tenantProfileRoute = createRoute({
+const companyProfileRoute = createRoute({
   getParentRoute: () => layoutRoute,
-  path: '/settings/tenant',
-  component: TenantProfilePage,
+  path: '/company-profile',
+  component: CompanyProfilePage,
 });
 
 // The login route (independent of layout workspace)
@@ -131,7 +131,7 @@ const routeTree = rootRoute.addChildren([
     addInventoryRoute,
     inventoryProfileRoute,
     branchInventoryDetailRoute,
-    tenantProfileRoute
+    companyProfileRoute
   ]),
   loginRoute
 ]);

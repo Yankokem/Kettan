@@ -133,13 +133,13 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <ViewToggle 
             value={viewMode} 
-            options={viewOptions as any} 
+            options={viewOptions as never} 
             onChange={(newView: ViewMode) => setViewMode(newView)} 
           />
           {!hideAddButton && (
             <Button 
               startIcon={<AddRoundedIcon />} 
-              onClick={() => onAddClick ? onAddClick() : navigate({ to: '/inventory/add' })}
+              onClick={() => onAddClick ? onAddClick() : navigate({ to: '/hq-inventory/add' })}
             >
               Add Stock Item
             </Button>
@@ -193,7 +193,7 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
                 <TableRow 
                   key={item.id}
                   hover
-                  onClick={() => onRowClick ? onRowClick(item.id) : navigate({ to: '/inventory/$itemId', params: { itemId: item.id.toString() } })}
+                  onClick={() => onRowClick ? onRowClick(item.id) : navigate({ to: '/hq-inventory/$itemId', params: { itemId: item.id.toString() } })}
                   sx={{ 
                     cursor: 'pointer',
                     '&:last-child td, &:last-child th': { border: 0 },

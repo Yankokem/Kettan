@@ -37,15 +37,16 @@ export function AppLayout() {
           flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
+          height: '100vh',
           minWidth: 0,
           width: { sm: `calc(100% - ${effectiveWidth}px)` },
           transition: 'width 220ms cubic-bezier(0.4,0,0.2,1), margin 220ms cubic-bezier(0.4,0,0.2,1)',
         }}
       >
-        <Toolbar sx={{ height: 64, flexShrink: 0 }} />
+        <Toolbar sx={{ height: 64, minHeight: 64, flexShrink: 0 }} />
         <Box
           sx={{
-            flex: 1,
+            flexGrow: 1,
             p: { xs: 2, sm: 3, md: 3.5 },
             overflowY: 'auto',
           }}

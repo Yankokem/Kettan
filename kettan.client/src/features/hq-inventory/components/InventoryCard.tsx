@@ -16,7 +16,7 @@ export function InventoryCard({ item }: InventoryCardProps) {
 
   return (
     <Card
-      onClick={() => navigate({ to: '/inventory/$itemId', params: { itemId: item.id.toString() } })}
+      onClick={() => navigate({ to: '/hq-inventory/$itemId', params: { itemId: item.id.toString() } })}
       elevation={0}
       sx={{
         p: 2.5,

@@ -1,7 +1,7 @@
 import { Box, Typography, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
-import { InventoryTable } from '../inventory/components/InventoryTable';
-import type { InventoryItem } from '../inventory/types';
+import { InventoryTable } from '../hq-inventory/components/InventoryTable';
+import type { InventoryItem } from '../hq-inventory/types';
 import { StatCard } from '../../components/UI/StatCard';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';

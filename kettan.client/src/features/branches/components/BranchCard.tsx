@@ -33,9 +33,9 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = (event: React.MouseEvent<HTMLElement> | {}) => {
-    if ('stopPropagation' in event) {
-      (event as React.MouseEvent).stopPropagation();
+  const handleMenuClose = (event?: React.MouseEvent<HTMLElement>) => {
+    if (event && 'stopPropagation' in event) {
+      event.stopPropagation();
     }
     setAnchorEl(null);
   };
