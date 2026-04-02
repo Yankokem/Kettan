@@ -1,7 +1,8 @@
-import { Box, Typography, Tabs, Tab } from '@mui/material';
+import { Box, Tabs, Tab } from '@mui/material';
 import { StatCard } from '../../components/UI/StatCard';
 import { Button } from '../../components/UI/Button';
 import { Dropdown } from '../../components/UI/Dropdown';
+import { DateRangePicker } from '../../components/UI/DateRangePicker';
 import AttachMoneyRoundedIcon from '@mui/icons-material/AttachMoneyRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
@@ -27,7 +28,8 @@ const MOCK_INVOICES = [
 ];
 
 export function ReportsPage() {
-  const [dateRange, setDateRange] = useState('month');
+  const [startDate, setStartDate] = useState('2026-03-01');
+  const [endDate, setEndDate] = useState('2026-04-02');
   const [branchFilter, setBranchFilter] = useState('all');
   const [reportType, setReportType] = useState('full');
   const [exportFormat, setExportFormat] = useState('pdf');
@@ -37,15 +39,6 @@ export function ReportsPage() {
       {/* Universal Top Filter Bar */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-          <Dropdown
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value as string)}
-            options={[
-              { value: 'month', label: 'This Month' },
-              { value: 'quarter', label: 'Last Quarter' },
-              { value: 'ytd', label: 'Year to Date (YTD)' }
-            ]}
-          />
           <Dropdown
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value as string)}
@@ -60,6 +53,14 @@ export function ReportsPage() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+          <DateRangePicker 
+            startDate={startDate} 
+            endDate={endDate} 
+            onChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }} 
+          />
           <Dropdown
             value={exportFormat}
             onChange={(e) => setExportFormat(e.target.value as string)}

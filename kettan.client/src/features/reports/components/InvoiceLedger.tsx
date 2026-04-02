@@ -1,5 +1,4 @@
 import { Box, Typography } from '@mui/material';
-import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 
