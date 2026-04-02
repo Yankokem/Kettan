@@ -42,6 +42,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/staff':     'Manage employee records and role assignments across your network.',
   '/staff/add': 'Onboard a new employee to your organization.',
   '/settings':  'System settings, user roles, and platform permissions.',
+  '/reports':   'Financial analytics, performance leaderboards, and aggregated invoices.',
 };
 
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {

@@ -127,7 +127,7 @@ The following describes the primary operational flow within Kettan, from tenant 
 7. **Shipping and Delivery** — The packed order is dispatched via EasyPost. Courier assignment, tracking number, and estimated arrival are recorded. Google Maps calculates delivery distance.
 8. **Order Tracking** — Both HQ and the Branch Manager monitor real-time delivery status until receipt is confirmed by the branch.
 9. **Returns Management** — If items arrive damaged or incorrect, the Branch Manager initiates a return. HQ processes it and issues a replacement or credit memo.
-10. **Finance & Reporting** — Each fulfilled order generates an invoice. Costs, delivery expenses, and branch performance metrics are aggregated in the Finance dashboard using Weighted Branch Performance Scoring.
+10. **Finance & Reporting** — Each fulfilled order generates an invoice. Costs, delivery expenses, and branch performance metrics are aggregated in the Finance dashboard using Weighted Branch Performance Scoring and use Economic Order Quantity (EOQ) Algorithm.
 
 ---
 
