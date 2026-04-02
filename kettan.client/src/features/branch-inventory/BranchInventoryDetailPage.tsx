@@ -31,7 +31,7 @@ export function BranchInventoryDetailPage() {
     <Box sx={{ pb: 3, pt: 1 }}>
       {/* Header section */}
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/branch-inventory" />
+        <BackButton to="/branches" />
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
             Branch Inventory

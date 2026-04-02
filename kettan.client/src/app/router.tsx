@@ -11,7 +11,6 @@ import { StaffProfilePage } from '../features/staff/StaffProfilePage';
 import { InventoryPage } from '../features/inventory/InventoryPage';
 import { AddInventoryPage } from '../features/inventory/AddInventoryPage';
 import { InventoryItemProfilePage } from '../features/inventory/InventoryItemProfilePage';
-import { BranchInventoryListPage } from '../features/branch-inventory/BranchInventoryListPage';
 import { BranchInventoryDetailPage } from '../features/branch-inventory/BranchInventoryDetailPage';
 import { TenantProfilePage } from '../features/dashboard/TenantProfilePage';
 import { useAuthStore } from '../store/useAuthStore';
@@ -95,12 +94,6 @@ const inventoryProfileRoute = createRoute({
   component: InventoryItemProfilePage,
 });
 
-const branchInventoryRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: '/branch-inventory',
-  component: BranchInventoryListPage,
-});
-
 const branchInventoryDetailRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/branch-inventory/$branchId',
@@ -137,7 +130,6 @@ const routeTree = rootRoute.addChildren([
     inventoryRoute,
     addInventoryRoute,
     inventoryProfileRoute,
-    branchInventoryRoute,
     branchInventoryDetailRoute,
     tenantProfileRoute
   ]),

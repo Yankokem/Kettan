@@ -19,9 +19,9 @@ const PAGE_TITLES: Record<string, string> = {
   '/shipping':  'Shipping & Delivery',
   '/tracking':  'Order Tracking',
   '/returns':   'Returns Management',
-  '/branches':  'Tenants & Branches',
+  '/branches':  'Branch and Inventory',
   '/branches/add': 'Add New Branch',
-  '/settings/tenant': 'Tenant Profile',
+  '/settings/tenant': 'Company Profile',
   '/inventory': 'Inventory & Stock',
   '/inventory/add': 'Add Inventory Item',
   '/branch-inventory': 'Branch Inventory',
@@ -33,9 +33,9 @@ const PAGE_TITLES: Record<string, string> = {
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/':          'Kettan · Café Chain Operations',
-  '/branches':  'Manage your operational network and corporate details.',
+  '/branches':  'Manage branch operations, network details, and track branch inventory.',
   '/branches/add': 'Register a new branch within the tenant network.',
-  '/settings/tenant': 'Manage your organization profile and billing.',
+  '/settings/tenant': 'Manage your company profile and billing.',
   '/inventory': 'Track warehouse stock, raw ingredients, and reorder levels globally.',
   '/inventory/add': 'Register new coffee, syrups, packaging, or equipment.',
   '/branch-inventory': 'Monitor and fulfill stock requirements for individual branch locations.',
