@@ -56,7 +56,7 @@ const MAIN_NAV: NavItem[] = [
   { text: 'Order Processing',   icon: <CategoryRoundedIcon />,            path: '/orders', allowedRoles: ['HqManager', 'HqStaff', 'TenantAdmin'] },
   { text: 'Picking & Packing',  icon: <Inventory2RoundedIcon />,          path: '/picking', allowedRoles: ['HqManager', 'HqStaff'] },
   { text: 'Shipping & Delivery',icon: <LocalShippingRoundedIcon />,       path: '/shipping', allowedRoles: ['HqManager', 'HqStaff'] },
-  { text: 'Order Tracking',     icon: <TrackChangesRoundedIcon />,        path: '/tracking', allowedRoles: ['BranchManager', 'BranchOwner', 'HqStaff', 'HqManager', 'TenantAdmin'] },
+  { text: 'Order Tracking',     icon: <TrackChangesRoundedIcon />,             path: '/orders/active-tracking', allowedRoles: ['BranchManager', 'BranchOwner', 'HqStaff', 'HqManager', 'TenantAdmin'] },
   { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', allowedRoles: ['BranchManager', 'HqStaff', 'HqManager'] },
   { text: 'Branch and Inventory', icon: <StoreRoundedIcon />,            path: '/branches', allowedRoles: ['SuperAdmin', 'TenantAdmin', 'BranchManager', 'BranchOwner'] },
   { text: 'Company Profile',    icon: <StoreRoundedIcon />,            path: '/company-profile', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },

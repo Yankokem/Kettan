@@ -18,6 +18,7 @@ import { ReportsPage } from '../features/reports/ReportsPage';
 import { OrdersPage } from '../features/orders/OrdersPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { OrderTrackingPage } from '../features/orders/OrderTrackingPage';
+import { GlobalTrackingPage } from '../features/orders/GlobalTrackingPage';
 import { NewOrderRequestPage } from '../features/orders/NewOrderRequestPage';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -148,6 +149,12 @@ const orderTrackingRoute = createRoute({
   component: OrderTrackingPage,
 });
 
+const globalTrackingRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/orders/active-tracking',
+  component: GlobalTrackingPage,
+});
+
 // The login route (independent of layout workspace)
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -179,7 +186,8 @@ const routeTree = rootRoute.addChildren([
     ordersRoute,
     newOrderRoute,
     orderDetailRoute,
-    orderTrackingRoute
+    orderTrackingRoute,
+    globalTrackingRoute
   ]),
   loginRoute
 ]);
