@@ -80,7 +80,7 @@ export function ReportsPage() {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
         <Tabs 
           value={reportType} 
-          onChange={(e, val) => setReportType(val)}
+          onChange={(_, val) => setReportType(val)}
           sx={{
             minHeight: 48,
             '& .MuiTab-root': {

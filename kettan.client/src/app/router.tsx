@@ -15,6 +15,9 @@ import { BranchInventoryDetailPage } from '../features/branches/BranchInventoryD
 import { CompanyProfilePage } from '../features/company/CompanyProfilePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
+import { OrdersPage } from '../features/orders/OrdersPage';
+import { OrderDetailPage } from '../features/orders/OrderDetailPage';
+import { OrderTrackingPage } from '../features/orders/OrderTrackingPage';
 import { useAuthStore } from '../store/useAuthStore';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
@@ -120,6 +123,24 @@ const reportsRoute = createRoute({
   component: ReportsPage,
 });
 
+const ordersRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/orders',
+  component: OrdersPage,
+});
+
+const orderDetailRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/orders/$orderId',
+  component: OrderDetailPage,
+});
+
+const orderTrackingRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/orders/$orderId/tracking',
+  component: OrderTrackingPage,
+});
+
 // The login route (independent of layout workspace)
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -147,7 +168,10 @@ const routeTree = rootRoute.addChildren([
     branchInventoryDetailRoute,
     companyProfileRoute,
     settingsRoute,
-    reportsRoute
+    reportsRoute,
+    ordersRoute,
+    orderDetailRoute,
+    orderTrackingRoute
   ]),
   loginRoute
 ]);
