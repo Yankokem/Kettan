@@ -1,14 +1,18 @@
-import { Box, Typography, Chip, Card } from '@mui/material';
+import { Box, Typography, Chip, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import BuildCircleRoundedIcon from '@mui/icons-material/BuildCircleRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
-import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { TextField } from '../../components/UI/TextField';
+import { OrderFulfillmentStepper } from './components/OrderFulfillmentStepper';
+import { StatusAlertIcon } from './components/StatusAlertIcon';
+import { OrderDetailsPanel } from './components/OrderDetailsPanel';
 
 interface RequestItem {
   id: string;
@@ -94,39 +98,41 @@ export function OrderDetailPage() {
   const displayId = orderId || 'ORD-8891';
 
   return (
-    <Box sx={{ pb: 3, maxWidth: 1000, mx: 'auto' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <BackButton to="/orders" />
-        <Typography sx={{ ml: 1.5, fontSize: 14, fontWeight: 600, color: 'text.secondary' }}>Back to Orders</Typography>
-      </Box>
-
+    <Box sx={{ pb: 3, pt: 1 }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-            <Typography sx={{ fontSize: 24, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}>
-              {displayId}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <BackButton to="/orders" />
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}>
+                {displayId}
+              </Typography>
+              <Chip
+                label="Pending Approval"
+                icon={<AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} />}
+                size="small"
+                sx={{ fontSize: 12, fontWeight: 600, bgcolor: 'rgba(180,83,9,0.12)', color: '#B45309', border: '1px solid rgba(180,83,9,0.28)' }}
+              />
+            </Box>
+            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
+              Requested by <strong>Downtown Main</strong> on Apr 02, 2026
             </Typography>
-            <Chip
-              label="Pending Approval"
-              icon={<AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} />}
-              size="small"
-              sx={{ fontSize: 12, fontWeight: 600, bgcolor: 'rgba(180,83,9,0.12)', color: '#B45309', border: '1px solid rgba(180,83,9,0.28)' }}
-            />
           </Box>
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
-            Requested by <strong>Downtown Main</strong> on Apr 02, 2026
-          </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Button variant="outlined" sx={{ color: 'error.main', borderColor: 'error.light', '&:hover': { bgcolor: 'error.50' } }}>
+        <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center' }}>
+          <StatusAlertIcon
+            severity="warning"
+            title="Partial Fulfillment Warning"
+            message="This order contains items with insufficient HQ stock. Approving this order will dispatch only the available quantities."
+          />
+          <Button variant="outlined" startIcon={<CancelRoundedIcon />} sx={{ color: 'error.main', borderColor: 'error.light', '&:hover': { bgcolor: 'error.50' } }}>
             Reject Order
           </Button>
           <Button startIcon={<CheckCircleRoundedIcon />}>
             Approve & Send to Packing
           </Button>
-           
-<a href={`/orders/${displayId}/tracking`} style={{ textDecoration: 'none' }}>
+          <a href={`/orders/${displayId}/tracking`} style={{ textDecoration: 'none' }}>
             <Button variant="outlined" startIcon={<LocalShippingRoundedIcon />}>
               Tracker
             </Button>
@@ -134,61 +140,30 @@ export function OrderDetailPage() {
         </Box>
       </Box>
 
-      {/* Fulfillment Details Banner */}
-      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'error.main', bgcolor: '#FEF2F2', borderRadius: 3, p: 2, mb: 4, display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-        <ErrorOutlineRoundedIcon sx={{ color: 'error.main', mt: 0.5 }} />
-        <Box>
-          <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'error.dark' }}>
-            Partial Fulfillment Required
-          </Typography>
-          <Typography sx={{ fontSize: 13, color: 'error.main', mt: 0.5, lineHeight: 1.5 }}>
-            HQ Inventory is insufficient to fulfill this order completely. Almond Milk and Vanilla Syrup are out of stock or low. Please adjust the approved quantities before sending to the packing floor.
-          </Typography>
-        </Box>
-      </Card>
-
       {/* Stepper Visual */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 5, mx: 2 }}>
-        {[
-          { label: 'Requested', icon: <AccessTimeFilledRoundedIcon />, active: true },
-          { label: 'Approved', icon: <CheckCircleRoundedIcon />, active: false },
-          { label: 'Packing', icon: <BuildCircleRoundedIcon />, active: false },
-          { label: 'Dispatched', icon: <LocalShippingRoundedIcon />, active: false },
-        ].map((step, idx, arr) => (
-          <Box key={step.label} sx={{ display: 'flex', alignItems: 'center', flex: idx < arr.length - 1 ? 1 : 0 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ 
-                width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                bgcolor: step.active ? '#C9A84C' : 'background.paper', 
-                color: step.active ? '#fff' : 'text.disabled',
-                border: '2px solid', borderColor: step.active ? '#C9A84C' : 'divider',
-                boxShadow: step.active ? '0 2px 8px rgba(201,168,76,0.3)' : 'none'
-              }}>
-                {step.icon}
-              </Box>
-              <Typography sx={{ fontSize: 12, fontWeight: 600, color: step.active ? 'text.primary' : 'text.disabled' }}>
-                {step.label}
-              </Typography>
-            </Box>
-            {idx < arr.length - 1 && (
-              <Box sx={{ flex: 1, height: 2, bgcolor: step.active ? '#C9A84C' : 'divider', mx: 2, mt: -3, opacity: step.active ? 1 : 0.5 }} />
-            )}
-          </Box>
-        ))}
-      </Box>
+      <OrderFulfillmentStepper activeStepIndex={0} />
 
-      {/* Constraints Data Table */}
-      <DataTable
-        title={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LocalShippingRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-            <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Item Reconciliation</Typography>
-          </Box>
-        }
-        data={MOCK_ITEMS}
-        columns={COLUMNS}
-        keyExtractor={(row) => row.id}
-      />
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 3.5 }}>
+          {/* Order Details Panel */}
+          <OrderDetailsPanel orderId={displayId} />
+        </Grid>
+        
+        <Grid size={{ xs: 12, md: 8.5 }}>
+          {/* Constraints Data Table */}
+          <DataTable
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <InventoryRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Item Reconciliation</Typography>
+              </Box>
+            }
+            data={MOCK_ITEMS}
+            columns={COLUMNS}
+            keyExtractor={(row) => row.id}
+          />
+        </Grid>
+      </Grid>
     </Box>
   );
 }

@@ -18,6 +18,7 @@ import { ReportsPage } from '../features/reports/ReportsPage';
 import { OrdersPage } from '../features/orders/OrdersPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { OrderTrackingPage } from '../features/orders/OrderTrackingPage';
+import { NewOrderRequestPage } from '../features/orders/NewOrderRequestPage';
 import { useAuthStore } from '../store/useAuthStore';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
@@ -129,6 +130,12 @@ const ordersRoute = createRoute({
   component: OrdersPage,
 });
 
+const newOrderRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/orders/new',
+  component: NewOrderRequestPage,
+});
+
 const orderDetailRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/orders/$orderId',
@@ -170,6 +177,7 @@ const routeTree = rootRoute.addChildren([
     settingsRoute,
     reportsRoute,
     ordersRoute,
+    newOrderRoute,
     orderDetailRoute,
     orderTrackingRoute
   ]),
