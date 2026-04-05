@@ -1,8 +1,13 @@
-import { Box, Typography, Chip, Tabs, Tab } from '@mui/material';
+import { Box, Typography, Chip, Tabs, Tab, Grid } from '@mui/material';
 import { useState } from 'react';
 
 import LocalMallRoundedIcon from '@mui/icons-material/LocalMallRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
+
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
+import { StatCard } from '../../components/UI/StatCard';
 import { Dropdown } from '../../components/UI/Dropdown';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
 import { Button } from '../../components/UI/Button';
@@ -140,7 +145,55 @@ export function OrdersPage() {
           Manage incoming branch fulfillment requests and process dispatches.
         </Typography>
       </Box>
-
+      {/* Stat Cards Grid */}
+      <Box sx={{ mb: 5 }}>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Pending Requests"
+              value={MOCK_ORDERS.filter(o => o.status === 'Pending').length.toString()}
+              trend="up"
+              trendValue="1.5%"
+              icon={<AccessTimeRoundedIcon />}
+              accentClass="stat-accent-rust"
+              iconBg="linear-gradient(135deg, #D48C6B 0%, #EAA989 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Orders Packing"
+              value={MOCK_ORDERS.filter(o => o.status === 'Packing').length.toString()}
+              trend="up"
+              trendValue="2.4%"
+              icon={<LocalMallRoundedIcon />}
+              accentClass="stat-accent-sand"
+              iconBg="linear-gradient(135deg, #D1BFA8 0%, #E6DFD4 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="In Transit"
+              value={MOCK_ORDERS.filter(o => o.status === 'Dispatched').length.toString()}
+              trend="up"
+              trendValue="5.1%"
+              icon={<LocalShippingRoundedIcon />}
+              accentClass="stat-accent-brown"
+              iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Total Revenue"
+              value={`₱${MOCK_ORDERS.reduce((acc, o) => acc + o.totalCost, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              trend="up"
+              trendValue="1.2%"
+              icon={<MonetizationOnRoundedIcon />}
+              accentClass="stat-accent-sage"
+              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+            />
+          </Grid>
+        </Grid>
+      </Box>
       {/* Top Filter Bar */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
