@@ -136,15 +136,6 @@ export function OrdersPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography sx={{ fontSize: 22, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em' }}>
-          Supply Orders
-        </Typography>
-        <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.25 }}>
-          Manage incoming branch fulfillment requests and process dispatches.
-        </Typography>
-      </Box>
       {/* Stat Cards Grid */}
       <Box sx={{ mb: 5 }}>
         <Grid container spacing={3}>
