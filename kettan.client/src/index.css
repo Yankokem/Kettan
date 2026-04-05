@@ -125,6 +125,22 @@ body {
   border-radius: 99px;
   margin-top: 16px;
 }
+.stat-accent-rust::after {
+  content: '';
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, #D48C6B 0%, rgba(212,140,107,0.35) 100%);
+  border-radius: 99px;
+  margin-top: 12px;
+}
+.stat-accent-sand::after {
+  content: '';
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, #D5CDA4 0%, rgba(213,205,164,0.35) 100%);
+  border-radius: 99px;
+  margin-top: 12px;
+}
 /* ─── Smooth transitions ────────────────────────────────────────────── */
 *, *::before, *::after {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
