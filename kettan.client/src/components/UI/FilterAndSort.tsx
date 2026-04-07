@@ -9,9 +9,10 @@ export interface FilterDropdownProps {
   label: string;
   icon: React.ReactNode;
   minWidth?: number;
+  compact?: boolean;
 }
 
-export function FilterDropdown({ value, onChange, options, label, icon, minWidth = 140 }: FilterDropdownProps) {
+export function FilterDropdown({ value, onChange, options, label, icon, minWidth = 140, compact = false }: FilterDropdownProps) {
   return (
     <FormControl size="small">
       <Select
@@ -26,8 +27,8 @@ export function FilterDropdown({ value, onChange, options, label, icon, minWidth
         )}
         IconComponent={KeyboardArrowDownRoundedIcon}
         sx={{
-          height: 40,
-          borderRadius: 2,
+          height: compact ? 28 : 40,
+          borderRadius: compact ? '8px' : 2,
           fontSize: 14,
           fontWeight: 600,
           color: '#6B4C2A',
@@ -49,9 +50,10 @@ export function FilterDropdown({ value, onChange, options, label, icon, minWidth
             borderWidth: '1px',
           },
           '& .MuiSelect-select': {
-            py: 1,
+            py: compact ? 0.5 : 1,
             pl: 2,
             pr: 4,
+            fontSize: compact ? 12 : 14,
           }
         }}
       >

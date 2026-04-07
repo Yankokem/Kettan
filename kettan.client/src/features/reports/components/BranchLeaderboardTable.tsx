@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
-import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
+import { KettanTable, type KettanColumnDef } from '../../../components/UI/KettanTable';
 
 interface LeaderboardItem {
   id: string;
@@ -20,11 +20,11 @@ interface LeaderboardProps {
 export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
   const sorted = [...branches].sort((a, b) => b.weightedScore - a.weightedScore).map((b, i) => ({ ...b, rank: i + 1 }));
 
-  const columns: ColumnDef<LeaderboardItem>[] = [
+  const columns: KettanColumnDef<LeaderboardItem>[] = [
     {
       key: 'rank',
       label: 'Rank',
-      gridWidth: '80px',
+      width: 80,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: row.rank === 1 ? '#C9A84C' : 'text.primary' }}>
           #{row.rank}
@@ -34,7 +34,6 @@ export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
     {
       key: 'name',
       label: 'Branch',
-      gridWidth: '2fr',
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
           {row.name}
@@ -44,7 +43,7 @@ export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
     {
       key: 'fulfillmentRate',
       label: 'Fulfill %',
-      gridWidth: '1fr',
+      sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: row.fulfillmentRate >= 95 ? 'success.main' : 'text.secondary', fontWeight: 500 }}>
           {row.fulfillmentRate}%
@@ -54,7 +53,7 @@ export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
     {
       key: 'returnRate',
       label: 'Return %',
-      gridWidth: '1fr',
+      sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: row.returnRate > 3 ? 'error.main' : 'text.secondary', fontWeight: 500 }}>
           {row.returnRate}%
@@ -63,8 +62,8 @@ export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
     },
     {
       key: 'deliverySpeed',
-      label: 'Speed',
-      gridWidth: '1fr',
+      label: 'Speed (hrs)',
+      sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
           {row.deliverySpeed} hrs
@@ -74,7 +73,7 @@ export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
     {
       key: 'stockAccuracy',
       label: 'Accuracy',
-      gridWidth: '1fr',
+      sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
           {row.stockAccuracy}%
@@ -84,7 +83,8 @@ export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
     {
       key: 'weightedScore',
       label: 'Score',
-      gridWidth: '1fr',
+      sortable: true,
+      align: 'right',
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'primary.main' }}>
           {row.weightedScore.toFixed(1)}
@@ -94,16 +94,18 @@ export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
   ];
 
   return (
-    <DataTable
-      title={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <EmojiEventsRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-          <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Branch Performance Leaderboard</Typography>
-        </Box>
-      }
-      data={sorted}
-      columns={columns}
-      keyExtractor={(row) => row.id}
-    />
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, px: 0.5 }}>
+        <EmojiEventsRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+        <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Branch Performance Leaderboard</Typography>
+      </Box>
+      <KettanTable
+        data={sorted}
+        columns={columns}
+        keyExtractor={(row) => row.id}
+        defaultRowsPerPage={10}
+        rowsPerPageOptions={[10, 25, 50]}
+      />
+    </Box>
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Box, Typography, Chip } from '@mui/material';
 import LocalShippingRoundedIcon    from '@mui/icons-material/LocalShippingRounded';
 import SettingsBackupRestoreRoundedIcon from '@mui/icons-material/SettingsBackupRestoreRounded';
@@ -5,10 +6,11 @@ import LocalMallRoundedIcon        from '@mui/icons-material/LocalMallRounded';
 import WarningAmberRoundedIcon     from '@mui/icons-material/WarningAmberRounded';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import RadioButtonCheckedRoundedIcon from '@mui/icons-material/RadioButtonCheckedRounded';
-import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 
 import { StatCard } from '../../components/UI/StatCard';
-import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
+import { KettanTable, type KettanColumnDef } from '../../components/UI/KettanTable';
+import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { useAuthStore } from '../../store/useAuthStore';
 import { BranchPerformance } from './components/BranchPerformance';
 import { InventoryAlerts } from './components/InventoryAlerts';
@@ -45,13 +47,13 @@ const STATUS_MAP = {
   returned:   { label: 'Returned',   color: '#B91C1C', bg: 'rgba(185,28,28,0.10)', icon: <WarningAmberRoundedIcon sx={{ fontSize: 12 }} /> },
 };
 
-const activityColumns: ColumnDef<ActivityItem>[] = [
+const activityColumns: KettanColumnDef<ActivityItem>[] = [
   {
     key: 'id',
     label: 'Order ID',
-    gridWidth: '130px',
+    width: 130,
     render: (row) => (
-      <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
+      <Typography sx={{ fontSize: 12.5, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
         {row.id}
       </Typography>
     ),
@@ -59,7 +61,6 @@ const activityColumns: ColumnDef<ActivityItem>[] = [
   {
     key: 'branch',
     label: 'Branch',
-    gridWidth: '1fr',
     render: (row) => (
       <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
         {row.branch}
@@ -69,7 +70,7 @@ const activityColumns: ColumnDef<ActivityItem>[] = [
   {
     key: 'type',
     label: 'Type',
-    gridWidth: '160px',
+    width: 170,
     render: (row) => (
       <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
         {row.type}
@@ -79,7 +80,7 @@ const activityColumns: ColumnDef<ActivityItem>[] = [
   {
     key: 'status',
     label: 'Status',
-    gridWidth: '120px',
+    width: 130,
     render: (row) => {
       const st = STATUS_MAP[row.status];
       return (
@@ -102,7 +103,8 @@ const activityColumns: ColumnDef<ActivityItem>[] = [
   {
     key: 'time',
     label: 'Time',
-    gridWidth: '90px',
+    width: 100,
+    align: 'right' as const,
     render: (row) => (
       <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
         {row.time}
@@ -111,9 +113,25 @@ const activityColumns: ColumnDef<ActivityItem>[] = [
   },
 ];
 
+const ACTIVITY_QUICK_FILTERS = [
+  { value: 'completed',  label: 'Completed' },
+  { value: 'in-transit', label: 'In Transit' },
+  { value: 'pending',    label: 'Pending' },
+  { value: 'returned',   label: 'Returned' },
+];
+
 export function DashboardPage() {
   const { user } = useAuthStore();
   const isBranchManager = user?.role === 'BranchManager';
+  const [activityStatusFilter, setActivityStatusFilter] = useState('');
+  const [activityBranchFilter, setActivityBranchFilter] = useState('');
+
+  const baseActivity = isBranchManager ? RECENT_ACTIVITY.slice(0, 4) : RECENT_ACTIVITY;
+  const filteredActivity = baseActivity.filter((row) => {
+    const matchesStatus = !activityStatusFilter || row.status === activityStatusFilter;
+    const matchesBranch = !activityBranchFilter || row.branch === activityBranchFilter;
+    return matchesStatus && matchesBranch;
+  });
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -203,16 +221,38 @@ export function DashboardPage() {
         {/* Bottom Row: Activity Table & Alerts */}
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <DataTable
-              title={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ListAltRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-                  <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Recent Order Activity</Typography>
-                </Box>
-              }
-              data={isBranchManager ? RECENT_ACTIVITY.slice(0, 4) : RECENT_ACTIVITY}
+            <KettanTable
+              data={filteredActivity}
               columns={activityColumns}
               keyExtractor={(row) => row.id}
+              defaultRowsPerPage={5}
+              rowsPerPageOptions={[5, 10, 25]}
+              quickFilters={ACTIVITY_QUICK_FILTERS}
+              activeQuickFilter={activityStatusFilter}
+              onQuickFilterChange={setActivityStatusFilter}
+              rightAction={
+                <FilterDropdown
+                  label="Branch"
+                  icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+                  value={activityBranchFilter}
+                  onChange={setActivityBranchFilter}
+                  minWidth={110}
+                  compact
+                  options={[
+                    { value: 'BGC Branch',     label: 'BGC Branch' },
+                    { value: 'Makati HQ',      label: 'Makati HQ' },
+                    { value: 'Ortigas Branch', label: 'Ortigas Branch' },
+                    { value: 'Alabang Branch', label: 'Alabang Branch' },
+                    { value: 'QC Branch',      label: 'QC Branch' },
+                    { value: 'Manila Branch',  label: 'Manila Branch' },
+                    { value: 'Cebu Branch',    label: 'Cebu Branch' },
+                    { value: 'Davao Branch',   label: 'Davao Branch' },
+                    { value: 'Iloilo Branch',  label: 'Iloilo Branch' },
+                    { value: 'Bacolod Branch', label: 'Bacolod Branch' },
+                    { value: 'Clark HQ',       label: 'Clark HQ' },
+                  ]}
+                />
+              }
             />
           </Box>
           <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
