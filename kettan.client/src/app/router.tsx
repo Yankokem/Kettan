@@ -19,6 +19,9 @@ import { OrdersPage } from '../features/orders/OrdersPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { OrderTrackingPage } from '../features/orders/OrderTrackingPage';
 import { NewOrderRequestPage } from '../features/orders/NewOrderRequestPage';
+import { MenuItemsPage } from '../features/menu/MenuItemsPage';
+import { AddMenuItemPage } from '../features/menu/AddMenuItemPage';
+import { MenuItemProfilePage } from '../features/menu/MenuItemProfilePage';
 import { useAuthStore } from '../store/useAuthStore';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
@@ -148,6 +151,24 @@ const orderTrackingRoute = createRoute({
   component: OrderTrackingPage,
 });
 
+const menuRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/menu',
+  component: MenuItemsPage,
+});
+
+const addMenuItemRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/menu/add',
+  component: AddMenuItemPage,
+});
+
+const menuItemProfileRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/menu/$menuItemId',
+  component: MenuItemProfilePage,
+});
+
 // The login route (independent of layout workspace)
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -179,7 +200,10 @@ const routeTree = rootRoute.addChildren([
     ordersRoute,
     newOrderRoute,
     orderDetailRoute,
-    orderTrackingRoute
+    orderTrackingRoute,
+    menuRoute,
+    addMenuItemRoute,
+    menuItemProfileRoute
   ]),
   loginRoute
 ]);

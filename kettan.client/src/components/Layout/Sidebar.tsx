@@ -28,6 +28,7 @@ import LogoutRoundedIcon            from '@mui/icons-material/LogoutRounded';
 import ShoppingCartRoundedIcon      from '@mui/icons-material/ShoppingCartRounded';
 import ScaleRoundedIcon             from '@mui/icons-material/ScaleRounded';
 import AnalyticsRoundedIcon         from '@mui/icons-material/AnalyticsRounded';
+import LocalCafeRoundedIcon         from '@mui/icons-material/LocalCafeRounded';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../../store/useAuthStore';
 import { IconButton } from '@mui/material';
@@ -59,6 +60,7 @@ const MAIN_NAV: NavItem[] = [
   { text: 'Branch and Inventory', icon: <StoreRoundedIcon />,            path: '/branches', allowedRoles: ['SuperAdmin', 'TenantAdmin', 'BranchManager', 'BranchOwner'] },
   { text: 'Company Profile',    icon: <StoreRoundedIcon />,            path: '/company-profile', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },
   { text: 'HQ Inventory',       icon: <Inventory2RoundedIcon />,       path: '/hq-inventory', allowedRoles: ['HqManager', 'HqStaff', 'TenantAdmin'] },
+  { text: 'Menu & Recipes',     icon: <LocalCafeRoundedIcon />,        path: '/menu', allowedRoles: ['HqManager', 'TenantAdmin', 'HqStaff'] },
   { text: 'Consumption',        icon: <ScaleRoundedIcon />,            path: '/consumption', allowedRoles: ['BranchManager', 'BranchOwner'] },
   { text: 'HR & Staff',         icon: <BadgeRoundedIcon />,            path: '/staff', allowedRoles: ['TenantAdmin', 'HqManager', 'BranchManager'] },
   { text: 'Settings',           icon: <ManageAccountsRoundedIcon />,   path: '/settings', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },
