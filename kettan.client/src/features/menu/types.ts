@@ -6,6 +6,7 @@ export interface RecipeIngredient {
   itemName: string;
   qtyPerUnit: number;
   uom: string;
+  unitCost?: number; // Cost per unit for price calculation
 }
 
 export interface MenuVariant {
@@ -18,6 +19,7 @@ export interface MenuItem {
   id: string;
   name: string;
   category: string;
+  description?: string;
   sellingPrice: number;
   status: MenuItemStatus;
   image?: string;
@@ -28,6 +30,7 @@ export interface MenuItem {
 export interface MenuItemFormData {
   name: string;
   category: string;
+  description?: string;
   sellingPrice: number;
   status: MenuItemStatus;
   image?: string;
@@ -40,4 +43,6 @@ export interface InventoryItemOption {
   sku: string;
   uom: string;
   category: string;
+  unitCost?: number; // Cost per unit for price calculation
+  stockCount?: number; // Available stock
 }

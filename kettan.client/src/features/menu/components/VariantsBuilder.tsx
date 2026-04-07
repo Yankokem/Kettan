@@ -23,21 +23,27 @@ interface VariantsBuilderProps {
   variants: MenuVariant[];
   onVariantsChange: (variants: MenuVariant[]) => void;
   inventoryOptions?: InventoryItemOption[];
+  readOnly?: boolean;
 }
 
 const MOCK_INVENTORY_OPTIONS: InventoryItemOption[] = [
-  { id: '1', name: 'Arabica Coffee Beans (Medium Roast) - 5kg', sku: 'BN-ARB-001', uom: 'kg', category: 'Coffee Beans' },
-  { id: '2', name: 'Espresso Blend - 1kg', sku: 'BN-ESP-001', uom: 'kg', category: 'Coffee Beans' },
-  { id: '3', name: 'Almond Milk - 1L', sku: 'MK-ALM-001', uom: 'L', category: 'Milk & Dairy' },
-  { id: '4', name: 'Vanilla Syrup - 750ml', sku: 'SY-VAN-001', uom: 'ml', category: 'Syrups' },
-  { id: '5', name: 'Paper Cups 12oz - Box of 500', sku: 'CP-PAP-001', uom: 'pcs', category: 'Cups & Packaging' },
-  { id: '6', name: 'Plastic Lids - Box of 1000', sku: 'LID-PLS-001', uom: 'pcs', category: 'Cups & Packaging' },
+  { id: '1', name: 'Arabica Coffee Beans (Medium Roast) - 5kg', sku: 'BN-ARB-001', uom: 'g', category: 'Coffee Beans', unitCost: 0.8, stockCount: 15000 },
+  { id: '2', name: 'Espresso Blend - 1kg', sku: 'BN-ESP-001', uom: 'g', category: 'Coffee Beans', unitCost: 1.2, stockCount: 8000 },
+  { id: '3', name: 'Almond Milk - 1L', sku: 'MK-ALM-001', uom: 'ml', category: 'Milk & Dairy', unitCost: 0.15, stockCount: 5000 },
+  { id: '4', name: 'Vanilla Syrup - 750ml', sku: 'SY-VAN-001', uom: 'ml', category: 'Syrups', unitCost: 0.2, stockCount: 3000 },
+  { id: '5', name: 'Caramel Syrup - 750ml', sku: 'SY-CAR-001', uom: 'ml', category: 'Syrups', unitCost: 0.22, stockCount: 2800 },
+  { id: '6', name: 'Whole Milk - 1L', sku: 'MK-WHL-001', uom: 'ml', category: 'Milk & Dairy', unitCost: 0.12, stockCount: 8000 },
+  { id: '7', name: 'Oat Milk - 1L', sku: 'MK-OAT-001', uom: 'ml', category: 'Milk & Dairy', unitCost: 0.18, stockCount: 4000 },
+  { id: '8', name: 'Sugar - 1kg', sku: 'ADD-SUG-001', uom: 'g', category: 'Additives', unitCost: 0.05, stockCount: 10000 },
+  { id: '9', name: 'Paper Cups 12oz - Box of 500', sku: 'CP-PAP-001', uom: 'pcs', category: 'Cups & Packaging', unitCost: 2.5, stockCount: 500 },
+  { id: '10', name: 'Plastic Lids - Box of 1000', sku: 'LID-PLS-001', uom: 'pcs', category: 'Cups & Packaging', unitCost: 1.8, stockCount: 1000 },
 ];
 
 export function VariantsBuilder({
   variants,
   onVariantsChange,
   inventoryOptions = MOCK_INVENTORY_OPTIONS,
+  readOnly = false,
 }: VariantsBuilderProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<MenuVariant | undefined>();
@@ -140,16 +146,18 @@ export function VariantsBuilder({
             </TableBody>
           </Table>
         </TableContainer>
-        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Button
-            variant="outlined"
-            startIcon={<AddRoundedIcon />}
-            onClick={handleAddVariant}
-            sx={{ width: '100%' }}
-          >
-            Add Variant
-          </Button>
-        </Box>
+        {!readOnly && (
+          <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+            <Button
+              variant="outlined"
+              startIcon={<AddRoundedIcon />}
+              onClick={handleAddVariant}
+              sx={{ width: '100%' }}
+            >
+              Add Variant
+            </Button>
+          </Box>
+        )}
       </Paper>
 
       <VariantModal
