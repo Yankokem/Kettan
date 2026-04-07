@@ -161,6 +161,7 @@ export function KettanTable<T>({
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
+          minHeight: 420,
         }}
       >
         {/* ── Quick-filter chip bar (inside card) ── */}
@@ -216,10 +217,10 @@ export function KettanTable<T>({
                     size="small"
                     onClick={() => onQuickFilterChange?.(isActive ? '' : f.value)}
                     sx={{
-                      height: 28,
-                      fontSize: 12.5,
+                      height: 32,
+                      fontSize: 13,
                       fontWeight: 600,
-                      borderRadius: '8px',
+                      borderRadius: '9px',
                       cursor: 'pointer',
                       transition: 'all 0.15s',
                       ...(isActive
@@ -269,7 +270,7 @@ export function KettanTable<T>({
             <TableHead>
               <TableRow
                 sx={{
-                  background: 'linear-gradient(135deg, rgba(107, 76, 42, 0.06) 0%, rgba(201, 168, 77, 0.06) 100%)',
+                  background: 'linear-gradient(135deg, #FDF6EC 0%, #FAF0DC 100%)',
                   borderBottom: '1.5px solid',
                   borderColor: 'divider',
                 }}
@@ -281,7 +282,7 @@ export function KettanTable<T>({
                     width={col.width}
                     onClick={col.sortable ? () => handleSort(col.key) : undefined}
                     sx={{
-                      py: 1.25,
+                      py: 1.5,
                       px: 2.5,
                       fontWeight: 700,
                       fontSize: 11,
@@ -336,7 +337,7 @@ export function KettanTable<T>({
                         key={col.key}
                         align={col.align ?? 'left'}
                         width={col.width}
-                        sx={{ py: 1.5, px: 2.5, borderColor: 'divider' }}
+                        sx={{ py: 2.25, px: 2.5, borderColor: 'divider' }}
                       >
                         {col.render(row)}
                       </TableCell>

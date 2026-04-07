@@ -1,14 +1,15 @@
-import { Box, Typography, Chip, Tabs, Tab, Grid } from '@mui/material';
+import { Box, Typography, Chip, Grid } from '@mui/material';
 import { useState } from 'react';
 
 import LocalMallRoundedIcon from '@mui/icons-material/LocalMallRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 
-import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
+import { KettanTable, type KettanColumnDef } from '../../components/UI/KettanTable';
 import { StatCard } from '../../components/UI/StatCard';
-import { Dropdown } from '../../components/UI/Dropdown';
+import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
 import { Button } from '../../components/UI/Button';
 
@@ -23,11 +24,11 @@ interface OrderItem {
 }
 
 const MOCK_ORDERS: OrderItem[] = [
-  { id: 'ORD-8891', branch: 'Downtown Main', itemsCount: 14, totalCost: 8540.00, status: 'Pending', date: '2026-04-02' },
-  { id: 'ORD-8890', branch: 'Uptown Station', itemsCount: 5, totalCost: 3200.50, status: 'Approved', date: '2026-04-01' },
-  { id: 'ORD-8889', branch: 'Westside Market', itemsCount: 22, totalCost: 11250.00, status: 'Packing', date: '2026-03-30' },
-  { id: 'ORD-8888', branch: 'Airport Express', itemsCount: 8, totalCost: 5400.00, status: 'Dispatched', date: '2026-03-29' },
-  { id: 'ORD-8887', branch: 'Uptown Station', itemsCount: 42, totalCost: 0, status: 'Suspended', date: '2026-03-28' },
+  { id: 'ORD-8891', branch: 'Downtown Main',   itemsCount: 14, totalCost: 8540.00,  status: 'Pending',    date: '2026-04-02' },
+  { id: 'ORD-8890', branch: 'Uptown Station',  itemsCount: 5,  totalCost: 3200.50,  status: 'Approved',   date: '2026-04-01' },
+  { id: 'ORD-8889', branch: 'Westside Market', itemsCount: 22, totalCost: 11250.00, status: 'Packing',    date: '2026-03-30' },
+  { id: 'ORD-8888', branch: 'Airport Express', itemsCount: 8,  totalCost: 5400.00,  status: 'Dispatched', date: '2026-03-29' },
+  { id: 'ORD-8887', branch: 'Uptown Station',  itemsCount: 42, totalCost: 0,        status: 'Suspended',  date: '2026-03-28' },
 ];
 
 const STATUS_MAP = {
@@ -38,13 +39,21 @@ const STATUS_MAP = {
   'Suspended':  { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
 };
 
-const columns: ColumnDef<OrderItem>[] = [
+const ORDER_QUICK_FILTERS = [
+  { value: 'Pending',    label: 'Pending' },
+  { value: 'Approved',  label: 'Approved' },
+  { value: 'Packing',   label: 'Packing' },
+  { value: 'Dispatched',label: 'Dispatched' },
+  { value: 'Suspended', label: 'Suspended' },
+];
+
+const columns: KettanColumnDef<OrderItem>[] = [
   {
     key: 'id',
     label: 'Order ID',
-    gridWidth: '120px',
+    width: 120,
     render: (row) => (
-      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
+      <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
         {row.id}
       </Typography>
     ),
@@ -52,7 +61,6 @@ const columns: ColumnDef<OrderItem>[] = [
   {
     key: 'branch',
     label: 'Branch Location',
-    gridWidth: '1.5fr',
     render: (row) => (
       <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>
         {row.branch}
@@ -62,7 +70,8 @@ const columns: ColumnDef<OrderItem>[] = [
   {
     key: 'itemsCount',
     label: 'Items',
-    gridWidth: '100px',
+    width: 100,
+    sortable: true,
     render: (row) => (
       <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
         {row.itemsCount} SKUs
@@ -72,17 +81,19 @@ const columns: ColumnDef<OrderItem>[] = [
   {
     key: 'totalCost',
     label: 'Est. Cost',
-    gridWidth: '120px',
+    width: 120,
+    sortable: true,
+    align: 'right',
     render: (row) => (
       <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
-        {row.totalCost > 0 ? `$${row.totalCost.toFixed(2)}` : '--'}
+        {row.totalCost > 0 ? `₱${row.totalCost.toFixed(2)}` : '--'}
       </Typography>
     ),
   },
   {
     key: 'status',
     label: 'Status',
-    gridWidth: '120px',
+    width: 120,
     render: (row) => {
       const st = STATUS_MAP[row.status];
       return (
@@ -103,7 +114,8 @@ const columns: ColumnDef<OrderItem>[] = [
   {
     key: 'date',
     label: 'Date Requested',
-    gridWidth: '120px',
+    width: 130,
+    sortable: true,
     render: (row) => (
       <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
         {new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -113,14 +125,10 @@ const columns: ColumnDef<OrderItem>[] = [
   {
     key: 'actions',
     label: '',
-    gridWidth: '100px',
+    width: 100,
     render: (row) => (
-       
-<a href={`/orders/${row.id}`} style={{ textDecoration: 'none' }}>
-        <Button 
-          variant="outlined" 
-          sx={{ minWidth: 0, px: 1.5, height: 32, fontSize: 12 }}
-        >
+      <a href={`/orders/${row.id}`} style={{ textDecoration: 'none' }}>
+        <Button variant="outlined" sx={{ minWidth: 0, px: 1.5, height: 32, fontSize: 12 }}>
           Manage
         </Button>
       </a>
@@ -131,8 +139,14 @@ const columns: ColumnDef<OrderItem>[] = [
 export function OrdersPage() {
   const [startDate, setStartDate] = useState('2026-03-01');
   const [endDate, setEndDate] = useState('2026-04-03');
-  const [branchFilter, setBranchFilter] = useState('all');
-  const [currentTab, setCurrentTab] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const filtered = MOCK_ORDERS.filter((o) => {
+    const matchesBranch = !branchFilter || o.branch === branchFilter;
+    const matchesStatus = !statusFilter || o.status === statusFilter;
+    return matchesBranch && matchesStatus;
+  });
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -185,74 +199,50 @@ export function OrdersPage() {
           </Grid>
         </Grid>
       </Box>
-      {/* Top Filter Bar */}
+
+      {/* Toolbar above table */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-          <Dropdown
-            value={branchFilter}
-            onChange={(e) => setBranchFilter(e.target.value as string)}
-            options={[
-              { value: 'all', label: 'All Branches' },
-              { value: '1', label: 'Downtown Main' },
-              { value: '2', label: 'Uptown Station' },
-              { value: '3', label: 'Westside Market' },
-              { value: '4', label: 'Airport Express' }
-            ]}
-          />
-          <DateRangePicker 
-            startDate={startDate} 
-            endDate={endDate} 
-            onChange={(start, end) => {
-              setStartDate(start);
-              setEndDate(end);
-            }} 
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(start, end) => { setStartDate(start); setEndDate(end); }}
           />
         </Box>
-         
-<a href="/orders/new" style={{ textDecoration: 'none' }}>
+        <a href="/orders/new" style={{ textDecoration: 'none' }}>
           <Button startIcon={<LocalMallRoundedIcon />}>
             New Internal Request
           </Button>
         </a>
       </Box>
 
-      {/* Status Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={currentTab} 
-          onChange={(_e, val) => setCurrentTab(val)}
-          sx={{
-            minHeight: 48,
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              fontWeight: 600,
-              fontSize: 14,
-              minHeight: 48,
-              color: 'text.secondary',
-              '&.Mui-selected': { color: 'text.primary' }
-            },
-            '& .MuiTabs-indicator': { backgroundColor: '#C9A84C' }
-          }}
-        >
-          <Tab label="All Orders" value="all" />
-          <Tab label="Pending" value="Pending" />
-          <Tab label="Approved" value="Approved" />
-          <Tab label="Packing" value="Packing" />
-          <Tab label="Ready to Dispatch" value="Ready" />
-        </Tabs>
-      </Box>
-
-      {/* Main DataTable */}
-      <DataTable
-        title={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LocalMallRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-            <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Active Fulfillment Ledger</Typography>
-          </Box>
-        }
-        data={currentTab === 'all' ? MOCK_ORDERS : MOCK_ORDERS.filter(o => o.status === currentTab)}
+      {/* Orders Table with quick-filter chips + branch dropdown */}
+      <KettanTable
+        data={filtered}
         columns={columns}
         keyExtractor={(row) => row.id}
+        defaultRowsPerPage={10}
+        rowsPerPageOptions={[10, 25, 50]}
+        quickFilters={ORDER_QUICK_FILTERS}
+        activeQuickFilter={statusFilter}
+        onQuickFilterChange={setStatusFilter}
+        rightAction={
+          <FilterDropdown
+            label="Branch"
+            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+            value={branchFilter}
+            onChange={setBranchFilter}
+            compact
+            minWidth={120}
+            options={[
+              { value: 'Downtown Main',   label: 'Downtown Main' },
+              { value: 'Uptown Station',  label: 'Uptown Station' },
+              { value: 'Westside Market', label: 'Westside Market' },
+              { value: 'Airport Express', label: 'Airport Express' },
+            ]}
+          />
+        }
+        emptyMessage="No orders match the selected filters."
       />
     </Box>
   );
