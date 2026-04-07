@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { useThemeStore } from '../store/useThemeStore';
 import { lightTheme, darkTheme } from './theme';
+import { ToastProvider } from '../components/UI/ToastProvider';
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children }: { children: React.ReactNode }) {      
   const themeMode = useThemeStore((state) => state.mode);
 
   const appliedTheme = useMemo(() => {
@@ -26,7 +27,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider theme={appliedTheme}>
       <CssBaseline />
-      {children}
+      <ToastProvider>
+        {children}
+      </ToastProvider>
     </ThemeProvider>
   );
 }

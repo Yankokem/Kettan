@@ -2,10 +2,10 @@ import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip, Typography, InputBas
 import MenuIcon          from '@mui/icons-material/Menu';
 import DarkModeRoundedIcon   from '@mui/icons-material/DarkModeRounded';
 import LightModeRoundedIcon  from '@mui/icons-material/LightModeRounded';
-import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useLocation } from '@tanstack/react-router';
+import { NotificationBell } from '../UI/NotificationBell';
 
 interface HeaderProps {
   onDrawerToggle: () => void;
@@ -168,31 +168,7 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
           </Box>
 
           {/* Notifications */}
-          <Tooltip title="Notifications">
-            <IconButton
-              sx={{
-                color: '#8C6B43',
-                '&:hover': { background: 'rgba(201,168,77,0.1)', color: '#6B4C2A' },
-                transition: 'background 160ms, color 160ms',
-                position: 'relative',
-              }}
-            >
-              <NotificationsNoneRoundedIcon sx={{ fontSize: 20 }} />
-              {/* Notification dot */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  background: '#C9A84C',
-                  border: '1.5px solid rgba(250,245,233,0.9)',
-                }}
-              />
-            </IconButton>
-          </Tooltip>
+          <NotificationBell />
 
           {/* Theme toggle */}
           <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>
