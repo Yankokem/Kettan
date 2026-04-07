@@ -1,6 +1,16 @@
 import { CardActionArea, Box, Typography, Chip } from '@mui/material';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import type { ActiveOrder } from '../GlobalTrackingPage';
+
+export interface ActiveOrder {
+  id: string;
+  branch: string;
+  items: number;
+  status: 'In Transit' | 'Out for Delivery';
+  eta: string;
+  courier: string;
+  lastUpdated: string;
+  coordinates: [number, number];
+}
 
 interface ActiveOrderCardProps {
   order: ActiveOrder;
@@ -43,10 +53,10 @@ export function ActiveOrderCard({ order, isSelected, onSelect }: ActiveOrderCard
         />
       </Box>
       <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
-        {order.destination}
+        {order.branch}
       </Typography>
       <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-        Driver: {order.driver}
+        Courier: {order.courier}
       </Typography>
     </CardActionArea>
   );

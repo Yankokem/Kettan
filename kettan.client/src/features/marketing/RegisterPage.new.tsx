@@ -47,7 +47,7 @@ export function RegisterPage() {
     try {
       // Simulate API call
       await new Promise((r) => setTimeout(r, 1500));
-      navigate({ to: "/register/success" });
+      navigate({ to: "/" });
     } catch {
       setError("Registration failed. Please try again.");
     } finally {

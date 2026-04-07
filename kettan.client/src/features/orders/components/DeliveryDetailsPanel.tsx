@@ -1,8 +1,7 @@
-import { Box, Typography, Card } from '@mui/material';
+import { Box, Typography, Card, Divider, Grid } from '@mui/material';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import PersonPinCircleRoundedIcon from '@mui/icons-material/PersonPinCircleRounded';
-import MapRoundedIcon from '@mui/icons-material/MapRounded';
+import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
+import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
 
 export function DeliveryDetailsPanel() {
   return (
@@ -12,73 +11,66 @@ export function DeliveryDetailsPanel() {
         <Typography sx={{ fontSize: 16, fontWeight: 700 }}>Delivery Details</Typography>
       </Box>
 
-      <Box sx={{ mb: 4, flexShrink: 0 }}>
-        <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, mb: 1 }}>
-          Courier Profile
-        </Typography>
-        <Typography sx={{ fontSize: 14, fontWeight: 600, mb: 0.5 }}>Michael Dela Cruz</Typography>
-        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Lalamove / AB-1234-CD</Typography>
-        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>ETA: 2:45 PM Today</Typography>
-      </Box>
-
-      <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, mb: 2, flexShrink: 0 }}>
-        Journey Log
-      </Typography>
-
-      <Box sx={{ position: 'relative', ml: 1, pl: 3, borderLeft: '2px solid', borderColor: 'divider', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        {/* Event 1 */}
-        <Box sx={{ position: 'relative' }}>
-          <Box sx={{ position: 'absolute', left: -34, top: 0, width: 24, height: 24, borderRadius: '50%', bgcolor: '#E8D3A9', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-            <CheckCircleRoundedIcon sx={{ fontSize: 14, color: '#B08B5A' }} />
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <LocalShippingRoundedIcon color="action" sx={{ mr: 2 }} />
+            <Box>
+              <Typography variant="body2" color="text.secondary">Courier / Provider</Typography>
+              <Typography variant="body1" fontWeight={600}>In-House Logistics</Typography>
+            </Box>
           </Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>Order Received</Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Apr 02, 09:00 AM</Typography>
-        </Box>
+        </Grid>
+        
+        <Grid size={{ xs: 12 }}>
+          <Divider />
+        </Grid>
 
-        {/* Event 2 */}
-        <Box sx={{ position: 'relative' }}>
-          <Box sx={{ position: 'absolute', left: -34, top: 0, width: 24, height: 24, borderRadius: '50%', bgcolor: '#E8D3A9', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-            <CheckCircleRoundedIcon sx={{ fontSize: 14, color: '#B08B5A' }} />
+        <Grid size={{ xs: 12 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <PersonRoundedIcon color="action" sx={{ mr: 2 }} />
+            <Box>
+              <Typography variant="body2" color="text.secondary">Driver Assigned</Typography>
+              <Typography variant="body1" fontWeight={600}>Juan Dela Cruz</Typography>
+            </Box>
           </Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>Packed at HQ</Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Apr 02, 11:30 AM</Typography>
-        </Box>
+        </Grid>
+        
+        <Grid size={{ xs: 12 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <PhoneRoundedIcon color="action" sx={{ mr: 2 }} />
+            <Box>
+              <Typography variant="body2" color="text.secondary">Contact Info</Typography>
+              <Typography variant="body1" fontWeight={600}>+63 917 123 4567</Typography>
+            </Box>
+          </Box>
+        </Grid>
 
-        {/* Event 3 */}
-        <Box sx={{ position: 'relative' }}>
-          <Box sx={{ position: 'absolute', left: -34, top: 0, width: 24, height: 24, borderRadius: '50%', bgcolor: '#E8D3A9', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-            <LocalShippingRoundedIcon sx={{ fontSize: 14, color: '#B08B5A' }} />
-          </Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#C9A84C' }}>Dispatched</Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Apr 02, 12:15 PM</Typography>
-        </Box>
+        <Grid size={{ xs: 12 }}>
+          <Divider />
+        </Grid>
 
-        {/* Event 4 (Active/Pulsing) */}
-        <Box sx={{ position: 'relative' }}>
-          <Box sx={{
-            position: 'absolute', left: -34, top: 0, width: 24, height: 24, borderRadius: '50%', bgcolor: 'background.paper', border: '2px solid', borderColor: '#C9A84C', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2,
-            animation: 'pulse 1.5s infinite',
-            '@keyframes pulse': {
-              '0%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
-              '50%': { transform: 'scale(1.15)', filter: 'drop-shadow(0px 0px 12px rgba(201,168,76,1))' },
-              '100%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
-            }
-          }}>
-            <MapRoundedIcon sx={{ fontSize: 14, color: '#C9A84C' }} />
+        <Grid size={{ xs: 12 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <LocalShippingRoundedIcon color="info" sx={{ mr: 2 }} />
+            <Box>
+              <Typography variant="body2" color="text.secondary">Vehicle Information</Typography>
+              <Typography variant="body1" fontWeight={600}>ABC-1234 (Van)</Typography>
+            </Box>
           </Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>In Transit</Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Current Status</Typography>
-        </Box>
+        </Grid>
 
-        {/* Event 5 */}
-        <Box sx={{ position: 'relative' }}>
-          <Box sx={{ position: 'absolute', left: -34, top: 0, width: 24, height: 24, borderRadius: '50%', bgcolor: 'background.paper', border: '2px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-            <PersonPinCircleRoundedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+        <Grid size={{ xs: 12 }}>
+          <Divider />
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>Estimated Arrival</Typography>
+            <Typography variant="h6" color="primary.main" fontWeight={700}>Today, 5:00 PM</Typography>
           </Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.disabled' }}>Arrived at Branch</Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>Pending Delivery</Typography>
-        </Box>
-      </Box>
+        </Grid>
+      </Grid>
     </Card>
   );
 }
