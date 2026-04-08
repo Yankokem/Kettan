@@ -254,10 +254,10 @@ export function getTransactionsForItem(itemId: string): InventoryTransaction[] {
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Most recent first
 }
 
-export function generateBatchNumber(itemSku: string): string {
+export function generateBatchNumber(itemSku?: string): string {
   const date = new Date();
   const year = date.getFullYear();
   const seq = Math.floor(Math.random() * 900) + 100;
-  const prefix = itemSku.split('-')[0] || 'BN';
+  const prefix = itemSku ? itemSku.split('-')[0] : 'BN';
   return `${prefix}-${year}-${seq}`;
 }

@@ -5,14 +5,13 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
-import { useParams } from '@tanstack/react-router';
+import { useParams, useNavigate } from '@tanstack/react-router';
 import { Button } from '../../components/UI/Button';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BatchList } from './components/BatchList';
 import { TransactionsTable } from './components/TransactionsTable';
-import { StockInModal } from './components/StockInModal';
 import { AdjustmentModal } from './components/AdjustmentModal';
 import {
   MOCK_INVENTORY_ITEMS,
@@ -21,12 +20,12 @@ import {
   getBatchesForItem,
   getTransactionsForItem,
 } from './mockData';
-import type { StockInItem, AdjustmentFormData, Batch } from './types';
+import type { AdjustmentFormData, Batch } from './types';
 
 export function InventoryItemProfilePage() {
   const { itemId } = useParams({ from: '/layout/hq-inventory/$itemId' });
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
-  const [stockInOpen, setStockInOpen] = useState(false);
   const [adjustmentOpen, setAdjustmentOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
 
@@ -50,11 +49,6 @@ export function InventoryItemProfilePage() {
 
   const categoryOptions = MOCK_CATEGORIES.map(c => ({ value: c.id, label: c.name }));
   const unitOptions = MOCK_UNITS.map(u => ({ value: u.id, label: `${u.name} (${u.symbol})` }));
-
-  const handleStockInComplete = (items: StockInItem[]) => {
-    console.log('Stock-In completed:', items);
-    setStockInOpen(false);
-  };
 
   const handleAdjustBatch = (batchId: string) => {
     const batch = batches.find(b => b.id === batchId);
@@ -103,7 +97,7 @@ export function InventoryItemProfilePage() {
           <Button
             variant="outlined"
             startIcon={<AddRoundedIcon />}
-            onClick={() => setStockInOpen(true)}
+            onClick={() => navigate({ to: '/hq-inventory/stock-in' })}
           >
             Stock-In
           </Button>
@@ -261,14 +255,6 @@ export function InventoryItemProfilePage() {
       </Box>
 
       {/* Modals */}
-      <StockInModal
-        open={stockInOpen}
-        onClose={() => setStockInOpen(false)}
-        onComplete={handleStockInComplete}
-        inventoryItems={[item]}
-        units={MOCK_UNITS}
-      />
-
       <AdjustmentModal
         open={adjustmentOpen}
         onClose={() => { setAdjustmentOpen(false); setSelectedBatch(null); }}

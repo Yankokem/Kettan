@@ -16,15 +16,6 @@ export function MenuItemCard({ item }: Props) {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active': return 'success.main';
-      case 'Inactive': return 'text.secondary';
-      case 'Out of Stock': return 'error.main';
-      default: return 'text.primary';
-    }
-  };
-
   // Predefined pill colors for variants
   const variantColors = ['#E2D5C4', '#D4E2C4', '#C4D6E2', '#E2C4CA', '#E2c4E1'];
   const variantTextColors = ['#5A4D3B', '#4D5A3B', '#3B4D5A', '#5A3B45', '#5A3B59'];
@@ -114,11 +105,13 @@ export function MenuItemCard({ item }: Props) {
                 height: 22,
                 fontSize: 10,
                 fontWeight: 800,
-                bgcolor: item.status === 'Active' ? 'success.50' : item.status === 'Out of Stock' ? 'error.50' : 'grey.100',
-                color: getStatusColor(item.status),
+                bgcolor: item.status === 'Active' ? 'rgba(84,107,63,0.08)' : item.status === 'Out of Stock' ? 'rgba(220, 38, 38, 0.08)' : 'rgba(107,76,42,0.06)',
+                color: item.status === 'Active' ? '#546B3F' : item.status === 'Out of Stock' ? '#991B1B' : '#6B7280',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                borderRadius: 1
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: item.status === 'Active' ? 'rgba(84,107,63,0.15)' : item.status === 'Out of Stock' ? 'rgba(220, 38, 38, 0.15)' : 'rgba(107,76,42,0.1)',
               }}
             />
             <Typography sx={{ fontWeight: 800, color: 'text.primary' }}>

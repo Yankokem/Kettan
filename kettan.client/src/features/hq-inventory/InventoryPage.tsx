@@ -5,25 +5,17 @@ import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import { InventoryTable } from './components/InventoryTable';
-import { StockInModal } from './components/StockInModal';
 import { StockOutModal } from './components/StockOutModal';
 import { StatCard } from '../../components/UI/StatCard';
 import {
   MOCK_INVENTORY_ITEMS,
-  MOCK_UNITS,
   MOCK_BATCHES,
   MOCK_TRANSACTIONS,
 } from './mockData';
-import type { StockInItem, StockOutFormData } from './types';
+import type { StockOutFormData } from './types';
 
 export function InventoryPage() {
-  const [stockInOpen, setStockInOpen] = useState(false);
   const [stockOutOpen, setStockOutOpen] = useState(false);
-
-  const handleStockInComplete = (items: StockInItem[]) => {
-    console.log('Stock-In completed:', items);
-    // TODO: API call to save stock-in
-  };
 
   const handleStockOutConfirm = (data: StockOutFormData) => {
     console.log('Stock-Out confirmed:', data);
@@ -83,17 +75,7 @@ export function InventoryPage() {
       <InventoryTable
         items={MOCK_INVENTORY_ITEMS}
         transactions={MOCK_TRANSACTIONS}
-        onStockIn={() => setStockInOpen(true)}
         onStockOut={() => setStockOutOpen(true)}
-      />
-
-      {/* Stock-In Modal */}
-      <StockInModal
-        open={stockInOpen}
-        onClose={() => setStockInOpen(false)}
-        onComplete={handleStockInComplete}
-        inventoryItems={MOCK_INVENTORY_ITEMS}
-        units={MOCK_UNITS}
       />
 
       {/* Stock-Out Modal */}

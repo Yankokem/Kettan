@@ -96,7 +96,10 @@ export interface StockInFormData {
 export interface StockInItem extends StockInFormData {
   id: string;
   itemName?: string;
+  itemSku?: string;
   unitSymbol?: string;
+  unit?: Unit;
+  previousUnitCost?: number;
 }
 
 // Stock-Out reasons

@@ -21,22 +21,22 @@ export function InventoryCard({ item }: InventoryCardProps) {
       sx={{
         p: 2.5,
         border: '1px solid',
-        borderColor: isLowStock ? 'error.light' : 'divider',
-        bgcolor: isLowStock ? '#FFF5F5' : 'background.paper',
+        borderColor: isLowStock ? 'rgba(220, 38, 38, 0.2)' : 'divider',
+        bgcolor: isLowStock ? 'rgba(220, 38, 38, 0.02)' : 'background.paper',
         borderRadius: 4,
         display: 'flex',
         flexDirection: 'column',
         transition: 'all 0.2s ease-in-out',
         cursor: 'pointer',
         '&:hover': {
-          borderColor: isLowStock ? 'error.main' : 'primary.main',
+          borderColor: isLowStock ? 'rgba(220, 38, 38, 0.4)' : 'primary.main',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
         },
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: isLowStock ? 'error.light' : 'background.default', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isLowStock ? 'error.main' : 'text.secondary' }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: isLowStock ? 'rgba(220, 38, 38, 0.06)' : 'rgba(107,76,42,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isLowStock ? '#991B1B' : '#6B4C2A' }}>
             <Inventory2RoundedIcon />
           </Box>
           <Box>
@@ -53,14 +53,14 @@ export function InventoryCard({ item }: InventoryCardProps) {
       <Box sx={{ mt: 'auto' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5, alignItems: 'flex-end' }}>
           <Box>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, color: isLowStock ? 'error.main' : 'text.primary', lineHeight: 1 }}>
+            <Typography sx={{ fontSize: 24, fontWeight: 800, color: isLowStock ? '#991B1B' : 'text.primary', lineHeight: 1 }}>
               {item.totalStock} <Typography component="span" sx={{ fontSize: 13, fontWeight: 600, color: 'text.secondary' }}>{item.unit?.symbol || ''}</Typography>
             </Typography>
           </Box>
           {isLowStock ? (
-            <Chip icon={<WarningRoundedIcon fontSize="small" />} label="Low Stock" size="small" sx={{ bgcolor: 'error.main', color: 'white', fontWeight: 700, height: 24 }} />
+            <Chip icon={<WarningRoundedIcon fontSize="small" />} label="Low Stock" size="small" sx={{ bgcolor: 'rgba(220, 38, 38, 0.08)', color: '#991B1B', fontWeight: 700, height: 24, '& .MuiChip-icon': { color: '#991B1B' }, border: '1px solid rgba(220, 38, 38, 0.15)' }} />
           ) : (
-            <Chip label="In Stock" size="small" sx={{ bgcolor: 'success.light', color: 'success.dark', fontWeight: 700, height: 24 }} />
+            <Chip label="In Stock" size="small" sx={{ bgcolor: 'rgba(84,107,63,0.08)', color: '#546B3F', fontWeight: 700, height: 24, border: '1px solid rgba(84,107,63,0.15)' }} />
           )}
         </Box>
         
@@ -70,9 +70,9 @@ export function InventoryCard({ item }: InventoryCardProps) {
           sx={{ 
             height: 6, 
             borderRadius: 3,
-            bgcolor: 'action.hover',
+            bgcolor: 'rgba(107,76,42,0.06)',
             '& .MuiLinearProgress-bar': {
-              bgcolor: isLowStock ? 'error.main' : 'primary.main',
+              bgcolor: isLowStock ? '#DC2626' : '#6B4C2A',
               borderRadius: 3
             }
           }} 

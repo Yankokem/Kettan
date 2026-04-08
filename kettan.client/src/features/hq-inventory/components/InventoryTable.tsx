@@ -18,7 +18,6 @@ import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import RemoveCircleOutlineRoundedIcon from '@mui/icons-material/RemoveCircleOutlineRounded';
-import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
 import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
@@ -34,7 +33,6 @@ import { KettanTable, type KettanColumnDef } from '../../../components/UI/Kettan
 interface InventoryTableProps {
   items: InventoryItem[];
   transactions?: InventoryTransaction[];
-  onStockIn?: () => void;
   onStockOut?: () => void;
   onRowClick?: (id: string | number) => void;
 }
@@ -45,36 +43,36 @@ const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: strin
   Restock: {
     icon: <CallReceivedRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Stock-In',
-    color: 'success.dark',
-    bgcolor: 'success.light',
+    color: '#166534',
+    bgcolor: 'rgba(22, 163, 74, 0.08)',
   },
   Consumption: {
     icon: <CallMadeRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Stock-Out',
-    color: 'error.dark',
-    bgcolor: 'error.light',
+    color: '#991B1B',
+    bgcolor: 'rgba(220, 38, 38, 0.08)',
   },
   Sales_Auto: {
     icon: <ShoppingCartRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Sale',
-    color: 'info.dark',
-    bgcolor: 'info.light',
+    color: '#1E40AF',
+    bgcolor: 'rgba(59, 130, 246, 0.08)',
   },
   Adjustment: {
     icon: <TuneRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Adjust',
-    color: 'warning.dark',
-    bgcolor: 'warning.light',
+    color: '#92400E',
+    bgcolor: 'rgba(217, 119, 6, 0.08)',
   },
   Transfer: {
     icon: <SyncAltRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Transfer',
-    color: 'secondary.dark',
-    bgcolor: 'rgba(84,107,63,0.15)',
+    color: '#3D5029',
+    bgcolor: 'rgba(84,107,63,0.08)',
   },
 };
 
-export function InventoryTable({ items, transactions = [], onStockIn, onStockOut, onRowClick }: InventoryTableProps) {
+export function InventoryTable({ items, transactions = [], onStockOut, onRowClick }: InventoryTableProps) {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [searchQuery, setSearchQuery] = useState('');
@@ -240,13 +238,13 @@ export function InventoryTable({ items, transactions = [], onStockIn, onStockOut
             icon={<WarningRoundedIcon fontSize="small" />}
             label="Low Stock"
             size="small"
-            sx={{ bgcolor: 'error.main', color: 'white', fontWeight: 600, height: 24, '& .MuiChip-icon': { color: 'white' } }}
+            sx={{ bgcolor: 'rgba(220, 38, 38, 0.08)', color: '#991B1B', fontWeight: 600, height: 24, '& .MuiChip-icon': { color: '#991B1B' }, border: '1px solid rgba(220, 38, 38, 0.15)' }}
           />
         ) : (
           <Chip
             label="In Stock"
             size="small"
-            sx={{ bgcolor: 'rgba(84,107,63,0.12)', color: '#546B3F', fontWeight: 600, height: 24, border: '1px solid rgba(84,107,63,0.2)' }}
+            sx={{ bgcolor: 'rgba(84,107,63,0.08)', color: '#546B3F', fontWeight: 600, height: 24, border: '1px solid rgba(84,107,63,0.15)' }}
           />
         );
       },
@@ -424,7 +422,7 @@ export function InventoryTable({ items, transactions = [], onStockIn, onStockOut
         />
         <Button
           startIcon={<AddRoundedIcon />}
-          onClick={onStockIn}
+          onClick={() => navigate({ to: '/hq-inventory/stock-in' })}
         >
           Stock-In
         </Button>
@@ -443,17 +441,13 @@ export function InventoryTable({ items, transactions = [], onStockIn, onStockOut
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           PaperProps={{ sx: { minWidth: 180, borderRadius: 2, mt: 1 } }}
         >
-          <MenuItem onClick={() => { navigate({ to: '/hq-inventory/add' }); setMenuAnchor(null); }}>
-            <ListItemIcon><InventoryRoundedIcon fontSize="small" /></ListItemIcon>
-            <ListItemText>New Item</ListItemText>
-          </MenuItem>
           <MenuItem onClick={() => { onStockOut?.(); setMenuAnchor(null); }}>
             <ListItemIcon><RemoveCircleOutlineRoundedIcon fontSize="small" sx={{ color: 'error.main' }} /></ListItemIcon>
             <ListItemText>Stock-Out</ListItemText>
           </MenuItem>
           <MenuItem onClick={() => { setMenuAnchor(null); }}>
             <ListItemIcon><TuneRoundedIcon fontSize="small" /></ListItemIcon>
-            <ListItemText>Adjust</ListItemText>
+            <ListItemText>Adjust Inventory</ListItemText>
           </MenuItem>
         </Menu>
       </Box>
