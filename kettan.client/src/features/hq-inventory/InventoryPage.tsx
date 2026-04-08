@@ -1,30 +1,44 @@
+import { useState } from 'react';
 import { Box } from '@mui/material';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import { InventoryTable } from './components/InventoryTable';
+import { StockInModal } from './components/StockInModal';
+import { StockOutModal } from './components/StockOutModal';
 import { StatCard } from '../../components/UI/StatCard';
-import type { InventoryItem } from './types';
-
-const MOCK_INVENTORY: InventoryItem[] = [
-  { id: '1', sku: 'BN-ESA-01', name: 'Espresso Blend A', category: 'beans', stockCount: 15, reorderPoint: 20, unit: 'kg', status: 'Low Stock', supplier: 'Origin Roasters', lastRestocked: '2026-03-28' },
-  { id: '2', sku: 'SY-VAN-02', name: 'Vanilla Syrup (1L)', category: 'syrup', stockCount: 45, reorderPoint: 15, unit: 'L', status: 'In Stock', supplier: 'Monin Dist.', lastRestocked: '2026-03-15' },
-  { id: '3', sku: 'PK-CP-12', name: 'Takeaway Cups (12oz)', category: 'packaging', stockCount: 800, reorderPoint: 1000, unit: 'pcs', status: 'Low Stock', supplier: 'PackTech Co.', lastRestocked: '2026-03-10' },
-  { id: '4', sku: 'MK-OAT-01', name: 'Oat Milk (1L)', category: 'milk', stockCount: 60, reorderPoint: 30, unit: 'L', status: 'In Stock', supplier: 'Oatly Pacific', lastRestocked: '2026-04-01' },
-  { id: '5', sku: 'EQ-FLT-2', name: 'Grouphead Filters', category: 'equipment', stockCount: 20, reorderPoint: 5, unit: 'units', status: 'In Stock', supplier: 'Origin Roasters', lastRestocked: '2025-12-10' }
-];
+import {
+  MOCK_INVENTORY_ITEMS,
+  MOCK_UNITS,
+  MOCK_BATCHES,
+  MOCK_TRANSACTIONS,
+} from './mockData';
+import type { StockInItem, StockOutFormData } from './types';
 
 export function InventoryPage() {
+  const [stockInOpen, setStockInOpen] = useState(false);
+  const [stockOutOpen, setStockOutOpen] = useState(false);
+
+  const handleStockInComplete = (items: StockInItem[]) => {
+    console.log('Stock-In completed:', items);
+    // TODO: API call to save stock-in
+  };
+
+  const handleStockOutConfirm = (data: StockOutFormData) => {
+    console.log('Stock-Out confirmed:', data);
+    // TODO: API call to save stock-out
+  };
+
   return (
     <Box sx={{ pb: 3 }}>
       {/* KPI Stats */}
-      <Box 
-        sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' }, 
-          gap: 3, 
-          mb: 4 
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' },
+          gap: 3,
+          mb: 4,
         }}
       >
         <StatCard
@@ -65,8 +79,31 @@ export function InventoryPage() {
         />
       </Box>
 
-      {/* Roster Table */}
-      <InventoryTable items={MOCK_INVENTORY} />
+      {/* Inventory Table */}
+      <InventoryTable
+        items={MOCK_INVENTORY_ITEMS}
+        transactions={MOCK_TRANSACTIONS}
+        onStockIn={() => setStockInOpen(true)}
+        onStockOut={() => setStockOutOpen(true)}
+      />
+
+      {/* Stock-In Modal */}
+      <StockInModal
+        open={stockInOpen}
+        onClose={() => setStockInOpen(false)}
+        onComplete={handleStockInComplete}
+        inventoryItems={MOCK_INVENTORY_ITEMS}
+        units={MOCK_UNITS}
+      />
+
+      {/* Stock-Out Modal */}
+      <StockOutModal
+        open={stockOutOpen}
+        onClose={() => setStockOutOpen(false)}
+        onConfirm={handleStockOutConfirm}
+        inventoryItems={MOCK_INVENTORY_ITEMS}
+        batches={MOCK_BATCHES}
+      />
     </Box>
   );
 }

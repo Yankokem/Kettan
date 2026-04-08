@@ -29,6 +29,9 @@ export function MenuItemCard({ item }: Props) {
   const variantColors = ['#E2D5C4', '#D4E2C4', '#C4D6E2', '#E2C4CA', '#E2c4E1'];
   const variantTextColors = ['#5A4D3B', '#4D5A3B', '#3B4D5A', '#5A3B45', '#5A3B59'];
 
+  // Count total ingredients across all variants
+  const totalIngredients = item.variants?.reduce((sum, v) => sum + (v.ingredients?.length || 0), 0) || 0;
+
   return (
     <Link
       to="/menu/$menuItemId"
@@ -59,8 +62,8 @@ export function MenuItemCard({ item }: Props) {
             <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-end' }}>
               {item.variants?.map((variant, idx) => (
                 <Chip
-                  key={variant}
-                  label={variant}
+                  key={variant.id}
+                  label={variant.name}
                   size="small"
                   sx={{
                     fontWeight: 700,
@@ -98,7 +101,7 @@ export function MenuItemCard({ item }: Props) {
               }}
             />
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-              {item.ingredients.length} items
+              {item.variants.length} variant{item.variants.length !== 1 ? 's' : ''}{totalIngredients > 0 ? ` • ${totalIngredients} ingredient${totalIngredients !== 1 ? 's' : ''}` : ''}
             </Typography>
           </Box>
 

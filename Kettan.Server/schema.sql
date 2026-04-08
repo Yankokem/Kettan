@@ -44,16 +44,45 @@ CREATE TABLE Users (
 -- =====================================================================
 -- 2. Inventory & Batching Level
 -- =====================================================================
+
+-- Units of Measure: Standardized units (prevents typos, enables future conversions)
+CREATE TABLE Units (
+    UnitId INT IDENTITY(1,1) PRIMARY KEY,
+    TenantId INT NOT NULL,
+    Name NVARCHAR(50) NOT NULL,       -- Gram, Milliliter, Piece, Kilogram
+    Symbol NVARCHAR(10) NOT NULL,     -- g, ml, pc, kg
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT FK_Units_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId)
+);
+
+-- Inventory Categories: Organize raw materials (Dry Goods, Dairy, Syrups, Packaging)
+CREATE TABLE InventoryCategories (
+    CategoryId INT IDENTITY(1,1) PRIMARY KEY,
+    TenantId INT NOT NULL,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500) NULL,
+    DisplayOrder INT NOT NULL DEFAULT 0,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT FK_InvCategories_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId)
+);
+
 CREATE TABLE Items (
     ItemId INT IDENTITY(1,1) PRIMARY KEY,
     TenantId INT NOT NULL,
     SKU NVARCHAR(100) NOT NULL,
     Name NVARCHAR(255) NOT NULL,
-    UnitOfMeasure NVARCHAR(50) NOT NULL, -- kg, ml, pcs
+    UnitId INT NOT NULL,              -- FK to Units (replaces string UnitOfMeasure)
+    InventoryCategoryId INT NULL,     -- FK to InventoryCategories (optional grouping)
     DefaultThreshold DECIMAL(18,4) NOT NULL DEFAULT 0,
     UnitCost DECIMAL(18,2) NOT NULL DEFAULT 0,
+    PreviousUnitCost DECIMAL(18,2) NULL, -- Track cost changes
+    IsDeleted BIT NOT NULL DEFAULT 0, -- Soft delete for history preservation
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    CONSTRAINT FK_Items_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId)
+    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT FK_Items_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId),
+    CONSTRAINT FK_Items_Units FOREIGN KEY (UnitId) REFERENCES Units(UnitId),
+    CONSTRAINT FK_Items_InvCategories FOREIGN KEY (InventoryCategoryId) REFERENCES InventoryCategories(CategoryId)
 );
 
 CREATE TABLE Batches (
@@ -159,4 +188,78 @@ CREATE TABLE Returns (
     CONSTRAINT FK_Returns_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId),
     CONSTRAINT FK_Returns_Orders FOREIGN KEY (OrderId) REFERENCES Orders(OrderId),
     CONSTRAINT FK_Returns_Branches FOREIGN KEY (BranchId) REFERENCES Branches(BranchId)
+);
+
+-- =====================================================================
+-- 5. Menu Management Level
+-- =====================================================================
+
+-- Categories: User-managed groupings (e.g., Coffee, Non-Coffee, Food, Pastries)
+CREATE TABLE MenuCategories (
+    CategoryId INT IDENTITY(1,1) PRIMARY KEY,
+    TenantId INT NOT NULL,
+    Name NVARCHAR(100) NOT NULL,
+    DisplayOrder INT NOT NULL DEFAULT 0,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT FK_MenuCategories_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId)
+);
+
+-- Tags: User-managed labels/badges (e.g., Bestseller, New, Vegan, Spicy)
+CREATE TABLE MenuTags (
+    TagId INT IDENTITY(1,1) PRIMARY KEY,
+    TenantId INT NOT NULL,
+    Name NVARCHAR(50) NOT NULL,
+    Color NVARCHAR(7) NULL, -- Hex color for badge (e.g., #FF5733)
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT FK_MenuTags_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId)
+);
+
+-- Menu Items: The actual products (e.g., Vanilla Latte, Chicken Sandwich)
+CREATE TABLE MenuItems (
+    MenuItemId INT IDENTITY(1,1) PRIMARY KEY,
+    TenantId INT NOT NULL,
+    CategoryId INT NOT NULL,
+    Name NVARCHAR(255) NOT NULL,
+    Description NVARCHAR(MAX) NULL,
+    ImageUrl NVARCHAR(500) NULL,
+    BasePrice DECIMAL(18,2) NOT NULL DEFAULT 0,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Active', -- Active, Inactive
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT FK_MenuItems_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId),
+    CONSTRAINT FK_MenuItems_Categories FOREIGN KEY (CategoryId) REFERENCES MenuCategories(CategoryId)
+);
+
+-- Junction: Menu Item ↔ Tags (many-to-many)
+CREATE TABLE MenuItemTags (
+    MenuItemId INT NOT NULL,
+    TagId INT NOT NULL,
+    PRIMARY KEY (MenuItemId, TagId),
+    CONSTRAINT FK_MenuItemTags_MenuItems FOREIGN KEY (MenuItemId) REFERENCES MenuItems(MenuItemId),
+    CONSTRAINT FK_MenuItemTags_Tags FOREIGN KEY (TagId) REFERENCES MenuTags(TagId)
+);
+
+-- Variants: Sizes/portions with flexible pricing (e.g., Small, Medium, Large)
+CREATE TABLE MenuVariants (
+    VariantId INT IDENTITY(1,1) PRIMARY KEY,
+    MenuItemId INT NOT NULL,
+    Name NVARCHAR(100) NOT NULL, -- Small, Medium, Large, Solo, Regular
+    PricingMode NVARCHAR(10) NOT NULL DEFAULT 'absolute', -- 'absolute' or 'relative'
+    Price DECIMAL(18,2) NOT NULL, -- If absolute: exact price (₱150), if relative: modifier (+₱20)
+    DisplayOrder INT NOT NULL DEFAULT 0,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT FK_MenuVariants_MenuItems FOREIGN KEY (MenuItemId) REFERENCES MenuItems(MenuItemId)
+);
+
+-- Variant Ingredients: Recipe per variant linking to inventory
+CREATE TABLE VariantIngredients (
+    VariantIngredientId INT IDENTITY(1,1) PRIMARY KEY,
+    VariantId INT NOT NULL,
+    ItemId INT NOT NULL, -- References Items (inventory)
+    Quantity DECIMAL(18,4) NOT NULL, -- Amount to deduct per sale (e.g., 18g espresso)
+    CONSTRAINT FK_VariantIngredients_Variants FOREIGN KEY (VariantId) REFERENCES MenuVariants(VariantId),
+    CONSTRAINT FK_VariantIngredients_Items FOREIGN KEY (ItemId) REFERENCES Items(ItemId)
 );

@@ -22,10 +22,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Coffee',
     sellingPrice: 120.00,
     status: 'Active',
-    variants: ['12oz', '16oz', '22oz'],
-    ingredients: [
-      { id: 'i1', itemId: '1', itemName: 'Arabica Coffee Beans', qtyPerUnit: 0.018, uom: 'kg' },
-      { id: 'i2', itemId: '3', itemName: 'Ice', qtyPerUnit: 200, uom: 'ml' },
+    variants: [
+      { id: 'v1-1', name: '12oz', ingredients: [{ id: 'i1', itemId: '1', itemName: 'Arabica Coffee Beans', qtyPerUnit: 0.018, uom: 'kg' }] },
+      { id: 'v1-2', name: '16oz', ingredients: [{ id: 'i1', itemId: '1', itemName: 'Arabica Coffee Beans', qtyPerUnit: 0.020, uom: 'kg' }] },
+      { id: 'v1-3', name: '22oz', ingredients: [{ id: 'i1', itemId: '1', itemName: 'Arabica Coffee Beans', qtyPerUnit: 0.024, uom: 'kg' }] },
     ],
     createdAt: '2026-03-15',
   },
@@ -35,11 +35,9 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Coffee with Milk',
     sellingPrice: 150.00,
     status: 'Active',
-    variants: ['Hot', 'Iced'],
-    ingredients: [
-      { id: 'i3', itemId: '2', itemName: 'Espresso Blend', qtyPerUnit: 0.02, uom: 'kg' },
-      { id: 'i4', itemId: '3', itemName: 'Almond Milk', qtyPerUnit: 0.3, uom: 'L' },
-      { id: 'i5', itemId: '4', itemName: 'Vanilla Syrup', qtyPerUnit: 0.03, uom: 'L' },
+    variants: [
+      { id: 'v2-1', name: 'Hot', ingredients: [{ id: 'i3', itemId: '2', itemName: 'Espresso Blend', qtyPerUnit: 0.02, uom: 'kg' }] },
+      { id: 'v2-2', name: 'Iced', ingredients: [{ id: 'i3', itemId: '2', itemName: 'Espresso Blend', qtyPerUnit: 0.02, uom: 'kg' }] },
     ],
     createdAt: '2026-03-14',
   },
@@ -49,10 +47,9 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Frappe',
     sellingPrice: 180.00,
     status: 'Active',
-    variants: ['Medium', 'Large'],
-    ingredients: [
-      { id: 'i6', itemId: '1', itemName: 'Arabica Coffee Beans', qtyPerUnit: 0.016, uom: 'kg' },
-      { id: 'i7', itemId: '3', itemName: 'Almond Milk', qtyPerUnit: 0.25, uom: 'L' },
+    variants: [
+      { id: 'v3-1', name: 'Medium', ingredients: [] },
+      { id: 'v3-2', name: 'Large', ingredients: [] },
     ],
     createdAt: '2026-03-13',
   },
@@ -62,8 +59,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Tea',
     sellingPrice: 140.00,
     status: 'Active',
-    variants: ['Hot', 'Iced'],
-    ingredients: [],
+    variants: [
+      { id: 'v4-1', name: 'Hot', ingredients: [] },
+      { id: 'v4-2', name: 'Iced', ingredients: [] },
+    ],
     createdAt: '2026-03-12'
   },
   {
@@ -73,7 +72,6 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     sellingPrice: 95.00,
     status: 'Out of Stock',
     variants: [],
-    ingredients: [],
     createdAt: '2026-03-11'
   },
   {
@@ -82,8 +80,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Coffee with Milk',
     sellingPrice: 145.00,
     status: 'Active',
-    variants: ['Hot', 'Iced'],
-    ingredients: [],
+    variants: [
+      { id: 'v6-1', name: 'Hot', ingredients: [] },
+      { id: 'v6-2', name: 'Iced', ingredients: [] },
+    ],
     createdAt: '2026-03-10'
   },
   {
@@ -92,8 +92,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Coffee',
     sellingPrice: 130.00,
     status: 'Active',
-    variants: ['16oz', '22oz'],
-    ingredients: [],
+    variants: [
+      { id: 'v7-1', name: '16oz', ingredients: [] },
+      { id: 'v7-2', name: '22oz', ingredients: [] },
+    ],
     createdAt: '2026-03-09'
   },
   {
@@ -102,8 +104,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Pastry',
     sellingPrice: 160.00,
     status: 'Active',
-    variants: ['Slice', 'Whole'],
-    ingredients: [],
+    variants: [
+      { id: 'v8-1', name: 'Slice', ingredients: [] },
+      { id: 'v8-2', name: 'Whole', ingredients: [] },
+    ],
     createdAt: '2026-03-08'
   },
   {
@@ -112,8 +116,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Smoothie',
     sellingPrice: 170.00,
     status: 'Inactive',
-    variants: ['16oz', '22oz'],
-    ingredients: [],
+    variants: [
+      { id: 'v9-1', name: '16oz', ingredients: [] },
+      { id: 'v9-2', name: '22oz', ingredients: [] },
+    ],
     createdAt: '2026-03-07'
   },
   {
@@ -122,8 +128,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Smoothie',
     sellingPrice: 185.00,
     status: 'Active',
-    variants: ['16oz', '22oz'],
-    ingredients: [],
+    variants: [
+      { id: 'v10-1', name: '16oz', ingredients: [] },
+      { id: 'v10-2', name: '22oz', ingredients: [] },
+    ],
     createdAt: '2026-03-06'
   },
   {
@@ -132,8 +140,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Coffee',
     sellingPrice: 90.00,
     status: 'Active',
-    variants: ['Single', 'Double'],
-    ingredients: [],
+    variants: [
+      { id: 'v11-1', name: 'Single', ingredients: [] },
+      { id: 'v11-2', name: 'Double', ingredients: [] },
+    ],
     createdAt: '2026-03-05'
   },
   {
@@ -142,8 +152,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Food',
     sellingPrice: 150.00,
     status: 'Active',
-    variants: ['Solo', 'Combo'],
-    ingredients: [],
+    variants: [
+      { id: 'v12-1', name: 'Solo', ingredients: [] },
+      { id: 'v12-2', name: 'Combo', ingredients: [] },
+    ],
     createdAt: '2026-03-04'
   },
   {
@@ -152,8 +164,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Tea',
     sellingPrice: 110.00,
     status: 'Out of Stock',
-    variants: ['Hot', 'Iced'],
-    ingredients: [],
+    variants: [
+      { id: 'v13-1', name: 'Hot', ingredients: [] },
+      { id: 'v13-2', name: 'Iced', ingredients: [] },
+    ],
     createdAt: '2026-03-03'
   },
   {
@@ -162,8 +176,10 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     category: 'Coffee',
     sellingPrice: 160.00,
     status: 'Active',
-    variants: ['16oz', '22oz'],
-    ingredients: [],
+    variants: [
+      { id: 'v14-1', name: '16oz', ingredients: [] },
+      { id: 'v14-2', name: '22oz', ingredients: [] },
+    ],
     createdAt: '2026-03-02'
   },
   {
@@ -173,7 +189,6 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
     sellingPrice: 125.00,
     status: 'Inactive',
     variants: [],
-    ingredients: [],
     createdAt: '2026-03-01'
   }
 ];

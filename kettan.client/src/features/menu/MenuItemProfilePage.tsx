@@ -9,7 +9,6 @@ import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
-import { FormActions } from '../../components/Form/FormActions';
 import { VariantsBuilder } from './components/VariantsBuilder';
 import { PriceSuggestion } from './components/PriceSuggestion';
 import type { MenuItemFormData, MenuItem, MenuVariant } from './types';

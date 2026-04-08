@@ -4,16 +4,27 @@ import {
   Typography,
   Chip,
   LinearProgress,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import RemoveCircleOutlineRoundedIcon from '@mui/icons-material/RemoveCircleOutlineRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
+import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
+import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
+import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded';
 import { useNavigate } from '@tanstack/react-router';
-import type { InventoryItem } from '../types';
+import type { InventoryItem, InventoryTransaction, TransactionType } from '../types';
 import { SearchInput } from '../../../components/UI/SearchInput';
 import { Button } from '../../../components/UI/Button';
 import { ViewToggle } from '../../../components/UI/ViewToggle';
@@ -22,35 +33,70 @@ import { KettanTable, type KettanColumnDef } from '../../../components/UI/Kettan
 
 interface InventoryTableProps {
   items: InventoryItem[];
-  onAddClick?: () => void;
+  transactions?: InventoryTransaction[];
+  onStockIn?: () => void;
+  onStockOut?: () => void;
   onRowClick?: (id: string | number) => void;
-  hideAddButton?: boolean;
 }
 
-type ViewMode = 'default' | 'levels' | 'supply';
+type ViewMode = 'default' | 'levels' | 'transactions';
 
-export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = false }: InventoryTableProps) {
+const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: string; color: string; bgcolor: string }> = {
+  Restock: {
+    icon: <CallReceivedRoundedIcon sx={{ fontSize: 14 }} />,
+    label: 'Stock-In',
+    color: 'success.dark',
+    bgcolor: 'success.light',
+  },
+  Consumption: {
+    icon: <CallMadeRoundedIcon sx={{ fontSize: 14 }} />,
+    label: 'Stock-Out',
+    color: 'error.dark',
+    bgcolor: 'error.light',
+  },
+  Sales_Auto: {
+    icon: <ShoppingCartRoundedIcon sx={{ fontSize: 14 }} />,
+    label: 'Sale',
+    color: 'info.dark',
+    bgcolor: 'info.light',
+  },
+  Adjustment: {
+    icon: <TuneRoundedIcon sx={{ fontSize: 14 }} />,
+    label: 'Adjust',
+    color: 'warning.dark',
+    bgcolor: 'warning.light',
+  },
+  Transfer: {
+    icon: <SyncAltRoundedIcon sx={{ fontSize: 14 }} />,
+    label: 'Transfer',
+    color: 'secondary.dark',
+    bgcolor: 'rgba(84,107,63,0.15)',
+  },
+};
+
+export function InventoryTable({ items, transactions = [], onStockIn, onStockOut, onRowClick }: InventoryTableProps) {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   const viewOptions = [
     { value: 'default' as const, label: 'General', icon: <ViewListRoundedIcon fontSize="small" /> },
     { value: 'levels' as const, label: 'Stock Levels', icon: <BarChartRoundedIcon fontSize="small" /> },
-    { value: 'supply' as const, label: 'Distributor', icon: <LocalShippingRoundedIcon fontSize="small" /> },
+    { value: 'transactions' as const, label: 'Transactions', icon: <ReceiptLongRoundedIcon fontSize="small" /> },
   ];
 
   const filteredItems = useMemo(() => {
     let result = items.filter(item =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase())
+      (item.category?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     if (filterCategory) {
-      result = result.filter(item => item.category === filterCategory);
+      result = result.filter(item => item.categoryId === filterCategory);
     }
 
     if (sortBy === 'name_asc') {
@@ -58,13 +104,55 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
     } else if (sortBy === 'name_desc') {
       result.sort((a, b) => b.name.localeCompare(a.name));
     } else if (sortBy === 'stock_asc') {
-      result.sort((a, b) => a.stockCount - b.stockCount);
+      result.sort((a, b) => a.totalStock - b.totalStock);
     } else if (sortBy === 'stock_desc') {
-      result.sort((a, b) => b.stockCount - a.stockCount);
+      result.sort((a, b) => b.totalStock - a.totalStock);
     }
 
     return result;
   }, [items, searchQuery, filterCategory, sortBy]);
+
+  const filteredTransactions = useMemo(() => {
+    if (!searchQuery) return transactions;
+    return transactions.filter(t =>
+      (t.item?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.batch?.batchNumber || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [transactions, searchQuery]);
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    if (isToday) {
+      return `Today ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+    }
+    if (isYesterday) {
+      return `Yesterday`;
+    }
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const formatQuantity = (qty: number, unitSymbol?: string) => {
+    const absQty = Math.abs(qty);
+    const formatted = absQty < 1 ? absQty.toFixed(3) : absQty.toFixed(absQty % 1 === 0 ? 0 : 2);
+    return `${qty > 0 ? '+' : '-'}${formatted} ${unitSymbol || ''}`;
+  };
+
+  // Get unique categories from items
+  const categoryOptions = useMemo(() => {
+    const categories = new Map<string, string>();
+    items.forEach(item => {
+      if (item.category) {
+        categories.set(item.categoryId, item.category.name);
+      }
+    });
+    return Array.from(categories.entries()).map(([value, label]) => ({ value, label }));
+  }, [items]);
 
   // ── Column definitions per view mode ───────────────────────────────────────
 
@@ -96,21 +184,21 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
       label: 'Category',
       render: (row) => (
         <Chip
-          label={row.category}
+          label={row.category?.name || 'Uncategorized'}
           size="small"
           sx={{ height: 22, fontSize: 11, fontWeight: 600, textTransform: 'capitalize', bgcolor: 'rgba(107,76,42,0.08)', color: '#6B4C2A', border: '1px solid rgba(107,76,42,0.15)' }}
         />
       ),
     },
     {
-      key: 'stockCount',
+      key: 'totalStock',
       label: 'Stock',
       align: 'right',
       render: (row) => {
-        const isLow = row.stockCount <= row.reorderPoint;
+        const isLow = row.totalStock <= row.defaultThreshold;
         return (
           <Typography sx={{ fontWeight: 700, color: isLow ? 'error.main' : 'text.primary', fontSize: 14 }}>
-            {row.stockCount}
+            {row.totalStock}
           </Typography>
         );
       },
@@ -119,7 +207,7 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
       key: 'unit',
       label: 'Unit',
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.unit}</Typography>
+        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.unit?.symbol || ''}</Typography>
       ),
     },
   ];
@@ -131,7 +219,7 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
       render: (row) => (
         <Box>
           <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13.5 }}>{row.name}</Typography>
-          <Typography sx={{ color: 'text.secondary', fontSize: 12, textTransform: 'capitalize', mt: 0.25 }}>{row.category}</Typography>
+          <Typography sx={{ color: 'text.secondary', fontSize: 12, textTransform: 'capitalize', mt: 0.25 }}>{row.category?.name}</Typography>
         </Box>
       ),
     },
@@ -146,7 +234,7 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
       key: 'status',
       label: 'Status',
       render: (row) => {
-        const isLow = row.stockCount <= row.reorderPoint;
+        const isLow = row.totalStock <= row.defaultThreshold;
         return isLow ? (
           <Chip
             icon={<WarningRoundedIcon fontSize="small" />}
@@ -164,21 +252,21 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
       },
     },
     {
-      key: 'stockCount',
+      key: 'totalStock',
       label: 'Stock Capacity',
       width: 300,
       render: (row) => {
-        const isLow = row.stockCount <= row.reorderPoint;
-        const pct = Math.min((row.stockCount / (row.reorderPoint * 3)) * 100, 100);
+        const isLow = row.totalStock <= row.defaultThreshold;
+        const pct = Math.min((row.totalStock / (row.defaultThreshold * 3)) * 100, 100);
         return (
           <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
               <Typography sx={{ fontSize: 13, fontWeight: 700, color: isLow ? 'error.main' : 'text.primary' }}>
-                {row.stockCount}{' '}
-                <Typography component="span" sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 400 }}>{row.unit}</Typography>
+                {row.totalStock}{' '}
+                <Typography component="span" sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 400 }}>{row.unit?.symbol}</Typography>
               </Typography>
               <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 500 }}>
-                Reorder at {row.reorderPoint}
+                Reorder at {row.defaultThreshold}
               </Typography>
             </Box>
             <LinearProgress
@@ -200,45 +288,95 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
     },
   ];
 
-  const supplyColumns: KettanColumnDef<InventoryItem>[] = [
+  const transactionColumns: KettanColumnDef<InventoryTransaction>[] = [
     {
-      key: 'name',
-      label: 'Item Info',
+      key: 'timestamp',
+      label: 'Date',
+      width: 130,
+      render: (row) => (
+        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+          {formatDate(row.timestamp)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'transactionType',
+      label: 'Type',
+      width: 110,
+      render: (row) => {
+        const config = TYPE_CONFIG[row.transactionType];
+        return (
+          <Chip
+            icon={config.icon as React.ReactElement}
+            label={config.label}
+            size="small"
+            sx={{
+              height: 24,
+              fontSize: 11,
+              fontWeight: 600,
+              bgcolor: config.bgcolor,
+              color: config.color,
+              '& .MuiChip-icon': { color: config.color },
+            }}
+          />
+        );
+      },
+    },
+    {
+      key: 'item',
+      label: 'Item',
       render: (row) => (
         <Box>
-          <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13.5 }}>{row.name}</Typography>
-          <Typography sx={{ color: 'text.secondary', fontSize: 12, textTransform: 'capitalize', mt: 0.25 }}>{row.category}</Typography>
+          <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
+            {row.item?.name || 'Unknown Item'}
+          </Typography>
+          <Typography sx={{ fontSize: 11, color: 'text.secondary', fontFamily: 'monospace' }}>
+            {row.batch?.batchNumber || ''}
+          </Typography>
         </Box>
       ),
     },
     {
-      key: 'sku',
-      label: 'SKU',
+      key: 'quantityChange',
+      label: 'Qty',
+      align: 'right',
+      width: 100,
+      render: (row) => {
+        const isPositive = row.quantityChange > 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: isPositive ? 'success.main' : 'error.main',
+            }}
+          >
+            {formatQuantity(row.quantityChange, row.item?.unit?.symbol)}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'userName',
+      label: 'By',
+      width: 100,
       render: (row) => (
-        <Typography sx={{ fontWeight: 400, color: 'text.secondary', fontSize: 12.5, fontFamily: 'monospace' }}>{row.sku}</Typography>
+        <Typography sx={{ fontSize: 12.5, color: row.userName === 'Auto' ? 'info.main' : 'text.primary' }}>
+          {row.userName || 'Unknown'}
+        </Typography>
       ),
     },
     {
-      key: 'supplier',
-      label: 'Supplier',
+      key: 'referenceId',
+      label: 'Reference',
+      width: 100,
       render: (row) => (
-        <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13.5 }}>{row.supplier}</Typography>
-      ),
-    },
-    {
-      key: 'lastRestocked',
-      label: 'Last Restocked',
-      render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>{row.lastRestocked}</Typography>
+        <Typography sx={{ fontSize: 12, color: 'text.secondary', fontFamily: 'monospace' }}>
+          {row.referenceId || row.remarks?.substring(0, 20) || '-'}
+        </Typography>
       ),
     },
   ];
-
-  const columnsByView: Record<ViewMode, KettanColumnDef<InventoryItem>[]> = {
-    default: defaultColumns,
-    levels: levelsColumns,
-    supply: supplyColumns,
-  };
 
   // ── Toolbar ────────────────────────────────────────────────────────────────
   const toolbar = (
@@ -247,61 +385,99 @@ export function InventoryTable({ items, onAddClick, onRowClick, hideAddButton = 
       <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
         <Box sx={{ width: 280 }}>
           <SearchInput
-            placeholder="Search items..."
+            placeholder={viewMode === 'transactions' ? 'Search transactions...' : 'Search items...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </Box>
-        <FilterDropdown
-          label="Sort"
-          icon={<SortRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />}
-          value={sortBy}
-          onChange={(val) => setSortBy(val)}
-          options={[
-            { value: 'name_asc', label: 'Name (A–Z)' },
-            { value: 'name_desc', label: 'Name (Z–A)' },
-            { value: 'stock_desc', label: 'Highest Stock' },
-            { value: 'stock_asc', label: 'Lowest Stock' },
-          ]}
-        />
-        <FilterDropdown
-          label="Filter"
-          icon={<TuneRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />}
-          value={filterCategory}
-          onChange={(val) => setFilterCategory(val)}
-          options={[
-            { value: 'beans', label: 'Coffee Beans' },
-            { value: 'syrup', label: 'Syrups' },
-            { value: 'milk', label: 'Milk & Dairy' },
-            { value: 'packaging', label: 'Packaging' },
-            { value: 'equipment', label: 'Equipment' },
-          ]}
-        />
+        {viewMode !== 'transactions' && (
+          <>
+            <FilterDropdown
+              label="Sort"
+              icon={<SortRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />}
+              value={sortBy}
+              onChange={(val) => setSortBy(val)}
+              options={[
+                { value: 'name_asc', label: 'Name (A–Z)' },
+                { value: 'name_desc', label: 'Name (Z–A)' },
+                { value: 'stock_desc', label: 'Highest Stock' },
+                { value: 'stock_asc', label: 'Lowest Stock' },
+              ]}
+            />
+            <FilterDropdown
+              label="Filter"
+              icon={<TuneRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />}
+              value={filterCategory}
+              onChange={(val) => setFilterCategory(val)}
+              options={categoryOptions}
+            />
+          </>
+        )}
       </Box>
 
-      {/* Right: view toggle + action */}
+      {/* Right: view toggle + actions */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <ViewToggle
           value={viewMode}
           options={viewOptions as never}
           onChange={(newView: ViewMode) => setViewMode(newView)}
         />
-        {!hideAddButton && (
-          <Button
-            startIcon={<AddRoundedIcon />}
-            onClick={() => onAddClick ? onAddClick() : navigate({ to: '/hq-inventory/add' })}
-          >
-            Add Stock Item
-          </Button>
-        )}
+        <Button
+          startIcon={<AddRoundedIcon />}
+          onClick={onStockIn}
+        >
+          Stock-In
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={(e) => setMenuAnchor(e.currentTarget)}
+          sx={{ minWidth: 40, px: 1 }}
+        >
+          <MoreVertRoundedIcon />
+        </Button>
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={() => setMenuAnchor(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          PaperProps={{ sx: { minWidth: 180, borderRadius: 2, mt: 1 } }}
+        >
+          <MenuItem onClick={() => { navigate({ to: '/hq-inventory/add' }); setMenuAnchor(null); }}>
+            <ListItemIcon><InventoryRoundedIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>New Item</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => { onStockOut?.(); setMenuAnchor(null); }}>
+            <ListItemIcon><RemoveCircleOutlineRoundedIcon fontSize="small" sx={{ color: 'error.main' }} /></ListItemIcon>
+            <ListItemText>Stock-Out</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => { setMenuAnchor(null); }}>
+            <ListItemIcon><TuneRoundedIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Adjust</ListItemText>
+          </MenuItem>
+        </Menu>
       </Box>
     </Box>
   );
 
   // ── Render ────────────────────────────────────────────────────────────────
+  if (viewMode === 'transactions') {
+    return (
+      <KettanTable
+        columns={transactionColumns}
+        data={filteredTransactions}
+        keyExtractor={(row) => row.id}
+        toolbar={toolbar}
+        emptyMessage="No transactions found"
+        defaultRowsPerPage={15}
+        rowsPerPageOptions={[15, 25, 50]}
+      />
+    );
+  }
+
   return (
     <KettanTable
-      columns={columnsByView[viewMode]}
+      columns={viewMode === 'levels' ? levelsColumns : defaultColumns}
       data={filteredItems}
       keyExtractor={(row) => row.id.toString()}
       toolbar={toolbar}

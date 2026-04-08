@@ -1,4 +1,4 @@
-import { Box, Typography, Chip } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import LightbulbRoundedIcon from '@mui/icons-material/LightbulbRounded';
 import type { MenuVariant } from '../types';
 
