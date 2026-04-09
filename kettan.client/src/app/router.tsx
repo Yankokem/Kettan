@@ -11,7 +11,6 @@ import { StaffProfilePage } from '../features/staff/StaffProfilePage';
 import { InventoryPage } from '../features/hq-inventory/InventoryPage';
 import { InventoryItemProfilePage } from '../features/hq-inventory/InventoryItemProfilePage';
 import InventoryTransactionPage from '../features/hq-inventory/InventoryTransactionPage';
-import { BranchInventoryDetailPage } from '../features/branches/BranchInventoryDetailPage';
 import { CompanyProfilePage } from '../features/company/CompanyProfilePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
@@ -103,12 +102,6 @@ const inventoryProfileRoute = createRoute({
   component: InventoryItemProfilePage,
 });
 
-const branchInventoryDetailRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: '/branch-inventory/$branchId',
-  component: BranchInventoryDetailPage,
-});
-
 const companyProfileRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/company-profile',
@@ -193,7 +186,6 @@ const routeTree = rootRoute.addChildren([
     inventoryRoute,
     inventoryTransactionRoute,
     inventoryProfileRoute,
-    branchInventoryDetailRoute,
     companyProfileRoute,
     settingsRoute,
     reportsRoute,

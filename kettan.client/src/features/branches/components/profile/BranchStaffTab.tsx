@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Avatar, Box, Chip, Typography } from '@mui/material';
-import { UserPlus } from 'lucide-react';
+import { ArrowUpDown, Funnel, Layers3, UserPlus } from 'lucide-react';
 import { Button } from '../../../../components/UI/Button';
 import { DataTable, type ColumnDef } from '../../../../components/UI/DataTable';
+import { SearchInput } from '../../../../components/UI/SearchInput';
+import { FilterDropdown } from '../../../../components/UI/FilterAndSort';
 import type { BranchEmployee } from '../../types';
 import { formatDate } from '../../branchProfileData';
 
@@ -12,9 +14,68 @@ interface BranchStaffTabProps {
   onOpenStaffProfile: (employee: BranchEmployee) => void;
 }
 
+const SORT_OPTIONS = [
+  { value: 'name-asc', label: 'Name: A to Z' },
+  { value: 'name-desc', label: 'Name: Z to A' },
+  { value: 'hired-newest', label: 'Newest Hires' },
+  { value: 'hired-oldest', label: 'Oldest Hires' },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+];
+
 export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: BranchStaffTabProps) {
-  const activeStaffCount = employees.filter((employee) => employee.isActive).length;
-  const inactiveStaffCount = employees.length - activeStaffCount;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState(SORT_OPTIONS[0].value);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [positionFilter, setPositionFilter] = useState('');
+
+  const positionOptions = useMemo(
+    () =>
+      Array.from(new Set(employees.map((employee) => employee.position)))
+        .sort((left, right) => left.localeCompare(right))
+        .map((position) => ({ value: position, label: position })),
+    [employees]
+  );
+
+  const filteredEmployees = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    const nextEmployees = employees.filter((employee) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(normalizedQuery) ||
+        employee.position.toLowerCase().includes(normalizedQuery) ||
+        employee.contactNumber.toLowerCase().includes(normalizedQuery) ||
+        String(employee.id).includes(normalizedQuery);
+
+      const matchesStatus =
+        !statusFilter ||
+        (statusFilter === 'active' ? employee.isActive : !employee.isActive);
+
+      const matchesPosition = !positionFilter || employee.position === positionFilter;
+
+      return matchesQuery && matchesStatus && matchesPosition;
+    });
+
+    nextEmployees.sort((left, right) => {
+      switch (sortBy) {
+        case 'name-desc':
+          return `${right.firstName} ${right.lastName}`.localeCompare(`${left.firstName} ${left.lastName}`);
+        case 'hired-newest':
+          return new Date(right.dateHired).getTime() - new Date(left.dateHired).getTime();
+        case 'hired-oldest':
+          return new Date(left.dateHired).getTime() - new Date(right.dateHired).getTime();
+        case 'name-asc':
+        default:
+          return `${left.firstName} ${left.lastName}`.localeCompare(`${right.firstName} ${right.lastName}`);
+      }
+    });
+
+    return nextEmployees;
+  }, [employees, positionFilter, searchQuery, sortBy, statusFilter]);
 
   const staffColumns = useMemo<ColumnDef<BranchEmployee>[]>(
     () => [
@@ -110,28 +171,55 @@ export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: Br
 
   return (
     <Box sx={{ p: { xs: 3, md: 4 } }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 2.8, flexWrap: 'wrap' }}>
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600, mt: 1 }}>
-          Click any row to open the employee profile.
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.2, mb: 2.8, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap', flex: 1 }}>
+          <SearchInput
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search staff by name, role, contact, or ID"
+            sx={{ minWidth: 240, maxWidth: 380, flex: 1 }}
+          />
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
-            {activeStaffCount} active / {inactiveStaffCount} inactive
-          </Typography>
-          <Button startIcon={<UserPlus size={15} />} onClick={onAddStaff}>
-            Add Staff
-          </Button>
+          <FilterDropdown
+            value={sortBy}
+            onChange={setSortBy}
+            options={SORT_OPTIONS}
+            label="Sort"
+            icon={<ArrowUpDown size={14} />}
+            minWidth={175}
+          />
+
+          <FilterDropdown
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUS_FILTER_OPTIONS}
+            label="Status"
+            icon={<Funnel size={14} />}
+            minWidth={145}
+          />
+
+          <FilterDropdown
+            value={positionFilter}
+            onChange={setPositionFilter}
+            options={positionOptions}
+            label="Position"
+            icon={<Layers3 size={14} />}
+            minWidth={170}
+          />
         </Box>
+
+        <Button startIcon={<UserPlus size={15} />} onClick={onAddStaff} sx={{ ml: 'auto' }}>
+          Add Staff
+        </Button>
       </Box>
 
       <DataTable
-        data={employees}
+        data={filteredEmployees}
         columns={staffColumns}
         keyExtractor={(employee) => String(employee.id)}
         defaultPageSize={5}
         pageSizes={[5, 10, 25]}
-        emptyMessage="No employees assigned to this branch yet."
+        emptyMessage="No staff members match your filters."
         onRowClick={onOpenStaffProfile}
       />
     </Box>

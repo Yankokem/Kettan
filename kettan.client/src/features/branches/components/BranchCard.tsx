@@ -4,7 +4,6 @@ import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
 import { useNavigate } from '@tanstack/react-router';
@@ -37,12 +36,6 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
     setAnchorEl(null);
   };
 
-  const handleViewEdit = (e: React.MouseEvent<HTMLElement>) => {
-    e.stopPropagation();
-    handleMenuClose();
-    navigate({ to: '/branches/$branchId', params: { branchId: branch.id.toString() } });
-  };
-
   const handleInactive = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
     handleMenuClose();
@@ -59,7 +52,7 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
 
   return (
     <Card 
-      onClick={() => onClick ? onClick(branch.id) : navigate({ to: '/branch-inventory/$branchId', params: { branchId: branch.id.toString() } })}
+      onClick={() => onClick ? onClick(branch.id) : navigate({ to: '/branches/$branchId', params: { branchId: branch.id.toString() } })}
       elevation={0}
       sx={{
         border: '1px solid',
@@ -168,10 +161,6 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-              <MenuItem onClick={handleViewEdit}>
-                <ListItemIcon><EditRoundedIcon fontSize="small" sx={{ color: 'inherit' }}/></ListItemIcon>
-                View / Edit
-              </MenuItem>
               <MenuItem onClick={handleInactive}>
                 <ListItemIcon><BlockRoundedIcon fontSize="small" sx={{ color: 'inherit' }}/></ListItemIcon>
                 Set Inactive
