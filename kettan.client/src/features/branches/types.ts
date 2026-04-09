@@ -49,3 +49,42 @@ export interface BranchEmployee {
   dateHired: string;
   isActive: boolean;
 }
+
+export type BranchProfileTabKey = 'details' | 'staff' | 'activity' | 'transactions' | 'inventory';
+
+export interface BranchActivityLog {
+  id: string;
+  branchId: number;
+  event: string;
+  actor: string;
+  happenedAt: string;
+  category: 'staff' | 'inventory' | 'operations' | 'orders';
+  outcome: 'successful' | 'pending' | 'flagged';
+}
+
+export interface BranchTransactionRow {
+  id: string;
+  branchId: number;
+  reference: string;
+  type: 'Stock-In' | 'Stock-Out' | 'Transfer' | 'Adjustment';
+  lineItems: number;
+  netChange: number;
+  postedBy: string;
+  timestamp: string;
+}
+
+export type BranchInventoryStatus = 'in-stock' | 'low-stock' | 'out-of-stock';
+
+export interface BranchInventoryItem {
+  id: string;
+  branchId: number;
+  sku: string;
+  name: string;
+  category: string;
+  supplier: string;
+  unit: string;
+  stockCount: number;
+  reorderPoint: number;
+  status: BranchInventoryStatus;
+  lastRestocked: string;
+}

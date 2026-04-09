@@ -1,4 +1,11 @@
-import type { Branch, BranchEmployee, BranchUserOption } from './types';
+import type {
+  Branch,
+  BranchActivityLog,
+  BranchEmployee,
+  BranchInventoryItem,
+  BranchTransactionRow,
+  BranchUserOption,
+} from './types';
 
 const createBranchImage = (label: string, backgroundColor: string) =>
   `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -185,8 +192,323 @@ const BRANCH_EMPLOYEE_ROSTERS: Record<number, BranchEmployee[]> = {
   4: [],
 };
 
+const BRANCH_ACTIVITY_LOGS: Record<number, BranchActivityLog[]> = {
+  1: [
+    {
+      id: 'b1-a1',
+      branchId: 1,
+      event: 'Completed weekly bean transfer from HQ warehouse',
+      actor: 'Sarah Jenkins',
+      happenedAt: '2026-04-08T09:42:00Z',
+      category: 'inventory',
+      outcome: 'successful',
+    },
+    {
+      id: 'b1-a2',
+      branchId: 1,
+      event: 'Assigned a new shift supervisor to opening shift',
+      actor: 'Patricia Lim',
+      happenedAt: '2026-04-07T15:10:00Z',
+      category: 'staff',
+      outcome: 'successful',
+    },
+    {
+      id: 'b1-a3',
+      branchId: 1,
+      event: 'Daily inventory count flagged syrup variance',
+      actor: 'System Monitor',
+      happenedAt: '2026-04-07T07:25:00Z',
+      category: 'operations',
+      outcome: 'flagged',
+    },
+    {
+      id: 'b1-a4',
+      branchId: 1,
+      event: 'Prepared month-end stock valuation report',
+      actor: 'Sarah Jenkins',
+      happenedAt: '2026-04-06T17:00:00Z',
+      category: 'operations',
+      outcome: 'pending',
+    },
+  ],
+  2: [
+    {
+      id: 'b2-a1',
+      branchId: 2,
+      event: 'Closed transfer loop for packaging materials',
+      actor: 'Miguel Santos',
+      happenedAt: '2026-04-08T11:18:00Z',
+      category: 'inventory',
+      outcome: 'successful',
+    },
+    {
+      id: 'b2-a2',
+      branchId: 2,
+      event: 'Late-night stock count exceeded variance threshold',
+      actor: 'System Monitor',
+      happenedAt: '2026-04-07T23:09:00Z',
+      category: 'operations',
+      outcome: 'flagged',
+    },
+  ],
+  3: [
+    {
+      id: 'b3-a1',
+      branchId: 3,
+      event: 'Onboarded one new cashier for weekend shifts',
+      actor: 'Anna Cruz',
+      happenedAt: '2026-04-07T10:32:00Z',
+      category: 'staff',
+      outcome: 'successful',
+    },
+  ],
+  4: [],
+};
+
+const BRANCH_TRANSACTIONS: Record<number, BranchTransactionRow[]> = {
+  1: [
+    {
+      id: 'b1-t1',
+      branchId: 1,
+      reference: 'TR-1-0410',
+      type: 'Transfer',
+      lineItems: 4,
+      netChange: 28,
+      postedBy: 'Sarah Jenkins',
+      timestamp: '2026-04-08T10:10:00Z',
+    },
+    {
+      id: 'b1-t2',
+      branchId: 1,
+      reference: 'SO-1-0409',
+      type: 'Stock-Out',
+      lineItems: 6,
+      netChange: -19,
+      postedBy: 'System Auto',
+      timestamp: '2026-04-08T07:35:00Z',
+    },
+    {
+      id: 'b1-t3',
+      branchId: 1,
+      reference: 'SI-1-0408',
+      type: 'Stock-In',
+      lineItems: 5,
+      netChange: 42,
+      postedBy: 'Patricia Lim',
+      timestamp: '2026-04-07T13:20:00Z',
+    },
+    {
+      id: 'b1-t4',
+      branchId: 1,
+      reference: 'ADJ-1-0407',
+      type: 'Adjustment',
+      lineItems: 2,
+      netChange: -3,
+      postedBy: 'Sarah Jenkins',
+      timestamp: '2026-04-07T11:05:00Z',
+    },
+  ],
+  2: [
+    {
+      id: 'b2-t1',
+      branchId: 2,
+      reference: 'SI-2-0408',
+      type: 'Stock-In',
+      lineItems: 7,
+      netChange: 53,
+      postedBy: 'Miguel Santos',
+      timestamp: '2026-04-08T08:05:00Z',
+    },
+    {
+      id: 'b2-t2',
+      branchId: 2,
+      reference: 'SO-2-0408',
+      type: 'Stock-Out',
+      lineItems: 8,
+      netChange: -24,
+      postedBy: 'System Auto',
+      timestamp: '2026-04-08T07:35:00Z',
+    },
+  ],
+  3: [
+    {
+      id: 'b3-t1',
+      branchId: 3,
+      reference: 'TR-3-0407',
+      type: 'Transfer',
+      lineItems: 2,
+      netChange: 10,
+      postedBy: 'Anna Cruz',
+      timestamp: '2026-04-07T12:20:00Z',
+    },
+  ],
+  4: [],
+};
+
+const BRANCH_INVENTORY_ITEMS: Record<number, BranchInventoryItem[]> = {
+  1: [
+    {
+      id: 'b1-i1',
+      branchId: 1,
+      sku: 'BN-ESA-01',
+      name: 'Espresso Blend A',
+      category: 'Beans',
+      supplier: 'Origin Roasters',
+      unit: 'kg',
+      stockCount: 5,
+      reorderPoint: 10,
+      status: 'low-stock',
+      lastRestocked: '2026-03-29T10:30:00Z',
+    },
+    {
+      id: 'b1-i2',
+      branchId: 1,
+      sku: 'SY-VAN-02',
+      name: 'Vanilla Syrup (1L)',
+      category: 'Syrup',
+      supplier: 'SweetFlow Trading',
+      unit: 'L',
+      stockCount: 15,
+      reorderPoint: 5,
+      status: 'in-stock',
+      lastRestocked: '2026-03-20T08:45:00Z',
+    },
+    {
+      id: 'b1-i3',
+      branchId: 1,
+      sku: 'MK-OAT-01',
+      name: 'Oat Milk (1L)',
+      category: 'Milk',
+      supplier: 'Oatly Pacific',
+      unit: 'L',
+      stockCount: 8,
+      reorderPoint: 15,
+      status: 'low-stock',
+      lastRestocked: '2026-04-01T11:00:00Z',
+    },
+    {
+      id: 'b1-i4',
+      branchId: 1,
+      sku: 'PK-CUP-12',
+      name: 'Takeaway Cups 12oz',
+      category: 'Packaging',
+      supplier: 'PackRight PH',
+      unit: 'pcs',
+      stockCount: 420,
+      reorderPoint: 150,
+      status: 'in-stock',
+      lastRestocked: '2026-04-05T09:10:00Z',
+    },
+    {
+      id: 'b1-i5',
+      branchId: 1,
+      sku: 'EQ-FLTR-03',
+      name: 'Grouphead Filters',
+      category: 'Equipment',
+      supplier: 'BrewTech Parts',
+      unit: 'pcs',
+      stockCount: 0,
+      reorderPoint: 5,
+      status: 'out-of-stock',
+      lastRestocked: '2026-03-01T15:20:00Z',
+    },
+    {
+      id: 'b1-i6',
+      branchId: 1,
+      sku: 'BN-DEC-04',
+      name: 'Decaf Beans',
+      category: 'Beans',
+      supplier: 'Origin Roasters',
+      unit: 'kg',
+      stockCount: 12,
+      reorderPoint: 7,
+      status: 'in-stock',
+      lastRestocked: '2026-04-06T09:00:00Z',
+    },
+  ],
+  2: [
+    {
+      id: 'b2-i1',
+      branchId: 2,
+      sku: 'BN-ESA-01',
+      name: 'Espresso Blend A',
+      category: 'Beans',
+      supplier: 'Origin Roasters',
+      unit: 'kg',
+      stockCount: 12,
+      reorderPoint: 8,
+      status: 'in-stock',
+      lastRestocked: '2026-03-30T08:00:00Z',
+    },
+    {
+      id: 'b2-i2',
+      branchId: 2,
+      sku: 'MK-OAT-01',
+      name: 'Oat Milk (1L)',
+      category: 'Milk',
+      supplier: 'Oatly Pacific',
+      unit: 'L',
+      stockCount: 8,
+      reorderPoint: 15,
+      status: 'low-stock',
+      lastRestocked: '2026-04-01T10:15:00Z',
+    },
+    {
+      id: 'b2-i3',
+      branchId: 2,
+      sku: 'PK-LID-12',
+      name: 'Cup Lids 12oz',
+      category: 'Packaging',
+      supplier: 'PackRight PH',
+      unit: 'pcs',
+      stockCount: 610,
+      reorderPoint: 220,
+      status: 'in-stock',
+      lastRestocked: '2026-04-04T12:20:00Z',
+    },
+  ],
+  3: [
+    {
+      id: 'b3-i1',
+      branchId: 3,
+      sku: 'BN-ORG-11',
+      name: 'Single Origin Beans',
+      category: 'Beans',
+      supplier: 'Bean Circle Co.',
+      unit: 'kg',
+      stockCount: 9,
+      reorderPoint: 6,
+      status: 'in-stock',
+      lastRestocked: '2026-04-02T09:25:00Z',
+    },
+    {
+      id: 'b3-i2',
+      branchId: 3,
+      sku: 'SY-CAR-02',
+      name: 'Caramel Syrup (1L)',
+      category: 'Syrup',
+      supplier: 'SweetFlow Trading',
+      unit: 'L',
+      stockCount: 2,
+      reorderPoint: 5,
+      status: 'low-stock',
+      lastRestocked: '2026-03-25T11:00:00Z',
+    },
+  ],
+  4: [],
+};
+
 export const getBranchById = (branchId: number): Branch | undefined =>
   BRANCHES_MOCK.find((branch) => branch.id === branchId);
 
 export const getBranchEmployeesById = (branchId: number): BranchEmployee[] =>
   BRANCH_EMPLOYEE_ROSTERS[branchId] ?? [];
+
+export const getBranchActivityById = (branchId: number): BranchActivityLog[] =>
+  BRANCH_ACTIVITY_LOGS[branchId] ?? [];
+
+export const getBranchTransactionsById = (branchId: number): BranchTransactionRow[] =>
+  BRANCH_TRANSACTIONS[branchId] ?? [];
+
+export const getBranchInventoryById = (branchId: number): BranchInventoryItem[] =>
+  BRANCH_INVENTORY_ITEMS[branchId] ?? [];

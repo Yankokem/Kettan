@@ -635,58 +635,88 @@ export function BranchProfilePage() {
           <Box
             sx={{
               position: 'relative',
-              height: 132,
-              background: 'linear-gradient(135deg, #1A0F08 0%, #3D2210 32%, #6B4C2A 66%, #C9A84C 100%)',
+              height: 146,
+              background: 'linear-gradient(135deg, #6A4120 0%, #8C5F2B 34%, #B78644 68%, #E1C26F 100%)',
             }}
           >
             <Box
               sx={{
                 position: 'absolute',
                 inset: 0,
-                opacity: 0.08,
+                opacity: 0.06,
                 backgroundImage: 'radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)',
                 backgroundSize: '28px 28px',
               }}
             />
+
+            <Box sx={{ position: 'absolute', left: { xs: 16, sm: 24 }, bottom: 14, pr: 14 }}>
+              <Typography
+                sx={{
+                  color: 'rgba(255,255,255,0.96)',
+                  fontSize: { xs: 20, sm: 24 },
+                  fontWeight: 800,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.1,
+                }}
+              >
+                {formData.name}
+              </Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.82)', fontSize: 12, fontWeight: 600, mt: 0.4 }}>
+                Branch Profile
+              </Typography>
+            </Box>
 
             <Chip
               label={branchOpen ? 'Open Now' : 'Closed'}
               size="small"
               sx={{
                 position: 'absolute',
-                top: 14,
-                right: 14,
-                height: 28,
+                top: 16,
+                right: 16,
+                height: 30,
                 borderRadius: 999,
-                bgcolor: branchOpen ? 'rgba(22,163,74,0.28)' : 'rgba(255,255,255,0.15)',
-                color: branchOpen ? '#86EFAC' : 'rgba(255,255,255,0.72)',
+                bgcolor: branchOpen ? 'rgba(236,253,245,0.96)' : 'rgba(255,251,235,0.95)',
+                color: branchOpen ? '#166534' : '#92400E',
                 border: '1px solid',
-                borderColor: branchOpen ? 'rgba(22,163,74,0.42)' : 'rgba(255,255,255,0.2)',
+                borderColor: branchOpen ? '#86EFAC' : '#FCD34D',
                 fontSize: 11,
-                fontWeight: 700,
+                fontWeight: 800,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.14)',
               }}
             />
           </Box>
 
           <Box sx={{ px: { xs: 3, sm: 4 }, pb: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', mt: -5, gap: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2, mt: -6 }}>
                 <Avatar
                   src={selectedBranch.imageUrl}
                   sx={{
-                    width: 74,
-                    height: 74,
+                    width: 94,
+                    height: 94,
                     borderRadius: 3,
                     bgcolor: '#2E1F14',
-                    border: '3px solid #FFFFFF',
+                    border: '4px solid #FFFFFF',
                     fontWeight: 800,
-                    fontSize: 24,
+                    fontSize: 31,
                   }}
                 >
                   {getInitials(formData.name)}
                 </Avatar>
 
-                <Box sx={{ pb: 0.2 }}>
+                <Box sx={{ pb: 0.3, pt: 0.65 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      color: 'text.secondary',
+                      mb: 0.5,
+                    }}
+                  >
+                    Branch Name
+                  </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     <Typography sx={{ fontSize: { xs: 22, sm: 26 }, fontWeight: 800, letterSpacing: '-0.02em' }}>
                       {formData.name}
@@ -722,7 +752,7 @@ export function BranchProfilePage() {
                 </Box>
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap', mt: { xs: 0.5, md: 1.5 } }}>
                 <Button
                   variant="outlined"
                   startIcon={<Warehouse size={15} />}
