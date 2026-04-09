@@ -1,5 +1,6 @@
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Chip } from '@mui/material';
+import { Box, Chip, IconButton, Typography } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import type { InventoryItem } from './InventoryItemCard';
 
 interface SelectedItem {
@@ -15,63 +16,97 @@ interface SelectedItemsTableProps {
 }
 
 export function SelectedItemsTable({ items, onRemoveItem, onUpdateQuantity }: SelectedItemsTableProps) {
-  if (items.length === 0) {
-    return (
-      <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'background.default', borderRadius: 1, border: '1px dashed', borderColor: 'divider' }}>
-        <Typography color="text.secondary">No items selected yet. Click "Add Items" to choose inventory.</Typography>
-      </Box>
-    );
-  }
+  const columns: ColumnDef<SelectedItem>[] = [
+    {
+      key: 'item',
+      label: 'Item',
+      width: '28%',
+      render: (row) => (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.item.name}</Typography>
+          <Chip label={row.item.category} size="small" sx={{ height: 16, fontSize: '0.65rem', mt: 0.5 }} />
+        </Box>
+      ),
+    },
+    {
+      key: 'sku',
+      label: 'SKU',
+      width: '16%',
+      render: (row) => (
+        <Typography sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'text.secondary' }}>
+          {row.item.sku}
+        </Typography>
+      ),
+    },
+    {
+      key: 'quantity',
+      label: 'Qty',
+      align: 'right',
+      width: '12%',
+      render: (row) => (
+        <input
+          type="number"
+          min="1"
+          value={row.quantity}
+          onClick={(event) => event.stopPropagation()}
+          onChange={(event) =>
+            onUpdateQuantity(row.item.id, Math.max(1, parseInt(event.target.value, 10) || 1))
+          }
+          style={{ width: '60px', textAlign: 'right', padding: '4px', fontSize: '0.875rem' }}
+        />
+      ),
+    },
+    {
+      key: 'unit',
+      label: 'Unit',
+      align: 'right',
+      width: '10%',
+      render: (row) => (
+        <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>{row.item.unit}</Typography>
+      ),
+    },
+    {
+      key: 'notes',
+      label: 'Notes',
+      width: '26%',
+      render: (row) => (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: 'inline-block', maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+        >
+          {row.notes || '-'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      align: 'right',
+      width: '8%',
+      render: (row) => (
+        <IconButton
+          size="small"
+          color="error"
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemoveItem(row.item.id);
+          }}
+        >
+          <DeleteOutlineIcon fontSize="small" />
+        </IconButton>
+      ),
+    },
+  ];
 
   return (
-    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-      <Table size="small">
-        <TableHead sx={{ bgcolor: 'background.default' }}>
-          <TableRow>
-            <TableCell sx={{ fontWeight: 600 }}>Item</TableCell>
-            <TableCell sx={{ fontWeight: 600 }}>SKU</TableCell>
-            <TableCell sx={{ fontWeight: 600 }} align="right">Qty</TableCell>
-            <TableCell sx={{ fontWeight: 600 }} align="right">Unit</TableCell>
-            <TableCell sx={{ fontWeight: 600 }}>Notes</TableCell>
-            <TableCell align="right">Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {items.map(({ item, quantity, notes }) => (
-            <TableRow key={item.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-              <TableCell>
-                <Box>
-                  <Typography variant="body2" fontWeight={500}>{item.name}</Typography>
-                  <Chip label={item.category} size="small" sx={{ height: 16, fontSize: '0.65rem', mt: 0.5 }} />
-                </Box>
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'text.secondary' }}>
-                {item.sku}
-              </TableCell>
-              <TableCell align="right">
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => onUpdateQuantity(item.id, Math.max(1, parseInt(e.target.value) || 1))}
-                  style={{ width: '60px', textAlign: 'right', padding: '4px', fontSize: '0.875rem' }}
-                />
-              </TableCell>
-              <TableCell align="right" sx={{ color: 'text.secondary' }}>{item.unit}</TableCell>
-              <TableCell>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'inline-block', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {notes || '-'}
-                </Typography>
-              </TableCell>
-              <TableCell align="right">
-                <IconButton size="small" color="error" onClick={() => onRemoveItem(item.id)}>
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <DataTable
+      data={items}
+      columns={columns}
+      keyExtractor={(row) => row.item.id}
+      emptyMessage={'No items selected yet. Click "Add Items" to choose inventory.'}
+      defaultRowsPerPage={10}
+      rowsPerPageOptions={[10, 25, 50]}
+    />
   );
 }

@@ -224,6 +224,7 @@ export function OrdersPage() {
         defaultRowsPerPage={10}
         rowsPerPageOptions={[10, 25, 50]}
         quickFilters={ORDER_QUICK_FILTERS}
+        quickFilterStyle="default"
         activeQuickFilter={statusFilter}
         onQuickFilterChange={setStatusFilter}
         rightAction={

@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kettan Complete ERD</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg-a: #f9fafb;
+      --bg-b: #eef2ff;
+      --ink: #0f172a;
+      --muted: #475569;
+      --panel: #ffffff;
+      --line: #cbd5e1;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
+      --card-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+      --ok: #15803d;
+      --warn: #be123c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 620px at 10% 0%, rgba(37, 99, 235, 0.1), transparent 60%),
+        radial-gradient(900px 500px at 90% 20%, rgba(14, 116, 144, 0.1), transparent 55%),
+        linear-gradient(180deg, var(--bg-a), var(--bg-b));
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 10px 12px;
+    }
+
+    .panel h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+    }
+
+    .subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .controls {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .search {
+      width: min(360px, 100%);
+      border: 1px solid #94a3b8;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--ink);
+      background: #ffffff;
+    }
+
+    .btn {
+      border: 1px solid #64748b;
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #f8fafc;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: #fff;
+      white-space: nowrap;
+    }
+
+    .sample-line {
+      width: 20px;
+      height: 0;
+      border-top: 2px solid #334155;
+    }
+
+    .sample-line.optional {
+      border-top-style: dashed;
+    }
+
+    .stats {
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .stats .headline {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .ok {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    .warn {
+      color: var(--warn);
+      font-weight: 700;
+    }
+
+    #viewport {
+      position: relative;
+      height: calc(100vh - 122px);
+      margin: 0 12px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.93), rgba(248, 250, 252, 0.92));
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      touch-action: none;
+    }
+
+    #scene {
+      position: absolute;
+      width: 3900px;
+      height: 2550px;
+      transform-origin: 0 0;
+    }
+
+    #edgeLayer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    #board {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
+
+    .domain {
+      position: absolute;
+      border: 2px solid;
+      border-radius: 20px;
+      padding-top: 32px;
+      backdrop-filter: blur(0.8px);
+    }
+
+    .domain h3 {
+      position: absolute;
+      top: 8px;
+      left: 12px;
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0.01em;
+      font-weight: 700;
+    }
+
+    .table-card {
+      position: absolute;
+      width: 280px;
+      border: 1px solid #94a3b8;
+      border-left-width: 6px;
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: var(--card-shadow);
+      transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .table-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.22);
+    }
+
+    .table-card.is-active {
+      box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.6), 0 10px 26px rgba(14, 116, 144, 0.28);
+    }
+
+    .table-card.is-dimmed {
+      opacity: 0.2;
+    }
+
+    .table-head {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      background: linear-gradient(180deg, rgba(241, 245, 249, 0.95), rgba(248, 250, 252, 0.95));
+      border-radius: 14px 14px 0 0;
+    }
+
+    .table-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .table-name {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.1;
+      font-weight: 700;
+    }
+
+    .flags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .flag {
+      border: 1px solid #94a3b8;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      background: #fff;
+      color: #334155;
+    }
+
+    .flag.soft {
+      background: #fff7ed;
+      border-color: #fdba74;
+      color: #9a3412;
+    }
+
+    .flag.global {
+      background: #ecfeff;
+      border-color: #67e8f9;
+      color: #155e75;
+    }
+
+    .table-meta {
+      margin-top: 4px;
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    .fields {
+      margin: 0;
+      padding: 8px 12px 10px;
+      list-style: none;
+      display: grid;
+      gap: 4px;
+    }
+
+    .field {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 8px;
+      align-items: baseline;
+      font-size: 12px;
+      color: #0f172a;
+    }
+
+    .field-kind {
+      color: #475569;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      font-size: 10px;
+    }
+
+    .field.more {
+      grid-template-columns: 1fr;
+      color: #0369a1;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .relationship-edge {
+      fill: none;
+      stroke-width: 1.7;
+      opacity: 0.85;
+    }
+
+    .relationship-edge.optional {
+      stroke-dasharray: 8 5;
+    }
+
+    .relationship-edge.is-muted {
+      opacity: 0.1;
+    }
+
+    .relationship-edge.is-active {
+      stroke-width: 2.8;
+      opacity: 1;
+    }
+
+    .cardinality-label text {
+      font-size: 11px;
+      font-weight: 700;
+      fill: #0f172a;
+      dominant-baseline: middle;
+      text-anchor: middle;
+    }
+
+    .cardinality-label rect {
+      fill: rgba(255, 255, 255, 0.95);
+      stroke: rgba(51, 65, 85, 0.3);
+      stroke-width: 1;
+      rx: 5;
+      ry: 5;
+    }
+
+    .hint {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #334155;
+      z-index: 3;
+    }
+
+    @media (max-width: 1100px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      #viewport {
+        height: calc(100vh - 210px);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .panel h1 {
+        font-size: 16px;
+      }
+
+      .subtitle {
+        font-size: 11px;
+      }
+
+      .legend {
+        gap: 6px;
+      }
+
+      .legend-item {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <section class="panel">
+      <h1>Kettan Complete ERD (Single-File HTML)</h1>
+      <div class="subtitle">
+        <span>Source: Kettan.Server/schema.sql</span>
+        <span>Layout: Domain-arranged</span>
+        <span>Cardinality: Derived from FK nullability + uniqueness</span>
+      </div>
+      <div class="controls">
+        <input id="tableSearch" class="search" type="search" placeholder="Search tables..." />
+        <button id="resetView" class="btn" type="button">Reset View</button>
+        <button id="clearFocus" class="btn" type="button">Clear Focus</button>
+      </div>
+      <div class="legend" style="margin-top: 8px;">
+        <span class="legend-item"><span class="sample-line"></span>Mandatory FK</span>
+        <span class="legend-item"><span class="sample-line optional"></span>Optional FK</span>
+        <span class="legend-item">Parent endpoint label: child-to-parent (1 or 0..1)</span>
+        <span class="legend-item">Child endpoint label: parent-to-child (0..* or 0..1)</span>
+      </div>
+    </section>
+    <aside class="panel stats" id="stats"></aside>
+  </div>
+
+  <main id="viewport">
+    <div id="scene">
+      <svg id="edgeLayer" viewBox="0 0 3900 2550" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="board"></div>
+    </div>
+    <div class="hint">
+      Single click: focus table and connected relationships.<br />
+      Double click: expand/collapse fields.<br />
+      Wheel: zoom, Drag background: pan.
+    </div>
+  </main>
+
+  <script>
+    const SCENE_WIDTH = 3900;
+    const SCENE_HEIGHT = 2550;
+    const EXPECTED_TABLES = 33;
+    const EXPECTED_RELATIONSHIPS = 66;
+    const COLLAPSED_FIELD_LIMIT = 8;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    const groups = [
+      { id: 'saas', name: 'SaaS Foundation', x: 60, y: 60, w: 1300, h: 820, color: '#0f766e', bg: 'rgba(15, 118, 110, 0.08)' },
+      { id: 'system', name: 'System and Audit', x: 1430, y: 60, w: 2400, h: 400, color: '#334155', bg: 'rgba(51, 65, 85, 0.08)' },
+      { id: 'inventory', name: 'Inventory and Batching', x: 60, y: 930, w: 1320, h: 1460, color: '#1d4ed8', bg: 'rgba(29, 78, 216, 0.08)' },
+      { id: 'ofms', name: 'OFMS and Logistics', x: 1430, y: 520, w: 1400, h: 1870, color: '#0369a1', bg: 'rgba(3, 105, 161, 0.08)' },
+      { id: 'menu', name: 'Menu and Recipe', x: 2870, y: 520, w: 960, h: 1250, color: '#b45309', bg: 'rgba(180, 83, 9, 0.08)' },
+      { id: 'billing', name: 'Billing and Subscription', x: 2870, y: 1820, w: 960, h: 570, color: '#be123c', bg: 'rgba(190, 18, 60, 0.08)' }
+    ];
+
+    const tables = [
+      { id: 'Tenants', group: 'saas', x: 520, y: 170, attrs: ['Name', 'SubscriptionTier', 'IsActive', 'CreatedAt'], flags: ['soft'] },
+      { id: 'Branches', group: 'saas', x: 170, y: 350, attrs: ['Name', 'City', 'Location', 'IsActive'], flags: ['soft'] },
+      { id: 'Users', group: 'saas', x: 520, y: 350, attrs: ['FirstName', 'LastName', 'Email', 'Role'], flags: ['soft'] },
+      { id: 'Employees', group: 'saas', x: 870, y: 350, attrs: ['FirstName', 'LastName', 'Position', 'DateHired'], flags: ['soft'] },
+
+      { id: 'Notifications', group: 'system', x: 1520, y: 170, attrs: ['Title', 'Type', 'IsRead', 'CreatedAt'] },
+      { id: 'AuditLogs', group: 'system', x: 1860, y: 170, attrs: ['Action', 'EntityName', 'EntityId', 'OccurredAt'] },
+
+      { id: 'Units', group: 'inventory', x: 130, y: 1060, attrs: ['Name', 'Symbol', 'CreatedAt'], flags: ['soft'] },
+      { id: 'InventoryCategories', group: 'inventory', x: 130, y: 1320, attrs: ['Name', 'DisplayOrder', 'IsActive'], flags: ['soft'] },
+      { id: 'ItemCategories', group: 'inventory', x: 470, y: 1060, attrs: ['Name', 'DisplayOrder', 'IsActive'], flags: ['soft'] },
+      { id: 'Items', group: 'inventory', x: 470, y: 1320, attrs: ['SKU', 'Name', 'UnitCost', 'SellingPrice'], flags: ['soft'] },
+      { id: 'Batches', group: 'inventory', x: 810, y: 1320, attrs: ['BatchNumber', 'ExpiryDate', 'CurrentQuantity'] },
+      { id: 'InventoryTransactions', group: 'inventory', x: 810, y: 1580, attrs: ['QuantityChange', 'TransactionType', 'Timestamp'] },
+      { id: 'BundleItems', group: 'inventory', x: 470, y: 1580, attrs: ['Quantity', 'IsActive', 'IsDeleted'], flags: ['soft'] },
+
+      { id: 'SupplyRequests', group: 'ofms', x: 1500, y: 660, attrs: ['Status', 'CreatedAt', 'UpdatedAt'], flags: ['soft'] },
+      { id: 'SupplyRequestItems', group: 'ofms', x: 1500, y: 930, attrs: ['QuantityRequested', 'QuantityApproved'] },
+      { id: 'Orders', group: 'ofms', x: 1840, y: 930, attrs: ['Status', 'PushedToFulfillmentAt'], flags: ['soft'] },
+      { id: 'OrderAllocations', group: 'ofms', x: 2180, y: 930, attrs: ['QuantityPicked'] },
+      { id: 'Shipments', group: 'ofms', x: 2180, y: 1200, attrs: ['TrackingNumber', 'DispatchDate', 'EstimatedArrival'], flags: ['soft'] },
+      { id: 'Returns', group: 'ofms', x: 1840, y: 1200, attrs: ['Reason', 'Resolution', 'LoggedAt'], flags: ['soft'] },
+      { id: 'ReturnItems', group: 'ofms', x: 1840, y: 1470, attrs: ['QuantityReturned', 'Reason'] },
+      { id: 'OrderStatusHistory', group: 'ofms', x: 2180, y: 1470, attrs: ['Status', 'Timestamp', 'Remarks'] },
+      { id: 'Couriers', group: 'ofms', x: 1500, y: 1200, attrs: ['Name', 'ContactNumber', 'IsActive'], flags: ['soft'] },
+      { id: 'Vehicles', group: 'ofms', x: 1500, y: 1470, attrs: ['PlateNumber', 'VehicleType', 'IsActive'], flags: ['soft'] },
+
+      { id: 'MenuCategories', group: 'menu', x: 2940, y: 660, attrs: ['Name', 'DisplayOrder', 'IsActive'], flags: ['soft'] },
+      { id: 'MenuTags', group: 'menu', x: 3260, y: 660, attrs: ['Name', 'Color', 'IsActive'], flags: ['soft'] },
+      { id: 'MenuItems', group: 'menu', x: 2940, y: 930, attrs: ['Name', 'BasePrice', 'Status'], flags: ['soft'] },
+      { id: 'MenuItemTags', group: 'menu', x: 3260, y: 930, attrs: ['Many-to-many bridge'] },
+      { id: 'MenuVariants', group: 'menu', x: 2940, y: 1200, attrs: ['Name', 'PricingMode', 'Price'], flags: ['soft'] },
+      { id: 'VariantIngredients', group: 'menu', x: 3260, y: 1200, attrs: ['Quantity'] },
+
+      { id: 'SubscriptionPlans', group: 'billing', x: 2940, y: 1940, attrs: ['PlanCode', 'Name', 'PriceMonthly'], flags: ['global', 'soft'] },
+      { id: 'TenantSubscriptions', group: 'billing', x: 3260, y: 1940, attrs: ['Status', 'BillingCycle', 'PeriodStart'], flags: ['soft'] },
+      { id: 'SubscriptionInvoices', group: 'billing', x: 2940, y: 2200, attrs: ['InvoiceNumber', 'AmountDue', 'Status'] },
+      { id: 'SubscriptionPayments', group: 'billing', x: 3260, y: 2200, attrs: ['Amount', 'Status', 'PaidAt'] }
+    ];
+
+    const primaryKeys = {
+      Tenants: ['TenantId'],
+      Branches: ['BranchId'],
+      Users: ['UserId'],
+      Employees: ['EmployeeId'],
+      Units: ['UnitId'],
+      InventoryCategories: ['CategoryId'],
+      Items: ['ItemId'],
+      Batches: ['BatchId'],
+      InventoryTransactions: ['TransactionId'],
+      SupplyRequests: ['RequestId'],
+      SupplyRequestItems: ['RequestItemId'],
+      Orders: ['OrderId'],
+      OrderAllocations: ['AllocationId'],
+      Shipments: ['ShipmentId'],
+      Returns: ['ReturnId'],
+      MenuCategories: ['CategoryId'],
+      MenuTags: ['TagId'],
+      MenuItems: ['MenuItemId'],
+      MenuItemTags: ['MenuItemId', 'TagId'],
+      MenuVariants: ['VariantId'],
+      VariantIngredients: ['VariantIngredientId'],
+      ItemCategories: ['ItemCategoryId'],
+      BundleItems: ['BundleItemId'],
+      Couriers: ['CourierId'],
+      Vehicles: ['VehicleId'],
+      OrderStatusHistory: ['HistoryId'],
+      ReturnItems: ['ReturnItemId'],
+      Notifications: ['NotificationId'],
+      SubscriptionPlans: ['PlanId'],
+      TenantSubscriptions: ['TenantSubscriptionId'],
+      SubscriptionInvoices: ['InvoiceId'],
+      SubscriptionPayments: ['PaymentId'],
+      AuditLogs: ['AuditLogId']
+    };
+
+    const relationships = [
+      { child: 'AuditLogs', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: true, unique: false },
+      { child: 'AuditLogs', childColumn: 'UserId', parent: 'Users', parentColumn: 'UserId', nullable: true, unique: false },
+      { child: 'Batches', childColumn: 'BranchId', parent: 'Branches', parentColumn: 'BranchId', nullable: true, unique: false },
+      { child: 'Batches', childColumn: 'ItemId', parent: 'Items', parentColumn: 'ItemId', nullable: false, unique: false },
+      { child: 'Batches', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Branches', childColumn: 'ManagerUserId', parent: 'Users', parentColumn: 'UserId', nullable: true, unique: false },
+      { child: 'Branches', childColumn: 'OwnerUserId', parent: 'Users', parentColumn: 'UserId', nullable: true, unique: false },
+      { child: 'Branches', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'BundleItems', childColumn: 'ChildItemId', parent: 'Items', parentColumn: 'ItemId', nullable: false, unique: false },
+      { child: 'BundleItems', childColumn: 'ParentItemId', parent: 'Items', parentColumn: 'ItemId', nullable: false, unique: false },
+      { child: 'BundleItems', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Couriers', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Employees', childColumn: 'BranchId', parent: 'Branches', parentColumn: 'BranchId', nullable: true, unique: false },
+      { child: 'Employees', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'InventoryCategories', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'InventoryTransactions', childColumn: 'BatchId', parent: 'Batches', parentColumn: 'BatchId', nullable: false, unique: false },
+      { child: 'InventoryTransactions', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'InventoryTransactions', childColumn: 'UserId', parent: 'Users', parentColumn: 'UserId', nullable: false, unique: false },
+      { child: 'ItemCategories', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Items', childColumn: 'InventoryCategoryId', parent: 'InventoryCategories', parentColumn: 'CategoryId', nullable: true, unique: false },
+      { child: 'Items', childColumn: 'ItemCategoryId', parent: 'ItemCategories', parentColumn: 'ItemCategoryId', nullable: true, unique: false },
+      { child: 'Items', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Items', childColumn: 'UnitId', parent: 'Units', parentColumn: 'UnitId', nullable: false, unique: false },
+      { child: 'MenuCategories', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'MenuItems', childColumn: 'CategoryId', parent: 'MenuCategories', parentColumn: 'CategoryId', nullable: false, unique: false },
+      { child: 'MenuItems', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'MenuItemTags', childColumn: 'MenuItemId', parent: 'MenuItems', parentColumn: 'MenuItemId', nullable: false, unique: false },
+      { child: 'MenuItemTags', childColumn: 'TagId', parent: 'MenuTags', parentColumn: 'TagId', nullable: false, unique: false },
+      { child: 'MenuTags', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'MenuVariants', childColumn: 'MenuItemId', parent: 'MenuItems', parentColumn: 'MenuItemId', nullable: false, unique: false },
+      { child: 'Notifications', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Notifications', childColumn: 'UserId', parent: 'Users', parentColumn: 'UserId', nullable: false, unique: false },
+      { child: 'OrderAllocations', childColumn: 'BatchId', parent: 'Batches', parentColumn: 'BatchId', nullable: false, unique: false },
+      { child: 'OrderAllocations', childColumn: 'OrderId', parent: 'Orders', parentColumn: 'OrderId', nullable: false, unique: false },
+      { child: 'Orders', childColumn: 'RequestId', parent: 'SupplyRequests', parentColumn: 'RequestId', nullable: false, unique: false },
+      { child: 'Orders', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'OrderStatusHistory', childColumn: 'ChangedBy_UserId', parent: 'Users', parentColumn: 'UserId', nullable: true, unique: false },
+      { child: 'OrderStatusHistory', childColumn: 'OrderId', parent: 'Orders', parentColumn: 'OrderId', nullable: false, unique: false },
+      { child: 'OrderStatusHistory', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'ReturnItems', childColumn: 'ItemId', parent: 'Items', parentColumn: 'ItemId', nullable: false, unique: false },
+      { child: 'ReturnItems', childColumn: 'ReturnId', parent: 'Returns', parentColumn: 'ReturnId', nullable: false, unique: false },
+      { child: 'Returns', childColumn: 'BranchId', parent: 'Branches', parentColumn: 'BranchId', nullable: false, unique: false },
+      { child: 'Returns', childColumn: 'OrderId', parent: 'Orders', parentColumn: 'OrderId', nullable: false, unique: false },
+      { child: 'Returns', childColumn: 'ReviewedBy_UserId', parent: 'Users', parentColumn: 'UserId', nullable: true, unique: false },
+      { child: 'Returns', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Shipments', childColumn: 'CourierId', parent: 'Couriers', parentColumn: 'CourierId', nullable: true, unique: false },
+      { child: 'Shipments', childColumn: 'OrderId', parent: 'Orders', parentColumn: 'OrderId', nullable: false, unique: true },
+      { child: 'Shipments', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Shipments', childColumn: 'VehicleId', parent: 'Vehicles', parentColumn: 'VehicleId', nullable: true, unique: false },
+      { child: 'SubscriptionInvoices', childColumn: 'TenantSubscriptionId', parent: 'TenantSubscriptions', parentColumn: 'TenantSubscriptionId', nullable: false, unique: false },
+      { child: 'SubscriptionPayments', childColumn: 'InvoiceId', parent: 'SubscriptionInvoices', parentColumn: 'InvoiceId', nullable: false, unique: false },
+      { child: 'SupplyRequestItems', childColumn: 'ItemId', parent: 'Items', parentColumn: 'ItemId', nullable: false, unique: false },
+      { child: 'SupplyRequestItems', childColumn: 'RequestId', parent: 'SupplyRequests', parentColumn: 'RequestId', nullable: false, unique: false },
+      { child: 'SupplyRequests', childColumn: 'BranchId', parent: 'Branches', parentColumn: 'BranchId', nullable: false, unique: false },
+      { child: 'SupplyRequests', childColumn: 'RequestedBy_UserId', parent: 'Users', parentColumn: 'UserId', nullable: false, unique: false },
+      { child: 'SupplyRequests', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Tenants', childColumn: 'CurrentSubscriptionId', parent: 'TenantSubscriptions', parentColumn: 'TenantSubscriptionId', nullable: true, unique: false },
+      { child: 'TenantSubscriptions', childColumn: 'PlanId', parent: 'SubscriptionPlans', parentColumn: 'PlanId', nullable: false, unique: false },
+      { child: 'TenantSubscriptions', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Units', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false },
+      { child: 'Users', childColumn: 'BranchId', parent: 'Branches', parentColumn: 'BranchId', nullable: true, unique: false },
+      { child: 'Users', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: true, unique: false },
+      { child: 'VariantIngredients', childColumn: 'ItemId', parent: 'Items', parentColumn: 'ItemId', nullable: false, unique: false },
+      { child: 'VariantIngredients', childColumn: 'VariantId', parent: 'MenuVariants', parentColumn: 'VariantId', nullable: false, unique: false },
+      { child: 'Vehicles', childColumn: 'CourierId', parent: 'Couriers', parentColumn: 'CourierId', nullable: false, unique: false },
+      { child: 'Vehicles', childColumn: 'TenantId', parent: 'Tenants', parentColumn: 'TenantId', nullable: false, unique: false }
+    ];
+
+    const groupById = new Map(groups.map((g) => [g.id, g]));
+    const tableById = new Map(tables.map((t) => [t.id, t]));
+
+    const viewport = document.getElementById('viewport');
+    const scene = document.getElementById('scene');
+    const board = document.getElementById('board');
+    const edgeLayer = document.getElementById('edgeLayer');
+    const statsEl = document.getElementById('stats');
+    const tableSearch = document.getElementById('tableSearch');
+    const resetViewBtn = document.getElementById('resetView');
+    const clearFocusBtn = document.getElementById('clearFocus');
+
+    const state = {
+      scale: 1,
+      tx: 20,
+      ty: 20,
+      activeTable: null,
+      search: '',
+      expandedTables: new Set(),
+      dragging: false,
+      dragStart: null
+    };
+
+    const tableElements = new Map();
+
+    function capitalize(text) {
+      if (!text || !text.length) {
+        return text;
+      }
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    function createFlag(flag) {
+      const el = document.createElement('span');
+      el.className = 'flag ' + flag;
+      if (flag === 'soft') {
+        el.textContent = 'SOFT';
+      } else if (flag === 'global') {
+        el.textContent = 'GLOBAL';
+      } else {
+        el.textContent = capitalize(flag);
+      }
+      return el;
+    }
+
+    function getTableFields(table) {
+      const pk = primaryKeys[table.id] || [];
+      const fkColumns = [...new Set(relationships
+        .filter((rel) => rel.child === table.id)
+        .map((rel) => rel.childColumn))];
+
+      const result = [];
+      pk.forEach((column) => {
+        result.push({ kind: 'PK', name: column });
+      });
+      fkColumns.forEach((column) => {
+        if (!pk.includes(column)) {
+          result.push({ kind: 'FK', name: column });
+        }
+      });
+      table.attrs.forEach((column) => {
+        result.push({ kind: 'ATTR', name: column });
+      });
+      return result;
+    }
+
+    function renderDomains() {
+      groups.forEach((group) => {
+        const box = document.createElement('section');
+        box.className = 'domain';
+        box.style.left = group.x + 'px';
+        box.style.top = group.y + 'px';
+        box.style.width = group.w + 'px';
+        box.style.height = group.h + 'px';
+        box.style.borderColor = group.color;
+        box.style.background = group.bg;
+
+        const title = document.createElement('h3');
+        title.textContent = group.name;
+        title.style.color = group.color;
+        box.appendChild(title);
+
+        board.appendChild(box);
+      });
+    }
+
+    function renderTables() {
+      tableElements.clear();
+      const searchText = state.search.trim().toLowerCase();
+
+      tables.forEach((table) => {
+        const group = groupById.get(table.group);
+        const card = document.createElement('article');
+        card.className = 'table-card';
+        card.style.left = table.x + 'px';
+        card.style.top = table.y + 'px';
+        card.style.borderLeftColor = group.color;
+        card.dataset.table = table.id;
+
+        const fields = getTableFields(table);
+        const expanded = state.expandedTables.has(table.id);
+        const visibleFields = expanded ? fields : fields.slice(0, COLLAPSED_FIELD_LIMIT);
+
+        const head = document.createElement('div');
+        head.className = 'table-head';
+
+        const titleRow = document.createElement('div');
+        titleRow.className = 'table-title-row';
+
+        const title = document.createElement('h4');
+        title.className = 'table-name';
+        title.textContent = table.id;
+        titleRow.appendChild(title);
+
+        const flags = document.createElement('div');
+        flags.className = 'flags';
+        (table.flags || []).forEach((flagName) => {
+          flags.appendChild(createFlag(flagName));
+        });
+        titleRow.appendChild(flags);
+
+        head.appendChild(titleRow);
+
+        const meta = document.createElement('div');
+        meta.className = 'table-meta';
+        const fkCount = relationships.filter((rel) => rel.child === table.id).length;
+        meta.textContent = `PK ${primaryKeys[table.id].length} | FK ${fkCount}`;
+        head.appendChild(meta);
+        card.appendChild(head);
+
+        const list = document.createElement('ul');
+        list.className = 'fields';
+
+        visibleFields.forEach((field) => {
+          const item = document.createElement('li');
+          item.className = 'field';
+
+          const kind = document.createElement('span');
+          kind.className = 'field-kind';
+          kind.textContent = field.kind;
+          item.appendChild(kind);
+
+          const name = document.createElement('span');
+          name.textContent = field.name;
+          item.appendChild(name);
+
+          list.appendChild(item);
+        });
+
+        if (!expanded && fields.length > COLLAPSED_FIELD_LIMIT) {
+          const more = document.createElement('li');
+          more.className = 'field more';
+          more.textContent = `+${fields.length - COLLAPSED_FIELD_LIMIT} more fields`;
+          list.appendChild(more);
+        }
+
+        card.appendChild(list);
+
+        const searchMatch = !searchText || table.id.toLowerCase().includes(searchText);
+        if (!searchMatch) {
+          card.classList.add('is-dimmed');
+        }
+
+        if (state.activeTable === table.id) {
+          card.classList.add('is-active');
+        }
+
+        card.addEventListener('click', (event) => {
+          event.stopPropagation();
+          if (state.activeTable === table.id) {
+            state.activeTable = null;
+          } else {
+            state.activeTable = table.id;
+          }
+          refresh();
+        });
+
+        card.addEventListener('dblclick', (event) => {
+          event.stopPropagation();
+          if (state.expandedTables.has(table.id)) {
+            state.expandedTables.delete(table.id);
+          } else {
+            state.expandedTables.add(table.id);
+          }
+          refresh();
+        });
+
+        board.appendChild(card);
+        tableElements.set(table.id, card);
+      });
+    }
+
+    function getCardRect(card) {
+      return {
+        left: card.offsetLeft,
+        top: card.offsetTop,
+        width: card.offsetWidth,
+        height: card.offsetHeight,
+        cx: card.offsetLeft + card.offsetWidth / 2,
+        cy: card.offsetTop + card.offsetHeight / 2,
+        right: card.offsetLeft + card.offsetWidth,
+        bottom: card.offsetTop + card.offsetHeight
+      };
+    }
+
+    function selectAnchors(parentRect, childRect) {
+      const dx = childRect.cx - parentRect.cx;
+      const dy = childRect.cy - parentRect.cy;
+
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        if (dx >= 0) {
+          return {
+            orientation: 'horizontal',
+            start: { x: parentRect.right, y: parentRect.cy },
+            end: { x: childRect.left, y: childRect.cy }
+          };
+        }
+        return {
+          orientation: 'horizontal',
+          start: { x: parentRect.left, y: parentRect.cy },
+          end: { x: childRect.right, y: childRect.cy }
+        };
+      }
+
+      if (dy >= 0) {
+        return {
+          orientation: 'vertical',
+          start: { x: parentRect.cx, y: parentRect.bottom },
+          end: { x: childRect.cx, y: childRect.top }
+        };
+      }
+
+      return {
+        orientation: 'vertical',
+        start: { x: parentRect.cx, y: parentRect.top },
+        end: { x: childRect.cx, y: childRect.bottom }
+      };
+    }
+
+    function buildPathData(anchor) {
+      const { start, end, orientation } = anchor;
+      if (orientation === 'horizontal') {
+        const midX = (start.x + end.x) / 2;
+        return `M ${start.x} ${start.y} L ${midX} ${start.y} L ${midX} ${end.y} L ${end.x} ${end.y}`;
+      }
+      const midY = (start.y + end.y) / 2;
+      return `M ${start.x} ${start.y} L ${start.x} ${midY} L ${end.x} ${midY} L ${end.x} ${end.y}`;
+    }
+
+    function offsetLabel(from, to) {
+      const dx = from.x - to.x;
+      const dy = from.y - to.y;
+      const len = Math.max(Math.hypot(dx, dy), 1);
+      const nudge = 18;
+      return {
+        x: from.x + (dx / len) * nudge,
+        y: from.y + (dy / len) * nudge
+      };
+    }
+
+    function createCardinalityLabel(x, y, text) {
+      const group = document.createElementNS(SVG_NS, 'g');
+      group.setAttribute('class', 'cardinality-label');
+
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      rect.setAttribute('x', (x - 18).toString());
+      rect.setAttribute('y', (y - 9).toString());
+      rect.setAttribute('width', '36');
+      rect.setAttribute('height', '18');
+
+      const label = document.createElementNS(SVG_NS, 'text');
+      label.setAttribute('x', x.toString());
+      label.setAttribute('y', y.toString());
+      label.textContent = text;
+
+      group.appendChild(rect);
+      group.appendChild(label);
+      return group;
+    }
+
+    function shouldShowRelationship(rel) {
+      const searchText = state.search.trim().toLowerCase();
+      if (!searchText) {
+        return true;
+      }
+      return rel.child.toLowerCase().includes(searchText) || rel.parent.toLowerCase().includes(searchText);
+    }
+
+    function isActiveRelationship(rel) {
+      if (!state.activeTable) {
+        return false;
+      }
+      return rel.child === state.activeTable || rel.parent === state.activeTable;
+    }
+
+    function renderRelationships() {
+      edgeLayer.innerHTML = '';
+
+      relationships.forEach((rel) => {
+        if (!shouldShowRelationship(rel)) {
+          return;
+        }
+
+        const parentCard = tableElements.get(rel.parent);
+        const childCard = tableElements.get(rel.child);
+        if (!parentCard || !childCard) {
+          return;
+        }
+
+        const parentRect = getCardRect(parentCard);
+        const childRect = getCardRect(childCard);
+        const anchor = selectAnchors(parentRect, childRect);
+        const pathData = buildPathData(anchor);
+
+        const table = tableById.get(rel.parent);
+        const parentGroup = table ? groupById.get(table.group) : null;
+        const color = parentGroup ? parentGroup.color : '#334155';
+
+        const edge = document.createElementNS(SVG_NS, 'path');
+        edge.setAttribute('d', pathData);
+        edge.setAttribute('stroke', color);
+        edge.setAttribute('class', 'relationship-edge' + (rel.nullable ? ' optional' : ''));
+        edge.setAttribute('data-child', rel.child);
+        edge.setAttribute('data-parent', rel.parent);
+
+        if (state.activeTable && !isActiveRelationship(rel)) {
+          edge.classList.add('is-muted');
+        } else if (isActiveRelationship(rel)) {
+          edge.classList.add('is-active');
+        }
+
+        const title = document.createElementNS(SVG_NS, 'title');
+        title.textContent = `${rel.child}.${rel.childColumn} -> ${rel.parent}.${rel.parentColumn}`;
+        edge.appendChild(title);
+
+        edgeLayer.appendChild(edge);
+
+        const parentLabelText = rel.nullable ? '0..1' : '1';
+        const childLabelText = rel.unique ? '0..1' : '0..*';
+
+        const parentLabelPoint = offsetLabel(anchor.start, anchor.end);
+        const childLabelPoint = offsetLabel(anchor.end, anchor.start);
+
+        const parentLabel = createCardinalityLabel(parentLabelPoint.x, parentLabelPoint.y, parentLabelText);
+        const childLabel = createCardinalityLabel(childLabelPoint.x, childLabelPoint.y, childLabelText);
+
+        if (state.activeTable && !isActiveRelationship(rel)) {
+          parentLabel.setAttribute('opacity', '0.18');
+          childLabel.setAttribute('opacity', '0.18');
+        }
+
+        edgeLayer.appendChild(parentLabel);
+        edgeLayer.appendChild(childLabel);
+      });
+    }
+
+    function updateStats() {
+      const tableCountOk = tables.length === EXPECTED_TABLES;
+      const relCountOk = relationships.length === EXPECTED_RELATIONSHIPS;
+      const schemaOk = tableCountOk && relCountOk;
+
+      const activeInfo = state.activeTable
+        ? `Focused: ${state.activeTable}`
+        : 'Focused: none';
+
+      const searchInfo = state.search
+        ? `Search: "${state.search}"`
+        : 'Search: (all tables)';
+
+      statsEl.innerHTML = `
+        <div class="headline">Schema Completeness</div>
+        <div>Tables: <strong>${tables.length}</strong> / ${EXPECTED_TABLES} ${tableCountOk ? '<span class="ok">OK</span>' : '<span class="warn">Mismatch</span>'}</div>
+        <div>Foreign Keys: <strong>${relationships.length}</strong> / ${EXPECTED_RELATIONSHIPS} ${relCountOk ? '<span class="ok">OK</span>' : '<span class="warn">Mismatch</span>'}</div>
+        <div>Status: ${schemaOk ? '<span class="ok">PASS</span>' : '<span class="warn">CHECK REQUIRED</span>'}</div>
+        <div>${activeInfo}</div>
+        <div>${searchInfo}</div>
+        <div>Special Cases: Shipments.OrderId is unique (1:1), MenuItemTags is M:N bridge, Tenants.CurrentSubscriptionId circular link.</div>
+      `;
+    }
+
+    function applyTransform() {
+      scene.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+    }
+
+    function fitToViewport() {
+      const vw = viewport.clientWidth;
+      const vh = viewport.clientHeight;
+      const sx = (vw - 60) / SCENE_WIDTH;
+      const sy = (vh - 60) / SCENE_HEIGHT;
+      state.scale = Math.min(sx, sy, 1);
+      state.tx = 24;
+      state.ty = 24;
+      applyTransform();
+    }
+
+    function refresh() {
+      board.innerHTML = '';
+      renderDomains();
+      renderTables();
+      renderRelationships();
+      updateStats();
+    }
+
+    function handleWheelZoom(event) {
+      event.preventDefault();
+      const rect = viewport.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+
+      const zoomFactor = event.deltaY < 0 ? 1.08 : 0.92;
+      const newScale = Math.min(Math.max(state.scale * zoomFactor, 0.2), 2.2);
+      const ratio = newScale / state.scale;
+
+      state.tx = mouseX - (mouseX - state.tx) * ratio;
+      state.ty = mouseY - (mouseY - state.ty) * ratio;
+      state.scale = newScale;
+      applyTransform();
+    }
+
+    function beginPan(event) {
+      if (event.target.closest('.table-card')) {
+        return;
+      }
+      state.dragging = true;
+      state.dragStart = {
+        x: event.clientX,
+        y: event.clientY,
+        tx: state.tx,
+        ty: state.ty
+      };
+    }
+
+    function movePan(event) {
+      if (!state.dragging || !state.dragStart) {
+        return;
+      }
+      const dx = event.clientX - state.dragStart.x;
+      const dy = event.clientY - state.dragStart.y;
+      state.tx = state.dragStart.tx + dx;
+      state.ty = state.dragStart.ty + dy;
+      applyTransform();
+    }
+
+    function endPan() {
+      state.dragging = false;
+      state.dragStart = null;
+    }
+
+    viewport.addEventListener('wheel', handleWheelZoom, { passive: false });
+    viewport.addEventListener('mousedown', beginPan);
+    window.addEventListener('mousemove', movePan);
+    window.addEventListener('mouseup', endPan);
+
+    viewport.addEventListener('click', (event) => {
+      if (!event.target.closest('.table-card')) {
+        state.activeTable = null;
+        refresh();
+      }
+    });
+
+    tableSearch.addEventListener('input', () => {
+      state.search = tableSearch.value.trim();
+      refresh();
+    });
+
+    resetViewBtn.addEventListener('click', () => {
+      fitToViewport();
+    });
+
+    clearFocusBtn.addEventListener('click', () => {
+      state.activeTable = null;
+      tableSearch.value = '';
+      state.search = '';
+      refresh();
+    });
+
+    window.addEventListener('resize', () => {
+      renderRelationships();
+    });
+
+    fitToViewport();
+    refresh();
+  </script>
+</body>
+</html>

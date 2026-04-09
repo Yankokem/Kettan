@@ -35,6 +35,7 @@ export interface DataTableProps<T> {
   quickFilters?: QuickFilter[];
   activeQuickFilter?: string;
   onQuickFilterChange?: (value: string) => void;
+  quickFilterStyle?: 'brand' | 'default';
   rightAction?: React.ReactNode;
   striped?: boolean;
   className?: string;
@@ -57,6 +58,7 @@ export function DataTable<T>({
   quickFilters,
   activeQuickFilter = '',
   onQuickFilterChange,
+  quickFilterStyle = 'brand',
   rightAction,
   striped = false,
   className,
@@ -193,6 +195,36 @@ export function DataTable<T>({
 
   const hasQuickFilterBar = (quickFilters && quickFilters.length > 0) || rightAction;
 
+  const getQuickFilterSx = (isActive: boolean) => {
+    if (quickFilterStyle === 'default') {
+      return {
+        bgcolor: isActive ? 'action.selected' : 'transparent',
+        color: isActive ? 'text.primary' : 'text.secondary',
+        border: '1px solid',
+        borderColor: isActive ? 'text.disabled' : 'divider',
+        '&:hover': {
+          borderColor: 'text.secondary',
+          color: 'text.primary',
+          bgcolor: isActive ? 'action.selected' : 'action.hover',
+        },
+      };
+    }
+
+    return isActive
+      ? {
+          bgcolor: '#6B4C2A',
+          color: '#fff',
+          '&:hover': { bgcolor: '#5A3E23' },
+        }
+      : {
+          bgcolor: 'transparent',
+          color: 'text.secondary',
+          border: '1px solid',
+          borderColor: 'divider',
+          '&:hover': { borderColor: 'text.secondary', color: 'text.primary' },
+        };
+  };
+
   return (
     <Box
       sx={{
@@ -257,19 +289,7 @@ export function DataTable<T>({
                   fontSize: 12,
                   fontWeight: 700,
                   cursor: 'pointer',
-                  ...(activeQuickFilter === ''
-                    ? {
-                        bgcolor: '#6B4C2A',
-                        color: '#fff',
-                        '&:hover': { bgcolor: '#5A3E23' },
-                      }
-                    : {
-                        bgcolor: 'transparent',
-                        color: 'text.secondary',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        '&:hover': { borderColor: 'text.secondary', color: 'text.primary' },
-                      }),
+                  ...getQuickFilterSx(activeQuickFilter === ''),
                 }}
               />
 
@@ -288,19 +308,7 @@ export function DataTable<T>({
                       fontSize: 12,
                       fontWeight: 700,
                       cursor: 'pointer',
-                      ...(isActive
-                        ? {
-                            bgcolor: '#6B4C2A',
-                            color: '#fff',
-                            '&:hover': { bgcolor: '#5A3E23' },
-                          }
-                        : {
-                            bgcolor: 'transparent',
-                            color: 'text.secondary',
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            '&:hover': { borderColor: 'text.secondary', color: 'text.primary' },
-                          }),
+                      ...getQuickFilterSx(isActive),
                     }}
                   />
                 );
@@ -320,7 +328,7 @@ export function DataTable<T>({
           display: 'grid',
           gridTemplateColumns,
           px: 3,
-          py: 1,
+          py: 1.3,
           bgcolor: 'background.default',
           borderBottom: 1,
           borderColor: 'divider',
@@ -331,7 +339,7 @@ export function DataTable<T>({
             key={col.key}
             onClick={col.sortable ? () => handleSort(col) : undefined}
             sx={{
-              fontSize: 10.5,
+              fontSize: 11,
               fontWeight: 700,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
