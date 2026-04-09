@@ -8,7 +8,7 @@ import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
-import { KettanTable, type KettanColumnDef } from '../../components/UI/KettanTable';
+import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { TextField } from '../../components/UI/TextField';
 import { OrderFulfillmentStepper } from './components/OrderFulfillmentStepper';
 import { StatusAlertIcon } from './components/StatusAlertIcon';
@@ -30,7 +30,7 @@ const MOCK_ITEMS: RequestItem[] = [
   { id: '4', name: 'Paper Cups (12oz) - Box of 500',           requestedQty: 2,  hqStock: 45,  approvedQty: 2,  status: 'Available' },
 ];
 
-const COLUMNS: KettanColumnDef<RequestItem>[] = [
+const COLUMNS: ColumnDef<RequestItem>[] = [
   {
     key: 'name',
     label: 'Requested Item',
@@ -154,7 +154,7 @@ export function OrderDetailPage() {
             <InventoryRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
             <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Item Reconciliation</Typography>
           </Box>
-          <KettanTable
+          <DataTable
             data={MOCK_ITEMS}
             columns={COLUMNS}
             keyExtractor={(row) => row.id}
@@ -166,3 +166,4 @@ export function OrderDetailPage() {
     </Box>
   );
 }
+

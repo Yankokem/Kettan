@@ -1,5 +1,5 @@
 import { Chip, Typography } from '@mui/material';
-import { KettanTable, type KettanColumnDef } from '../../../components/UI/KettanTable';
+import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import type { BranchEmployee } from '../types';
 
 interface StaffRosterTableProps {
@@ -20,7 +20,7 @@ const formatDate = (dateValue: string) => {
   });
 };
 
-const columns: KettanColumnDef<BranchEmployee>[] = [
+const columns: ColumnDef<BranchEmployee>[] = [
   {
     key: 'name',
     label: 'Name',
@@ -82,7 +82,7 @@ const columns: KettanColumnDef<BranchEmployee>[] = [
 
 export function StaffRosterTable({ employees }: StaffRosterTableProps) {
   return (
-    <KettanTable
+    <DataTable
       columns={columns}
       data={employees}
       keyExtractor={(row) => row.id.toString()}
@@ -93,3 +93,4 @@ export function StaffRosterTable({ employees }: StaffRosterTableProps) {
     />
   );
 }
+

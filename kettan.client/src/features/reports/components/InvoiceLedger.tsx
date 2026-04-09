@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
-import { KettanTable, type KettanColumnDef } from '../../../components/UI/KettanTable';
+import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 
 interface LedgerItem {
   id: string;
@@ -13,7 +13,7 @@ interface LedgerItem {
 }
 
 export function InvoiceLedger({ invoices }: { invoices: LedgerItem[] }) {
-  const columns: KettanColumnDef<LedgerItem>[] = [
+  const columns: ColumnDef<LedgerItem>[] = [
     {
       key: 'orderId',
       label: 'Invoice',
@@ -52,7 +52,7 @@ export function InvoiceLedger({ invoices }: { invoices: LedgerItem[] }) {
         <ReceiptLongRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
         <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Recent Invoices</Typography>
       </Box>
-      <KettanTable
+      <DataTable
         data={invoices}
         columns={columns}
         keyExtractor={(row) => row.id}

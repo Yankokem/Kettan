@@ -9,7 +9,7 @@ import RadioButtonCheckedRoundedIcon from '@mui/icons-material/RadioButtonChecke
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 
 import { StatCard } from '../../components/UI/StatCard';
-import { KettanTable, type KettanColumnDef } from '../../components/UI/KettanTable';
+import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { useAuthStore } from '../../store/useAuthStore';
 import { BranchPerformance } from './components/BranchPerformance';
@@ -47,7 +47,7 @@ const STATUS_MAP = {
   returned:   { label: 'Returned',   color: '#B91C1C', bg: 'rgba(185,28,28,0.10)', icon: <WarningAmberRoundedIcon sx={{ fontSize: 12 }} /> },
 };
 
-const activityColumns: KettanColumnDef<ActivityItem>[] = [
+const activityColumns: ColumnDef<ActivityItem>[] = [
   {
     key: 'id',
     label: 'Order ID',
@@ -221,7 +221,7 @@ export function DashboardPage() {
         {/* Bottom Row: Activity Table & Alerts */}
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <KettanTable
+            <DataTable
               data={filteredActivity}
               columns={activityColumns}
               keyExtractor={(row) => row.id}
@@ -264,3 +264,4 @@ export function DashboardPage() {
     </Box>
   );
 }
+

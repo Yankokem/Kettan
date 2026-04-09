@@ -7,7 +7,7 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 
-import { KettanTable, type KettanColumnDef } from '../../components/UI/KettanTable';
+import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { StatCard } from '../../components/UI/StatCard';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
@@ -47,7 +47,7 @@ const ORDER_QUICK_FILTERS = [
   { value: 'Suspended', label: 'Suspended' },
 ];
 
-const columns: KettanColumnDef<OrderItem>[] = [
+const columns: ColumnDef<OrderItem>[] = [
   {
     key: 'id',
     label: 'Order ID',
@@ -217,7 +217,7 @@ export function OrdersPage() {
       </Box>
 
       {/* Orders Table with quick-filter chips + branch dropdown */}
-      <KettanTable
+      <DataTable
         data={filtered}
         columns={columns}
         keyExtractor={(row) => row.id}
@@ -247,3 +247,4 @@ export function OrdersPage() {
     </Box>
   );
 }
+

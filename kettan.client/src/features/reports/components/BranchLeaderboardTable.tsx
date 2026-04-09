@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
-import { KettanTable, type KettanColumnDef } from '../../../components/UI/KettanTable';
+import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 
 interface LeaderboardItem {
   id: string;
@@ -20,7 +20,7 @@ interface LeaderboardProps {
 export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
   const sorted = [...branches].sort((a, b) => b.weightedScore - a.weightedScore).map((b, i) => ({ ...b, rank: i + 1 }));
 
-  const columns: KettanColumnDef<LeaderboardItem>[] = [
+  const columns: ColumnDef<LeaderboardItem>[] = [
     {
       key: 'rank',
       label: 'Rank',
@@ -99,7 +99,7 @@ export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
         <EmojiEventsRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
         <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Branch Performance Leaderboard</Typography>
       </Box>
-      <KettanTable
+      <DataTable
         data={sorted}
         columns={columns}
         keyExtractor={(row) => row.id}

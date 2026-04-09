@@ -21,7 +21,7 @@ import { SearchInput } from '../../../components/UI/SearchInput';
 import { Button } from '../../../components/UI/Button';
 import { ViewToggle } from '../../../components/UI/ViewToggle';
 import { FilterDropdown } from '../../../components/UI/FilterAndSort';
-import { KettanTable, type KettanColumnDef } from '../../../components/UI/KettanTable';
+import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 
 interface InventoryTableProps {
   items: InventoryItem[];
@@ -145,7 +145,7 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
 
   // ── Column definitions per view mode ───────────────────────────────────────
 
-  const defaultColumns: KettanColumnDef<InventoryItem>[] = [
+  const defaultColumns: ColumnDef<InventoryItem>[] = [
     {
       key: 'id',
       label: 'ID',
@@ -201,7 +201,7 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
     },
   ];
 
-  const levelsColumns: KettanColumnDef<InventoryItem>[] = [
+  const levelsColumns: ColumnDef<InventoryItem>[] = [
     {
       key: 'name',
       label: 'Item Info',
@@ -277,7 +277,7 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
     },
   ];
 
-  const transactionColumns: KettanColumnDef<InventoryTransaction>[] = [
+  const transactionColumns: ColumnDef<InventoryTransaction>[] = [
     {
       key: 'timestamp',
       label: 'Date',
@@ -424,7 +424,7 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
   // ── Render ────────────────────────────────────────────────────────────────
   if (viewMode === 'transactions') {
     return (
-      <KettanTable
+      <DataTable
         columns={transactionColumns}
         data={filteredTransactions}
         keyExtractor={(row) => row.id}
@@ -437,7 +437,7 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
   }
 
   return (
-    <KettanTable
+    <DataTable
       columns={viewMode === 'levels' ? levelsColumns : defaultColumns}
       data={filteredItems}
       keyExtractor={(row) => row.id.toString()}

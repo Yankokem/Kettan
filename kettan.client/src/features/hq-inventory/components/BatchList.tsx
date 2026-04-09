@@ -1,7 +1,7 @@
 import { Box, Typography, Chip, IconButton, Tooltip } from '@mui/material';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import { KettanTable, type KettanColumnDef } from '../../../components/UI/KettanTable';
+import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import type { Batch, Unit } from '../types';
 
 interface BatchListProps {
@@ -37,7 +37,7 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
     return null;
   };
 
-  const columns: KettanColumnDef<Batch & { index: number }>[] = [
+  const columns: ColumnDef<Batch & { index: number }>[] = [
     {
       key: 'index',
       label: '#',
@@ -137,7 +137,7 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
   const batchesWithIndex = batches.map((batch, i) => ({ ...batch, index: i + 1 }));
 
   return (
-    <KettanTable
+    <DataTable
       columns={columns}
       data={batchesWithIndex}
       keyExtractor={(row) => row.id}
@@ -147,3 +147,4 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
     />
   );
 }
+

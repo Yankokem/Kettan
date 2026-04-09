@@ -5,7 +5,7 @@ import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
 import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
 import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import { KettanTable, type KettanColumnDef } from '../../../components/UI/KettanTable';
+import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import type { InventoryTransaction, TransactionType } from '../types';
 
 interface TransactionsTableProps {
@@ -70,8 +70,8 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
     return `${sign}${qty > 0 ? '' : '-'}${formatted} ${unitSymbol || ''}`;
   };
 
-  const columns: KettanColumnDef<InventoryTransaction>[] = useMemo(() => {
-    const baseColumns: KettanColumnDef<InventoryTransaction>[] = [
+  const columns: ColumnDef<InventoryTransaction>[] = useMemo(() => {
+    const baseColumns: ColumnDef<InventoryTransaction>[] = [
       {
         key: 'timestamp',
         label: 'Date',
@@ -173,7 +173,7 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
   }, [compact]);
 
   return (
-    <KettanTable
+    <DataTable
       columns={columns}
       data={transactions}
       keyExtractor={(row) => row.id}
@@ -184,3 +184,4 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
     />
   );
 }
+
