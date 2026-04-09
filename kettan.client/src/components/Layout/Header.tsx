@@ -25,7 +25,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/hq-inventory': 'HQ Inventory & Stock',
   '/hq-inventory/add': 'Add Inventory Item',
   '/staff':     'HR & Staff',
-  '/staff/add': 'Add Staff Member',
   '/settings':  'Settings',
   '/reports':   'Finance & Reports',
 };
@@ -38,7 +37,6 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/hq-inventory': 'Track warehouse stock, raw ingredients, and reorder levels globally.',
   '/hq-inventory/add': 'Register new coffee, syrups, packaging, or equipment.',
   '/staff':     'Manage employee records and role assignments across your network.',
-  '/staff/add': 'Onboard a new employee to your organization.',
   '/settings':  'System settings, user roles, and platform permissions.',
   '/reports':   'Financial analytics, performance leaderboards, and aggregated invoices.',
 };

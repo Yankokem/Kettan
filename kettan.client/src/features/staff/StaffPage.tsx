@@ -1,11 +1,13 @@
+import { useMemo, useState } from 'react';
 import { Box } from '@mui/material';
-import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import type { StaffMember } from './types';
 import { StaffCard } from './components/StaffCard';
+import { AddStaffModal, type AddStaffFormValues } from './components/AddStaffModal';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { Dropdown } from '../../components/UI/Dropdown';
+import { BRANCHES_MOCK } from '../branches/mockData';
 
 const MOCK_STAFF: StaffMember[] = [
   { id: 1, name: 'Sarah Jenkins', email: 's.jenkins@kettan.co', role: 'Branch Manager', location: 'Makati Headquarters', status: 'active', avatar: 'SJ' },
@@ -14,8 +16,51 @@ const MOCK_STAFF: StaffMember[] = [
   { id: 4, name: 'David Lee', email: 'd.lee@kettan.co', role: 'Barista', location: 'Ortigas Center', status: 'inactive', avatar: 'DL' },
 ];
 
+const ROLE_LABEL_MAP: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
+  hq: 'HQ Executive',
+  manager: 'Branch Manager',
+  staff: 'Store Staff',
+};
+
+const getInitials = (firstName: string, lastName: string) =>
+  `${firstName.trim().charAt(0)}${lastName.trim().charAt(0)}`.toUpperCase();
+
 export function StaffPage() {
-  const navigate = useNavigate();
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>(MOCK_STAFF);
+  const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
+
+  const branchOptions = useMemo(
+    () =>
+      BRANCHES_MOCK.map((branch) => ({
+        value: branch.id.toString(),
+        label: branch.name,
+      })),
+    []
+  );
+
+  const handleCreateStaff = (formValues: AddStaffFormValues) => {
+    const roleValue = formValues.role;
+
+    if (roleValue === '') {
+      return;
+    }
+
+    const nextId = staffMembers.reduce((maxId, staff) => Math.max(maxId, staff.id), 0) + 1;
+    const branchLabel = branchOptions.find((option) => option.value === formValues.branchAssignment)?.label ?? 'Unassigned';
+
+    setStaffMembers((previous) => [
+      {
+        id: nextId,
+        name: `${formValues.firstName} ${formValues.lastName}`,
+        email: formValues.email,
+        role: ROLE_LABEL_MAP[roleValue],
+        location: branchLabel,
+        status: 'active',
+        avatar: getInitials(formValues.firstName, formValues.lastName),
+      },
+      ...previous,
+    ]);
+  };
 
   return (
     <Box sx={{ pb: 3, pt: 1 }}>
@@ -32,7 +77,7 @@ export function StaffPage() {
           ]} 
         />
 
-        <Button startIcon={<PersonAddAlt1RoundedIcon />} onClick={() => navigate({ to: '/staff/add' })}>
+        <Button startIcon={<PersonAddAlt1RoundedIcon />} onClick={() => setIsAddStaffModalOpen(true)}>
           Add Staff
         </Button>
       </Box>
@@ -45,10 +90,17 @@ export function StaffPage() {
           gap: 3,
         }}
       >
-        {MOCK_STAFF.map((staff) => (
+        {staffMembers.map((staff) => (
           <StaffCard key={staff.id} staff={staff} />
         ))}
       </Box>
+
+      <AddStaffModal
+        open={isAddStaffModalOpen}
+        branchOptions={branchOptions}
+        onClose={() => setIsAddStaffModalOpen(false)}
+        onSave={handleCreateStaff}
+      />
     </Box>
   );
 }

@@ -6,7 +6,6 @@ import { BranchesPage } from '../features/branches/BranchesPage';
 import { AddBranchPage } from '../features/branches/AddBranchPage';
 import { BranchProfilePage } from '../features/branches/BranchProfilePage';
 import { StaffPage } from '../features/staff/StaffPage';
-import { AddStaffPage } from '../features/staff/AddStaffPage';
 import { StaffProfilePage } from '../features/staff/StaffProfilePage';
 import { InventoryPage } from '../features/hq-inventory/InventoryPage';
 import { InventoryItemProfilePage } from '../features/hq-inventory/InventoryItemProfilePage';
@@ -70,12 +69,6 @@ const staffRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/staff',
   component: StaffPage,
-});
-
-const addStaffRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: '/staff/add',
-  component: AddStaffPage,
 });
 
 const staffProfileRoute = createRoute({
@@ -181,7 +174,6 @@ const routeTree = rootRoute.addChildren([
     addBranchRoute,
     branchProfileRoute,
     staffRoute,
-    addStaffRoute,
     staffProfileRoute,
     inventoryRoute,
     inventoryTransactionRoute,

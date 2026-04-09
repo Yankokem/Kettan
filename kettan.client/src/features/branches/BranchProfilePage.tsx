@@ -28,7 +28,8 @@ import { BranchActivityTab } from './components/profile/BranchActivityTab';
 import { BranchTransactionsTab } from './components/profile/BranchTransactionsTab';
 import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
 import { BranchEditModal } from './components/profile/BranchEditModal.tsx';
-import type { BranchFormData, BranchProfileTabKey } from './types';
+import { AddStaffModal, type AddStaffFormValues } from '../staff/components/AddStaffModal.tsx';
+import type { BranchEmployee, BranchFormData, BranchProfileTabKey } from './types';
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Active (Operational)' },
@@ -45,19 +46,26 @@ const MANAGER_OPTIONS = [
   ...BRANCH_MANAGER_OPTIONS,
 ];
 
+const STAFF_ROLE_TO_POSITION: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
+  hq: 'HQ Executive',
+  manager: 'Branch Manager',
+  staff: 'Store Staff',
+};
+
 export function BranchProfilePage() {
   const navigate = useNavigate();
   const { branchId } = useParams({ from: '/layout/branches/$branchId' });
 
   const parsedBranchId = Number(branchId);
   const selectedBranch = useMemo(() => getBranchById(parsedBranchId), [parsedBranchId]);
-  const employees = useMemo(() => getBranchEmployeesById(parsedBranchId), [parsedBranchId]);
+  const branchEmployees = useMemo(() => getBranchEmployeesById(parsedBranchId), [parsedBranchId]);
   const activityLogs = useMemo(() => getBranchActivityById(parsedBranchId), [parsedBranchId]);
   const transactions = useMemo(() => getBranchTransactionsById(parsedBranchId), [parsedBranchId]);
   const inventoryItems = useMemo(() => getBranchInventoryById(parsedBranchId), [parsedBranchId]);
 
   const [activeTab, setActiveTab] = useState<BranchProfileTabKey>('details');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   const [formData, setFormData] = useState<BranchFormData | null>(
     selectedBranch ? toBranchFormData(selectedBranch) : null
@@ -65,16 +73,19 @@ export function BranchProfilePage() {
   const [editDraft, setEditDraft] = useState<BranchFormData | null>(
     selectedBranch ? toBranchFormData(selectedBranch) : null
   );
+  const [staffMembers, setStaffMembers] = useState<BranchEmployee[]>(branchEmployees);
 
   useEffect(() => {
     const nextFormData = selectedBranch ? toBranchFormData(selectedBranch) : null;
 
     setFormData(nextFormData);
     setEditDraft(nextFormData);
+    setStaffMembers(branchEmployees);
     setActiveTab('details');
     setIsEditModalOpen(false);
+    setIsAddStaffModalOpen(false);
     setShowSavedNotice(false);
-  }, [selectedBranch]);
+  }, [branchEmployees, selectedBranch]);
 
   useEffect(() => {
     if (!showSavedNotice) {
@@ -127,26 +138,35 @@ export function BranchProfilePage() {
     return knownCities.map((city) => ({ value: city, label: city }));
   }, [editDraft?.city]);
 
+  const staffBranchOptions = useMemo(
+    () =>
+      BRANCHES_MOCK.map((branch) => ({
+        value: branch.id.toString(),
+        label: branch.name,
+      })),
+    []
+  );
+
   const tabBadges = useMemo(
     () => ({
-      staff: employees.length,
+      staff: staffMembers.length,
       activity: activityLogs.length,
       transactions: transactions.length,
       inventory: inventoryItems.length,
     }),
-    [activityLogs.length, employees.length, inventoryItems.length, transactions.length]
+    [activityLogs.length, inventoryItems.length, staffMembers.length, transactions.length]
   );
 
   const kpis = useMemo(
     () =>
       getKpisForTab(activeTab, {
         branch: selectedBranch,
-        employees,
+        employees: staffMembers,
         activityLogs,
         transactions,
         inventoryItems,
       }),
-    [activeTab, activityLogs, employees, inventoryItems, selectedBranch, transactions]
+    [activeTab, activityLogs, inventoryItems, selectedBranch, staffMembers, transactions]
   );
 
   const updateEditDraft = <K extends keyof BranchFormData>(field: K, value: BranchFormData[K]) => {
@@ -183,6 +203,33 @@ export function BranchProfilePage() {
     setEditDraft(formData);
     setIsEditModalOpen(true);
     setActiveTab('details');
+  };
+
+  const handleCreateStaff = (formValues: AddStaffFormValues) => {
+    if (!formValues.role) {
+      return;
+    }
+
+    const assignedBranchId = Number(formValues.branchAssignment);
+    const nextId = staffMembers.reduce((maxId, employee) => Math.max(maxId, employee.id), 0) + 1;
+
+    const newEmployee: BranchEmployee = {
+      id: nextId,
+      branchId: Number.isFinite(assignedBranchId) ? assignedBranchId : null,
+      firstName: formValues.firstName,
+      lastName: formValues.lastName,
+      position: STAFF_ROLE_TO_POSITION[formValues.role],
+      contactNumber: 'N/A',
+      dateHired: new Date().toISOString(),
+      isActive: true,
+    };
+
+    if (newEmployee.branchId === selectedBranch.id) {
+      setStaffMembers((previous) => [newEmployee, ...previous]);
+    }
+
+    setIsAddStaffModalOpen(false);
+    setActiveTab('staff');
   };
 
   return (
@@ -271,17 +318,8 @@ export function BranchProfilePage() {
 
           {activeTab === 'staff' ? (
             <BranchStaffTab
-              employees={employees}
-              onAddStaff={() =>
-                navigate({
-                  to: '/staff/add',
-                  search: {
-                    branchId: selectedBranch.id.toString(),
-                    branchName: selectedBranch.name,
-                    returnTo: `/branches/${selectedBranch.id}`,
-                  },
-                })
-              }
+              employees={staffMembers}
+              onAddStaff={() => setIsAddStaffModalOpen(true)}
               onOpenStaffProfile={(employee) =>
                 navigate({
                   to: '/staff/$staffId',
@@ -309,6 +347,15 @@ export function BranchProfilePage() {
         onClose={handleCloseEditModal}
         onSave={handleSave}
         onUpdate={updateEditDraft}
+      />
+
+      <AddStaffModal
+        open={isAddStaffModalOpen}
+        branchOptions={staffBranchOptions}
+        initialBranchId={selectedBranch.id.toString()}
+        initialBranchName={selectedBranch.name}
+        onClose={() => setIsAddStaffModalOpen(false)}
+        onSave={handleCreateStaff}
       />
     </Box>
   );
