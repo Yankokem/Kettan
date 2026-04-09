@@ -15,7 +15,6 @@ import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import RemoveCircleOutlineRoundedIcon from '@mui/icons-material/RemoveCircleOutlineRounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
@@ -421,12 +420,6 @@ export function InventoryTable({ items, transactions = [], onStockOut, onRowClic
           onChange={(newView: ViewMode) => setViewMode(newView)}
         />
         <Button
-          startIcon={<AddRoundedIcon />}
-          onClick={() => navigate({ to: '/hq-inventory/stock-in' })}
-        >
-          Stock-In
-        </Button>
-        <Button
           variant="outlined"
           onClick={(e) => setMenuAnchor(e.currentTarget)}
           sx={{ minWidth: 40, px: 1 }}
@@ -450,6 +443,12 @@ export function InventoryTable({ items, transactions = [], onStockOut, onRowClic
             <ListItemText>Adjust Inventory</ListItemText>
           </MenuItem>
         </Menu>
+        <Button
+          startIcon={<CallReceivedRoundedIcon />}
+          onClick={() => navigate({ to: '/hq-inventory/transaction' })}
+        >
+          New Transaction
+        </Button>
       </Box>
     </Box>
   );

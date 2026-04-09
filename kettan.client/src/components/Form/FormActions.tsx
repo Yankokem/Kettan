@@ -7,9 +7,10 @@ export interface FormActionsProps {
   saveText: string;
   saveIcon?: React.ReactNode;
   onSave?: () => void;
+  saveDisabled?: boolean;
 }
 
-export function FormActions({ cancelTo, saveText, saveIcon, onSave }: FormActionsProps) {
+export function FormActions({ cancelTo, saveText, saveIcon, onSave, saveDisabled = false }: FormActionsProps) {
   const navigate = useNavigate();
   
   const handleSave = () => {
@@ -27,7 +28,7 @@ export function FormActions({ cancelTo, saveText, saveIcon, onSave }: FormAction
         Cancel
       </Button>
       
-      <Button startIcon={saveIcon} onClick={handleSave}>
+      <Button startIcon={saveIcon} onClick={handleSave} disabled={saveDisabled}>
         {saveText}
       </Button>
     </Box>

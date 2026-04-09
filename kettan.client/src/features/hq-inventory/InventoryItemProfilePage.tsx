@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Box, Typography, Paper, Chip, Divider } from '@mui/material';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
 import { useParams, useNavigate } from '@tanstack/react-router';
@@ -96,10 +96,10 @@ export function InventoryItemProfilePage() {
         <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Button
             variant="outlined"
-            startIcon={<AddRoundedIcon />}
-            onClick={() => navigate({ to: '/hq-inventory/stock-in' })}
+            startIcon={<CallReceivedRoundedIcon />}
+            onClick={() => navigate({ to: '/hq-inventory/transaction', search: { itemId: item.id } })}
           >
-            Stock-In
+            New Transaction
           </Button>
           {!isEditing ? (
             <Button startIcon={<EditRoundedIcon />} onClick={() => setIsEditing(true)}>
