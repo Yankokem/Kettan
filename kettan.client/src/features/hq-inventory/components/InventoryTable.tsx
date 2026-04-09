@@ -4,10 +4,6 @@ import {
   Typography,
   Chip,
   LinearProgress,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
 } from '@mui/material';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
@@ -15,8 +11,6 @@ import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
-import RemoveCircleOutlineRoundedIcon from '@mui/icons-material/RemoveCircleOutlineRounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
 import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
@@ -32,7 +26,6 @@ import { KettanTable, type KettanColumnDef } from '../../../components/UI/Kettan
 interface InventoryTableProps {
   items: InventoryItem[];
   transactions?: InventoryTransaction[];
-  onStockOut?: () => void;
   onRowClick?: (id: string | number) => void;
 }
 
@@ -71,13 +64,12 @@ const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: strin
   },
 };
 
-export function InventoryTable({ items, transactions = [], onStockOut, onRowClick }: InventoryTableProps) {
+export function InventoryTable({ items, transactions = [], onRowClick }: InventoryTableProps) {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
-  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   const viewOptions = [
     { value: 'default' as const, label: 'General', icon: <ViewListRoundedIcon fontSize="small" /> },
@@ -419,30 +411,6 @@ export function InventoryTable({ items, transactions = [], onStockOut, onRowClic
           options={viewOptions as never}
           onChange={(newView: ViewMode) => setViewMode(newView)}
         />
-        <Button
-          variant="outlined"
-          onClick={(e) => setMenuAnchor(e.currentTarget)}
-          sx={{ minWidth: 40, px: 1 }}
-        >
-          <MoreVertRoundedIcon />
-        </Button>
-        <Menu
-          anchorEl={menuAnchor}
-          open={Boolean(menuAnchor)}
-          onClose={() => setMenuAnchor(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          PaperProps={{ sx: { minWidth: 180, borderRadius: 2, mt: 1 } }}
-        >
-          <MenuItem onClick={() => { onStockOut?.(); setMenuAnchor(null); }}>
-            <ListItemIcon><RemoveCircleOutlineRoundedIcon fontSize="small" sx={{ color: 'error.main' }} /></ListItemIcon>
-            <ListItemText>Stock-Out</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => { setMenuAnchor(null); }}>
-            <ListItemIcon><TuneRoundedIcon fontSize="small" /></ListItemIcon>
-            <ListItemText>Adjust Inventory</ListItemText>
-          </MenuItem>
-        </Menu>
         <Button
           startIcon={<CallReceivedRoundedIcon />}
           onClick={() => navigate({ to: '/hq-inventory/transaction' })}

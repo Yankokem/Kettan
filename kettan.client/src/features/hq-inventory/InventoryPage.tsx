@@ -1,27 +1,16 @@
-import { useState } from 'react';
 import { Box } from '@mui/material';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import { InventoryTable } from './components/InventoryTable';
-import { StockOutModal } from './components/StockOutModal';
 import { StatCard } from '../../components/UI/StatCard';
 import {
   MOCK_INVENTORY_ITEMS,
-  MOCK_BATCHES,
   MOCK_TRANSACTIONS,
 } from './mockData';
-import type { StockOutFormData } from './types';
 
 export function InventoryPage() {
-  const [stockOutOpen, setStockOutOpen] = useState(false);
-
-  const handleStockOutConfirm = (data: StockOutFormData) => {
-    console.log('Stock-Out confirmed:', data);
-    // TODO: API call to save stock-out
-  };
-
   return (
     <Box sx={{ pb: 3 }}>
       {/* KPI Stats */}
@@ -75,16 +64,6 @@ export function InventoryPage() {
       <InventoryTable
         items={MOCK_INVENTORY_ITEMS}
         transactions={MOCK_TRANSACTIONS}
-        onStockOut={() => setStockOutOpen(true)}
-      />
-
-      {/* Stock-Out Modal */}
-      <StockOutModal
-        open={stockOutOpen}
-        onClose={() => setStockOutOpen(false)}
-        onConfirm={handleStockOutConfirm}
-        inventoryItems={MOCK_INVENTORY_ITEMS}
-        batches={MOCK_BATCHES}
       />
     </Box>
   );

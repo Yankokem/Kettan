@@ -1,16 +1,25 @@
 import { TextField as MuiTextField, alpha } from '@mui/material';
 import type { TextFieldProps as MuiTextFieldProps } from '@mui/material';
 
-export function TextField(props: MuiTextFieldProps) {
+export function TextField({ multiline = false, sx, ...props }: MuiTextFieldProps) {
   return (
     <MuiTextField
       variant="outlined"
       size="small"
       fullWidth
       {...props}
+      multiline={multiline}
       sx={{
         '& .MuiOutlinedInput-root': {
-          height: 40,
+          ...(multiline
+            ? {
+                minHeight: 40,
+                alignItems: 'flex-start',
+                py: 0.75,
+              }
+            : {
+                height: 40,
+              }),
           borderRadius: 2,
           bgcolor: 'background.paper',
           '& fieldset': {
@@ -38,7 +47,11 @@ export function TextField(props: MuiTextFieldProps) {
             fontWeight: 400,
           },
         },
-        ...props.sx,
+        '& .MuiInputBase-inputMultiline': {
+          lineHeight: 1.5,
+          py: 0,
+        },
+        ...sx,
       }}
     />
   );

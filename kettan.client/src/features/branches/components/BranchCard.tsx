@@ -79,12 +79,56 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
     >
       {/* Card Header Section */}
       <Box sx={{ p: 2.5, pb: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ p: 1.25, borderRadius: 2, bgcolor: '#FAF5EF', color: '#6B4C2A', border: '1px solid #EADDCD' }}>
-              <StorefrontRoundedIcon sx={{ fontSize: 22 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 1.75, minWidth: 0, flex: 1 }}>
+            <Box
+              sx={{
+                width: 72,
+                height: 72,
+                borderRadius: 2,
+                overflow: 'hidden',
+                border: '1px solid',
+                borderColor: 'divider',
+                bgcolor: '#F3F4F6',
+                flexShrink: 0,
+              }}
+            >
+              {branch.imageUrl ? (
+                <Box
+                  component="img"
+                  src={branch.imageUrl}
+                  alt={`${branch.name} branch`}
+                  sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#9CA3AF',
+                  }}
+                >
+                  <StorefrontRoundedIcon sx={{ fontSize: 30 }} />
+                </Box>
+              )}
+            </Box>
+
+            <Box sx={{ minWidth: 0, pt: 0.25 }}>
+              <Typography sx={{ fontSize: 17, fontWeight: 800, color: 'text.primary', lineHeight: 1.2, mb: 0.65 }}>
+                {branch.name}
+              </Typography>
+              <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>
+                {branch.manager}
+              </Typography>
+              <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
+                {branch.staff} Staff Members
+              </Typography>
             </Box>
           </Box>
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {getStatusChip(branch.status)}
             {alertCount !== undefined && alertCount > 0 && (
@@ -139,10 +183,6 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
             </Menu>
           </Box>
         </Box>
-        
-        <Typography sx={{ fontSize: 17, fontWeight: 800, color: 'text.primary', mb: 0.5 }}>
-          {branch.name}
-        </Typography>
       </Box>
 
       <Divider />
@@ -157,14 +197,9 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <PeopleRoundedIcon sx={{ fontSize: 18, color: '#546B3F' }} />
-          <Box>
-            <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>
-              {branch.manager}
-            </Typography>
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
-              {branch.staff} Staff Members
-            </Typography>
-          </Box>
+          <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>
+            Operations team: {branch.staff} active members
+          </Typography>
         </Box>
       </Box>
     </Card>

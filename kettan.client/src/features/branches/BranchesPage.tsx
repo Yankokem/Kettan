@@ -17,10 +17,15 @@ interface BranchInventoryStat extends Branch {
   totalItems: number;
 }
 
+const createBranchImage = (label: string, backgroundColor: string) =>
+  `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><rect width='100%' height='100%' fill='${backgroundColor}'/><text x='50%' y='54%' text-anchor='middle' dominant-baseline='middle' font-family='Segoe UI, sans-serif' font-size='74' font-weight='700' fill='#FFFFFF'>${label}</text></svg>`
+  )}`;
+
 // Mock Data
 const MOCK_BRANCHES: BranchInventoryStat[] = [
-  { id: 1, name: 'Makati HQ', location: 'Ayala Triangle, Makati City', manager: 'Sarah Jenkins', staff: 14, status: 'active', lowStockItems: 2, totalItems: 140 },
-  { id: 2, name: 'BGC High Street', location: '5th Ave, Taguig', manager: 'Miguel Santos', staff: 8, status: 'active', lowStockItems: 5, totalItems: 110 },
+  { id: 1, name: 'Makati HQ', location: 'Ayala Triangle, Makati City', manager: 'Sarah Jenkins', staff: 14, status: 'active', lowStockItems: 2, totalItems: 140, imageUrl: createBranchImage('MH', '#6B4C2A') },
+  { id: 2, name: 'BGC High Street', location: '5th Ave, Taguig', manager: 'Miguel Santos', staff: 8, status: 'active', lowStockItems: 5, totalItems: 110, imageUrl: createBranchImage('BG', '#546B3F') },
   { id: 3, name: 'Ortigas Center', location: 'Emerald Ave, Pasig', manager: 'Anna Cruz', staff: 6, status: 'active', lowStockItems: 0, totalItems: 95 },
   { id: 4, name: 'Quezon City Circle', location: 'Tomas Morato, QC', manager: 'Pending Assignment', staff: 0, status: 'setup', lowStockItems: 0, totalItems: 0 },
 ];
