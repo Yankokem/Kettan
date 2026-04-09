@@ -5,36 +5,18 @@ import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
-import type { Branch } from './types';
 import { BranchCard } from './components/BranchCard';
+import { BRANCHES_MOCK } from './mockData';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { Dropdown } from '../../components/UI/Dropdown';
 import { StatCard } from '../../components/UI/StatCard';
 
-interface BranchInventoryStat extends Branch {
-  lowStockItems: number;
-  totalItems: number;
-}
-
-const createBranchImage = (label: string, backgroundColor: string) =>
-  `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><rect width='100%' height='100%' fill='${backgroundColor}'/><text x='50%' y='54%' text-anchor='middle' dominant-baseline='middle' font-family='Segoe UI, sans-serif' font-size='74' font-weight='700' fill='#FFFFFF'>${label}</text></svg>`
-  )}`;
-
-// Mock Data
-const MOCK_BRANCHES: BranchInventoryStat[] = [
-  { id: 1, name: 'Makati HQ', location: 'Ayala Triangle, Makati City', manager: 'Sarah Jenkins', staff: 14, status: 'active', lowStockItems: 2, totalItems: 140, imageUrl: createBranchImage('MH', '#6B4C2A') },
-  { id: 2, name: 'BGC High Street', location: '5th Ave, Taguig', manager: 'Miguel Santos', staff: 8, status: 'active', lowStockItems: 5, totalItems: 110, imageUrl: createBranchImage('BG', '#546B3F') },
-  { id: 3, name: 'Ortigas Center', location: 'Emerald Ave, Pasig', manager: 'Anna Cruz', staff: 6, status: 'active', lowStockItems: 0, totalItems: 95 },
-  { id: 4, name: 'Quezon City Circle', location: 'Tomas Morato, QC', manager: 'Pending Assignment', staff: 0, status: 'setup', lowStockItems: 0, totalItems: 0 },
-];
-
 export function BranchesPage() {
   const navigate = useNavigate();
 
-  const activeBranches = MOCK_BRANCHES.filter(b => b.status === 'active').length;
-  const criticalStockBranches = MOCK_BRANCHES.filter(b => b.lowStockItems > 0).length;
+  const activeBranches = BRANCHES_MOCK.filter((branch) => branch.status === 'active').length;
+  const criticalStockBranches = BRANCHES_MOCK.filter((branch) => branch.lowStockItems > 0).length;
 
   return (
     <Box sx={{ pb: 3, pt: 1 }}>
@@ -66,7 +48,7 @@ export function BranchesPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard 
               label="Total Tracked SKUs" 
-              value={MOCK_BRANCHES.reduce((acc, b) => acc + b.totalItems, 0).toString()} 
+              value={BRANCHES_MOCK.reduce((acc, branch) => acc + branch.totalItems, 0).toString()} 
               trend="up"
               trendValue="3.1%"
               icon={<Inventory2RoundedIcon />} 
@@ -77,7 +59,7 @@ export function BranchesPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard 
               label="Pending Installations" 
-              value={MOCK_BRANCHES.filter(b => b.status !== 'active').length.toString()} 
+              value={BRANCHES_MOCK.filter((branch) => branch.status !== 'active').length.toString()} 
               trend="down"
               trendValue="1.0%"
               icon={<HourglassEmptyRoundedIcon />} 
@@ -90,7 +72,7 @@ export function BranchesPage() {
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, gap: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: 17, minWidth: 'max-content' }}>
-          Branch and Inventory ({MOCK_BRANCHES.length})
+          Branch and Inventory ({BRANCHES_MOCK.length})
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, justifyContent: 'flex-end' }}>
@@ -119,7 +101,7 @@ export function BranchesPage() {
           gap: 3,
         }}
       >
-        {MOCK_BRANCHES.map((branch) => (
+        {BRANCHES_MOCK.map((branch) => (
           <BranchCard key={branch.id} branch={branch} alertCount={branch.lowStockItems} />
         ))}
       </Box>

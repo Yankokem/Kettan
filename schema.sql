@@ -19,13 +19,6 @@ CREATE TABLE Branches (
     BranchId INT IDENTITY(1,1) PRIMARY KEY,
     TenantId INT NOT NULL,
     Name NVARCHAR(255) NOT NULL,
-    Address NVARCHAR(500) NULL,
-    City NVARCHAR(150) NULL,
-    ContactNumber NVARCHAR(50) NULL,
-    OpenTime TIME(0) NULL,
-    CloseTime TIME(0) NULL,
-    OwnerUserId INT NULL,
-    ManagerUserId INT NULL,
     Location NVARCHAR(500),
     CustomThresholds NVARCHAR(MAX), -- JSON for overriding default item thresholds
     IsActive BIT NOT NULL DEFAULT 1,
@@ -47,33 +40,6 @@ CREATE TABLE Users (
     CONSTRAINT FK_Users_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId),
     CONSTRAINT FK_Users_Branches FOREIGN KEY (BranchId) REFERENCES Branches(BranchId)
 );
-
-CREATE INDEX IX_Branches_OwnerUserId ON Branches(OwnerUserId);
-CREATE INDEX IX_Branches_ManagerUserId ON Branches(ManagerUserId);
-
-ALTER TABLE Branches
-ADD CONSTRAINT FK_Branches_OwnerUsers FOREIGN KEY (OwnerUserId) REFERENCES Users(UserId);
-
-ALTER TABLE Branches
-ADD CONSTRAINT FK_Branches_ManagerUsers FOREIGN KEY (ManagerUserId) REFERENCES Users(UserId);
-
-CREATE TABLE Employees (
-    EmployeeId INT IDENTITY(1,1) PRIMARY KEY,
-    TenantId INT NOT NULL,
-    BranchId INT NULL, -- Null means HQ employee
-    FirstName NVARCHAR(100) NOT NULL,
-    LastName NVARCHAR(100) NOT NULL,
-    Position NVARCHAR(100) NOT NULL,
-    ContactNumber NVARCHAR(50) NULL,
-    DateHired DATE NULL,
-    IsActive BIT NOT NULL DEFAULT 1,
-    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    CONSTRAINT FK_Employees_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(TenantId),
-    CONSTRAINT FK_Employees_Branches FOREIGN KEY (BranchId) REFERENCES Branches(BranchId)
-);
-
-CREATE INDEX IX_Employees_TenantId ON Employees(TenantId);
-CREATE INDEX IX_Employees_BranchId ON Employees(BranchId);
 
 -- =====================================================================
 -- 2. Inventory & Batching Level

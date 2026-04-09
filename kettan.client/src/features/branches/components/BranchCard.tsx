@@ -192,7 +192,7 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
           <LocationOnRoundedIcon sx={{ fontSize: 18, color: '#546B3F', mt: 0.1 }} />
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary', lineHeight: 1.4, fontWeight: 500 }}>
-            {branch.location}
+            {branch.address}, {branch.city}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
