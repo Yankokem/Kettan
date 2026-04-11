@@ -1,4 +1,6 @@
+import { useMemo, useState } from 'react';
 import { Box, Checkbox, Typography } from '@mui/material';
+import { Button } from './Button';
 import { MatrixTable, type MatrixColumnDef } from './MatrixTable';
 
 const ROLES = ['TenantAdmin', 'HQ Manager', 'HQ Staff', 'Branch Owner', 'Branch Manager'] as const;
@@ -11,7 +13,6 @@ interface PermissionState {
   create: boolean;
   update: boolean;
   remove: boolean;
-  disabled: boolean;
 }
 
 interface AccessMatrixRow {
@@ -31,11 +32,10 @@ function getPermissionState(module: string, role: RoleName): PermissionState {
     create: hasAccess && !role.includes('Owner'),
     update: hasAccess && !role.includes('Owner'),
     remove: isTenantAdmin,
-    disabled: !hasAccess && !isTenantAdmin,
   };
 }
 
-const rows: AccessMatrixRow[] = MODULES.map((module) => {
+const INITIAL_ROWS: AccessMatrixRow[] = MODULES.map((module) => {
   const permissions = {} as Record<RoleName, PermissionState>;
 
   ROLES.forEach((role) => {
@@ -49,66 +49,110 @@ const rows: AccessMatrixRow[] = MODULES.map((module) => {
   };
 });
 
-const columns: MatrixColumnDef<AccessMatrixRow>[] = [
-  {
-    key: 'module',
-    label: 'Module',
-    gridWidth: 'minmax(180px, 1.2fr)',
-    render: (row) => (
-      <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13 }}>
-        {row.module}
-      </Typography>
-    ),
-  },
-  ...ROLES.map((role) => ({
-    key: role,
-    label: role,
-    align: 'center' as const,
-    gridWidth: 'minmax(155px, 1fr)',
-    render: (row: AccessMatrixRow) => {
-      const permission = row.permissions[role];
-
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.25 }}>
-          <Checkbox
-            size="small"
-            checked={permission.view}
-            disabled={permission.disabled}
-            color="success"
-            sx={{ p: 0.25 }}
-          />
-          <Checkbox
-            size="small"
-            checked={permission.create}
-            disabled={permission.disabled}
-            color="info"
-            sx={{ p: 0.25 }}
-          />
-          <Checkbox
-            size="small"
-            checked={permission.update}
-            disabled={permission.disabled}
-            color="warning"
-            sx={{ p: 0.25 }}
-          />
-          <Checkbox
-            size="small"
-            checked={permission.remove}
-            disabled={!permission.remove}
-            color="error"
-            sx={{ p: 0.25 }}
-          />
-        </Box>
-      );
-    },
-  })),
-];
-
 interface AccessMatrixProps {
   hideHeader?: boolean;
 }
 
 export function AccessMatrix({ hideHeader = false }: AccessMatrixProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [rows, setRows] = useState<AccessMatrixRow[]>(() => INITIAL_ROWS);
+
+  const updatePermission = (
+    moduleId: string,
+    role: RoleName,
+    key: keyof PermissionState,
+    checked: boolean
+  ) => {
+    setRows((previous) =>
+      previous.map((row) => {
+        if (row.id !== moduleId) {
+          return row;
+        }
+
+        return {
+          ...row,
+          permissions: {
+            ...row.permissions,
+            [role]: {
+              ...row.permissions[role],
+              [key]: checked,
+            },
+          },
+        };
+      })
+    );
+  };
+
+  const columns = useMemo<MatrixColumnDef<AccessMatrixRow>[]>(
+    () => [
+      {
+        key: 'module',
+        label: 'Module',
+        gridWidth: 'minmax(180px, 1.2fr)',
+        render: (row) => (
+          <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13 }}>
+            {row.module}
+          </Typography>
+        ),
+      },
+      ...ROLES.map((role) => ({
+        key: role,
+        label: role,
+        align: 'center' as const,
+        gridWidth: 'minmax(155px, 1fr)',
+        render: (row: AccessMatrixRow) => {
+          const permission = row.permissions[role];
+
+          return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.25 }}>
+              <Checkbox
+                size="small"
+                checked={permission.view}
+                disabled={!isEditing}
+                onChange={(event) => updatePermission(row.id, role, 'view', event.target.checked)}
+                color="success"
+                sx={{ p: 0.25 }}
+              />
+              <Checkbox
+                size="small"
+                checked={permission.create}
+                disabled={!isEditing}
+                onChange={(event) => updatePermission(row.id, role, 'create', event.target.checked)}
+                color="info"
+                sx={{ p: 0.25 }}
+              />
+              <Checkbox
+                size="small"
+                checked={permission.update}
+                disabled={!isEditing}
+                onChange={(event) => updatePermission(row.id, role, 'update', event.target.checked)}
+                color="warning"
+                sx={{ p: 0.25 }}
+              />
+              <Checkbox
+                size="small"
+                checked={permission.remove}
+                disabled={!isEditing}
+                onChange={(event) => updatePermission(row.id, role, 'remove', event.target.checked)}
+                color="error"
+                sx={{ p: 0.25 }}
+              />
+            </Box>
+          );
+        },
+      })),
+    ],
+    [isEditing]
+  );
+
+  const handleToggleEditing = () => {
+    if (isEditing) {
+      console.log('Saved role access matrix changes', rows);
+    }
+
+    setIsEditing((previous) => !previous);
+  };
+
   return (
     <Box>
       {!hideHeader ? (
@@ -117,6 +161,24 @@ export function AccessMatrix({ hideHeader = false }: AccessMatrixProps) {
           <Typography variant="body2" color="text.secondary">Global permission rules mapping roles to specific system modules.</Typography>
         </Box>
       ) : null}
+
+      <Box
+        sx={{
+          mb: 1.8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1.2,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
+          {isEditing ? 'Edit mode enabled. Update checkmarks, then click Save Changes.' : 'Permissions are locked. Click Edit Access to modify checkmarks.'}
+        </Typography>
+        <Button variant={isEditing ? 'contained' : 'outlined'} onClick={handleToggleEditing}>
+          {isEditing ? 'Save Changes' : 'Edit Access'}
+        </Button>
+      </Box>
 
       <MatrixTable columns={columns} data={rows} keyExtractor={(row) => row.id} striped />
 

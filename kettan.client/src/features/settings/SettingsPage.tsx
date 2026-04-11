@@ -1,43 +1,24 @@
 import { useMemo, useState } from 'react';
-import { Box, Chip, Paper, TextField, Typography } from '@mui/material';
+import { Box, Paper, TextField, Typography } from '@mui/material';
 import { motion } from 'motion/react';
 import {
   BellRing,
-  Car,
-  Layers3,
   ShieldCheck,
   SlidersHorizontal,
   Store,
-  Truck,
 } from 'lucide-react';
 import { AccessMatrix } from '../../components/UI/AccessMatrix';
 import { Button } from '../../components/UI/Button';
-import { Dropdown } from '../../components/UI/Dropdown';
 import { PageTransition, SectionReveal } from '../../components/UI/PageTransition';
 import { Switch } from '../../components/UI/Switch';
 
-type SettingsTabKey = 'access' | 'thresholds' | 'approvals' | 'notifications' | 'catalog' | 'couriers';
+type SettingsTabKey = 'access' | 'thresholds' | 'approvals' | 'notifications';
 
 interface ThresholdConfig {
   id: string;
   label: string;
   unit: string;
   value: number;
-}
-
-interface ItemTypeConfig {
-  id: string;
-  name: string;
-  categories: string[];
-}
-
-interface CourierConfig {
-  id: string;
-  name: string;
-  contact: string;
-  vehicleType: string;
-  plateNumber: string;
-  active: boolean;
 }
 
 const SETTINGS_TABS: {
@@ -75,20 +56,6 @@ const SETTINGS_TABS: {
     hint: 'Persistent alert preferences',
     detail: 'Choose which operational events send persistent bell notifications to users and managers.',
   },
-  {
-    key: 'catalog',
-    label: 'Item Types & Categories',
-    icon: Layers3,
-    hint: 'Inventory taxonomy and grouping',
-    detail: 'Manage item type and category structures used in inventory forms, filters, and reporting views.',
-  },
-  {
-    key: 'couriers',
-    label: 'Couriers & Vehicles',
-    icon: Truck,
-    hint: 'Dispatch profiles and fleet records',
-    detail: 'Maintain active delivery providers and assigned vehicles used during fulfillment dispatch.',
-  },
 ];
 
 export function SettingsPage() {
@@ -111,40 +78,6 @@ export function SettingsPage() {
     returnFiled: true,
   });
 
-  const [itemTypes, setItemTypes] = useState<ItemTypeConfig[]>([
-    { id: 'raw', name: 'Raw Material', categories: ['Beans', 'Dairy & Alternatives', 'Syrups'] },
-    { id: 'consumable', name: 'Consumable', categories: ['Cups', 'Lids', 'Napkins'] },
-    { id: 'finished', name: 'Finished Good', categories: ['Bottled Drinks', 'Merchandise'] },
-  ]);
-
-  const [selectedTypeId, setSelectedTypeId] = useState(itemTypes[0]?.id ?? '');
-  const [newTypeName, setNewTypeName] = useState('');
-  const [newCategoryName, setNewCategoryName] = useState('');
-
-  const [couriers, setCouriers] = useState<CourierConfig[]>([
-    {
-      id: 'c-1',
-      name: 'Juan Delivery Services',
-      contact: '0917-555-0101',
-      vehicleType: 'Van',
-      plateNumber: 'ABC-1234',
-      active: true,
-    },
-    {
-      id: 'c-2',
-      name: 'Metro Fast Riders',
-      contact: '0917-555-0146',
-      vehicleType: 'Motorcycle',
-      plateNumber: 'MTR-8812',
-      active: true,
-    },
-  ]);
-
-  const selectedType = useMemo(
-    () => itemTypes.find((entry) => entry.id === selectedTypeId) ?? itemTypes[0],
-    [itemTypes, selectedTypeId]
-  );
-
   const activeTabMeta = useMemo(
     () => SETTINGS_TABS.find((entry) => entry.key === activeTab) ?? SETTINGS_TABS[0],
     [activeTab]
@@ -159,47 +92,6 @@ export function SettingsPage() {
 
     setThresholds((previous) =>
       previous.map((entry) => (entry.id === id ? { ...entry, value: parsed } : entry))
-    );
-  };
-
-  const addItemType = () => {
-    const normalized = newTypeName.trim();
-    if (!normalized) {
-      return;
-    }
-
-    const id = normalized.toLowerCase().replace(/\s+/g, '-');
-    if (itemTypes.some((entry) => entry.id === id)) {
-      return;
-    }
-
-    setItemTypes((previous) => [...previous, { id, name: normalized, categories: [] }]);
-    setSelectedTypeId(id);
-    setNewTypeName('');
-  };
-
-  const addCategory = () => {
-    const normalized = newCategoryName.trim();
-    if (!normalized || !selectedType) {
-      return;
-    }
-
-    setItemTypes((previous) =>
-      previous.map((entry) => {
-        if (entry.id !== selectedType.id || entry.categories.includes(normalized)) {
-          return entry;
-        }
-
-        return { ...entry, categories: [...entry.categories, normalized] };
-      })
-    );
-
-    setNewCategoryName('');
-  };
-
-  const toggleCourierActive = (courierId: string) => {
-    setCouriers((previous) =>
-      previous.map((entry) => (entry.id === courierId ? { ...entry, active: !entry.active } : entry))
     );
   };
 
@@ -469,107 +361,6 @@ export function SettingsPage() {
               </Box>
             ) : null}
 
-            {activeTab === 'catalog' ? (
-              <Box sx={{ display: 'grid', gap: 2.2 }}>
-                <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, p: 2 }}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1.1 }}>Create Item Type</Typography>
-                  <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-                    <TextField
-                      size="small"
-                      placeholder="e.g. Equipment"
-                      value={newTypeName}
-                      onChange={(event) => setNewTypeName(event.target.value)}
-                      sx={{ width: { xs: '100%', sm: 300 } }}
-                    />
-                    <Button onClick={addItemType}>Add Type</Button>
-                  </Box>
-                </Paper>
-
-                <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, p: 2 }}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1.1 }}>Manage Categories</Typography>
-
-                  <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap', mb: 1.5 }}>
-                    <Dropdown
-                      value={selectedTypeId}
-                      onChange={(event) => setSelectedTypeId(event.target.value as string)}
-                      options={itemTypes.map((entry) => ({ value: entry.id, label: entry.name }))}
-                      sx={{ minWidth: 220 }}
-                    />
-
-                    <TextField
-                      size="small"
-                      placeholder="e.g. Lids"
-                      value={newCategoryName}
-                      onChange={(event) => setNewCategoryName(event.target.value)}
-                      sx={{ width: { xs: '100%', sm: 240 } }}
-                    />
-                    <Button onClick={addCategory}>Add Category</Button>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                    {(selectedType?.categories ?? []).map((category) => (
-                      <Chip key={category} label={category} size="small" sx={{ fontWeight: 600, bgcolor: 'background.default' }} />
-                    ))}
-                  </Box>
-                </Paper>
-              </Box>
-            ) : null}
-
-            {activeTab === 'couriers' ? (
-              <Box>
-                <Box sx={{ display: 'grid', gap: 1.2 }}>
-                  {couriers.map((entry) => (
-                    <Paper
-                      key={entry.id}
-                      elevation={0}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        px: 2,
-                        py: 1.5,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: 2,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <Box>
-                        <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{entry.name}</Typography>
-                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{entry.contact}</Typography>
-                        <Box sx={{ mt: 0.65, display: 'flex', alignItems: 'center', gap: 0.65 }}>
-                          <Car size={12} color="#6B4C2A" />
-                          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                            {entry.vehicleType} • {entry.plateNumber}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.1 }}>
-                        <Chip
-                          size="small"
-                          label={entry.active ? 'Active' : 'Disabled'}
-                          sx={{
-                            fontWeight: 700,
-                            bgcolor: entry.active ? 'rgba(84,107,63,0.12)' : 'rgba(161,98,7,0.14)',
-                            color: entry.active ? '#546B3F' : '#92400E',
-                          }}
-                        />
-                        <Switch checked={entry.active} onChange={() => toggleCourierActive(entry.id)} />
-                      </Box>
-                    </Paper>
-                  ))}
-                </Box>
-
-                <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
-                  <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                    Use this list during order dispatch to select courier and vehicle assignments.
-                  </Typography>
-                  <Button>Add Courier Record</Button>
-                </Box>
-              </Box>
-            ) : null}
             </Box>
           </Paper>
         </PageTransition>
