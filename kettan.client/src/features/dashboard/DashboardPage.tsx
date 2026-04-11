@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { Box, Typography, Chip } from '@mui/material';
-import LocalShippingRoundedIcon    from '@mui/icons-material/LocalShippingRounded';
-import SettingsBackupRestoreRoundedIcon from '@mui/icons-material/SettingsBackupRestoreRounded';
-import LocalMallRoundedIcon        from '@mui/icons-material/LocalMallRounded';
-import WarningAmberRoundedIcon     from '@mui/icons-material/WarningAmberRounded';
-import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
-import RadioButtonCheckedRoundedIcon from '@mui/icons-material/RadioButtonCheckedRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import {
+  CircleCheck,
+  CircleDot,
+  RotateCcw,
+  ShoppingBag,
+  SlidersHorizontal,
+  TriangleAlert,
+  Truck,
+} from 'lucide-react';
 
 import { StatCard } from '../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
+import { PageTransition, SectionReveal } from '../../components/UI/PageTransition';
 import { useAuthStore } from '../../store/useAuthStore';
 import { BranchPerformance } from './components/BranchPerformance';
 import { InventoryAlerts } from './components/InventoryAlerts';
@@ -41,10 +44,10 @@ const RECENT_ACTIVITY: ActivityItem[] = [
 ];
 
 const STATUS_MAP = {
-  completed:  { label: 'Completed',  color: '#546B3F', bg: 'rgba(84,107,63,0.12)',  icon: <CheckCircleOutlineRoundedIcon sx={{ fontSize: 12 }} /> },
-  'in-transit': { label: 'In Transit', color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)', icon: <LocalShippingRoundedIcon sx={{ fontSize: 12 }} /> },
-  pending:    { label: 'Pending',    color: '#B45309', bg: 'rgba(180,83,9,0.12)',   icon: <RadioButtonCheckedRoundedIcon sx={{ fontSize: 12 }} /> },
-  returned:   { label: 'Returned',   color: '#B91C1C', bg: 'rgba(185,28,28,0.10)', icon: <WarningAmberRoundedIcon sx={{ fontSize: 12 }} /> },
+  completed:  { label: 'Completed',  color: '#546B3F', bg: 'rgba(84,107,63,0.12)',  icon: <CircleCheck size={12} /> },
+  'in-transit': { label: 'In Transit', color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)', icon: <Truck size={12} /> },
+  pending:    { label: 'Pending',    color: '#B45309', bg: 'rgba(180,83,9,0.12)',   icon: <CircleDot size={12} /> },
+  returned:   { label: 'Returned',   color: '#B91C1C', bg: 'rgba(185,28,28,0.10)', icon: <TriangleAlert size={12} /> },
 };
 
 const activityColumns: ColumnDef<ActivityItem>[] = [
@@ -135,130 +138,138 @@ export function DashboardPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      {/* Page header */}
-      <Box sx={{ mb: 2.5 }}>
-        <Typography
+      <PageTransition yOffset={-6} duration={0.28}>
+        {/* Page header */}
+        <Box sx={{ mb: 2.5 }}>
+          <Typography
+            sx={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: 'text.primary',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Good morning, {user?.name?.split(' ')[0] || 'there'}
+          </Typography>
+          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.25 }}>
+            {isBranchManager
+              ? "Here's what's happening at your branch today."
+              : "Here's what's happening across your café chain today."}
+          </Typography>
+        </Box>
+      </PageTransition>
+
+      <SectionReveal delay={0.04}>
+        {/* ── Stat Cards ── */}
+        <Box
           sx={{
-            fontSize: 22,
-            fontWeight: 700,
-            color: 'text.primary',
-            letterSpacing: '-0.02em',
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', lg: 'repeat(4,1fr)' },
+            gap: 2.5,
+            mb: 3.5,
           }}
         >
-          Good morning, {user?.name?.split(' ')[0] || 'there'} 👋
-        </Typography>
-        <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.25 }}>
-          {isBranchManager 
-            ? "Here's what's happening at your branch today." 
-            : "Here's what's happening across your café chain today."}
-        </Typography>
-      </Box>
-
-      {/* ── Stat Cards ── */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', lg: 'repeat(4,1fr)' },
-          gap: 2.5,
-          mb: 3.5,
-        }}
-      >
-        <StatCard
-          label="Pending Supply Orders"
-          value={14}
-          sub="Requires fulfillment"
-          trend="up"
-          trendValue="+3"
-          icon={<LocalMallRoundedIcon />}
-          accentClass="stat-accent-brown"
-          iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
-        />
-        <StatCard
-          label="Low Stock Items"
-          value={12}
-          sub="3 at critical levels"
-          trend="up"
-          trendValue="+2"
-          icon={<WarningAmberRoundedIcon />}
-          accentClass="stat-accent-gold"
-          iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
-        />
-        <StatCard
-          label="Active Shipments"
-          value={8}
-          sub="In transit today"
-          trend="up"
-          trendValue="+5"
-          icon={<LocalShippingRoundedIcon />}
-          accentClass="stat-accent-sage"
-          iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
-        />
-        <StatCard
-          label="Pending Returns"
-          value={2}
-          sub="Awaiting review"
-          trend="down"
-          trendValue="-2"
-          icon={<SettingsBackupRestoreRoundedIcon />}
-          accentClass="stat-accent-brown"
-          iconBg="linear-gradient(135deg, #C9A84C 0%, #E8D3A9 100%)"
-        />
-      </Box>
+          <StatCard
+            label="Pending Supply Orders"
+            value={14}
+            sub="Requires fulfillment"
+            trend="up"
+            trendValue="+3"
+            icon={<ShoppingBag size={20} />}
+            accentClass="stat-accent-brown"
+            iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+          />
+          <StatCard
+            label="Low Stock Items"
+            value={12}
+            sub="3 at critical levels"
+            trend="up"
+            trendValue="+2"
+            icon={<TriangleAlert size={20} />}
+            accentClass="stat-accent-gold"
+            iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+          />
+          <StatCard
+            label="Active Shipments"
+            value={8}
+            sub="In transit today"
+            trend="up"
+            trendValue="+5"
+            icon={<Truck size={20} />}
+            accentClass="stat-accent-sage"
+            iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+          />
+          <StatCard
+            label="Pending Returns"
+            value={2}
+            sub="Awaiting review"
+            trend="down"
+            trendValue="-2"
+            icon={<RotateCcw size={20} />}
+            accentClass="stat-accent-brown"
+            iconBg="linear-gradient(135deg, #C9A84C 0%, #E8D3A9 100%)"
+          />
+        </Box>
+      </SectionReveal>
 
       {/* ── Main Dashboard Grid ── */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         
         {/* Top Row: Chart & Performance/Stepper */}
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <DashboardChart />
+        <SectionReveal delay={0.08}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <DashboardChart />
+            </Box>
+            <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
+              {!isBranchManager ? <BranchPerformance /> : <FulfillmentStepper />}
+            </Box>
           </Box>
-          <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
-            {!isBranchManager ? <BranchPerformance /> : <FulfillmentStepper />}
-          </Box>
-        </Box>
+        </SectionReveal>
 
         {/* Bottom Row: Activity Table & Alerts */}
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <DataTable
-              data={filteredActivity}
-              columns={activityColumns}
-              keyExtractor={(row) => row.id}
-              defaultRowsPerPage={5}
-              rowsPerPageOptions={[5, 10, 25]}
-              quickFilters={ACTIVITY_QUICK_FILTERS}
-              activeQuickFilter={activityStatusFilter}
-              onQuickFilterChange={setActivityStatusFilter}
-              rightAction={
-                <FilterDropdown
-                  label="Branch"
-                  icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-                  value={activityBranchFilter}
-                  onChange={setActivityBranchFilter}
-                  minWidth={110}
-                  compact
-                  options={[
-                    { value: 'BGC Branch',     label: 'BGC Branch' },
-                    { value: 'Makati HQ',      label: 'Makati HQ' },
-                    { value: 'Ortigas Branch', label: 'Ortigas Branch' },
-                    { value: 'Alabang Branch', label: 'Alabang Branch' },
-                    { value: 'QC Branch',      label: 'QC Branch' },
-                    { value: 'Manila Branch',  label: 'Manila Branch' },
-                    { value: 'Cebu Branch',    label: 'Cebu Branch' },
-                    { value: 'Davao Branch',   label: 'Davao Branch' },
-                    { value: 'Iloilo Branch',  label: 'Iloilo Branch' },
-                    { value: 'Bacolod Branch', label: 'Bacolod Branch' },
-                    { value: 'Clark HQ',       label: 'Clark HQ' },
-                  ]}
-                />
-              }
-            />
+        <SectionReveal delay={0.12}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <DataTable
+                data={filteredActivity}
+                columns={activityColumns}
+                keyExtractor={(row) => row.id}
+                defaultRowsPerPage={5}
+                rowsPerPageOptions={[5, 10, 25]}
+                quickFilters={ACTIVITY_QUICK_FILTERS}
+                activeQuickFilter={activityStatusFilter}
+                onQuickFilterChange={setActivityStatusFilter}
+                rightAction={
+                  <FilterDropdown
+                    label="Branch"
+                    icon={<SlidersHorizontal size={14} color="#6B4C2A" />}
+                    value={activityBranchFilter}
+                    onChange={setActivityBranchFilter}
+                    minWidth={110}
+                    compact
+                    options={[
+                      { value: 'BGC Branch',     label: 'BGC Branch' },
+                      { value: 'Makati HQ',      label: 'Makati HQ' },
+                      { value: 'Ortigas Branch', label: 'Ortigas Branch' },
+                      { value: 'Alabang Branch', label: 'Alabang Branch' },
+                      { value: 'QC Branch',      label: 'QC Branch' },
+                      { value: 'Manila Branch',  label: 'Manila Branch' },
+                      { value: 'Cebu Branch',    label: 'Cebu Branch' },
+                      { value: 'Davao Branch',   label: 'Davao Branch' },
+                      { value: 'Iloilo Branch',  label: 'Iloilo Branch' },
+                      { value: 'Bacolod Branch', label: 'Bacolod Branch' },
+                      { value: 'Clark HQ',       label: 'Clark HQ' },
+                    ]}
+                  />
+                }
+              />
+            </Box>
+            <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
+              <InventoryAlerts />
+            </Box>
           </Box>
-          <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
-            <InventoryAlerts />
-          </Box>
-        </Box>
+        </SectionReveal>
         
       </Box>
     </Box>

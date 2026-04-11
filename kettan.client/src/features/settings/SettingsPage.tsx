@@ -1,14 +1,513 @@
-import { Box, Typography } from '@mui/material';
+import { useMemo, useState } from 'react';
+import { Box, Chip, Paper, TextField, Typography } from '@mui/material';
+import { motion } from 'motion/react';
+import {
+  BellRing,
+  Car,
+  Layers3,
+  ShieldCheck,
+  SlidersHorizontal,
+  Store,
+  Truck,
+} from 'lucide-react';
+import { AccessMatrix } from '../../components/UI/AccessMatrix';
+import { Button } from '../../components/UI/Button';
+import { Dropdown } from '../../components/UI/Dropdown';
+import { PageTransition, SectionReveal } from '../../components/UI/PageTransition';
+import { Switch } from '../../components/UI/Switch';
+
+type SettingsTabKey = 'access' | 'thresholds' | 'approvals' | 'notifications' | 'catalog' | 'couriers';
+
+interface ThresholdConfig {
+  id: string;
+  label: string;
+  unit: string;
+  value: number;
+}
+
+interface ItemTypeConfig {
+  id: string;
+  name: string;
+  categories: string[];
+}
+
+interface CourierConfig {
+  id: string;
+  name: string;
+  contact: string;
+  vehicleType: string;
+  plateNumber: string;
+  active: boolean;
+}
+
+const SETTINGS_TABS: { key: SettingsTabKey; label: string; icon: typeof SlidersHorizontal }[] = [
+  { key: 'access', label: 'Role Access', icon: ShieldCheck },
+  { key: 'thresholds', label: 'Thresholds', icon: SlidersHorizontal },
+  { key: 'approvals', label: 'Approval Rules', icon: Store },
+  { key: 'notifications', label: 'Notifications', icon: BellRing },
+  { key: 'catalog', label: 'Item Types & Categories', icon: Layers3 },
+  { key: 'couriers', label: 'Couriers & Vehicles', icon: Truck },
+];
 
 export function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<SettingsTabKey>('access');
+
+  const [thresholds, setThresholds] = useState<ThresholdConfig[]>([
+    { id: 'beans', label: 'Arabica Beans', unit: 'kg', value: 5 },
+    { id: 'milk', label: 'Fresh Milk', unit: 'L', value: 20 },
+    { id: 'cups', label: 'Medium Cups', unit: 'pcs', value: 120 },
+    { id: 'lids', label: 'Cup Lids', unit: 'pcs', value: 120 },
+  ]);
+
+  const [autoApproveEnabled, setAutoApproveEnabled] = useState(true);
+  const [autoApproveLimit, setAutoApproveLimit] = useState('5000');
+
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    lowStock: true,
+    orderUpdates: true,
+    deliveryConfirmations: true,
+    returnFiled: true,
+  });
+
+  const [itemTypes, setItemTypes] = useState<ItemTypeConfig[]>([
+    { id: 'raw', name: 'Raw Material', categories: ['Beans', 'Dairy & Alternatives', 'Syrups'] },
+    { id: 'consumable', name: 'Consumable', categories: ['Cups', 'Lids', 'Napkins'] },
+    { id: 'finished', name: 'Finished Good', categories: ['Bottled Drinks', 'Merchandise'] },
+  ]);
+
+  const [selectedTypeId, setSelectedTypeId] = useState(itemTypes[0]?.id ?? '');
+  const [newTypeName, setNewTypeName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const [couriers, setCouriers] = useState<CourierConfig[]>([
+    {
+      id: 'c-1',
+      name: 'Juan Delivery Services',
+      contact: '0917-555-0101',
+      vehicleType: 'Van',
+      plateNumber: 'ABC-1234',
+      active: true,
+    },
+    {
+      id: 'c-2',
+      name: 'Metro Fast Riders',
+      contact: '0917-555-0146',
+      vehicleType: 'Motorcycle',
+      plateNumber: 'MTR-8812',
+      active: true,
+    },
+  ]);
+
+  const selectedType = useMemo(
+    () => itemTypes.find((entry) => entry.id === selectedTypeId) ?? itemTypes[0],
+    [itemTypes, selectedTypeId]
+  );
+
+  const updateThreshold = (id: string, value: string) => {
+    const parsed = Number(value);
+
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    setThresholds((previous) =>
+      previous.map((entry) => (entry.id === id ? { ...entry, value: parsed } : entry))
+    );
+  };
+
+  const addItemType = () => {
+    const normalized = newTypeName.trim();
+    if (!normalized) {
+      return;
+    }
+
+    const id = normalized.toLowerCase().replace(/\s+/g, '-');
+    if (itemTypes.some((entry) => entry.id === id)) {
+      return;
+    }
+
+    setItemTypes((previous) => [...previous, { id, name: normalized, categories: [] }]);
+    setSelectedTypeId(id);
+    setNewTypeName('');
+  };
+
+  const addCategory = () => {
+    const normalized = newCategoryName.trim();
+    if (!normalized || !selectedType) {
+      return;
+    }
+
+    setItemTypes((previous) =>
+      previous.map((entry) => {
+        if (entry.id !== selectedType.id || entry.categories.includes(normalized)) {
+          return entry;
+        }
+
+        return { ...entry, categories: [...entry.categories, normalized] };
+      })
+    );
+
+    setNewCategoryName('');
+  };
+
+  const toggleCourierActive = (courierId: string) => {
+    setCouriers((previous) =>
+      previous.map((entry) => (entry.id === courierId ? { ...entry, active: !entry.active } : entry))
+    );
+  };
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 3 }}>
-        Settings & User Roles
-      </Typography>
-      <Typography variant="body1" color="text.secondary">
-        This page will contain platform configuration and user role management.
-      </Typography>
+    <Box sx={{ pb: 4 }}>
+      <PageTransition yOffset={-6} duration={0.28}>
+        <Box sx={{ mb: 2.5 }}>
+          <Typography sx={{ fontSize: 22, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+            Settings & Configuration
+          </Typography>
+          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.4 }}>
+            Configure role access, inventory defaults, approval flow, notifications, and delivery profiles.
+          </Typography>
+        </Box>
+      </PageTransition>
+
+      <SectionReveal delay={0.06}>
+        <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
+          <Box
+            sx={{
+              px: 1,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              alignItems: 'center',
+              overflowX: 'auto',
+            }}
+          >
+            {SETTINGS_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.key;
+
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    color: active ? '#6B4C2A' : '#78716C',
+                    fontWeight: active ? 700 : 600,
+                    fontSize: 13,
+                    whiteSpace: 'nowrap',
+                    padding: '14px 16px',
+                  }}
+                >
+                  <Icon size={14} />
+                  {tab.label}
+
+                  {active ? (
+                    <motion.div
+                      layoutId="settings-tab-indicator"
+                      transition={{ type: 'spring', stiffness: 460, damping: 38 }}
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: 2.5,
+                        borderTopLeftRadius: 999,
+                        borderTopRightRadius: 999,
+                        backgroundColor: '#C9A84C',
+                      }}
+                    />
+                  ) : null}
+                </button>
+              );
+            })}
+          </Box>
+
+          <Box sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+            {activeTab === 'access' ? <AccessMatrix /> : null}
+
+            {activeTab === 'thresholds' ? (
+              <Box>
+                <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Inventory Threshold Defaults</Typography>
+                <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
+                  Set default low-stock levels used when creating items. Branches can still override these values.
+                </Typography>
+
+                <Box sx={{ display: 'grid', gap: 1.5 }}>
+                  {thresholds.map((entry) => (
+                    <Box
+                      key={entry.id}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1.5,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <Box>
+                        <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'text.primary' }}>{entry.label}</Typography>
+                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Unit: {entry.unit}</Typography>
+                      </Box>
+
+                      <TextField
+                        size="small"
+                        type="number"
+                        value={entry.value}
+                        onChange={(event) => updateThreshold(entry.id, event.target.value)}
+                        sx={{ width: 120 }}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+
+                <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button>Save Threshold Defaults</Button>
+                </Box>
+              </Box>
+            ) : null}
+
+            {activeTab === 'approvals' ? (
+              <Box>
+                <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Order Approval Rules</Typography>
+                <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
+                  Control auto-approval behavior based on fulfillment cost thresholds.
+                </Typography>
+
+                <Paper
+                  elevation={0}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2.5,
+                    p: 2.2,
+                    display: 'grid',
+                    gap: 2,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                    <Box>
+                      <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Enable Auto-Approval</Typography>
+                      <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                        Approve supply requests automatically when below the configured cost limit.
+                      </Typography>
+                    </Box>
+                    <Switch checked={autoApproveEnabled} onChange={(event) => setAutoApproveEnabled(event.target.checked)} />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Auto-approve if order value is below:</Typography>
+                    <TextField
+                      size="small"
+                      value={autoApproveLimit}
+                      onChange={(event) => setAutoApproveLimit(event.target.value)}
+                      sx={{ width: 160 }}
+                      InputProps={{ startAdornment: <span style={{ marginRight: 8, color: '#57534E' }}>PHP</span> }}
+                    />
+                  </Box>
+                </Paper>
+
+                <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button>Save Approval Rules</Button>
+                </Box>
+              </Box>
+            ) : null}
+
+            {activeTab === 'notifications' ? (
+              <Box>
+                <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Notification Preferences</Typography>
+                <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
+                  Choose which events create persistent bell alerts for your team.
+                </Typography>
+
+                <Box sx={{ display: 'grid', gap: 1.2 }}>
+                  {[
+                    {
+                      key: 'lowStock' as const,
+                      title: 'Low-Stock Alerts',
+                      description: 'Notify users when branch or HQ stock drops below configured thresholds.',
+                    },
+                    {
+                      key: 'orderUpdates' as const,
+                      title: 'Order Status Changes',
+                      description: 'Notify assignees when request/order statuses move through the pipeline.',
+                    },
+                    {
+                      key: 'deliveryConfirmations' as const,
+                      title: 'Delivery Confirmations',
+                      description: 'Notify HQ and branch leads when deliveries are confirmed or delayed.',
+                    },
+                    {
+                      key: 'returnFiled' as const,
+                      title: 'Return Filings',
+                      description: 'Notify HQ managers immediately when a branch files a return request.',
+                    },
+                  ].map((row) => (
+                    <Paper
+                      key={row.key}
+                      elevation={0}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1.6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 2,
+                      }}
+                    >
+                      <Box>
+                        <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{row.title}</Typography>
+                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{row.description}</Typography>
+                      </Box>
+                      <Switch
+                        checked={notificationPrefs[row.key]}
+                        onChange={(event) =>
+                          setNotificationPrefs((previous) => ({
+                            ...previous,
+                            [row.key]: event.target.checked,
+                          }))
+                        }
+                      />
+                    </Paper>
+                  ))}
+                </Box>
+
+                <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button>Save Notification Settings</Button>
+                </Box>
+              </Box>
+            ) : null}
+
+            {activeTab === 'catalog' ? (
+              <Box sx={{ display: 'grid', gap: 2.2 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Item Types & Categories</Typography>
+                  <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+                    Manage your inventory taxonomy used by item creation forms and filters.
+                  </Typography>
+                </Box>
+
+                <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, p: 2 }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1.1 }}>Create Item Type</Typography>
+                  <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
+                    <TextField
+                      size="small"
+                      placeholder="e.g. Equipment"
+                      value={newTypeName}
+                      onChange={(event) => setNewTypeName(event.target.value)}
+                      sx={{ width: { xs: '100%', sm: 300 } }}
+                    />
+                    <Button onClick={addItemType}>Add Type</Button>
+                  </Box>
+                </Paper>
+
+                <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, p: 2 }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1.1 }}>Manage Categories</Typography>
+
+                  <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap', mb: 1.5 }}>
+                    <Dropdown
+                      value={selectedTypeId}
+                      onChange={(event) => setSelectedTypeId(event.target.value as string)}
+                      options={itemTypes.map((entry) => ({ value: entry.id, label: entry.name }))}
+                      sx={{ minWidth: 220 }}
+                    />
+
+                    <TextField
+                      size="small"
+                      placeholder="e.g. Lids"
+                      value={newCategoryName}
+                      onChange={(event) => setNewCategoryName(event.target.value)}
+                      sx={{ width: { xs: '100%', sm: 240 } }}
+                    />
+                    <Button onClick={addCategory}>Add Category</Button>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                    {(selectedType?.categories ?? []).map((category) => (
+                      <Chip key={category} label={category} size="small" sx={{ fontWeight: 600, bgcolor: 'background.default' }} />
+                    ))}
+                  </Box>
+                </Paper>
+              </Box>
+            ) : null}
+
+            {activeTab === 'couriers' ? (
+              <Box>
+                <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Couriers & Vehicles</Typography>
+                <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
+                  Register and maintain delivery providers and assigned vehicles for dispatch workflows.
+                </Typography>
+
+                <Box sx={{ display: 'grid', gap: 1.2 }}>
+                  {couriers.map((entry) => (
+                    <Paper
+                      key={entry.id}
+                      elevation={0}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1.5,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <Box>
+                        <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{entry.name}</Typography>
+                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{entry.contact}</Typography>
+                        <Box sx={{ mt: 0.65, display: 'flex', alignItems: 'center', gap: 0.65 }}>
+                          <Car size={12} color="#6B4C2A" />
+                          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                            {entry.vehicleType} • {entry.plateNumber}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.1 }}>
+                        <Chip
+                          size="small"
+                          label={entry.active ? 'Active' : 'Disabled'}
+                          sx={{
+                            fontWeight: 700,
+                            bgcolor: entry.active ? 'rgba(84,107,63,0.12)' : 'rgba(161,98,7,0.14)',
+                            color: entry.active ? '#546B3F' : '#92400E',
+                          }}
+                        />
+                        <Switch checked={entry.active} onChange={() => toggleCourierActive(entry.id)} />
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+
+                <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
+                  <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                    Use this list during order dispatch to select courier and vehicle assignments.
+                  </Typography>
+                  <Button>Add Courier Record</Button>
+                </Box>
+              </Box>
+            ) : null}
+          </Box>
+        </Paper>
+      </SectionReveal>
     </Box>
   );
 }

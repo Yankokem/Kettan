@@ -1,136 +1,174 @@
-import { Box, Typography, Card, MenuItem, Select, FormControl } from '@mui/material';
-import SsidChartRoundedIcon from '@mui/icons-material/SsidChartRounded';
+import { useMemo, useState } from 'react';
+import { Box, Typography } from '@mui/material';
+import { LineChart as LineChartIcon } from 'lucide-react';
+import { Dropdown } from '../../../components/UI/Dropdown';
+import { ChartCard } from '../../../components/charts/ChartCard';
+import {
+  LineAreaChart,
+  type ChartDatum,
+  type LineAreaSeries,
+} from '../../../components/charts/LineAreaChart';
+
+type MetricKey = 'orders' | 'inventory' | 'returns';
+type RangeKey = '7days' | '30days' | 'year';
+
+const metricOptions: { value: MetricKey; label: string }[] = [
+  { value: 'orders', label: 'Orders Fulfilled' },
+  { value: 'inventory', label: 'Inventory Issues' },
+  { value: 'returns', label: 'Return Requests' },
+];
+
+const rangeOptions: { value: RangeKey; label: string }[] = [
+  { value: '7days', label: 'Last 7 Days' },
+  { value: '30days', label: 'Last 30 Days' },
+  { value: 'year', label: 'This Year' },
+];
+
+const chartSeriesByMetric: Record<MetricKey, LineAreaSeries[]> = {
+  orders: [{ dataKey: 'value', label: 'Fulfilled Orders', color: '#6B4C2A' }],
+  inventory: [{ dataKey: 'value', label: 'Inventory Issues', color: '#B45309' }],
+  returns: [{ dataKey: 'value', label: 'Return Requests', color: '#B91C1C' }],
+};
+
+const chartDataByMetric: Record<MetricKey, Record<RangeKey, ChartDatum[]>> = {
+  orders: {
+    '7days': [
+      { label: 'Mon', value: 14 },
+      { label: 'Tue', value: 19 },
+      { label: 'Wed', value: 17 },
+      { label: 'Thu', value: 26 },
+      { label: 'Fri', value: 31 },
+      { label: 'Sat', value: 28 },
+      { label: 'Sun', value: 24 },
+    ],
+    '30days': [
+      { label: 'Wk 1', value: 106 },
+      { label: 'Wk 2', value: 118 },
+      { label: 'Wk 3', value: 142 },
+      { label: 'Wk 4', value: 135 },
+    ],
+    year: [
+      { label: 'Jan', value: 352 },
+      { label: 'Feb', value: 388 },
+      { label: 'Mar', value: 412 },
+      { label: 'Apr', value: 435 },
+      { label: 'May', value: 448 },
+      { label: 'Jun', value: 472 },
+      { label: 'Jul', value: 490 },
+      { label: 'Aug', value: 514 },
+      { label: 'Sep', value: 501 },
+      { label: 'Oct', value: 526 },
+      { label: 'Nov', value: 541 },
+      { label: 'Dec', value: 558 },
+    ],
+  },
+  inventory: {
+    '7days': [
+      { label: 'Mon', value: 7 },
+      { label: 'Tue', value: 9 },
+      { label: 'Wed', value: 6 },
+      { label: 'Thu', value: 5 },
+      { label: 'Fri', value: 8 },
+      { label: 'Sat', value: 4 },
+      { label: 'Sun', value: 6 },
+    ],
+    '30days': [
+      { label: 'Wk 1', value: 33 },
+      { label: 'Wk 2', value: 27 },
+      { label: 'Wk 3', value: 31 },
+      { label: 'Wk 4', value: 24 },
+    ],
+    year: [
+      { label: 'Jan', value: 122 },
+      { label: 'Feb', value: 118 },
+      { label: 'Mar', value: 127 },
+      { label: 'Apr', value: 111 },
+      { label: 'May', value: 104 },
+      { label: 'Jun', value: 96 },
+      { label: 'Jul', value: 109 },
+      { label: 'Aug', value: 102 },
+      { label: 'Sep', value: 93 },
+      { label: 'Oct', value: 88 },
+      { label: 'Nov', value: 84 },
+      { label: 'Dec', value: 81 },
+    ],
+  },
+  returns: {
+    '7days': [
+      { label: 'Mon', value: 1 },
+      { label: 'Tue', value: 2 },
+      { label: 'Wed', value: 2 },
+      { label: 'Thu', value: 1 },
+      { label: 'Fri', value: 3 },
+      { label: 'Sat', value: 2 },
+      { label: 'Sun', value: 1 },
+    ],
+    '30days': [
+      { label: 'Wk 1', value: 7 },
+      { label: 'Wk 2', value: 6 },
+      { label: 'Wk 3', value: 8 },
+      { label: 'Wk 4', value: 5 },
+    ],
+    year: [
+      { label: 'Jan', value: 23 },
+      { label: 'Feb', value: 20 },
+      { label: 'Mar', value: 24 },
+      { label: 'Apr', value: 22 },
+      { label: 'May', value: 21 },
+      { label: 'Jun', value: 18 },
+      { label: 'Jul', value: 17 },
+      { label: 'Aug', value: 19 },
+      { label: 'Sep', value: 16 },
+      { label: 'Oct', value: 15 },
+      { label: 'Nov', value: 14 },
+      { label: 'Dec', value: 13 },
+    ],
+  },
+};
 
 export function DashboardChart() {
+  const [metric, setMetric] = useState<MetricKey>('orders');
+  const [range, setRange] = useState<RangeKey>('7days');
+
+  const data = useMemo(() => chartDataByMetric[metric][range], [metric, range]);
+  const latestPoint = data[data.length - 1];
+
   return (
-    <Card
-      elevation={0}
-      sx={{
-        p: 2.5,
-        height: '100%',
-        border: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
+    <ChartCard
+      title="System Analytics"
+      icon={<LineChartIcon size={18} color="#6B4C2A" />}
+      actions={
+        <>
+          <Dropdown
+            value={metric}
+            onChange={(event) => setMetric(event.target.value as MetricKey)}
+            options={metricOptions}
+            sx={{ minWidth: 178 }}
+          />
+          <Dropdown
+            value={range}
+            onChange={(event) => setRange(event.target.value as RangeKey)}
+            options={rangeOptions}
+            sx={{ minWidth: 145 }}
+          />
+        </>
+      }
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SsidChartRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
-          <Typography sx={{ fontSize: 15, fontWeight: 600, color: 'text.primary' }}>
-            System Analytics
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <FormControl size="small" variant="outlined">
-            <Select
-              defaultValue="orders"
-              sx={{ 
-                height: 32, 
-                fontSize: 12, 
-                fontWeight: 500,
-                borderRadius: 1.5,
-                bgcolor: 'background.default',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-              }}
-            >
-              <MenuItem value="orders" sx={{ fontSize: 13 }}>Orders Fulfilled</MenuItem>
-              <MenuItem value="inventory" sx={{ fontSize: 13 }}>Inventory Issues</MenuItem>
-              <MenuItem value="returns" sx={{ fontSize: 13 }}>Return Requests</MenuItem>
-            </Select>
-          </FormControl>
-          
-          <FormControl size="small" variant="outlined">
-            <Select
-              defaultValue="7days"
-              sx={{ 
-                height: 32, 
-                fontSize: 12, 
-                fontWeight: 500,
-                borderRadius: 1.5,
-                bgcolor: 'background.default',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-              }}
-            >
-              <MenuItem value="7days" sx={{ fontSize: 13 }}>Last 7 Days</MenuItem>
-              <MenuItem value="30days" sx={{ fontSize: 13 }}>Last 30 Days</MenuItem>
-              <MenuItem value="year" sx={{ fontSize: 13 }}>This Year</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
+      <LineAreaChart
+        data={data}
+        series={chartSeriesByMetric[metric]}
+        yTickFormatter={(value) => value.toLocaleString()}
+        tooltipValueFormatter={(value) => `${value.toLocaleString()} items`}
+      />
+
+      <Box sx={{ mt: 1.25, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
+          Latest point: <strong>{latestPoint?.label}</strong>
+        </Typography>
+        <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 700 }}>
+          {metricOptions.find((entry) => entry.value === metric)?.label}: {Number(latestPoint?.value ?? 0).toLocaleString()}
+        </Typography>
       </Box>
-
-      {/* ── Mock Line Chart via SVG ── */}
-      <Box sx={{ flex: 1, minHeight: 200, width: '100%', position: 'relative', mt: 2 }}>
-        <svg viewBox="0 0 500 150" style={{ width: '100%', height: '100%', overflow: 'visible' }} preserveAspectRatio="none">
-          {/* Grid lines */}
-          {[0, 1, 2, 3, 4].map((line) => (
-            <line 
-              key={line}
-              x1="0" 
-              y1={line * 37.5} 
-              x2="500" 
-              y2={line * 37.5} 
-              stroke="#E5E7EB" 
-              strokeWidth="1" 
-              strokeDasharray="4 4" 
-            />
-          ))}
-
-          {/* Area under the curve */}
-          <path
-            d="M 0 120 C 50 120, 80 80, 150 90 C 200 100, 250 40, 300 50 C 350 60, 400 110, 450 90 C 480 80, 500 50, 500 50 L 500 150 L 0 150 Z"
-            fill="url(#chartGradient)"
-            opacity="0.3"
-          />
-
-          {/* Line curve */}
-          <path
-            d="M 0 120 C 50 120, 80 80, 150 90 C 200 100, 250 40, 300 50 C 350 60, 400 110, 450 90 C 480 80, 500 50, 500 50"
-            fill="none"
-            stroke="#6B4C2A"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Data points */}
-          {[
-            { cx: 0, cy: 120 },
-            { cx: 150, cy: 90 },
-            { cx: 300, cy: 50 },
-            { cx: 450, cy: 90 },
-            { cx: 500, cy: 50 },
-          ].map((point, index) => (
-            <circle
-              key={index}
-              cx={point.cx}
-              cy={point.cy}
-              r="4"
-              fill="#FFFFFF"
-              stroke="#6B4C2A"
-              strokeWidth="2"
-            />
-          ))}
-
-          <defs>
-            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#8C6B43" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#8C6B43" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-        </svg>
-
-        {/* X Axis Labels */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, px: 1 }}>
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
-            <Typography key={idx} sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
-              {day}
-            </Typography>
-          ))}
-        </Box>
-      </Box>
-    </Card>
+    </ChartCard>
   );
 }
