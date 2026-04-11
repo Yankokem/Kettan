@@ -40,13 +40,55 @@ interface CourierConfig {
   active: boolean;
 }
 
-const SETTINGS_TABS: { key: SettingsTabKey; label: string; icon: typeof SlidersHorizontal }[] = [
-  { key: 'access', label: 'Role Access', icon: ShieldCheck },
-  { key: 'thresholds', label: 'Thresholds', icon: SlidersHorizontal },
-  { key: 'approvals', label: 'Approval Rules', icon: Store },
-  { key: 'notifications', label: 'Notifications', icon: BellRing },
-  { key: 'catalog', label: 'Item Types & Categories', icon: Layers3 },
-  { key: 'couriers', label: 'Couriers & Vehicles', icon: Truck },
+const SETTINGS_TABS: {
+  key: SettingsTabKey;
+  label: string;
+  icon: typeof SlidersHorizontal;
+  hint: string;
+  detail: string;
+}[] = [
+  {
+    key: 'access',
+    label: 'Role Access',
+    icon: ShieldCheck,
+    hint: 'Permissions by role and module',
+    detail: 'Define who can view, create, update, and delete records across each major system module.',
+  },
+  {
+    key: 'thresholds',
+    label: 'Thresholds',
+    icon: SlidersHorizontal,
+    hint: 'Low-stock defaults for catalog items',
+    detail: 'Set chain-wide minimum stock levels used by alerts, replenishment planning, and branch monitoring.',
+  },
+  {
+    key: 'approvals',
+    label: 'Approval Rules',
+    icon: Store,
+    hint: 'Automation limits for supply requests',
+    detail: 'Configure order value rules that trigger automatic approval or require manager sign-off.',
+  },
+  {
+    key: 'notifications',
+    label: 'Notifications',
+    icon: BellRing,
+    hint: 'Persistent alert preferences',
+    detail: 'Choose which operational events send persistent bell notifications to users and managers.',
+  },
+  {
+    key: 'catalog',
+    label: 'Item Types & Categories',
+    icon: Layers3,
+    hint: 'Inventory taxonomy and grouping',
+    detail: 'Manage item type and category structures used in inventory forms, filters, and reporting views.',
+  },
+  {
+    key: 'couriers',
+    label: 'Couriers & Vehicles',
+    icon: Truck,
+    hint: 'Dispatch profiles and fleet records',
+    detail: 'Maintain active delivery providers and assigned vehicles used during fulfillment dispatch.',
+  },
 ];
 
 export function SettingsPage() {
@@ -101,6 +143,11 @@ export function SettingsPage() {
   const selectedType = useMemo(
     () => itemTypes.find((entry) => entry.id === selectedTypeId) ?? itemTypes[0],
     [itemTypes, selectedTypeId]
+  );
+
+  const activeTabMeta = useMemo(
+    () => SETTINGS_TABS.find((entry) => entry.key === activeTab) ?? SETTINGS_TABS[0],
+    [activeTab]
   );
 
   const updateThreshold = (id: string, value: string) => {
@@ -158,78 +205,123 @@ export function SettingsPage() {
 
   return (
     <Box sx={{ pb: 4 }}>
-      <PageTransition yOffset={-6} duration={0.28}>
-        <Box sx={{ mb: 2.5 }}>
-          <Typography sx={{ fontSize: 22, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            Settings & Configuration
-          </Typography>
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.4 }}>
-            Configure role access, inventory defaults, approval flow, notifications, and delivery profiles.
-          </Typography>
-        </Box>
-      </PageTransition>
-
-      <SectionReveal delay={0.06}>
-        <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
-          <Box
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '320px minmax(0, 1fr)', lg: '340px minmax(0, 1fr)' },
+          gap: 2.5,
+          alignItems: 'start',
+        }}
+      >
+        <SectionReveal delay={0.04}>
+          <Paper
+            elevation={0}
             sx={{
-              px: 1,
-              borderBottom: '1px solid',
+              border: '1px solid',
               borderColor: 'divider',
-              display: 'flex',
-              alignItems: 'center',
-              overflowX: 'auto',
+              borderRadius: 4,
+              overflow: 'hidden',
+              position: { md: 'sticky' },
+              top: { md: 12 },
             }}
           >
-            {SETTINGS_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.key;
+            <Box
+              sx={{
+                px: 2.2,
+                py: 2,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                background: 'linear-gradient(180deg, rgba(201,168,76,0.15) 0%, rgba(201,168,76,0) 100%)',
+              }}
+            >
+              <Typography sx={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#8C6B43' }}>
+                Control Center
+              </Typography>
+              <Typography sx={{ mt: 0.4, fontSize: 16, fontWeight: 800, color: 'text.primary' }}>
+                Settings Cabinet
+              </Typography>
+              <Typography sx={{ mt: 0.6, fontSize: 12, lineHeight: 1.5, color: 'text.secondary' }}>
+                Configure access, inventory defaults, and operational rules from one place.
+              </Typography>
+            </Box>
 
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  style={{
-                    position: 'relative',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    border: 'none',
-                    background: 'transparent',
-                    cursor: 'pointer',
-                    color: active ? '#6B4C2A' : '#78716C',
-                    fontWeight: active ? 700 : 600,
-                    fontSize: 13,
-                    whiteSpace: 'nowrap',
-                    padding: '14px 16px',
-                  }}
-                >
-                  <Icon size={14} />
-                  {tab.label}
+            <Box sx={{ p: 1.2, display: 'flex', flexDirection: 'column', gap: 0.55 }}>
+              {SETTINGS_TABS.map((tab) => {
+                const Icon = tab.icon;
+                const active = activeTab === tab.key;
 
-                  {active ? (
-                    <motion.div
-                      layoutId="settings-tab-indicator"
-                      transition={{ type: 'spring', stiffness: 460, damping: 38 }}
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key)}
+                    style={{
+                      position: 'relative',
+                      border: 'none',
+                      borderRadius: 10,
+                      background: active ? 'rgba(201,168,76,0.16)' : 'transparent',
+                      cursor: 'pointer',
+                      color: active ? '#5C4518' : '#57534E',
+                      fontWeight: active ? 700 : 600,
+                      fontSize: 13,
+                      padding: '12px 12px 12px 18px',
+                      textAlign: 'left',
+                      transition: 'background 180ms ease, color 180ms ease',
+                    }}
+                  >
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <Icon size={14} />
+                      {tab.label}
+                    </span>
+                    <span
                       style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: 2.5,
-                        borderTopLeftRadius: 999,
-                        borderTopRightRadius: 999,
-                        backgroundColor: '#C9A84C',
+                        display: 'block',
+                        marginTop: 5,
+                        marginLeft: 22,
+                        fontSize: 11,
+                        fontWeight: 500,
+                        color: active ? '#6B4C2A' : '#78716C',
+                        opacity: 0.95,
                       }}
-                    />
-                  ) : null}
-                </button>
-              );
-            })}
-          </Box>
+                    >
+                      {tab.hint}
+                    </span>
 
-          <Box sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                    {active ? (
+                      <motion.div
+                        layoutId="settings-tab-indicator"
+                        transition={{ type: 'spring', stiffness: 460, damping: 38 }}
+                        style={{
+                          position: 'absolute',
+                          top: 10,
+                          bottom: 10,
+                          left: 0,
+                          width: 4,
+                          borderTopRightRadius: 999,
+                          borderBottomRightRadius: 999,
+                          backgroundColor: '#C9A84C',
+                        }}
+                      />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </Box>
+          </Paper>
+        </SectionReveal>
+
+        <PageTransition yOffset={8} duration={0.3}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+            <Box sx={{ mb: 2.4, pb: 2, borderBottom: '1px dashed', borderColor: 'divider' }}>
+              <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.01em' }}>
+                {activeTabMeta.label}
+              </Typography>
+              <Typography sx={{ mt: 0.6, fontSize: 12.5, color: 'text.secondary', maxWidth: 760, lineHeight: 1.55 }}>
+                {activeTabMeta.detail}
+              </Typography>
+            </Box>
+
             {activeTab === 'access' ? <AccessMatrix /> : null}
 
             {activeTab === 'thresholds' ? (
@@ -505,9 +597,10 @@ export function SettingsPage() {
                 </Box>
               </Box>
             ) : null}
-          </Box>
-        </Paper>
-      </SectionReveal>
+            </Box>
+          </Paper>
+        </PageTransition>
+      </Box>
     </Box>
   );
 }

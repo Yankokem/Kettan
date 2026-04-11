@@ -1,5 +1,5 @@
 import { Box, Checkbox, Typography } from '@mui/material';
-import { DataTable, type ColumnDef } from './DataTable';
+import { MatrixTable, type MatrixColumnDef } from './MatrixTable';
 
 const ROLES = ['TenantAdmin', 'HQ Manager', 'HQ Staff', 'Branch Owner', 'Branch Manager'] as const;
 const MODULES = ['Dashboard', 'Orders', 'HQ Inventory', 'Branches', 'Staff', 'Menu Recipes', 'Consumption', 'Returns', 'Reports', 'Settings'] as const;
@@ -49,7 +49,7 @@ const rows: AccessMatrixRow[] = MODULES.map((module) => {
   };
 });
 
-const columns: ColumnDef<AccessMatrixRow>[] = [
+const columns: MatrixColumnDef<AccessMatrixRow>[] = [
   {
     key: 'module',
     label: 'Module',
@@ -112,13 +112,7 @@ export function AccessMatrix() {
         <Typography variant="body2" color="text.secondary">Global permission rules mapping roles to specific system modules.</Typography>
       </Box>
 
-      <DataTable
-        columns={columns}
-        data={rows}
-        keyExtractor={(row) => row.id}
-        defaultRowsPerPage={10}
-        rowsPerPageOptions={[10, 25, 50]}
-      />
+      <MatrixTable columns={columns} data={rows} keyExtractor={(row) => row.id} striped />
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mt: 3, px: 2, py: 2, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
