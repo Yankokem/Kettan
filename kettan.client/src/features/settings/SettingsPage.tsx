@@ -322,15 +322,10 @@ export function SettingsPage() {
               </Typography>
             </Box>
 
-            {activeTab === 'access' ? <AccessMatrix /> : null}
+            {activeTab === 'access' ? <AccessMatrix hideHeader /> : null}
 
             {activeTab === 'thresholds' ? (
               <Box>
-                <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Inventory Threshold Defaults</Typography>
-                <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
-                  Set default low-stock levels used when creating items. Branches can still override these values.
-                </Typography>
-
                 <Box sx={{ display: 'grid', gap: 1.5 }}>
                   {thresholds.map((entry) => (
                     <Box
@@ -372,11 +367,6 @@ export function SettingsPage() {
 
             {activeTab === 'approvals' ? (
               <Box>
-                <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Order Approval Rules</Typography>
-                <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
-                  Control auto-approval behavior based on fulfillment cost thresholds.
-                </Typography>
-
                 <Paper
                   elevation={0}
                   sx={{
@@ -418,11 +408,6 @@ export function SettingsPage() {
 
             {activeTab === 'notifications' ? (
               <Box>
-                <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Notification Preferences</Typography>
-                <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
-                  Choose which events create persistent bell alerts for your team.
-                </Typography>
-
                 <Box sx={{ display: 'grid', gap: 1.2 }}>
                   {[
                     {
@@ -486,13 +471,6 @@ export function SettingsPage() {
 
             {activeTab === 'catalog' ? (
               <Box sx={{ display: 'grid', gap: 2.2 }}>
-                <Box>
-                  <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Item Types & Categories</Typography>
-                  <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
-                    Manage your inventory taxonomy used by item creation forms and filters.
-                  </Typography>
-                </Box>
-
                 <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2.5, p: 2 }}>
                   <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1.1 }}>Create Item Type</Typography>
                   <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
@@ -539,11 +517,6 @@ export function SettingsPage() {
 
             {activeTab === 'couriers' ? (
               <Box>
-                <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.4 }}>Couriers & Vehicles</Typography>
-                <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
-                  Register and maintain delivery providers and assigned vehicles for dispatch workflows.
-                </Typography>
-
                 <Box sx={{ display: 'grid', gap: 1.2 }}>
                   {couriers.map((entry) => (
                     <Paper

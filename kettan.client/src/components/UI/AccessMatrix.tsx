@@ -104,13 +104,19 @@ const columns: MatrixColumnDef<AccessMatrixRow>[] = [
   })),
 ];
 
-export function AccessMatrix() {
+interface AccessMatrixProps {
+  hideHeader?: boolean;
+}
+
+export function AccessMatrix({ hideHeader = false }: AccessMatrixProps) {
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>Role Access Matrix</Typography>
-        <Typography variant="body2" color="text.secondary">Global permission rules mapping roles to specific system modules.</Typography>
-      </Box>
+      {!hideHeader ? (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>Role Access Matrix</Typography>
+          <Typography variant="body2" color="text.secondary">Global permission rules mapping roles to specific system modules.</Typography>
+        </Box>
+      ) : null}
 
       <MatrixTable columns={columns} data={rows} keyExtractor={(row) => row.id} striped />
 
