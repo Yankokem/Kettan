@@ -3,11 +3,11 @@ import { StatCard } from '../../components/UI/StatCard';
 import { Button } from '../../components/UI/Button';
 import { Dropdown } from '../../components/UI/Dropdown';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
-import AttachMoneyRoundedIcon from '@mui/icons-material/AttachMoneyRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
-import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
-import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
+import AttachMoneyRoundedIcon from '@/components/icons/lucide-mui/AttachMoneyRoundedIcon';
+import LocalShippingRoundedIcon from '@/components/icons/lucide-mui/LocalShippingRoundedIcon';
+import ReplayRoundedIcon from '@/components/icons/lucide-mui/ReplayRoundedIcon';
+import EmojiEventsRoundedIcon from '@/components/icons/lucide-mui/EmojiEventsRoundedIcon';
+import DownloadRoundedIcon from '@/components/icons/lucide-mui/DownloadRoundedIcon';
 import { BranchLeaderboardTable } from './components/BranchLeaderboardTable';
 import { FinancialCostChart } from './components/FinancialCostChart';
 import { InvoiceLedger } from './components/InvoiceLedger';
@@ -161,3 +161,5 @@ export function ReportsPage() {
     </Box>
   );
 }
+
+

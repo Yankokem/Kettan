@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Box, Typography, Button, Grid, Paper, Container, Switch, FormControlLabel, Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
-import CheckIcon from "@mui/icons-material/Check";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import StarIcon from "@mui/icons-material/Star";
+import CheckIcon from '@/components/icons/lucide-mui/CheckIcon';
+import ExpandMoreIcon from '@/components/icons/lucide-mui/ExpandMoreIcon';
+import StarIcon from '@/components/icons/lucide-mui/StarIcon';
 
 const plans = [
   {
@@ -220,3 +220,5 @@ export function PricingPage() {
     </Box>
   );
 }
+
+

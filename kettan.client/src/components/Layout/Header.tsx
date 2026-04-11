@@ -1,8 +1,8 @@
 import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip, Typography, InputBase } from '@mui/material';
-import MenuIcon          from '@mui/icons-material/Menu';
-import DarkModeRoundedIcon   from '@mui/icons-material/DarkModeRounded';
-import LightModeRoundedIcon  from '@mui/icons-material/LightModeRounded';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import MenuIcon from '@/components/icons/lucide-mui/MenuIcon';
+import DarkModeRoundedIcon from '@/components/icons/lucide-mui/DarkModeRoundedIcon';
+import LightModeRoundedIcon from '@/components/icons/lucide-mui/LightModeRoundedIcon';
+import SearchRoundedIcon from '@/components/icons/lucide-mui/SearchRoundedIcon';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useLocation } from '@tanstack/react-router';
 import { NotificationBell } from '../UI/NotificationBell';
@@ -211,3 +211,5 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
     </AppBar>
   );
 }
+
+

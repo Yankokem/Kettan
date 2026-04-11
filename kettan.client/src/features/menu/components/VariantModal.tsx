@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -16,8 +16,8 @@ import {
   IconButton,
   Chip,
 } from '@mui/material';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import DeleteRoundedIcon from '@/components/icons/lucide-mui/DeleteRoundedIcon';
+import AddRoundedIcon from '@/components/icons/lucide-mui/AddRoundedIcon';
 import { Button } from '../../../components/UI/Button';
 import { FormTextField } from '../../../components/Form/FormTextField';
 import { InventorySelectionModal } from './InventorySelectionModal';
@@ -29,6 +29,11 @@ interface VariantModalProps {
   onClose: () => void;
   onSave: (variant: MenuVariant) => void;
   inventoryOptions: InventoryItemOption[];
+}
+
+interface VariantDraft {
+  variantName: string;
+  ingredients: RecipeIngredient[];
 }
 
 const MOCK_INVENTORY_OPTIONS: InventoryItemOption[] = [
@@ -51,32 +56,55 @@ export function VariantModal({
   onSave,
   inventoryOptions = MOCK_INVENTORY_OPTIONS,
 }: VariantModalProps) {
-  const [variantName, setVariantName] = useState(variant?.name || '');
-  const [ingredients, setIngredients] = useState<RecipeIngredient[]>(variant?.ingredients || []);
+  const [draftByVariant, setDraftByVariant] = useState<Record<string, VariantDraft>>({});
   const [showInventoryModal, setShowInventoryModal] = useState(false);
+  const newVariantIdCounter = useRef(0);
 
-  // Reset form when variant changes or modal opens
-  useEffect(() => {
-    if (open) {
-      setVariantName(variant?.name || '');
-      setIngredients(variant?.ingredients || []);
-    }
-  }, [open, variant]);
+  const draftKey = variant?.id || 'new';
+  const defaultDraft: VariantDraft = {
+    variantName: variant?.name || '',
+    ingredients: variant?.ingredients || [],
+  };
+  const activeDraft = draftByVariant[draftKey] ?? defaultDraft;
+  const variantName = activeDraft.variantName;
+  const ingredients = activeDraft.ingredients;
+
+  const updateDraft = (patch: Partial<VariantDraft>) => {
+    setDraftByVariant((previous) => ({
+      ...previous,
+      [draftKey]: {
+        ...(previous[draftKey] ?? defaultDraft),
+        ...patch,
+      },
+    }));
+  };
+
+  const clearDraft = () => {
+    setDraftByVariant((previous) => {
+      if (!(draftKey in previous)) {
+        return previous;
+      }
+
+      const next = { ...previous };
+      delete next[draftKey];
+      return next;
+    });
+  };
 
   const handleAddIngredientFromInventory = (ingredient: RecipeIngredient) => {
-    setIngredients([...ingredients, ingredient]);
+    updateDraft({ ingredients: [...ingredients, ingredient] });
     setShowInventoryModal(false);
   };
 
   const handleRemoveIngredient = (id: string) => {
-    setIngredients(ingredients.filter(ing => ing.id !== id));
+    updateDraft({ ingredients: ingredients.filter((ing) => ing.id !== id) });
   };
 
   const handleQtyChange = (id: string, qty: number) => {
     const updated = ingredients.map(ing => 
       ing.id === id ? { ...ing, qtyPerUnit: qty } : ing
     );
-    setIngredients(updated);
+    updateDraft({ ingredients: updated });
   };
 
   const handleSave = () => {
@@ -89,19 +117,21 @@ export function VariantModal({
       return;
     }
 
+    if (!variant?.id) {
+      newVariantIdCounter.current += 1;
+    }
+
     onSave({
-      id: variant?.id || `variant-${Date.now()}`,
+      id: variant?.id || `variant-new-${newVariantIdCounter.current}`,
       name: variantName,
       ingredients,
     });
 
-    setVariantName('');
-    setIngredients([]);
+    clearDraft();
   };
 
   const handleClose = () => {
-    setVariantName('');
-    setIngredients([]);
+    clearDraft();
     setShowInventoryModal(false);
     onClose();
   };
@@ -121,7 +151,7 @@ export function VariantModal({
               label="Variant Name"
               placeholder="e.g., Small, Medium, Large"
               value={variantName}
-              onChange={(e) => setVariantName(e.target.value)}
+              onChange={(e) => updateDraft({ variantName: e.target.value })}
               fullWidth
             />
           </Box>
@@ -250,3 +280,5 @@ export function VariantModal({
     </>
   );
 }
+
+

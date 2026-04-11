@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Box, Typography, Paper, Chip, Divider } from '@mui/material';
-import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
-import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
-import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
+import WarningRoundedIcon from '@/components/icons/lucide-mui/WarningRoundedIcon';
+import EditRoundedIcon from '@/components/icons/lucide-mui/EditRoundedIcon';
+import CallReceivedRoundedIcon from '@/components/icons/lucide-mui/CallReceivedRoundedIcon';
+import TrendingUpRoundedIcon from '@/components/icons/lucide-mui/TrendingUpRoundedIcon';
+import TrendingDownRoundedIcon from '@/components/icons/lucide-mui/TrendingDownRoundedIcon';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { Button } from '../../components/UI/Button';
 import { BackButton } from '../../components/UI/BackButton';
@@ -265,3 +265,4 @@ export function InventoryItemProfilePage() {
     </Box>
   );
 }
+

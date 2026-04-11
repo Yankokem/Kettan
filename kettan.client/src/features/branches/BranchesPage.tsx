@@ -1,10 +1,10 @@
 import { Box, Typography, Grid } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
+import AddRoundedIcon from '@/components/icons/lucide-mui/AddRoundedIcon';
+import ViewModuleRoundedIcon from '@/components/icons/lucide-mui/ViewModuleRoundedIcon';
+import TuneRoundedIcon from '@/components/icons/lucide-mui/TuneRoundedIcon';
+import Inventory2RoundedIcon from '@/components/icons/lucide-mui/Inventory2RoundedIcon';
+import HourglassEmptyRoundedIcon from '@/components/icons/lucide-mui/HourglassEmptyRoundedIcon';
 import { BranchCard } from './components/BranchCard';
 import { BRANCHES_MOCK } from './mockData';
 import { Button } from '../../components/UI/Button';
@@ -108,3 +108,5 @@ export function BranchesPage() {
     </Box>
   );
 }
+
+

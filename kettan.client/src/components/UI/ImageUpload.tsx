@@ -1,5 +1,5 @@
 import { Box, Typography, Button } from '@mui/material';
-import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
+import CloudUploadRoundedIcon from '@/components/icons/lucide-mui/CloudUploadRoundedIcon';
 import { useRef, useState } from 'react';
 
 interface ImageUploadProps {
@@ -82,3 +82,5 @@ export function ImageUpload({
     </Box>
   );
 }
+
+

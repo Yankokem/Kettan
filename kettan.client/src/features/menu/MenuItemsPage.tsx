@@ -1,12 +1,12 @@
 import { Box, Typography, Grid } from '@mui/material';
 import { useState } from 'react';
-import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
-import SortRoundedIcon from '@mui/icons-material/SortRounded';
-import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
-import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import LocalCafeRoundedIcon from '@/components/icons/lucide-mui/LocalCafeRoundedIcon';
+import TuneRoundedIcon from '@/components/icons/lucide-mui/TuneRoundedIcon';
+import CheckCircleRoundedIcon from '@/components/icons/lucide-mui/CheckCircleRoundedIcon';
+import CancelRoundedIcon from '@/components/icons/lucide-mui/CancelRoundedIcon';
+import SortRoundedIcon from '@/components/icons/lucide-mui/SortRoundedIcon';
+import CategoryRoundedIcon from '@/components/icons/lucide-mui/CategoryRoundedIcon';
+import ErrorOutlineRoundedIcon from '@/components/icons/lucide-mui/ErrorOutlineRoundedIcon';
 import { Link } from '@tanstack/react-router';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
@@ -306,3 +306,5 @@ export function MenuItemsPage() {
     </Box>
   );
 }
+
+

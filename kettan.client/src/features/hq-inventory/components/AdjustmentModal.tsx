@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -10,9 +10,9 @@ import {
   Divider,
   Chip,
 } from '@mui/material';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import CloseRoundedIcon from '@/components/icons/lucide-mui/CloseRoundedIcon';
+import TuneRoundedIcon from '@/components/icons/lucide-mui/TuneRoundedIcon';
+import ArrowForwardRoundedIcon from '@/components/icons/lucide-mui/ArrowForwardRoundedIcon';
 import { Button } from '../../../components/UI/Button';
 import { FormTextField } from '../../../components/Form/FormTextField';
 import type { Batch, InventoryItem, AdjustmentFormData } from '../types';
@@ -26,26 +26,40 @@ interface AdjustmentModalProps {
 }
 
 export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: AdjustmentModalProps) {
-  const [formData, setFormData] = useState<AdjustmentFormData>({
-    batchId: '',
-    newQuantity: 0,
-    reason: '',
-    remarks: '',
-  });
-
-  // Reset state when modal opens
-  useEffect(() => {
-    if (open && batch) {
-      setFormData({
-        batchId: batch.id,
-        newQuantity: batch.currentQuantity,
-        reason: '',
-        remarks: '',
-      });
-    }
-  }, [open, batch]);
+  const [draftByBatch, setDraftByBatch] = useState<Record<string, AdjustmentFormData>>({});
 
   if (!batch || !item) return null;
+
+  const defaultFormData: AdjustmentFormData = {
+    batchId: batch.id,
+    newQuantity: batch.currentQuantity,
+    reason: '',
+    remarks: '',
+  };
+
+  const formData = draftByBatch[batch.id] ?? defaultFormData;
+
+  const updateFormData = (patch: Partial<AdjustmentFormData>) => {
+    setDraftByBatch((previous) => ({
+      ...previous,
+      [batch.id]: {
+        ...(previous[batch.id] ?? defaultFormData),
+        ...patch,
+      },
+    }));
+  };
+
+  const clearCurrentDraft = () => {
+    setDraftByBatch((previous) => {
+      if (!(batch.id in previous)) {
+        return previous;
+      }
+
+      const next = { ...previous };
+      delete next[batch.id];
+      return next;
+    });
+  };
 
   const difference = formData.newQuantity - batch.currentQuantity;
   const differenceText = difference > 0 ? `+${difference}` : `${difference}`;
@@ -54,13 +68,19 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
   const handleConfirm = () => {
     if (isNoChange || !formData.reason) return;
     onConfirm(formData);
+    clearCurrentDraft();
+    onClose();
+  };
+
+  const handleDialogClose = () => {
+    clearCurrentDraft();
     onClose();
   };
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleDialogClose}
       maxWidth="xs"
       fullWidth
       PaperProps={{
@@ -88,7 +108,7 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
             </Typography>
           </Box>
         </Box>
-        <IconButton onClick={onClose} size="small">
+        <IconButton onClick={handleDialogClose} size="small">
           <CloseRoundedIcon />
         </IconButton>
       </DialogTitle>
@@ -149,21 +169,21 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
             label={`New Quantity (${item.unit?.symbol})`}
             type="number"
             value={formData.newQuantity}
-            onChange={(e) => setFormData(prev => ({ ...prev, newQuantity: parseFloat(e.target.value) || 0 }))}
+            onChange={(e) => updateFormData({ newQuantity: parseFloat(e.target.value) || 0 })}
             placeholder="Enter actual quantity"
           />
 
           <FormTextField
             label="Reason"
             value={formData.reason}
-            onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+            onChange={(e) => updateFormData({ reason: e.target.value })}
             placeholder="e.g., Physical count, Inventory audit"
           />
 
           <FormTextField
             label="Remarks (Optional)"
             value={formData.remarks || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
+            onChange={(e) => updateFormData({ remarks: e.target.value })}
             placeholder="Additional notes"
             multiline
             rows={2}
@@ -174,7 +194,7 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
       <Divider />
 
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button variant="outlined" onClick={onClose}>
+        <Button variant="outlined" onClick={handleDialogClose}>
           Cancel
         </Button>
         <Button
@@ -188,3 +208,5 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
     </Dialog>
   );
 }
+
+

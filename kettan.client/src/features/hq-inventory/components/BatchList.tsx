@@ -1,6 +1,6 @@
 import { Box, Typography, Chip, IconButton, Tooltip } from '@mui/material';
-import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import WarningAmberRoundedIcon from '@/components/icons/lucide-mui/WarningAmberRoundedIcon';
+import TuneRoundedIcon from '@/components/icons/lucide-mui/TuneRoundedIcon';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import type { Batch, Unit } from '../types';
 
@@ -147,4 +147,6 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
     />
   );
 }
+
+
 

@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
-import InboxRoundedIcon from '@mui/icons-material/InboxRounded';
+import InboxRoundedIcon from '@/components/icons/lucide-mui/InboxRoundedIcon';
 
 interface EmptyStateProps {
   title: string;
@@ -47,3 +47,5 @@ export function EmptyState({
     </Box>
   );
 }
+
+

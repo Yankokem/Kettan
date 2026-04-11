@@ -1,13 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { Box, Typography, Button, Grid, Paper, Container } from "@mui/material";
-import LocalCafeIcon from "@mui/icons-material/LocalCafe";
-import InventoryIcon from "@mui/icons-material/Inventory";
-import AssessmentIcon from "@mui/icons-material/Assessment";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import StoreIcon from "@mui/icons-material/Store";
-import GroupsIcon from "@mui/icons-material/Groups";
+import LocalCafeIcon from '@/components/icons/lucide-mui/LocalCafeIcon';
+import InventoryIcon from '@/components/icons/lucide-mui/InventoryIcon';
+import AssessmentIcon from '@/components/icons/lucide-mui/AssessmentIcon';
+import LocalShippingIcon from '@/components/icons/lucide-mui/LocalShippingIcon';
+import CheckCircleIcon from '@/components/icons/lucide-mui/CheckCircleIcon';
+import ArrowForwardIcon from '@/components/icons/lucide-mui/ArrowForwardIcon';
+import StoreIcon from '@/components/icons/lucide-mui/StoreIcon';
+import GroupsIcon from '@/components/icons/lucide-mui/GroupsIcon';
 
 const features = [
   { icon: <InventoryIcon sx={{ fontSize: 40 }} />, title: "Inventory Management", desc: "Track stock levels across all branches in real-time" },
@@ -246,3 +246,5 @@ export function HomePage() {
     </Box>
   );
 }
+
+

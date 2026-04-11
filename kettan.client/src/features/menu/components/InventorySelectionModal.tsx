@@ -14,9 +14,9 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
-import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import CheckCircleRoundedIcon from '@/components/icons/lucide-mui/CheckCircleRoundedIcon';
+import CategoryRoundedIcon from '@/components/icons/lucide-mui/CategoryRoundedIcon';
+import SortRoundedIcon from '@/components/icons/lucide-mui/SortRoundedIcon';
 import { Button } from '../../../components/UI/Button';
 import { SearchInput } from '../../../components/UI/SearchInput';
 import { FilterDropdown } from '../../../components/UI/FilterAndSort';
@@ -349,3 +349,5 @@ export function InventorySelectionModal({
     </Dialog>
   );
 }
+
+

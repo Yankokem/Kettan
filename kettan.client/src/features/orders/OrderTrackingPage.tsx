@@ -1,6 +1,6 @@
 import { Box, Typography, Chip, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import LocalShippingRoundedIcon from '@/components/icons/lucide-mui/LocalShippingRoundedIcon';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { DeliveryDetailsPanel } from './components/DeliveryDetailsPanel';
@@ -48,3 +48,5 @@ export function OrderTrackingPage() {
     </Box>
   );
 }
+
+

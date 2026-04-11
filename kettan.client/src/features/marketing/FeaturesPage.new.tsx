@@ -1,14 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { Box, Typography, Button, Grid, Paper, Container } from "@mui/material";
-import InventoryIcon from "@mui/icons-material/Inventory";
-import AssessmentIcon from "@mui/icons-material/Assessment";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import StoreIcon from "@mui/icons-material/Store";
-import GroupsIcon from "@mui/icons-material/Groups";
-import SecurityIcon from "@mui/icons-material/Security";
-import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
-import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import InventoryIcon from '@/components/icons/lucide-mui/InventoryIcon';
+import AssessmentIcon from '@/components/icons/lucide-mui/AssessmentIcon';
+import LocalShippingIcon from '@/components/icons/lucide-mui/LocalShippingIcon';
+import StoreIcon from '@/components/icons/lucide-mui/StoreIcon';
+import GroupsIcon from '@/components/icons/lucide-mui/GroupsIcon';
+import SecurityIcon from '@/components/icons/lucide-mui/SecurityIcon';
+import NotificationsActiveIcon from '@/components/icons/lucide-mui/NotificationsActiveIcon';
+import ReceiptLongIcon from '@/components/icons/lucide-mui/ReceiptLongIcon';
+import ArrowForwardIcon from '@/components/icons/lucide-mui/ArrowForwardIcon';
 
 const features = [
   {
@@ -195,3 +195,5 @@ export function FeaturesPage() {
     </Box>
   );
 }
+
+

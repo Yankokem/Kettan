@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Box } from '@mui/material';
-import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
+import PersonAddAlt1RoundedIcon from '@/components/icons/lucide-mui/PersonAddAlt1RoundedIcon';
 import type { StaffMember } from './types';
 import { StaffCard } from './components/StaffCard';
 import { AddStaffModal, type AddStaffFormValues } from './components/AddStaffModal';
@@ -104,3 +104,5 @@ export function StaffPage() {
     </Box>
   );
 }
+
+

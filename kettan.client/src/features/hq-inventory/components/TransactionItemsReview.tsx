@@ -1,9 +1,9 @@
 import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
-import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import DeleteOutlineRoundedIcon from '@/components/icons/lucide-mui/DeleteOutlineRoundedIcon';
+import EditRoundedIcon from '@/components/icons/lucide-mui/EditRoundedIcon';
+import CallMadeRoundedIcon from '@/components/icons/lucide-mui/CallMadeRoundedIcon';
+import CallReceivedRoundedIcon from '@/components/icons/lucide-mui/CallReceivedRoundedIcon';
+import TuneRoundedIcon from '@/components/icons/lucide-mui/TuneRoundedIcon';
 import type { InventoryTransactionKind, TransactionLineItem } from './transactionModels';
 
 interface TransactionItemsReviewProps {
@@ -172,3 +172,5 @@ export function TransactionItemsReview({ items, transactionType, onEdit, onRemov
     </Paper>
   );
 }
+
+

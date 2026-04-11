@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import LightbulbRoundedIcon from '@mui/icons-material/LightbulbRounded';
+import LightbulbRoundedIcon from '@/components/icons/lucide-mui/LightbulbRoundedIcon';
 import type { MenuVariant } from '../types';
 
 interface PriceSuggestionProps {
@@ -81,3 +81,5 @@ export function PriceSuggestion({ variants }: PriceSuggestionProps) {
     </Box>
   );
 }
+
+

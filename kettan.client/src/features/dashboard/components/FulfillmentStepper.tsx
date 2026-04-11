@@ -1,5 +1,5 @@
 import { Box, Typography, Card, Stepper, Step, StepLabel, StepContent } from '@mui/material';
-import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded';
+import AutorenewRoundedIcon from '@/components/icons/lucide-mui/AutorenewRoundedIcon';
 
 const STEPS = [
   { label: 'Order Processing', description: '3 orders waiting for approval', active: false },
@@ -66,3 +66,5 @@ export function FulfillmentStepper() {
     </Card>
   );
 }
+
+

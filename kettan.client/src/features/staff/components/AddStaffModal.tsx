@@ -72,15 +72,6 @@ export function AddStaffModal({
     [branchOptions]
   );
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setFormValues(buildInitialFormValues(initialBranchId));
-    setErrors({});
-  }, [open, initialBranchId]);
-
   useEffect(
     () => () => {
       if (previewObjectUrlRef.current) {

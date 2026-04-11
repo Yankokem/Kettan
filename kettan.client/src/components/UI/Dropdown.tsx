@@ -1,6 +1,6 @@
 import { Select, MenuItem, FormControl } from '@mui/material';
 import type { SelectProps } from '@mui/material';
-import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import KeyboardArrowDownRoundedIcon from '@/components/icons/lucide-mui/KeyboardArrowDownRoundedIcon';
 
 export interface DropdownProps extends Omit<SelectProps, 'variant'> {
   options: { value: string | number; label: string }[];
@@ -41,3 +41,5 @@ export function Dropdown({ options, sx, ...props }: DropdownProps) {
     </FormControl>
   );
 }
+
+

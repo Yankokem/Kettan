@@ -1,5 +1,5 @@
 import { IconButton } from '@mui/material';
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
+import ArrowBackRoundedIcon from '@/components/icons/lucide-mui/ArrowBackRoundedIcon';
 import { useNavigate } from '@tanstack/react-router';
 
 export interface BackButtonProps {
@@ -26,3 +26,5 @@ export function BackButton({ to }: BackButtonProps) {
     </IconButton>
   );
 }
+
+

@@ -1,7 +1,7 @@
 import { Box, Typography, Card, Divider, Grid } from '@mui/material';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
-import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
+import LocalShippingRoundedIcon from '@/components/icons/lucide-mui/LocalShippingRoundedIcon';
+import PersonRoundedIcon from '@/components/icons/lucide-mui/PersonRoundedIcon';
+import PhoneRoundedIcon from '@/components/icons/lucide-mui/PhoneRoundedIcon';
 
 export function DeliveryDetailsPanel() {
   return (
@@ -74,3 +74,5 @@ export function DeliveryDetailsPanel() {
     </Card>
   );
 }
+
+

@@ -1,10 +1,10 @@
 import { Box, Typography, Paper, Divider, Avatar, IconButton, Chip } from '@mui/material';
 import { useState, useRef } from 'react';
 import { useParams } from '@tanstack/react-router';
-import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
-import CameraAltRoundedIcon from '@mui/icons-material/CameraAltRounded';
-import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import LocalCafeRoundedIcon from '@/components/icons/lucide-mui/LocalCafeRoundedIcon';
+import CameraAltRoundedIcon from '@/components/icons/lucide-mui/CameraAltRoundedIcon';
+import ImageRoundedIcon from '@/components/icons/lucide-mui/ImageRoundedIcon';
+import EditRoundedIcon from '@/components/icons/lucide-mui/EditRoundedIcon';
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
 import { FormTextField } from '../../components/Form/FormTextField';
@@ -438,3 +438,4 @@ export function MenuItemProfilePage() {
     </Box>
   );
 }
+

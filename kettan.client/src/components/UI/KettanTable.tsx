@@ -1,7 +1,7 @@
 import React from 'react';
 import { DataTable, type ColumnDef, type QuickFilter } from './DataTable';
 
-export interface KettanColumnDef<T> extends ColumnDef<T> {}
+export type KettanColumnDef<T> = ColumnDef<T>;
 
 export interface KettanTableProps<T> {
   columns: KettanColumnDef<T>[];

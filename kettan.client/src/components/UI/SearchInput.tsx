@@ -1,6 +1,6 @@
 import { Paper, InputBase } from '@mui/material';
 import type { InputBaseProps } from '@mui/material';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import SearchRoundedIcon from '@/components/icons/lucide-mui/SearchRoundedIcon';
 
 export function SearchInput({ sx, ...props }: InputBaseProps) {
   return (
@@ -28,3 +28,5 @@ export function SearchInput({ sx, ...props }: InputBaseProps) {
     </Paper>
   );
 }
+
+

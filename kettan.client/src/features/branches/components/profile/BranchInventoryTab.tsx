@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Box, Chip, Pagination, Paper, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { ArrowUpDown, Funnel, Layers3, LayoutGrid, Rows3, Truck } from 'lucide-react';
 import { SearchInput } from '../../../../components/UI/SearchInput';
@@ -101,16 +101,13 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
     return nextItems;
   }, [categoryFilter, items, searchQuery, sortBy, statusFilter, supplierFilter]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery, sortBy, statusFilter, categoryFilter, supplierFilter, viewMode]);
-
   const pageCount = Math.max(1, Math.ceil(filteredItems.length / CARDS_PER_PAGE));
+  const currentPage = Math.min(page, pageCount);
 
   const pagedItems = useMemo(() => {
-    const start = (page - 1) * CARDS_PER_PAGE;
+    const start = (currentPage - 1) * CARDS_PER_PAGE;
     return filteredItems.slice(start, start + CARDS_PER_PAGE);
-  }, [filteredItems, page]);
+  }, [currentPage, filteredItems]);
 
   const tableColumns = useMemo<ColumnDef<BranchInventoryItem>[]>(
     () => [
@@ -185,14 +182,20 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
       <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap', mb: 1.6 }}>
         <SearchInput
           value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
+          onChange={(event) => {
+            setSearchQuery(event.target.value);
+            setPage(1);
+          }}
           placeholder="Search by item, SKU, category, or supplier..."
           sx={{ flex: 1, minWidth: 260 }}
         />
 
         <FilterDropdown
           value={sortBy}
-          onChange={setSortBy}
+          onChange={(value) => {
+            setSortBy(value);
+            setPage(1);
+          }}
           options={SORT_OPTIONS}
           label="Sort"
           icon={<ArrowUpDown size={14} />}
@@ -201,7 +204,10 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
 
         <FilterDropdown
           value={statusFilter}
-          onChange={setStatusFilter}
+          onChange={(value) => {
+            setStatusFilter(value);
+            setPage(1);
+          }}
           options={STATUS_OPTIONS}
           label="Status"
           icon={<Funnel size={14} />}
@@ -210,7 +216,10 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
 
         <FilterDropdown
           value={categoryFilter}
-          onChange={setCategoryFilter}
+          onChange={(value) => {
+            setCategoryFilter(value);
+            setPage(1);
+          }}
           options={categoryOptions}
           label="Category"
           icon={<Layers3 size={14} />}
@@ -219,7 +228,10 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
 
         <FilterDropdown
           value={supplierFilter}
-          onChange={setSupplierFilter}
+          onChange={(value) => {
+            setSupplierFilter(value);
+            setPage(1);
+          }}
           options={supplierOptions}
           label="Supplier"
           icon={<Truck size={14} />}
@@ -232,6 +244,7 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
           onChange={(_event, value: 'cards' | 'table' | null) => {
             if (value) {
               setViewMode(value);
+              setPage(1);
             }
           }}
           size="small"
@@ -295,7 +308,7 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
             <Box sx={{ mt: 2.2, display: 'flex', justifyContent: 'center' }}>
               <Pagination
                 count={pageCount}
-                page={page}
+                page={currentPage}
                 onChange={(_event, value) => setPage(value)}
                 shape="rounded"
                 color="primary"

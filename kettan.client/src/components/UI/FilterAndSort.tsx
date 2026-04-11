@@ -1,5 +1,5 @@
 import { Select, MenuItem, FormControl, Box } from '@mui/material';
-import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import KeyboardArrowDownRoundedIcon from '@/components/icons/lucide-mui/KeyboardArrowDownRoundedIcon';
 import React from 'react';
 
 export interface FilterDropdownProps {
@@ -69,3 +69,4 @@ export function FilterDropdown({ value, onChange, options, label, icon, minWidth
     </FormControl>
   );
 }
+

@@ -1,6 +1,6 @@
 import { Card, Box, Typography, Chip, LinearProgress } from '@mui/material';
-import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
+import Inventory2RoundedIcon from '@/components/icons/lucide-mui/Inventory2RoundedIcon';
+import WarningRoundedIcon from '@/components/icons/lucide-mui/WarningRoundedIcon';
 import { useNavigate } from '@tanstack/react-router';
 import type { InventoryItem } from '../types';
 
@@ -84,3 +84,4 @@ export function InventoryCard({ item }: InventoryCardProps) {
     </Card>
   );
 }
+

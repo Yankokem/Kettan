@@ -1,12 +1,12 @@
 import { Box, Typography, Chip } from '@mui/material';
-import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
-import EventRoundedIcon from '@mui/icons-material/EventRounded';
-import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
-import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
-import DirectionsCarFilledRoundedIcon from '@mui/icons-material/DirectionsCarFilledRounded';
-import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
-import StickyNote2RoundedIcon from '@mui/icons-material/StickyNote2Rounded';
-import TagRoundedIcon from '@mui/icons-material/TagRounded';
+import DescriptionRoundedIcon from '@/components/icons/lucide-mui/DescriptionRoundedIcon';
+import EventRoundedIcon from '@/components/icons/lucide-mui/EventRoundedIcon';
+import StorefrontRoundedIcon from '@/components/icons/lucide-mui/StorefrontRoundedIcon';
+import InfoRoundedIcon from '@/components/icons/lucide-mui/InfoRoundedIcon';
+import DirectionsCarFilledRoundedIcon from '@/components/icons/lucide-mui/DirectionsCarFilledRoundedIcon';
+import PersonOutlineRoundedIcon from '@/components/icons/lucide-mui/PersonOutlineRoundedIcon';
+import StickyNote2RoundedIcon from '@/components/icons/lucide-mui/StickyNote2RoundedIcon';
+import TagRoundedIcon from '@/components/icons/lucide-mui/TagRoundedIcon';
 
 export interface OrderDetailsPanelProps {
   orderId: string;
@@ -94,3 +94,5 @@ export function OrderDetailsPanel({ orderId }: OrderDetailsPanelProps) {
     </Box>
   );
 }
+
+

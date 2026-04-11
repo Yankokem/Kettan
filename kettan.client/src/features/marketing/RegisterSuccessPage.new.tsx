@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Box, Typography, Button, Paper, Container } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import EmailIcon from "@mui/icons-material/Email";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import CheckCircleIcon from '@/components/icons/lucide-mui/CheckCircleIcon';
+import EmailIcon from '@/components/icons/lucide-mui/EmailIcon';
+import ArrowForwardIcon from '@/components/icons/lucide-mui/ArrowForwardIcon';
+import LocalCafeIcon from '@/components/icons/lucide-mui/LocalCafeIcon';
 
 export function RegisterSuccessPage() {
   return (
@@ -109,3 +109,5 @@ export function RegisterSuccessPage() {
     </Box>
   );
 }
+
+

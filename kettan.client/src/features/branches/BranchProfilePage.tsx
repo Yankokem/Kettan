@@ -67,25 +67,69 @@ export function BranchProfilePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
-  const [formData, setFormData] = useState<BranchFormData | null>(
-    selectedBranch ? toBranchFormData(selectedBranch) : null
-  );
+  const [savedFormDataByBranch, setSavedFormDataByBranch] = useState<Record<number, BranchFormData>>({});
+  const [staffOverridesByBranch, setStaffOverridesByBranch] = useState<Record<number, BranchEmployee[]>>({});
   const [editDraft, setEditDraft] = useState<BranchFormData | null>(
     selectedBranch ? toBranchFormData(selectedBranch) : null
   );
-  const [staffMembers, setStaffMembers] = useState<BranchEmployee[]>(branchEmployees);
 
-  useEffect(() => {
-    const nextFormData = selectedBranch ? toBranchFormData(selectedBranch) : null;
+  const formData = useMemo(() => {
+    if (!selectedBranch) {
+      return null;
+    }
 
-    setFormData(nextFormData);
-    setEditDraft(nextFormData);
-    setStaffMembers(branchEmployees);
-    setActiveTab('details');
-    setIsEditModalOpen(false);
-    setIsAddStaffModalOpen(false);
-    setShowSavedNotice(false);
-  }, [branchEmployees, selectedBranch]);
+    return savedFormDataByBranch[selectedBranch.id] ?? toBranchFormData(selectedBranch);
+  }, [savedFormDataByBranch, selectedBranch]);
+
+  const staffMembers = useMemo(() => {
+    if (!selectedBranch) {
+      return [];
+    }
+
+    return staffOverridesByBranch[selectedBranch.id] ?? branchEmployees;
+  }, [branchEmployees, selectedBranch, staffOverridesByBranch]);
+
+  const cityOptions = useMemo(() => {
+    const knownCities = Array.from(new Set(BRANCHES_MOCK.map((branch) => branch.city).filter(Boolean)));
+    if (editDraft?.city && !knownCities.includes(editDraft.city)) {
+      knownCities.push(editDraft.city);
+    }
+
+    return knownCities.map((city) => ({ value: city, label: city }));
+  }, [editDraft]);
+
+  const staffBranchOptions = useMemo(
+    () =>
+      BRANCHES_MOCK.map((branch) => ({
+        value: branch.id.toString(),
+        label: branch.name,
+      })),
+    []
+  );
+
+  const tabBadges = useMemo(
+    () => ({
+      staff: staffMembers.length,
+      activity: activityLogs.length,
+      transactions: transactions.length,
+      inventory: inventoryItems.length,
+    }),
+    [activityLogs.length, inventoryItems.length, staffMembers.length, transactions.length]
+  );
+
+  const kpis = useMemo(() => {
+    if (!selectedBranch) {
+      return [];
+    }
+
+    return getKpisForTab(activeTab, {
+      branch: selectedBranch,
+      employees: staffMembers,
+      activityLogs,
+      transactions,
+      inventoryItems,
+    });
+  }, [activeTab, activityLogs, inventoryItems, selectedBranch, staffMembers, transactions]);
 
   useEffect(() => {
     if (!showSavedNotice) {
@@ -129,46 +173,6 @@ export function BranchProfilePage() {
   const branchCode = `BR-${selectedBranch.id.toString().padStart(5, '0')}`;
   const branchOpen = isOpenNow(formData.openTime, formData.closeTime);
 
-  const cityOptions = useMemo(() => {
-    const knownCities = Array.from(new Set(BRANCHES_MOCK.map((branch) => branch.city).filter(Boolean)));
-    if (editDraft?.city && !knownCities.includes(editDraft.city)) {
-      knownCities.push(editDraft.city);
-    }
-
-    return knownCities.map((city) => ({ value: city, label: city }));
-  }, [editDraft?.city]);
-
-  const staffBranchOptions = useMemo(
-    () =>
-      BRANCHES_MOCK.map((branch) => ({
-        value: branch.id.toString(),
-        label: branch.name,
-      })),
-    []
-  );
-
-  const tabBadges = useMemo(
-    () => ({
-      staff: staffMembers.length,
-      activity: activityLogs.length,
-      transactions: transactions.length,
-      inventory: inventoryItems.length,
-    }),
-    [activityLogs.length, inventoryItems.length, staffMembers.length, transactions.length]
-  );
-
-  const kpis = useMemo(
-    () =>
-      getKpisForTab(activeTab, {
-        branch: selectedBranch,
-        employees: staffMembers,
-        activityLogs,
-        transactions,
-        inventoryItems,
-      }),
-    [activeTab, activityLogs, inventoryItems, selectedBranch, staffMembers, transactions]
-  );
-
   const updateEditDraft = <K extends keyof BranchFormData>(field: K, value: BranchFormData[K]) => {
     setEditDraft((previous) => {
       if (!previous) {
@@ -189,7 +193,10 @@ export function BranchProfilePage() {
       ...editDraft,
     });
 
-    setFormData(editDraft);
+    setSavedFormDataByBranch((previous) => ({
+      ...previous,
+      [selectedBranch.id]: editDraft,
+    }));
     setIsEditModalOpen(false);
     setShowSavedNotice(true);
   };
@@ -225,7 +232,13 @@ export function BranchProfilePage() {
     };
 
     if (newEmployee.branchId === selectedBranch.id) {
-      setStaffMembers((previous) => [newEmployee, ...previous]);
+      setStaffOverridesByBranch((previous) => {
+        const existingForBranch = previous[selectedBranch.id] ?? branchEmployees;
+        return {
+          ...previous,
+          [selectedBranch.id]: [newEmployee, ...existingForBranch],
+        };
+      });
     }
 
     setIsAddStaffModalOpen(false);

@@ -11,8 +11,8 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import DeleteRoundedIcon from '@/components/icons/lucide-mui/DeleteRoundedIcon';
+import AddRoundedIcon from '@/components/icons/lucide-mui/AddRoundedIcon';
 import { Button } from '../../../components/UI/Button';
 import { FormDropdown } from '../../../components/Form/FormDropdown';
 import { FormTextField } from '../../../components/Form/FormTextField';
@@ -166,3 +166,4 @@ export function RecipeBuilder({
     </Box>
   );
 }
+

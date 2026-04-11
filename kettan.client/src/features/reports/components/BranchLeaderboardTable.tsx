@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
+import EmojiEventsRoundedIcon from '@/components/icons/lucide-mui/EmojiEventsRoundedIcon';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 
 interface LeaderboardItem {
@@ -109,3 +109,5 @@ export function BranchLeaderboardTable({ branches }: LeaderboardProps) {
     </Box>
   );
 }
+
+

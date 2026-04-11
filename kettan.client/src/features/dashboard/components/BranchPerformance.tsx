@@ -1,5 +1,5 @@
 import { Box, Typography, Card, LinearProgress } from '@mui/material';
-import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
+import EmojiEventsRoundedIcon from '@/components/icons/lucide-mui/EmojiEventsRoundedIcon';
 
 interface BranchScore {
   id: string;
@@ -76,3 +76,5 @@ export function BranchPerformance() {
     </Card>
   );
 }
+
+

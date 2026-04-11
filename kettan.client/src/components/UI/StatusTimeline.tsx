@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
-import AdjustRoundedIcon from '@mui/icons-material/AdjustRounded';
+import CheckCircleRoundedIcon from '@/components/icons/lucide-mui/CheckCircleRoundedIcon';
+import RadioButtonUncheckedRoundedIcon from '@/components/icons/lucide-mui/RadioButtonUncheckedRoundedIcon';
+import AdjustRoundedIcon from '@/components/icons/lucide-mui/AdjustRoundedIcon';
 
 export interface TimelineEvent {
   title: string;
@@ -63,3 +63,5 @@ export function StatusTimeline({ events }: StatusTimelineProps) {
     </Box>
   );
 }
+
+

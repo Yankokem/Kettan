@@ -1,14 +1,14 @@
 import { Dialog, DialogContent, DialogTitle, IconButton, Box, TextField, Grid, Typography, InputAdornment, Button, Tooltip, Menu, MenuItem, ListItemIcon, ListItemText, Checkbox } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import SortIcon from '@mui/icons-material/Sort';
-import InventoryIcon from '@mui/icons-material/Inventory';
+import CloseIcon from '@/components/icons/lucide-mui/CloseIcon';
+import SearchIcon from '@/components/icons/lucide-mui/SearchIcon';
+import FilterListIcon from '@/components/icons/lucide-mui/FilterListIcon';
+import SortIcon from '@/components/icons/lucide-mui/SortIcon';
+import InventoryIcon from '@/components/icons/lucide-mui/InventoryIcon';
 import { InventoryItemCard } from './InventoryItemCard';
 import type { InventoryItem } from './InventoryItemCard';
 import { InventoryItemDetails } from './InventoryItemDetails';
 import { useState, useMemo } from 'react';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleOutlineIcon from '@/components/icons/lucide-mui/CheckCircleOutlineIcon';
 
 interface InventorySelectionModalProps {
   open: boolean;
@@ -204,3 +204,5 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
     </Dialog>
   );
 }
+
+

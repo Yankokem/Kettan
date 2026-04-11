@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
-import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
+import TrendingUpRoundedIcon from '@/components/icons/lucide-mui/TrendingUpRoundedIcon';
+import TrendingDownRoundedIcon from '@/components/icons/lucide-mui/TrendingDownRoundedIcon';
 
 export interface StatCardProps {
   label: string;
@@ -104,3 +104,5 @@ export function StatCard({ label, value, sub, trend, trendValue, icon, accentCla
     </Box>
   );
 }
+
+

@@ -1,7 +1,7 @@
 import { IconButton, Badge, Popover, Typography, Box, List, ListItem, ListItemText, ListItemAvatar, Avatar, Button } from '@mui/material';
-import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
-import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import NotificationsRoundedIcon from '@/components/icons/lucide-mui/NotificationsRoundedIcon';
+import InventoryRoundedIcon from '@/components/icons/lucide-mui/InventoryRoundedIcon';
+import LocalShippingRoundedIcon from '@/components/icons/lucide-mui/LocalShippingRoundedIcon';
 import { useState } from 'react';
 
 export function NotificationBell() {
@@ -85,3 +85,5 @@ export function NotificationBell() {
     </>
   );
 }
+
+

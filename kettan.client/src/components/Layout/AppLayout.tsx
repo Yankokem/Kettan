@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Box, Toolbar } from '@mui/material';
-import { Outlet } from '@tanstack/react-router';
+import { Outlet, useLocation } from '@tanstack/react-router';
+import { motion } from 'motion/react';
 import { Sidebar, DRAWER_WIDTH } from './Sidebar';
 import { Header } from './Header';
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -51,7 +53,14 @@ export function AppLayout() {
             overflowY: 'auto',
           }}
         >
-          <Outlet />
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28 }}
+          >
+            <Outlet />
+          </motion.div>
         </Box>
       </Box>
     </Box>

@@ -1,7 +1,7 @@
 import { Card, Box, Avatar, IconButton, Typography, Chip } from '@mui/material';
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
-import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
-import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import MoreVertRoundedIcon from '@/components/icons/lucide-mui/MoreVertRoundedIcon';
+import EmailRoundedIcon from '@/components/icons/lucide-mui/EmailRoundedIcon';
+import StorefrontRoundedIcon from '@/components/icons/lucide-mui/StorefrontRoundedIcon';
 import { useNavigate } from '@tanstack/react-router';
 import type { StaffMember } from '../types';
 
@@ -74,3 +74,5 @@ export function StaffCard({ staff }: StaffCardProps) {
     </Card>
   );
 }
+
+

@@ -1,8 +1,8 @@
 import { Box } from '@mui/material';
-import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
+import Inventory2RoundedIcon from '@/components/icons/lucide-mui/Inventory2RoundedIcon';
+import WarningRoundedIcon from '@/components/icons/lucide-mui/WarningRoundedIcon';
+import LocalShippingRoundedIcon from '@/components/icons/lucide-mui/LocalShippingRoundedIcon';
+import TrendingUpRoundedIcon from '@/components/icons/lucide-mui/TrendingUpRoundedIcon';
 import { InventoryTable } from './components/InventoryTable';
 import { StatCard } from '../../components/UI/StatCard';
 import {
@@ -68,3 +68,4 @@ export function InventoryPage() {
     </Box>
   );
 }
+

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Box, Card, Chip, IconButton, Divider, Typography, Menu, MenuItem, ListItemIcon } from '@mui/material';
-import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
-import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
-import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
-import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
-import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import StorefrontRoundedIcon from '@/components/icons/lucide-mui/StorefrontRoundedIcon';
+import LocationOnRoundedIcon from '@/components/icons/lucide-mui/LocationOnRoundedIcon';
+import PeopleRoundedIcon from '@/components/icons/lucide-mui/PeopleRoundedIcon';
+import MoreVertRoundedIcon from '@/components/icons/lucide-mui/MoreVertRoundedIcon';
+import BlockRoundedIcon from '@/components/icons/lucide-mui/BlockRoundedIcon';
+import ArchiveRoundedIcon from '@/components/icons/lucide-mui/ArchiveRoundedIcon';
 import { useNavigate } from '@tanstack/react-router';
 import type { Branch } from '../types';
 
@@ -194,3 +194,5 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
     </Card>
   );
 }
+
+

@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
+import ReceiptLongRoundedIcon from '@/components/icons/lucide-mui/ReceiptLongRoundedIcon';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 
 interface LedgerItem {
@@ -62,3 +62,5 @@ export function InvoiceLedger({ invoices }: { invoices: LedgerItem[] }) {
     </Box>
   );
 }
+
+

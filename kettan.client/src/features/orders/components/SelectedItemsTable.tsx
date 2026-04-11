@@ -1,5 +1,5 @@
 import { Box, Chip, IconButton, Typography } from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@/components/icons/lucide-mui/DeleteOutlineIcon';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import type { InventoryItem } from './InventoryItemCard';
 
@@ -110,3 +110,5 @@ export function SelectedItemsTable({ items, onRemoveItem, onUpdateQuantity }: Se
     />
   );
 }
+
+

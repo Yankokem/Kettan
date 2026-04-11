@@ -1,5 +1,5 @@
 import { Box, Typography, Popover, TextField } from '@mui/material';
-import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
+import CalendarMonthRoundedIcon from '@/components/icons/lucide-mui/CalendarMonthRoundedIcon';
 import { useState } from 'react';
 import { Button } from './Button';
 
@@ -118,3 +118,4 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
     </>
   );
 }
+

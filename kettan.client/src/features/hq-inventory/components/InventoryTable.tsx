@@ -5,16 +5,16 @@ import {
   Chip,
   LinearProgress,
 } from '@mui/material';
-import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
-import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
-import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
-import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
-import SortRoundedIcon from '@mui/icons-material/SortRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
-import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
-import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
-import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded';
+import WarningRoundedIcon from '@/components/icons/lucide-mui/WarningRoundedIcon';
+import ViewListRoundedIcon from '@/components/icons/lucide-mui/ViewListRoundedIcon';
+import BarChartRoundedIcon from '@/components/icons/lucide-mui/BarChartRoundedIcon';
+import ReceiptLongRoundedIcon from '@/components/icons/lucide-mui/ReceiptLongRoundedIcon';
+import SortRoundedIcon from '@/components/icons/lucide-mui/SortRoundedIcon';
+import TuneRoundedIcon from '@/components/icons/lucide-mui/TuneRoundedIcon';
+import CallMadeRoundedIcon from '@/components/icons/lucide-mui/CallMadeRoundedIcon';
+import CallReceivedRoundedIcon from '@/components/icons/lucide-mui/CallReceivedRoundedIcon';
+import ShoppingCartRoundedIcon from '@/components/icons/lucide-mui/ShoppingCartRoundedIcon';
+import SyncAltRoundedIcon from '@/components/icons/lucide-mui/SyncAltRoundedIcon';
 import { useNavigate } from '@tanstack/react-router';
 import type { InventoryItem, InventoryTransaction, TransactionType } from '../types';
 import { SearchInput } from '../../../components/UI/SearchInput';
@@ -449,3 +449,5 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
     />
   );
 }
+
+

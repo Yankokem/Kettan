@@ -1,7 +1,7 @@
 import { Box, Typography, TextField, Button, Divider, Alert, Stack } from '@mui/material';
 import type { InventoryItem } from './InventoryItemCard';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ShoppingCartIcon from '@/components/icons/lucide-mui/ShoppingCartIcon';
+import WarningAmberIcon from '@/components/icons/lucide-mui/WarningAmberIcon';
 import { useState } from 'react';
 
 interface InventoryItemDetailsProps {
@@ -92,3 +92,5 @@ export function InventoryItemDetails({ item, onAddItem }: InventoryItemDetailsPr
     </Box>
   );
 }
+
+

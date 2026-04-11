@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Box, Typography } from '@mui/material';
-import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import ErrorOutlineRoundedIcon from '@/components/icons/lucide-mui/ErrorOutlineRoundedIcon';
 
 export const PartialFulfillmentAlert: React.FC = () => {
   return (
@@ -30,3 +30,5 @@ export const PartialFulfillmentAlert: React.FC = () => {
     </Card>
   );
 };
+
+

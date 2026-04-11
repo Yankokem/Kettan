@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { AppBar, Toolbar, Box, Button, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText, Typography } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import CloseIcon from "@mui/icons-material/Close";
-import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import MenuIcon from '@/components/icons/lucide-mui/MenuIcon';
+import CloseIcon from '@/components/icons/lucide-mui/CloseIcon';
+import LocalCafeIcon from '@/components/icons/lucide-mui/LocalCafeIcon';
 
 const NAV_LINKS = [
   { label: "Home", path: "/" },
@@ -149,3 +149,5 @@ export function MarketingNavbar() {
     </>
   );
 }
+
+

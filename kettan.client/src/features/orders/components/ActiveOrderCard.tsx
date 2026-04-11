@@ -1,5 +1,5 @@
 import { CardActionArea, Box, Typography, Chip } from '@mui/material';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import LocalShippingRoundedIcon from '@/components/icons/lucide-mui/LocalShippingRoundedIcon';
 
 export interface ActiveOrder {
   id: string;
@@ -61,3 +61,5 @@ export function ActiveOrderCard({ order, isSelected, onSelect }: ActiveOrderCard
     </CardActionArea>
   );
 }
+
+

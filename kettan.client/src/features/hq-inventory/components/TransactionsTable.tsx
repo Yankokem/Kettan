@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { Box, Typography, Chip } from '@mui/material';
-import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
-import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
-import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
-import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import CallMadeRoundedIcon from '@/components/icons/lucide-mui/CallMadeRoundedIcon';
+import CallReceivedRoundedIcon from '@/components/icons/lucide-mui/CallReceivedRoundedIcon';
+import ShoppingCartRoundedIcon from '@/components/icons/lucide-mui/ShoppingCartRoundedIcon';
+import SyncAltRoundedIcon from '@/components/icons/lucide-mui/SyncAltRoundedIcon';
+import TuneRoundedIcon from '@/components/icons/lucide-mui/TuneRoundedIcon';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import type { InventoryTransaction, TransactionType } from '../types';
 
@@ -184,4 +184,6 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
     />
   );
 }
+
+
 

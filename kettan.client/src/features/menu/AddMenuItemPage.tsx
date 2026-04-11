@@ -1,7 +1,7 @@
 import { Box, Typography, Paper, Divider, Button } from '@mui/material';
 import { useState } from 'react';
-import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
-import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
+import LocalCafeRoundedIcon from '@/components/icons/lucide-mui/LocalCafeRoundedIcon';
+import ImageRoundedIcon from '@/components/icons/lucide-mui/ImageRoundedIcon';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
@@ -265,3 +265,4 @@ export function AddMenuItemPage() {
     </Box>
   );
 }
+

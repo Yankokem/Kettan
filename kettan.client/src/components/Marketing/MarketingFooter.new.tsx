@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Box, Typography, Container, Grid } from "@mui/material";
-import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import LocalCafeIcon from '@/components/icons/lucide-mui/LocalCafeIcon';
 
 const footerLinks = {
   Product: [
@@ -69,3 +69,5 @@ export function MarketingFooter() {
     </Box>
   );
 }
+
+

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Box, Typography, IconButton, Popover } from '@mui/material';
-import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
-import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
-import ErrorRoundedIcon from '@mui/icons-material/ErrorRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import WarningRoundedIcon from '@/components/icons/lucide-mui/WarningRoundedIcon';
+import InfoRoundedIcon from '@/components/icons/lucide-mui/InfoRoundedIcon';
+import ErrorRoundedIcon from '@/components/icons/lucide-mui/ErrorRoundedIcon';
+import CheckCircleRoundedIcon from '@/components/icons/lucide-mui/CheckCircleRoundedIcon';
 
 export type AlertSeverity = 'warning' | 'error' | 'info' | 'success';
 
@@ -71,3 +71,5 @@ export function StatusAlertIcon({ severity, title, message }: StatusAlertIconPro
     </>
   );
 }
+
+

@@ -12,9 +12,9 @@ import {
   Typography,
   Chip,
 } from '@mui/material';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import DeleteRoundedIcon from '@/components/icons/lucide-mui/DeleteRoundedIcon';
+import AddRoundedIcon from '@/components/icons/lucide-mui/AddRoundedIcon';
+import EditRoundedIcon from '@/components/icons/lucide-mui/EditRoundedIcon';
 import { Button } from '../../../components/UI/Button';
 import { VariantModal } from './VariantModal';
 import type { MenuVariant, InventoryItemOption } from '../types';
@@ -170,3 +170,5 @@ export function VariantsBuilder({
     </Box>
   );
 }
+
+

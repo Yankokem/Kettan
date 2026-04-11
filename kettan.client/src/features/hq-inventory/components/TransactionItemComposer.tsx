@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { Box, Paper, Typography, Chip, Alert } from '@mui/material';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import SearchRoundedIcon from '@/components/icons/lucide-mui/SearchRoundedIcon';
+import AddRoundedIcon from '@/components/icons/lucide-mui/AddRoundedIcon';
+import EditRoundedIcon from '@/components/icons/lucide-mui/EditRoundedIcon';
 import { SearchInput } from '../../../components/UI/SearchInput';
 import { FormDropdown } from '../../../components/Form/FormDropdown';
 import { FormTextField } from '../../../components/Form/FormTextField';
@@ -273,3 +273,5 @@ export function TransactionItemComposer({
     </Paper>
   );
 }
+
+

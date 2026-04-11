@@ -1,7 +1,7 @@
 import { Box, Typography, Grid, Paper, Avatar, Divider, Chip } from '@mui/material';
-import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
-import BuildRoundedIcon from '@mui/icons-material/BuildRounded';
-import MapRoundedIcon from '@mui/icons-material/MapRounded';
+import BusinessRoundedIcon from '@/components/icons/lucide-mui/BusinessRoundedIcon';
+import BuildRoundedIcon from '@/components/icons/lucide-mui/BuildRoundedIcon';
+import MapRoundedIcon from '@/components/icons/lucide-mui/MapRoundedIcon';
 import { Button } from '../../components/UI/Button';
 import { TextField } from '../../components/UI/TextField';
 
@@ -118,3 +118,5 @@ export function CompanyProfilePage() {
     </Box>
   );
 }
+
+

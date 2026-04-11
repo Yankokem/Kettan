@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Box, TextField, Button, Typography, Paper, Alert, CircularProgress, InputAdornment, IconButton, MenuItem } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import VisibilityIcon from '@/components/icons/lucide-mui/VisibilityIcon';
+import VisibilityOffIcon from '@/components/icons/lucide-mui/VisibilityOffIcon';
+import ArrowBackIcon from '@/components/icons/lucide-mui/ArrowBackIcon';
+import LocalCafeIcon from '@/components/icons/lucide-mui/LocalCafeIcon';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -203,3 +203,5 @@ export function RegisterPage() {
     </Box>
   );
 }
+
+

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Box, Divider, Paper, Typography } from '@mui/material';
-import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
+import ReceiptLongRoundedIcon from '@/components/icons/lucide-mui/ReceiptLongRoundedIcon';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FormTextField } from '../../components/Form/FormTextField';
@@ -44,30 +44,18 @@ export default function InventoryTransactionPage() {
   const [transactionType, setTransactionType] = useState<InventoryTransactionKind>('Stock-In');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [remarks, setRemarks] = useState('');
-  const [items, setItems] = useState<TransactionLineItem[]>([]);
-  const [draft, setDraft] = useState<TransactionItemDraft>(createEmptyTransactionItemDraft('existing'));
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [composerError, setComposerError] = useState<string | null>(null);
-  const [prefillApplied, setPrefillApplied] = useState(false);
-
-  const prefillIds = useMemo(() => {
-    const ids: string[] = [];
+  const [items, setItems] = useState<TransactionLineItem[]>(() => {
+    const prefillIds: string[] = [];
 
     if (typeof search.itemId === 'string' && search.itemId.trim()) {
-      ids.push(search.itemId.trim());
+      prefillIds.push(search.itemId.trim());
     }
 
     if (typeof search.itemIds === 'string' && search.itemIds.trim()) {
-      ids.push(...search.itemIds.split(',').map((id) => id.trim()).filter(Boolean));
+      prefillIds.push(...search.itemIds.split(',').map((id) => id.trim()).filter(Boolean));
     }
 
-    return Array.from(new Set(ids));
-  }, [search.itemId, search.itemIds]);
-
-  useEffect(() => {
-    if (prefillApplied || prefillIds.length === 0) return;
-
-    const preloadedItems: TransactionLineItem[] = prefillIds
+    return Array.from(new Set(prefillIds))
       .map((id) => MOCK_INVENTORY_ITEMS.find((item) => item.id === id))
       .filter((item): item is InventoryItem => Boolean(item))
       .map((item) => ({
@@ -79,24 +67,14 @@ export default function InventoryTransactionPage() {
         categoryName: item.category?.name,
         currentStock: item.totalStock,
         quantity: 1,
-        unitCost: transactionType === 'Stock-In' ? item.unitCost : undefined,
-        batchNumber: transactionType === 'Stock-In' ? generateBatchNumber(item.sku) : undefined,
-        reason: transactionType !== 'Stock-In' ? draft.reason : undefined,
+        unitCost: item.unitCost,
+        batchNumber: generateBatchNumber(item.sku),
         isNewItem: false,
       }));
-
-    if (preloadedItems.length > 0) {
-      setItems((prev) => (prev.length > 0 ? prev : preloadedItems));
-    }
-
-    setPrefillApplied(true);
-  }, [prefillApplied, prefillIds, transactionType, draft.reason]);
-
-  useEffect(() => {
-    if (transactionType !== 'Stock-In' && draft.mode === 'new') {
-      setDraft((prev) => ({ ...prev, mode: 'existing' }));
-    }
-  }, [transactionType, draft.mode]);
+  });
+  const [draft, setDraft] = useState<TransactionItemDraft>(createEmptyTransactionItemDraft('existing'));
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [composerError, setComposerError] = useState<string | null>(null);
 
   const categoryOptions = useMemo(
     () => MOCK_CATEGORIES.map((category) => ({ value: category.id, label: category.name })),
@@ -168,8 +146,10 @@ export default function InventoryTransactionPage() {
   };
 
   const handleModeChange = (mode: TransactionItemDraft['mode']) => {
+    const resolvedMode = transactionType === 'Stock-In' ? mode : 'existing';
+
     setDraft((prev) => ({
-      ...createEmptyTransactionItemDraft(mode),
+      ...createEmptyTransactionItemDraft(resolvedMode),
       reason: prev.reason,
     }));
     setComposerError(null);
@@ -474,3 +454,5 @@ export default function InventoryTransactionPage() {
     </Box>
   );
 }
+
+

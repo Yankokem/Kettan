@@ -1,8 +1,8 @@
 import { Box, Typography } from '@mui/material';
-import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import BuildCircleRoundedIcon from '@mui/icons-material/BuildCircleRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import AccessTimeFilledRoundedIcon from '@/components/icons/lucide-mui/AccessTimeFilledRoundedIcon';
+import CheckCircleRoundedIcon from '@/components/icons/lucide-mui/CheckCircleRoundedIcon';
+import BuildCircleRoundedIcon from '@/components/icons/lucide-mui/BuildCircleRoundedIcon';
+import LocalShippingRoundedIcon from '@/components/icons/lucide-mui/LocalShippingRoundedIcon';
 
 export interface OrderFulfillmentStepperProps {
   activeStepIndex?: number;
@@ -83,3 +83,5 @@ export function OrderFulfillmentStepper({ activeStepIndex = 0 }: OrderFulfillmen
     </Box>
   );
 }
+
+

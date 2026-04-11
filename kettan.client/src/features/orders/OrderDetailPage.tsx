@@ -1,10 +1,10 @@
 import { Box, Typography, Chip, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
-import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
-import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import LocalShippingRoundedIcon from '@/components/icons/lucide-mui/LocalShippingRoundedIcon';
+import CheckCircleRoundedIcon from '@/components/icons/lucide-mui/CheckCircleRoundedIcon';
+import AccessTimeFilledRoundedIcon from '@/components/icons/lucide-mui/AccessTimeFilledRoundedIcon';
+import CancelRoundedIcon from '@/components/icons/lucide-mui/CancelRoundedIcon';
+import InventoryRoundedIcon from '@/components/icons/lucide-mui/InventoryRoundedIcon';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -166,4 +166,6 @@ export function OrderDetailPage() {
     </Box>
   );
 }
+
+
 

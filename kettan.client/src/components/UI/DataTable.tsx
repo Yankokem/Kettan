@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Chip, TablePagination, Typography } from '@mui/material';
-import UnfoldMoreRoundedIcon from '@mui/icons-material/UnfoldMoreRounded';
-import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
-import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import UnfoldMoreRoundedIcon from '@/components/icons/lucide-mui/UnfoldMoreRoundedIcon';
+import KeyboardArrowUpRoundedIcon from '@/components/icons/lucide-mui/KeyboardArrowUpRoundedIcon';
+import KeyboardArrowDownRoundedIcon from '@/components/icons/lucide-mui/KeyboardArrowDownRoundedIcon';
 
 export interface ColumnDef<T> {
   key: string;
@@ -422,3 +422,5 @@ export function DataTable<T>({
     </Box>
   );
 }
+
+

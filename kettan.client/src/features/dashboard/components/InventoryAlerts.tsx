@@ -1,6 +1,6 @@
 import { Box, Typography, Card, Chip } from '@mui/material';
-import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
-import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import NotificationsActiveRoundedIcon from '@/components/icons/lucide-mui/NotificationsActiveRoundedIcon';
+import CheckCircleOutlineRoundedIcon from '@/components/icons/lucide-mui/CheckCircleOutlineRoundedIcon';
 
 interface Alert {
   id: string;
@@ -90,3 +90,5 @@ export function InventoryAlerts() {
     </Card>
   );
 }
+
+

@@ -1,6 +1,6 @@
 import { Switch as MuiSwitch, type SwitchProps as MuiSwitchProps, styled } from '@mui/material';
 
-export const StyledSwitch = styled(MuiSwitch)(({ theme }) => ({
+const StyledSwitch = styled(MuiSwitch)(({ theme }) => ({
   width: 44,
   height: 24,
   padding: 0,

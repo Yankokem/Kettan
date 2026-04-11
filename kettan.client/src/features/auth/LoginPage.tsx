@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -10,8 +10,8 @@ import {
   InputAdornment,
   IconButton
 } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Visibility from '@/components/icons/lucide-mui/Visibility';
+import VisibilityOff from '@/components/icons/lucide-mui/VisibilityOff';
 
 import loginBg from '../../assets/login-bg.jpg';
 import logo from '../../assets/logo.png';
@@ -225,3 +225,5 @@ export function LoginPage() {
     </Box>
   );
 }
+
+

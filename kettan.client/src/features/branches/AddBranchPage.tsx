@@ -1,7 +1,7 @@
 import { Box, Typography, Paper, Divider, Button, Grid } from '@mui/material';
 import { useState } from 'react';
-import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
-import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
+import BusinessRoundedIcon from '@/components/icons/lucide-mui/BusinessRoundedIcon';
+import ImageRoundedIcon from '@/components/icons/lucide-mui/ImageRoundedIcon';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
@@ -363,3 +363,5 @@ export function AddBranchPage() {
     </Box>
   );
 }
+
+

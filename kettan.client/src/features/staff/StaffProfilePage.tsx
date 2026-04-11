@@ -1,7 +1,7 @@
 import { Box, Typography, Grid, Paper, Avatar, Divider, Chip } from '@mui/material';
-import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
-import BuildRoundedIcon from '@mui/icons-material/BuildRounded';
-import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
+import PersonRoundedIcon from '@/components/icons/lucide-mui/PersonRoundedIcon';
+import BuildRoundedIcon from '@/components/icons/lucide-mui/BuildRoundedIcon';
+import EmailRoundedIcon from '@/components/icons/lucide-mui/EmailRoundedIcon';
 import { Button } from '../../components/UI/Button';
 import { TextField } from '../../components/UI/TextField';
 import { Dropdown } from '../../components/UI/Dropdown';
@@ -115,3 +115,5 @@ export function StaffProfilePage() {
     </Box>
   );
 }
+
+
