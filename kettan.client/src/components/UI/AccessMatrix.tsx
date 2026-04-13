@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Box, Checkbox, Typography } from '@mui/material';
 import { Button } from './Button';
-import { MatrixTable, type MatrixColumnDef } from './MatrixTable';
+import { DataTable, type ColumnDef } from './DataTable';
 
 const ROLES = ['TenantAdmin', 'HQ Manager', 'HQ Staff', 'Branch Owner', 'Branch Manager'] as const;
 const MODULES = ['Dashboard', 'Orders', 'HQ Inventory', 'Branches', 'Staff', 'Menu Recipes', 'Consumption', 'Returns', 'Reports', 'Settings'] as const;
@@ -83,7 +83,7 @@ export function AccessMatrix({ hideHeader = false }: AccessMatrixProps) {
     );
   };
 
-  const columns = useMemo<MatrixColumnDef<AccessMatrixRow>[]>(
+  const columns = useMemo<ColumnDef<AccessMatrixRow>[]>(
     () => [
       {
         key: 'module',

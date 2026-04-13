@@ -4,6 +4,7 @@ export interface StaffMember {
   email: string;
   role: string;
   location: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'archived';
   avatar: string;
+  imageUrl?: string | null;
 }

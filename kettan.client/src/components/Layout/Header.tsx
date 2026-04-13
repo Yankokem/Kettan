@@ -24,7 +24,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/company-profile': 'Company Profile',
   '/hq-inventory': 'HQ Inventory & Stock',
   '/hq-inventory/add': 'Add Inventory Item',
-  '/staff':     'HR & Staff',
+  '/staff':     '',
   '/settings':  'Settings',
   '/reports':   'Finance & Reports',
 };
@@ -36,7 +36,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/company-profile': 'Manage your company profile and billing.',
   '/hq-inventory': 'Track warehouse stock, raw ingredients, and reorder levels globally.',
   '/hq-inventory/add': 'Register new coffee, syrups, packaging, or equipment.',
-  '/staff':     'Manage employee records and role assignments across your network.',
+  '/staff':     '',
   '/settings':  'System settings, user roles, and platform permissions.',
   '/reports':   'Financial analytics, performance leaderboards, and aggregated invoices.',
 };
@@ -55,6 +55,7 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   const basePath = getParentResource(location.pathname);
   const pageTitle = PAGE_TITLES[basePath] ?? PAGE_TITLES[location.pathname] ?? 'Kettan';
   const pageDesc = PAGE_DESCRIPTIONS[basePath] ?? PAGE_DESCRIPTIONS[location.pathname] ?? 'Kettan · Café Chain Operations';
+  const showPageMeta = Boolean(pageTitle.trim());
 
   return (
     <AppBar
@@ -97,30 +98,32 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
             <MenuIcon />
           </IconButton>
 
-          <Box>
-            <Typography
-              sx={{
-                fontSize: 17,
-                fontWeight: 700,
-                color: '#2E1F0C',
-                letterSpacing: '-0.01em',
-                lineHeight: 1.1,
-                '.dark &': { color: '#E8D3A9' },
-              }}
-            >
-              {pageTitle}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: 12,
-                color: '#8C6B43',
-                letterSpacing: '0.01em',
-                '.dark &': { color: 'rgba(201,168,77,0.55)' },
-              }}
-            >
-              {pageDesc}
-            </Typography>
-          </Box>
+          {showPageMeta ? (
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  color: '#2E1F0C',
+                  letterSpacing: '-0.01em',
+                  lineHeight: 1.1,
+                  '.dark &': { color: '#E8D3A9' },
+                }}
+              >
+                {pageTitle}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: '#8C6B43',
+                  letterSpacing: '0.01em',
+                  '.dark &': { color: 'rgba(201,168,77,0.55)' },
+                }}
+              >
+                {pageDesc}
+              </Typography>
+            </Box>
+          ) : null}
         </Box>
 
         {/* Right side */}

@@ -1,15 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ElementType } from 'react';
 import { Box, Paper, TextField, Typography } from '@mui/material';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
 import { motion } from 'motion/react';
-import {
-  BellRing,
-  ShieldCheck,
-  SlidersHorizontal,
-  Store,
-} from 'lucide-react';
+import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
+import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import { AccessMatrix } from '../../components/UI/AccessMatrix';
 import { Button } from '../../components/UI/Button';
-import { PageTransition, SectionReveal } from '../../components/UI/PageTransition';
 import { Switch } from '../../components/UI/Switch';
 
 type SettingsTabKey = 'access' | 'thresholds' | 'approvals' | 'notifications';
@@ -24,35 +22,35 @@ interface ThresholdConfig {
 const SETTINGS_TABS: {
   key: SettingsTabKey;
   label: string;
-  icon: typeof SlidersHorizontal;
+  icon: ElementType<SvgIconProps>;
   hint: string;
   detail: string;
 }[] = [
   {
     key: 'access',
     label: 'Role Access',
-    icon: ShieldCheck,
+    icon: ShieldRoundedIcon,
     hint: 'Permissions by role and module',
     detail: 'Define who can view, create, update, and delete records across each major system module.',
   },
   {
     key: 'thresholds',
     label: 'Thresholds',
-    icon: SlidersHorizontal,
+    icon: TuneRoundedIcon,
     hint: 'Low-stock defaults for catalog items',
     detail: 'Set chain-wide minimum stock levels used by alerts, replenishment planning, and branch monitoring.',
   },
   {
     key: 'approvals',
     label: 'Approval Rules',
-    icon: Store,
+    icon: StoreRoundedIcon,
     hint: 'Automation limits for supply requests',
     detail: 'Configure order value rules that trigger automatic approval or require manager sign-off.',
   },
   {
     key: 'notifications',
     label: 'Notifications',
-    icon: BellRing,
+    icon: NotificationsRoundedIcon,
     hint: 'Persistent alert preferences',
     detail: 'Choose which operational events send persistent bell notifications to users and managers.',
   },
@@ -105,7 +103,11 @@ export function SettingsPage() {
           alignItems: 'start',
         }}
       >
-        <SectionReveal delay={0.04}>
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.26 }}
+        >
           <Paper
             elevation={0}
             sx={{
@@ -162,7 +164,7 @@ export function SettingsPage() {
                     }}
                   >
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <Icon size={14} />
+                      <Icon sx={{ fontSize: 16 }} />
                       {tab.label}
                     </span>
                     <span
@@ -200,9 +202,9 @@ export function SettingsPage() {
               })}
             </Box>
           </Paper>
-        </SectionReveal>
+        </motion.div>
 
-        <PageTransition yOffset={8} duration={0.3}>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
           <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
             <Box sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
             <Box sx={{ mb: 2.4, pb: 2, borderBottom: '1px dashed', borderColor: 'divider' }}>
@@ -363,7 +365,7 @@ export function SettingsPage() {
 
             </Box>
           </Paper>
-        </PageTransition>
+        </motion.div>
       </Box>
     </Box>
   );
