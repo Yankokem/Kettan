@@ -1,17 +1,16 @@
-import type { LucideIcon } from 'lucide-react';
-import {
-  Activity,
-  AlertTriangle,
-  Box,
-  CheckCircle2,
-  ClipboardList,
-  FileText,
-  PackageSearch,
-  TrendingUp,
-  Users,
-  UserCheck,
-  UserX,
-} from 'lucide-react';
+import type { ElementType } from 'react';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
+import AnalyticsRoundedIcon from '@mui/icons-material/AnalyticsRounded';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
+import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
+import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
+import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
+import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
+import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import type {
   Branch,
   BranchActivityLog,
@@ -25,7 +24,7 @@ import type {
 export interface BranchTabDefinition {
   key: BranchProfileTabKey;
   label: string;
-  icon: LucideIcon;
+  icon: ElementType<SvgIconProps>;
 }
 
 export interface BranchProfileKpi {
@@ -33,7 +32,7 @@ export interface BranchProfileKpi {
   label: string;
   value: string;
   helperText?: string;
-  icon: LucideIcon;
+  icon: ElementType<SvgIconProps>;
   iconColor: string;
   iconBg: string;
 }
@@ -47,11 +46,11 @@ interface BranchKpiContext {
 }
 
 export const BRANCH_PROFILE_TABS: BranchTabDefinition[] = [
-  { key: 'details', label: 'Details', icon: FileText },
-  { key: 'staff', label: 'Staff Roster', icon: Users },
-  { key: 'activity', label: 'Activity Logs', icon: Activity },
-  { key: 'transactions', label: 'Transactions', icon: ClipboardList },
-  { key: 'inventory', label: 'Inventory', icon: PackageSearch },
+  { key: 'details', label: 'Details', icon: DescriptionRoundedIcon },
+  { key: 'staff', label: 'Staff Roster', icon: PeopleRoundedIcon },
+  { key: 'activity', label: 'Activity Logs', icon: AnalyticsRoundedIcon },
+  { key: 'transactions', label: 'Transactions', icon: ReceiptLongRoundedIcon },
+  { key: 'inventory', label: 'Inventory', icon: Inventory2RoundedIcon },
 ];
 
 export const toBranchFormData = (branch: Branch): BranchFormData => ({
@@ -122,7 +121,7 @@ const buildDetailsKpis = ({ branch, employees }: BranchKpiContext): BranchProfil
       id: 'details-total-staff',
       label: 'Total Staff',
       value: employees.length.toString(),
-      icon: Users,
+      icon: PeopleRoundedIcon,
       iconColor: '#6B4C2A',
       iconBg: 'rgba(107,76,42,0.16)',
     },
@@ -130,7 +129,7 @@ const buildDetailsKpis = ({ branch, employees }: BranchKpiContext): BranchProfil
       id: 'details-active-staff',
       label: 'Active Staff',
       value: activeEmployees.toString(),
-      icon: UserCheck,
+      icon: PersonAddAlt1RoundedIcon,
       iconColor: '#166534',
       iconBg: '#DCFCE7',
     },
@@ -138,7 +137,7 @@ const buildDetailsKpis = ({ branch, employees }: BranchKpiContext): BranchProfil
       id: 'details-low-stock',
       label: 'Low Stock Items',
       value: branch.lowStockItems.toString(),
-      icon: AlertTriangle,
+      icon: WarningAmberRoundedIcon,
       iconColor: '#B45309',
       iconBg: '#FEF3C7',
     },
@@ -146,7 +145,7 @@ const buildDetailsKpis = ({ branch, employees }: BranchKpiContext): BranchProfil
       id: 'details-tracked-skus',
       label: 'Tracked SKUs',
       value: branch.totalItems.toString(),
-      icon: Box,
+      icon: Inventory2RoundedIcon,
       iconColor: '#1D4ED8',
       iconBg: '#DBEAFE',
     },
@@ -163,7 +162,7 @@ const buildStaffKpis = ({ employees }: BranchKpiContext): BranchProfileKpi[] => 
       id: 'staff-total',
       label: 'Total Staff',
       value: employees.length.toString(),
-      icon: Users,
+      icon: PeopleRoundedIcon,
       iconColor: '#6B4C2A',
       iconBg: 'rgba(107,76,42,0.16)',
     },
@@ -171,7 +170,7 @@ const buildStaffKpis = ({ employees }: BranchKpiContext): BranchProfileKpi[] => 
       id: 'staff-active',
       label: 'Active Staff',
       value: activeEmployees.toString(),
-      icon: UserCheck,
+      icon: PersonAddAlt1RoundedIcon,
       iconColor: '#166534',
       iconBg: '#DCFCE7',
     },
@@ -179,7 +178,7 @@ const buildStaffKpis = ({ employees }: BranchKpiContext): BranchProfileKpi[] => 
       id: 'staff-inactive',
       label: 'Inactive Staff',
       value: inactiveEmployees.toString(),
-      icon: UserX,
+      icon: BlockRoundedIcon,
       iconColor: '#991B1B',
       iconBg: '#FEE2E2',
     },
@@ -187,7 +186,7 @@ const buildStaffKpis = ({ employees }: BranchKpiContext): BranchProfileKpi[] => 
       id: 'staff-leads',
       label: 'Leads and Supervisors',
       value: leadEmployees.toString(),
-      icon: TrendingUp,
+      icon: TrendingUpRoundedIcon,
       iconColor: '#854D0E',
       iconBg: '#FEF9C3',
     },
@@ -204,7 +203,7 @@ const buildActivityKpis = ({ activityLogs }: BranchKpiContext): BranchProfileKpi
       id: 'activity-total',
       label: 'Total Events',
       value: activityLogs.length.toString(),
-      icon: Activity,
+      icon: AnalyticsRoundedIcon,
       iconColor: '#1D4ED8',
       iconBg: '#DBEAFE',
     },
@@ -212,7 +211,7 @@ const buildActivityKpis = ({ activityLogs }: BranchKpiContext): BranchProfileKpi
       id: 'activity-successful',
       label: 'Successful',
       value: successful.toString(),
-      icon: CheckCircle2,
+      icon: CheckCircleRoundedIcon,
       iconColor: '#166534',
       iconBg: '#DCFCE7',
     },
@@ -220,7 +219,7 @@ const buildActivityKpis = ({ activityLogs }: BranchKpiContext): BranchProfileKpi
       id: 'activity-pending',
       label: 'Pending',
       value: pending.toString(),
-      icon: ClipboardList,
+      icon: ReceiptLongRoundedIcon,
       iconColor: '#92400E',
       iconBg: '#FEF3C7',
     },
@@ -228,7 +227,7 @@ const buildActivityKpis = ({ activityLogs }: BranchKpiContext): BranchProfileKpi
       id: 'activity-flagged',
       label: 'Flagged',
       value: flagged.toString(),
-      icon: AlertTriangle,
+      icon: WarningAmberRoundedIcon,
       iconColor: '#991B1B',
       iconBg: '#FEE2E2',
     },
@@ -245,7 +244,7 @@ const buildTransactionKpis = ({ transactions }: BranchKpiContext): BranchProfile
       id: 'transactions-total',
       label: 'Total Entries',
       value: transactions.length.toString(),
-      icon: ClipboardList,
+      icon: ReceiptLongRoundedIcon,
       iconColor: '#6B4C2A',
       iconBg: 'rgba(107,76,42,0.16)',
     },
@@ -253,7 +252,7 @@ const buildTransactionKpis = ({ transactions }: BranchKpiContext): BranchProfile
       id: 'transactions-stock-in',
       label: 'Stock-In',
       value: stockIn.toString(),
-      icon: TrendingUp,
+      icon: TrendingUpRoundedIcon,
       iconColor: '#166534',
       iconBg: '#DCFCE7',
     },
@@ -261,7 +260,7 @@ const buildTransactionKpis = ({ transactions }: BranchKpiContext): BranchProfile
       id: 'transactions-stock-out',
       label: 'Stock-Out',
       value: stockOut.toString(),
-      icon: AlertTriangle,
+      icon: WarningAmberRoundedIcon,
       iconColor: '#B91C1C',
       iconBg: '#FEE2E2',
     },
@@ -269,7 +268,7 @@ const buildTransactionKpis = ({ transactions }: BranchKpiContext): BranchProfile
       id: 'transactions-net',
       label: 'Net Qty Movement',
       value: `${netMovement >= 0 ? '+' : ''}${netMovement}`,
-      icon: Activity,
+      icon: AnalyticsRoundedIcon,
       iconColor: '#1D4ED8',
       iconBg: '#DBEAFE',
     },
@@ -286,7 +285,7 @@ const buildInventoryKpis = ({ inventoryItems }: BranchKpiContext): BranchProfile
       id: 'inventory-total',
       label: 'Tracked Items',
       value: inventoryItems.length.toString(),
-      icon: Box,
+      icon: Inventory2RoundedIcon,
       iconColor: '#6B4C2A',
       iconBg: 'rgba(107,76,42,0.16)',
     },
@@ -294,7 +293,7 @@ const buildInventoryKpis = ({ inventoryItems }: BranchKpiContext): BranchProfile
       id: 'inventory-low',
       label: 'Low Stock',
       value: lowStock.toString(),
-      icon: AlertTriangle,
+      icon: WarningAmberRoundedIcon,
       iconColor: '#B45309',
       iconBg: '#FEF3C7',
     },
@@ -302,7 +301,7 @@ const buildInventoryKpis = ({ inventoryItems }: BranchKpiContext): BranchProfile
       id: 'inventory-out',
       label: 'Out of Stock',
       value: outOfStock.toString(),
-      icon: UserX,
+      icon: BlockRoundedIcon,
       iconColor: '#B91C1C',
       iconBg: '#FEE2E2',
     },
@@ -310,7 +309,7 @@ const buildInventoryKpis = ({ inventoryItems }: BranchKpiContext): BranchProfile
       id: 'inventory-suppliers',
       label: 'Suppliers',
       value: suppliers.toString(),
-      icon: PackageSearch,
+      icon: SearchRoundedIcon,
       iconColor: '#1D4ED8',
       iconBg: '#DBEAFE',
     },

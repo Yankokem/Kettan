@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Box, Chip, Typography } from '@mui/material';
-import { ArrowUpDown, Funnel, Layers3 } from 'lucide-react';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import { DataTable, type ColumnDef } from '../../../../components/UI/DataTable';
 import { SearchInput } from '../../../../components/UI/SearchInput';
 import { FilterDropdown } from '../../../../components/UI/FilterAndSort';
@@ -153,7 +155,7 @@ export function BranchActivityTab({ logs }: BranchActivityTabProps) {
           onChange={setSortBy}
           options={SORT_OPTIONS}
           label="Sort"
-          icon={<ArrowUpDown size={14} />}
+          icon={<SortRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={175}
         />
 
@@ -162,7 +164,7 @@ export function BranchActivityTab({ logs }: BranchActivityTabProps) {
           onChange={setOutcomeFilter}
           options={OUTCOME_FILTER_OPTIONS}
           label="Outcome"
-          icon={<Funnel size={14} />}
+          icon={<TuneRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={160}
         />
 
@@ -171,7 +173,7 @@ export function BranchActivityTab({ logs }: BranchActivityTabProps) {
           onChange={setCategoryFilter}
           options={categoryOptions}
           label="Category"
-          icon={<Layers3 size={14} />}
+          icon={<CategoryRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={165}
         />
       </Box>

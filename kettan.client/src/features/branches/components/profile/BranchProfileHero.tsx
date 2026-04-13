@@ -1,5 +1,10 @@
 import { Avatar, Box, Chip, Grid, Paper, Typography } from '@mui/material';
-import { CheckCircle2, Clock3, MapPin, PencilLine, Phone, Warehouse } from 'lucide-react';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import CallRoundedIcon from '@mui/icons-material/CallRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import { Button } from '../../../../components/UI/Button';
 import type { Branch, BranchFormData } from '../../types';
 import type { BranchProfileKpi } from '../../branchProfileData';
@@ -124,11 +129,11 @@ export function BranchProfileHero({
               </Box>
 
               <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-                <Button variant="outlined" startIcon={<Warehouse size={15} />} onClick={onViewInventory}>
+                <Button variant="outlined" startIcon={<Inventory2RoundedIcon sx={{ fontSize: 18 }} />} onClick={onViewInventory}>
                   View Inventory
                 </Button>
 
-                <Button startIcon={<PencilLine size={15} />} onClick={onEnableEdit}>
+                <Button startIcon={<EditRoundedIcon sx={{ fontSize: 18 }} />} onClick={onEnableEdit}>
                   Edit Branch
                 </Button>
               </Box>
@@ -147,15 +152,15 @@ export function BranchProfileHero({
               }}
             >
               <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                <MapPin size={13} />
+                <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
                 {formData.city}
               </Typography>
               <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                <Clock3 size={13} />
+                <AccessTimeRoundedIcon sx={{ fontSize: 14 }} />
                 {formatSchedule(formData.openTime)} - {formatSchedule(formData.closeTime)}
               </Typography>
               <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                <Phone size={13} />
+                <CallRoundedIcon sx={{ fontSize: 14 }} />
                 {formData.contactNumber}
               </Typography>
             </Box>
@@ -165,7 +170,7 @@ export function BranchProfileHero({
         {showSavedNotice ? (
           <Box sx={{ mt: 2.2 }}>
             <Chip
-              icon={<CheckCircle2 size={14} />}
+              icon={<CheckCircleRoundedIcon sx={{ fontSize: 16 }} />}
               label="Saved changes to branch profile"
               sx={{
                 borderRadius: 999,
@@ -214,7 +219,7 @@ export function BranchProfileHero({
                         justifyContent: 'center',
                       }}
                     >
-                      <Icon size={16} />
+                      <Icon sx={{ fontSize: 17 }} />
                     </Box>
                   </Box>
                 </Paper>

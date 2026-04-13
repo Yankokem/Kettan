@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Avatar, Box, Chip, Typography } from '@mui/material';
-import { ArrowUpDown, Funnel, Layers3, UserPlus } from 'lucide-react';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import { Button } from '../../../../components/UI/Button';
 import { DataTable, type ColumnDef } from '../../../../components/UI/DataTable';
 import { SearchInput } from '../../../../components/UI/SearchInput';
@@ -185,7 +188,7 @@ export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: Br
             onChange={setSortBy}
             options={SORT_OPTIONS}
             label="Sort"
-            icon={<ArrowUpDown size={14} />}
+            icon={<SortRoundedIcon sx={{ fontSize: 16 }} />}
             minWidth={175}
           />
 
@@ -194,7 +197,7 @@ export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: Br
             onChange={setStatusFilter}
             options={STATUS_FILTER_OPTIONS}
             label="Status"
-            icon={<Funnel size={14} />}
+            icon={<TuneRoundedIcon sx={{ fontSize: 16 }} />}
             minWidth={145}
           />
 
@@ -203,12 +206,12 @@ export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: Br
             onChange={setPositionFilter}
             options={positionOptions}
             label="Position"
-            icon={<Layers3 size={14} />}
+            icon={<BadgeRoundedIcon sx={{ fontSize: 16 }} />}
             minWidth={170}
           />
         </Box>
 
-        <Button startIcon={<UserPlus size={15} />} onClick={onAddStaff} sx={{ ml: 'auto' }}>
+        <Button startIcon={<PersonAddAlt1RoundedIcon sx={{ fontSize: 18 }} />} onClick={onAddStaff} sx={{ ml: 'auto' }}>
           Add Staff
         </Button>
       </Box>

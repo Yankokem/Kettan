@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Avatar, Box, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Typography } from '@mui/material';
-import { Camera, Upload, UserPlus, X } from 'lucide-react';
+import CameraAltRoundedIcon from '@mui/icons-material/CameraAltRounded';
+import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
+import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import { Button } from '../../../components/UI/Button';
 import { FormTextField } from '../../../components/Form/FormTextField';
 import { FormDropdown } from '../../../components/Form/FormDropdown';
@@ -248,7 +251,7 @@ export function AddStaffModal({
                       color: '#6B4C2A',
                     }}
                   >
-                    <Camera size={26} />
+                    <CameraAltRoundedIcon sx={{ fontSize: 26 }} />
                   </Avatar>
                   <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>Upload Photo</Typography>
                   <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.35 }}>PNG or JPG up to 5MB</Typography>
@@ -267,7 +270,7 @@ export function AddStaffModal({
             <Box sx={{ mt: 1.6, display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}>
               <Button
                 variant="outlined"
-                startIcon={<Upload size={14} />}
+                startIcon={<CloudUploadRoundedIcon sx={{ fontSize: 18 }} />}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {formValues.imagePreviewUrl ? 'Replace' : 'Upload'}
@@ -276,7 +279,7 @@ export function AddStaffModal({
               {formValues.imagePreviewUrl ? (
                 <Button
                   variant="outlined"
-                  startIcon={<X size={14} />}
+                  startIcon={<CloseRoundedIcon sx={{ fontSize: 18 }} />}
                   onClick={clearImage}
                   sx={{
                     color: '#B91C1C',
@@ -379,7 +382,7 @@ export function AddStaffModal({
         <Button variant="outlined" onClick={handleClose}>
           Cancel
         </Button>
-        <Button startIcon={<UserPlus size={15} />} onClick={handleSave}>
+        <Button startIcon={<PersonAddAlt1RoundedIcon sx={{ fontSize: 18 }} />} onClick={handleSave}>
           Create Profile
         </Button>
       </DialogActions>

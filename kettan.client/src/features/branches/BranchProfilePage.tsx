@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Chip, Paper, Typography } from '@mui/material';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { motion } from 'motion/react';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import { Button } from '../../components/UI/Button';
 import {
   BRANCH_MANAGER_OPTIONS,
@@ -234,12 +234,7 @@ export function BranchProfilePage() {
 
   return (
     <Box sx={{ pb: 5, pt: 1 }}>
-      <motion.div
-        initial={{ opacity: 0, y: -6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.28 }}
-        style={{ marginBottom: 16 }}
-      >
+      <Box sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
           <button
             type="button"
@@ -258,11 +253,11 @@ export function BranchProfilePage() {
               fontWeight: 600,
             }}
           >
-            <ArrowLeft size={13} />
+            <ArrowBackRoundedIcon sx={{ fontSize: 14 }} />
             Branches
           </button>
 
-          <ChevronRight size={13} color="#A8A29E" />
+          <ChevronRightRoundedIcon sx={{ fontSize: 15, color: '#A8A29E' }} />
 
           <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary' }}>{formData.name}</Typography>
 
@@ -279,63 +274,55 @@ export function BranchProfilePage() {
             }}
           />
         </Box>
-      </motion.div>
+      </Box>
 
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.38 }}>
-        <BranchProfileHero
-          branch={selectedBranch}
-          formData={formData}
-          branchCode={branchCode}
-          branchOpen={branchOpen}
-          kpis={kpis}
-          showSavedNotice={showSavedNotice}
-          onViewInventory={() => setActiveTab('inventory')}
-          onEnableEdit={handleOpenEditModal}
+      <BranchProfileHero
+        branch={selectedBranch}
+        formData={formData}
+        branchCode={branchCode}
+        branchOpen={branchOpen}
+        kpis={kpis}
+        showSavedNotice={showSavedNotice}
+        onViewInventory={() => setActiveTab('inventory')}
+        onEnableEdit={handleOpenEditModal}
+      />
+
+      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
+        <BranchProfileTabHeader
+          tabs={BRANCH_PROFILE_TABS}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          badgeMap={tabBadges}
         />
-      </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.08 }}
-      >
-        <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
-          <BranchProfileTabHeader
-            tabs={BRANCH_PROFILE_TABS}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            badgeMap={tabBadges}
+        {activeTab === 'details' ? (
+          <BranchDetailsTab
+            formData={formData}
+            statusOptions={STATUS_OPTIONS}
+            ownerOptions={OWNER_OPTIONS}
+            managerOptions={MANAGER_OPTIONS}
           />
+        ) : null}
 
-          {activeTab === 'details' ? (
-            <BranchDetailsTab
-              formData={formData}
-              statusOptions={STATUS_OPTIONS}
-              ownerOptions={OWNER_OPTIONS}
-              managerOptions={MANAGER_OPTIONS}
-            />
-          ) : null}
+        {activeTab === 'staff' ? (
+          <BranchStaffTab
+            employees={staffMembers}
+            onAddStaff={() => setIsAddStaffModalOpen(true)}
+            onOpenStaffProfile={(employee) =>
+              navigate({
+                to: '/staff/$staffId',
+                params: { staffId: employee.id.toString() },
+              })
+            }
+          />
+        ) : null}
 
-          {activeTab === 'staff' ? (
-            <BranchStaffTab
-              employees={staffMembers}
-              onAddStaff={() => setIsAddStaffModalOpen(true)}
-              onOpenStaffProfile={(employee) =>
-                navigate({
-                  to: '/staff/$staffId',
-                  params: { staffId: employee.id.toString() },
-                })
-              }
-            />
-          ) : null}
+        {activeTab === 'activity' ? <BranchActivityTab logs={activityLogs} /> : null}
 
-          {activeTab === 'activity' ? <BranchActivityTab logs={activityLogs} /> : null}
+        {activeTab === 'transactions' ? <BranchTransactionsTab transactions={transactions} /> : null}
 
-          {activeTab === 'transactions' ? <BranchTransactionsTab transactions={transactions} /> : null}
-
-          {activeTab === 'inventory' ? <BranchInventoryTab items={inventoryItems} /> : null}
-        </Paper>
-      </motion.div>
+        {activeTab === 'inventory' ? <BranchInventoryTab items={inventoryItems} /> : null}
+      </Paper>
 
       <BranchEditModal
         open={isEditModalOpen}

@@ -1,5 +1,5 @@
 import { Box, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Typography } from '@mui/material';
-import { Save } from 'lucide-react';
+import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import { Button } from '../../../../components/UI/Button';
 import { Dropdown } from '../../../../components/UI/Dropdown';
 import { TextField } from '../../../../components/UI/TextField';
@@ -169,7 +169,7 @@ export function BranchEditModal({
         <Button variant="outlined" onClick={onClose}>
           Cancel
         </Button>
-        <Button startIcon={<Save size={15} />} onClick={onSave}>
+        <Button startIcon={<SaveRoundedIcon sx={{ fontSize: 18 }} />} onClick={onSave}>
           Save Changes
         </Button>
       </DialogActions>

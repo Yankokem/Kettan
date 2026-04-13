@@ -1,5 +1,6 @@
 import { Box, Chip, Paper, Typography } from '@mui/material';
-import { PackageCheck, Store } from 'lucide-react';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import type { BranchInventoryItem } from '../../types';
 import { formatDate } from '../../branchProfileData';
 
@@ -115,14 +116,14 @@ export function BranchInventoryCard({ item }: BranchInventoryCardProps) {
             minWidth: 0,
           }}
         >
-          <Store size={12} />
+          <StorefrontRoundedIcon sx={{ fontSize: 13 }} />
           <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {item.supplier}
           </Box>
         </Typography>
 
         <Chip
-          icon={<PackageCheck size={12} />}
+          icon={<CheckCircleRoundedIcon sx={{ fontSize: 14 }} />}
           label={STATUS_LABEL_MAP[item.status]}
           size="small"
           sx={{

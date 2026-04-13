@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Chip, Pagination, Paper, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { ArrowUpDown, Funnel, Layers3, LayoutGrid, Rows3, Truck } from 'lucide-react';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
+import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import { SearchInput } from '../../../../components/UI/SearchInput';
 import { FilterDropdown } from '../../../../components/UI/FilterAndSort';
 import { DataTable, type ColumnDef } from '../../../../components/UI/DataTable';
@@ -195,7 +200,7 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
           onChange={setSortBy}
           options={SORT_OPTIONS}
           label="Sort"
-          icon={<ArrowUpDown size={14} />}
+          icon={<SortRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={200}
         />
 
@@ -204,7 +209,7 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
           onChange={setStatusFilter}
           options={STATUS_OPTIONS}
           label="Status"
-          icon={<Funnel size={14} />}
+          icon={<TuneRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={168}
         />
 
@@ -213,7 +218,7 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
           onChange={setCategoryFilter}
           options={categoryOptions}
           label="Category"
-          icon={<Layers3 size={14} />}
+          icon={<CategoryRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={170}
         />
 
@@ -222,7 +227,7 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
           onChange={setSupplierFilter}
           options={supplierOptions}
           label="Supplier"
-          icon={<Truck size={14} />}
+          icon={<LocalShippingRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={170}
         />
 
@@ -250,10 +255,10 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
           }}
         >
           <ToggleButton value="cards">
-            <LayoutGrid size={14} />
+            <ViewModuleRoundedIcon sx={{ fontSize: 16 }} />
           </ToggleButton>
           <ToggleButton value="table">
-            <Rows3 size={14} />
+            <ViewListRoundedIcon sx={{ fontSize: 16 }} />
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>

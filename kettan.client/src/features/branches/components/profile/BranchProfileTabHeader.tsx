@@ -47,7 +47,7 @@ export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap 
               padding: '14px 16px',
             }}
           >
-            <Icon size={14} />
+            <Icon sx={{ fontSize: 15 }} />
             {tab.label}
             {typeof badge !== 'undefined' ? ` (${badge})` : ''}
 

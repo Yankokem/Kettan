@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Box, Chip, Typography } from '@mui/material';
-import { ArrowUpDown, Funnel } from 'lucide-react';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import { DataTable, type ColumnDef } from '../../../../components/UI/DataTable';
 import { SearchInput } from '../../../../components/UI/SearchInput';
 import { FilterDropdown } from '../../../../components/UI/FilterAndSort';
@@ -171,7 +172,7 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
           onChange={setSortBy}
           options={SORT_OPTIONS}
           label="Sort"
-          icon={<ArrowUpDown size={14} />}
+          icon={<SortRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={185}
         />
 
@@ -180,7 +181,7 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
           onChange={setTypeFilter}
           options={TYPE_FILTER_OPTIONS}
           label="Type"
-          icon={<Funnel size={14} />}
+          icon={<TuneRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={160}
         />
       </Box>
