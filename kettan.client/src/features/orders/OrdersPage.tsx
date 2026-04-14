@@ -1,4 +1,4 @@
-import { Box, Grid, ToggleButton, ToggleButtonGroup, Typography, Chip } from '@mui/material';
+import { Box, Grid, ToggleButton, ToggleButtonGroup, Tooltip, Typography, Chip } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -8,12 +8,15 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
+import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { StatCard } from '../../components/UI/StatCard';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
 import { Button } from '../../components/UI/Button';
+import { SearchInput } from '../../components/UI/SearchInput';
 import { OrdersListViewSwitcher, type OrdersListViewMode } from './components/OrdersListViewSwitcher';
 import { OrderRowActionsMenu, type OrderActionStatus } from './components/OrderRowActionsMenu';
 import { OrderListCard } from './components/OrderListCard';
@@ -188,7 +191,7 @@ export function OrdersPage() {
   const [endDate, setEndDate] = useState('2026-04-14');
   const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
   const [viewMode, setViewMode] = useState<OrdersListViewMode>('card');
-  const [branchFilter, setBranchFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
 
@@ -198,10 +201,15 @@ export function OrdersPage() {
   });
 
   const filtered = source.filter((order) => {
-    const matchesBranch = !branchFilter || order.branch === branchFilter;
+    const query = searchQuery.trim().toLowerCase();
+    const matchesQuery =
+      query.length === 0 ||
+      order.id.toLowerCase().includes(query) ||
+      order.branch.toLowerCase().includes(query) ||
+      (order.actionedBy || '').toLowerCase().includes(query);
     const matchesStatus = !statusFilter || order.status === statusFilter;
     const inRange = order.date >= startDate && order.date <= endDate;
-    return matchesBranch && matchesStatus && inRange;
+    return matchesQuery && matchesStatus && inRange;
   });
 
   const sorted = [...filtered].sort((a, b) => {
@@ -222,7 +230,6 @@ export function OrdersPage() {
     }
   });
 
-  const uniqueBranches = Array.from(new Set(MOCK_ORDERS.map((order) => order.branch)));
   const statusOptions = (datasetMode === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES).map((status) => ({
     value: status,
     label: status,
@@ -247,6 +254,14 @@ export function OrdersPage() {
 
   const handleDecline = (orderId: string) => {
     navigate({ to: '/orders/$orderId', params: { orderId } });
+  };
+
+  const handleDatasetModeChange = (nextMode: DatasetMode) => {
+    setDatasetMode(nextMode);
+    setStatusFilter('');
+    if (nextMode === 'history') {
+      setViewMode('table');
+    }
   };
 
   const columns = getColumns(datasetMode, openDetails, handleApprove, handleProceed, handleDecline);
@@ -304,36 +319,71 @@ export function OrdersPage() {
       </Box>
 
       {/* Top controls */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, flexWrap: 'wrap', gap: 1.5 }}>
-        <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'center', flexWrap: 'wrap' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2.5,
+          gap: 1.2,
+          flexWrap: 'nowrap',
+          overflowX: 'auto',
+          pb: 0.5,
+        }}
+      >
+        <Button
+          startIcon={<LocalMallRoundedIcon />}
+          onClick={() => navigate({ to: '/orders/new' })}
+          sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+        >
+          New Request
+        </Button>
+
+        <Tooltip title="Active Orders">
           <ToggleButtonGroup
             value={datasetMode}
             exclusive
             onChange={(_event, value: DatasetMode | null) => {
               if (value) {
-                setDatasetMode(value);
-                setStatusFilter('');
+                handleDatasetModeChange(value);
               }
             }}
             size="small"
             sx={{
+              height: 40,
+              borderRadius: 2,
+              flexShrink: 0,
               '& .MuiToggleButton-root': {
-                textTransform: 'none',
-                fontSize: 12.5,
-                fontWeight: 700,
-                px: 1.75,
+                px: 1.4,
                 color: '#6B4C2A',
-                borderColor: 'rgba(107, 76, 42, 0.25)',
+                borderColor: 'rgba(107, 76, 42, 0.3)',
                 '&.Mui-selected': {
                   bgcolor: 'rgba(107, 76, 42, 0.12)',
-                  color: '#6B4C2A',
+                  color: '#4A3424',
                 },
               },
             }}
           >
-            <ToggleButton value="active">Active Orders</ToggleButton>
-            <ToggleButton value="history">History</ToggleButton>
+            <ToggleButton value="active" aria-label="Active Orders">
+              <PendingActionsRoundedIcon sx={{ fontSize: 16 }} />
+            </ToggleButton>
+            <ToggleButton value="history" aria-label="History">
+              <HistoryRoundedIcon sx={{ fontSize: 16 }} />
+            </ToggleButton>
           </ToggleButtonGroup>
+        </Tooltip>
+
+        <OrdersListViewSwitcher
+          value={viewMode}
+          onChange={setViewMode}
+          allowCard={datasetMode === 'active'}
+        />
+
+        <SearchInput
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search order ID, branch, or actor..."
+          sx={{ minWidth: 280, maxWidth: 360, flexShrink: 0 }}
+        />
 
           <DateRangePicker
             startDate={startDate}
@@ -342,20 +392,11 @@ export function OrdersPage() {
           />
 
           <FilterDropdown
-            label="Branch"
-            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-            value={branchFilter}
-            onChange={setBranchFilter}
-            minWidth={140}
-            options={uniqueBranches.map((branch) => ({ value: branch, label: branch }))}
-          />
-
-          <FilterDropdown
             label="Status"
             icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
             value={statusFilter}
             onChange={setStatusFilter}
-            minWidth={130}
+            minWidth={120}
             options={statusOptions}
           />
 
@@ -364,16 +405,9 @@ export function OrdersPage() {
             icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
             value={sortBy}
             onChange={(value) => setSortBy(value as SortOption)}
-            minWidth={170}
+            minWidth={155}
             options={SORT_OPTIONS}
           />
-
-          <OrdersListViewSwitcher value={viewMode} onChange={setViewMode} />
-        </Box>
-
-        <Button startIcon={<LocalMallRoundedIcon />} onClick={() => navigate({ to: '/orders/new' })}>
-          New Internal Request
-        </Button>
       </Box>
 
       {viewMode === 'table' ? (
@@ -390,7 +424,7 @@ export function OrdersPage() {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
             gap: 2,
           }}
         >
