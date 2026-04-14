@@ -1,17 +1,22 @@
-import { Box, Typography, Chip, Grid } from '@mui/material';
+import { Box, Grid, ToggleButton, ToggleButtonGroup, Typography, Chip } from '@mui/material';
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 
 import LocalMallRoundedIcon from '@mui/icons-material/LocalMallRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { StatCard } from '../../components/UI/StatCard';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
 import { Button } from '../../components/UI/Button';
+import { OrdersListViewSwitcher, type OrdersListViewMode } from './components/OrdersListViewSwitcher';
+import { OrderRowActionsMenu, type OrderActionStatus } from './components/OrderRowActionsMenu';
+import { OrderListCard } from './components/OrderListCard';
 
 // Mock Data for Orders
 interface OrderItem {
@@ -19,134 +24,232 @@ interface OrderItem {
   branch: string;
   itemsCount: number;
   totalCost: number;
-  status: 'Pending' | 'Approved' | 'Packing' | 'Dispatched' | 'Suspended';
+  status: OrderActionStatus;
   date: string;
+  actionedBy?: string;
 }
 
 const MOCK_ORDERS: OrderItem[] = [
-  { id: 'ORD-8891', branch: 'Downtown Main',   itemsCount: 14, totalCost: 8540.00,  status: 'Pending',    date: '2026-04-02' },
-  { id: 'ORD-8890', branch: 'Uptown Station',  itemsCount: 5,  totalCost: 3200.50,  status: 'Approved',   date: '2026-04-01' },
-  { id: 'ORD-8889', branch: 'Westside Market', itemsCount: 22, totalCost: 11250.00, status: 'Packing',    date: '2026-03-30' },
-  { id: 'ORD-8888', branch: 'Airport Express', itemsCount: 8,  totalCost: 5400.00,  status: 'Dispatched', date: '2026-03-29' },
-  { id: 'ORD-8887', branch: 'Uptown Station',  itemsCount: 42, totalCost: 0,        status: 'Suspended',  date: '2026-03-28' },
+  { id: 'ORD-8894', branch: 'Downtown Main', itemsCount: 14, totalCost: 8540.0, status: 'Pending', date: '2026-04-11' },
+  { id: 'ORD-8893', branch: 'Uptown Station', itemsCount: 5, totalCost: 3200.5, status: 'Approved', date: '2026-04-10' },
+  { id: 'ORD-8892', branch: 'Westside Market', itemsCount: 22, totalCost: 11250.0, status: 'Packing', date: '2026-04-08' },
+  { id: 'ORD-8891', branch: 'Airport Express', itemsCount: 8, totalCost: 5400.0, status: 'Dispatched', date: '2026-04-07' },
+  { id: 'ORD-8890', branch: 'Uptown Station', itemsCount: 10, totalCost: 7045.5, status: 'Delivered', date: '2026-04-03', actionedBy: 'Ana Reyes' },
+  { id: 'ORD-8889', branch: 'Downtown Main', itemsCount: 9, totalCost: 4100.0, status: 'Declined', date: '2026-03-31', actionedBy: 'John Cruz' },
+  { id: 'ORD-8888', branch: 'Westside Market', itemsCount: 42, totalCost: 0, status: 'Suspended', date: '2026-03-28', actionedBy: 'System Hold' },
 ];
 
 const STATUS_MAP = {
-  'Pending':    { color: '#B45309', bg: 'rgba(180,83,9,0.12)' },
-  'Approved':   { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' },
-  'Packing':    { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' },
-  'Dispatched': { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
-  'Suspended':  { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
+  Pending: { color: '#B45309', bg: 'rgba(180,83,9,0.12)' },
+  Approved: { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' },
+  Packing: { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' },
+  Dispatched: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
+  Suspended: { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
+  Delivered: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
+  Declined: { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
 };
 
-const ORDER_QUICK_FILTERS = [
-  { value: 'Pending',    label: 'Pending' },
-  { value: 'Approved',  label: 'Approved' },
-  { value: 'Packing',   label: 'Packing' },
-  { value: 'Dispatched',label: 'Dispatched' },
-  { value: 'Suspended', label: 'Suspended' },
+type DatasetMode = 'active' | 'history';
+type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
+
+const ACTIVE_STATUSES: OrderActionStatus[] = ['Pending', 'Approved', 'Packing', 'Dispatched'];
+const HISTORY_STATUSES: OrderActionStatus[] = ['Delivered', 'Declined', 'Suspended'];
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'cost-high', label: 'Cost High to Low' },
+  { value: 'cost-low', label: 'Cost Low to High' },
+  { value: 'items-high', label: 'Most Items' },
+  { value: 'items-low', label: 'Least Items' },
 ];
 
-const columns: ColumnDef<OrderItem>[] = [
-  {
-    key: 'id',
-    label: 'Order ID',
-    width: 120,
-    render: (row) => (
-      <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
-        {row.id}
-      </Typography>
-    ),
-  },
-  {
-    key: 'branch',
-    label: 'Branch Location',
-    render: (row) => (
-      <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>
-        {row.branch}
-      </Typography>
-    ),
-  },
-  {
-    key: 'itemsCount',
-    label: 'Items',
-    width: 100,
-    sortable: true,
-    render: (row) => (
-      <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
-        {row.itemsCount} SKUs
-      </Typography>
-    ),
-  },
-  {
-    key: 'totalCost',
-    label: 'Est. Cost',
-    width: 120,
-    sortable: true,
+function getColumns(
+  mode: DatasetMode,
+  onViewDetails: (orderId: string) => void,
+  onApprove: (orderId: string) => void,
+  onProceed: (orderId: string) => void,
+  onDecline: (orderId: string) => void,
+): ColumnDef<OrderItem>[] {
+  const baseColumns: ColumnDef<OrderItem>[] = [
+    {
+      key: 'id',
+      label: 'Order ID',
+      width: 120,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
+          {row.id}
+        </Typography>
+      ),
+    },
+    {
+      key: 'branch',
+      label: 'Branch',
+      render: (row) => (
+        <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>
+          {row.branch}
+        </Typography>
+      ),
+    },
+    {
+      key: 'itemsCount',
+      label: 'Items',
+      width: 100,
+      sortable: true,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+          {row.itemsCount} SKUs
+        </Typography>
+      ),
+    },
+    {
+      key: 'totalCost',
+      label: 'Fulfillment Cost',
+      width: 150,
+      sortable: true,
+      align: 'right',
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
+          {row.totalCost > 0 ? `₱${row.totalCost.toFixed(2)}` : '--'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      width: 130,
+      render: (row) => {
+        const st = STATUS_MAP[row.status];
+        return (
+          <Chip
+            label={row.status}
+            size="small"
+            sx={{
+              fontSize: 11.5,
+              fontWeight: 600,
+              background: st.bg,
+              color: st.color,
+              border: `1px solid ${st.color}28`,
+            }}
+          />
+        );
+      },
+    },
+  ];
+
+  const modeColumn: ColumnDef<OrderItem> =
+    mode === 'history'
+      ? {
+          key: 'actionedBy',
+          label: 'Actioned By',
+          width: 150,
+          render: (row) => (
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
+              {row.actionedBy || '--'}
+            </Typography>
+          ),
+        }
+      : {
+          key: 'date',
+          label: 'Date Requested',
+          width: 140,
+          sortable: true,
+          render: (row) => (
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+              {new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Typography>
+          ),
+        };
+
+  const actionsColumn: ColumnDef<OrderItem> = {
+    key: 'actions',
+    label: 'Actions',
+    width: 90,
     align: 'right',
     render: (row) => (
-      <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
-        {row.totalCost > 0 ? `₱${row.totalCost.toFixed(2)}` : '--'}
-      </Typography>
+      <OrderRowActionsMenu
+        orderId={row.id}
+        status={row.status}
+        onViewDetails={onViewDetails}
+        onApprove={onApprove}
+        onProceed={onProceed}
+        onDecline={onDecline}
+      />
     ),
-  },
-  {
-    key: 'status',
-    label: 'Status',
-    width: 120,
-    render: (row) => {
-      const st = STATUS_MAP[row.status];
-      return (
-        <Chip
-          label={row.status}
-          size="small"
-          sx={{
-            fontSize: 11.5,
-            fontWeight: 600,
-            background: st.bg,
-            color: st.color,
-            border: `1px solid ${st.color}28`,
-          }}
-        />
-      );
-    },
-  },
-  {
-    key: 'date',
-    label: 'Date Requested',
-    width: 130,
-    sortable: true,
-    render: (row) => (
-      <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-        {new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-      </Typography>
-    ),
-  },
-  {
-    key: 'actions',
-    label: '',
-    width: 100,
-    render: (row) => (
-      <a href={`/orders/${row.id}`} style={{ textDecoration: 'none' }}>
-        <Button variant="outlined" sx={{ minWidth: 0, px: 1.5, height: 32, fontSize: 12 }}>
-          Manage
-        </Button>
-      </a>
-    ),
-  },
-];
+  };
+
+  return [...baseColumns, modeColumn, actionsColumn];
+}
 
 export function OrdersPage() {
-  const [startDate, setStartDate] = useState('2026-03-01');
-  const [endDate, setEndDate] = useState('2026-04-03');
+  const navigate = useNavigate();
+
+  const [startDate, setStartDate] = useState('2026-03-25');
+  const [endDate, setEndDate] = useState('2026-04-14');
+  const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
+  const [viewMode, setViewMode] = useState<OrdersListViewMode>('card');
   const [branchFilter, setBranchFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
 
-  const filtered = MOCK_ORDERS.filter((o) => {
-    const matchesBranch = !branchFilter || o.branch === branchFilter;
-    const matchesStatus = !statusFilter || o.status === statusFilter;
-    return matchesBranch && matchesStatus;
+  const source = MOCK_ORDERS.filter((order) => {
+    const statuses = datasetMode === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES;
+    return statuses.includes(order.status);
   });
+
+  const filtered = source.filter((order) => {
+    const matchesBranch = !branchFilter || order.branch === branchFilter;
+    const matchesStatus = !statusFilter || order.status === statusFilter;
+    const inRange = order.date >= startDate && order.date <= endDate;
+    return matchesBranch && matchesStatus && inRange;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'oldest':
+        return a.date.localeCompare(b.date);
+      case 'cost-high':
+        return b.totalCost - a.totalCost;
+      case 'cost-low':
+        return a.totalCost - b.totalCost;
+      case 'items-high':
+        return b.itemsCount - a.itemsCount;
+      case 'items-low':
+        return a.itemsCount - b.itemsCount;
+      case 'newest':
+      default:
+        return b.date.localeCompare(a.date);
+    }
+  });
+
+  const uniqueBranches = Array.from(new Set(MOCK_ORDERS.map((order) => order.branch)));
+  const statusOptions = (datasetMode === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES).map((status) => ({
+    value: status,
+    label: status,
+  }));
+
+  const openDetails = (orderId: string) => {
+    navigate({ to: '/orders/$orderId', params: { orderId } });
+  };
+
+  const handleApprove = (orderId: string) => {
+    navigate({ to: '/orders/$orderId', params: { orderId } });
+  };
+
+  const handleProceed = (orderId: string) => {
+    const target = sorted.find((order) => order.id === orderId);
+    if (target?.status === 'Dispatched') {
+      navigate({ to: '/orders/$orderId/tracking', params: { orderId } });
+      return;
+    }
+    navigate({ to: '/orders/$orderId', params: { orderId } });
+  };
+
+  const handleDecline = (orderId: string) => {
+    navigate({ to: '/orders/$orderId', params: { orderId } });
+  };
+
+  const columns = getColumns(datasetMode, openDetails, handleApprove, handleProceed, handleDecline);
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -156,7 +259,7 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Pending Requests"
-              value={MOCK_ORDERS.filter(o => o.status === 'Pending').length.toString()}
+              value={MOCK_ORDERS.filter((o) => o.status === 'Pending').length.toString()}
               trend="up"
               trendValue="1.5%"
               icon={<AccessTimeRoundedIcon />}
@@ -167,7 +270,7 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Orders Packing"
-              value={MOCK_ORDERS.filter(o => o.status === 'Packing').length.toString()}
+              value={MOCK_ORDERS.filter((o) => o.status === 'Packing').length.toString()}
               trend="up"
               trendValue="2.4%"
               icon={<LocalMallRoundedIcon />}
@@ -178,7 +281,7 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="In Transit"
-              value={MOCK_ORDERS.filter(o => o.status === 'Dispatched').length.toString()}
+              value={MOCK_ORDERS.filter((o) => o.status === 'Dispatched').length.toString()}
               trend="up"
               trendValue="5.1%"
               icon={<LocalShippingRoundedIcon />}
@@ -200,51 +303,127 @@ export function OrdersPage() {
         </Grid>
       </Box>
 
-      {/* Toolbar above table */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+      {/* Top controls */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, flexWrap: 'wrap', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'center', flexWrap: 'wrap' }}>
+          <ToggleButtonGroup
+            value={datasetMode}
+            exclusive
+            onChange={(_event, value: DatasetMode | null) => {
+              if (value) {
+                setDatasetMode(value);
+                setStatusFilter('');
+              }
+            }}
+            size="small"
+            sx={{
+              '& .MuiToggleButton-root': {
+                textTransform: 'none',
+                fontSize: 12.5,
+                fontWeight: 700,
+                px: 1.75,
+                color: '#6B4C2A',
+                borderColor: 'rgba(107, 76, 42, 0.25)',
+                '&.Mui-selected': {
+                  bgcolor: 'rgba(107, 76, 42, 0.12)',
+                  color: '#6B4C2A',
+                },
+              },
+            }}
+          >
+            <ToggleButton value="active">Active Orders</ToggleButton>
+            <ToggleButton value="history">History</ToggleButton>
+          </ToggleButtonGroup>
+
           <DateRangePicker
             startDate={startDate}
             endDate={endDate}
             onChange={(start, end) => { setStartDate(start); setEndDate(end); }}
           />
-        </Box>
-        <a href="/orders/new" style={{ textDecoration: 'none' }}>
-          <Button startIcon={<LocalMallRoundedIcon />}>
-            New Internal Request
-          </Button>
-        </a>
-      </Box>
 
-      {/* Orders Table with quick-filter chips + branch dropdown */}
-      <DataTable
-        data={filtered}
-        columns={columns}
-        keyExtractor={(row) => row.id}
-        defaultRowsPerPage={10}
-        rowsPerPageOptions={[10, 25, 50]}
-        quickFilters={ORDER_QUICK_FILTERS}
-        quickFilterStyle="default"
-        activeQuickFilter={statusFilter}
-        onQuickFilterChange={setStatusFilter}
-        rightAction={
           <FilterDropdown
             label="Branch"
             icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
             value={branchFilter}
             onChange={setBranchFilter}
-            compact
-            minWidth={120}
-            options={[
-              { value: 'Downtown Main',   label: 'Downtown Main' },
-              { value: 'Uptown Station',  label: 'Uptown Station' },
-              { value: 'Westside Market', label: 'Westside Market' },
-              { value: 'Airport Express', label: 'Airport Express' },
-            ]}
+            minWidth={140}
+            options={uniqueBranches.map((branch) => ({ value: branch, label: branch }))}
           />
-        }
-        emptyMessage="No orders match the selected filters."
-      />
+
+          <FilterDropdown
+            label="Status"
+            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            minWidth={130}
+            options={statusOptions}
+          />
+
+          <FilterDropdown
+            label="Sort"
+            icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+            value={sortBy}
+            onChange={(value) => setSortBy(value as SortOption)}
+            minWidth={170}
+            options={SORT_OPTIONS}
+          />
+
+          <OrdersListViewSwitcher value={viewMode} onChange={setViewMode} />
+        </Box>
+
+        <Button startIcon={<LocalMallRoundedIcon />} onClick={() => navigate({ to: '/orders/new' })}>
+          New Internal Request
+        </Button>
+      </Box>
+
+      {viewMode === 'table' ? (
+        <DataTable
+          data={sorted}
+          columns={columns}
+          keyExtractor={(row) => row.id}
+          defaultRowsPerPage={10}
+          rowsPerPageOptions={[10, 25, 50]}
+          onRowClick={(row) => openDetails(row.id)}
+          emptyMessage="No orders match the selected filters."
+        />
+      ) : (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+            gap: 2,
+          }}
+        >
+          {sorted.length > 0 ? (
+            sorted.map((order) => (
+              <OrderListCard
+                key={order.id}
+                order={order}
+                datasetMode={datasetMode}
+                onOpen={openDetails}
+                onApprove={handleApprove}
+                onProceed={handleProceed}
+                onDecline={handleDecline}
+              />
+            ))
+          ) : (
+            <Box
+              sx={{
+                gridColumn: '1 / -1',
+                py: 8,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+                textAlign: 'center',
+              }}
+            >
+              <Typography sx={{ fontSize: 13, color: 'text.secondary', fontStyle: 'italic' }}>
+                No orders match the selected filters.
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }
