@@ -330,54 +330,6 @@ export function OrdersPage() {
           pb: 0.5,
         }}
       >
-        <Button
-          startIcon={<LocalMallRoundedIcon />}
-          onClick={() => navigate({ to: '/orders/new' })}
-          sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-        >
-          New Request
-        </Button>
-
-        <Tooltip title="Active Orders">
-          <ToggleButtonGroup
-            value={datasetMode}
-            exclusive
-            onChange={(_event, value: DatasetMode | null) => {
-              if (value) {
-                handleDatasetModeChange(value);
-              }
-            }}
-            size="small"
-            sx={{
-              height: 40,
-              borderRadius: 2,
-              flexShrink: 0,
-              '& .MuiToggleButton-root': {
-                px: 1.4,
-                color: '#6B4C2A',
-                borderColor: 'rgba(107, 76, 42, 0.3)',
-                '&.Mui-selected': {
-                  bgcolor: 'rgba(107, 76, 42, 0.12)',
-                  color: '#4A3424',
-                },
-              },
-            }}
-          >
-            <ToggleButton value="active" aria-label="Active Orders">
-              <PendingActionsRoundedIcon sx={{ fontSize: 16 }} />
-            </ToggleButton>
-            <ToggleButton value="history" aria-label="History">
-              <HistoryRoundedIcon sx={{ fontSize: 16 }} />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Tooltip>
-
-        <OrdersListViewSwitcher
-          value={viewMode}
-          onChange={setViewMode}
-          allowCard={datasetMode === 'active'}
-        />
-
         <SearchInput
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
@@ -385,29 +337,82 @@ export function OrdersPage() {
           sx={{ minWidth: 280, maxWidth: 360, flexShrink: 0 }}
         />
 
-          <DateRangePicker
-            startDate={startDate}
-            endDate={endDate}
-            onChange={(start, end) => { setStartDate(start); setEndDate(end); }}
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={(start, end) => {
+            setStartDate(start);
+            setEndDate(end);
+          }}
+        />
+
+        <FilterDropdown
+          label="Sort"
+          icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={sortBy}
+          onChange={(value) => setSortBy(value as SortOption)}
+          minWidth={155}
+          options={SORT_OPTIONS}
+        />
+
+        <FilterDropdown
+          label="Status"
+          icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={statusFilter}
+          onChange={setStatusFilter}
+          minWidth={120}
+          options={statusOptions}
+        />
+
+        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.2, flexShrink: 0 }}>
+          <Tooltip title="Active Orders">
+            <ToggleButtonGroup
+              value={datasetMode}
+              exclusive
+              onChange={(_event, value: DatasetMode | null) => {
+                if (value) {
+                  handleDatasetModeChange(value);
+                }
+              }}
+              size="small"
+              sx={{
+                height: 40,
+                borderRadius: 2,
+                flexShrink: 0,
+                '& .MuiToggleButton-root': {
+                  px: 1.4,
+                  color: '#6B4C2A',
+                  borderColor: 'rgba(107, 76, 42, 0.3)',
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(107, 76, 42, 0.12)',
+                    color: '#4A3424',
+                  },
+                },
+              }}
+            >
+              <ToggleButton value="active" aria-label="Active Orders">
+                <PendingActionsRoundedIcon sx={{ fontSize: 16 }} />
+              </ToggleButton>
+              <ToggleButton value="history" aria-label="History">
+                <HistoryRoundedIcon sx={{ fontSize: 16 }} />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Tooltip>
+
+          <OrdersListViewSwitcher
+            value={viewMode}
+            onChange={setViewMode}
+            allowCard={datasetMode === 'active'}
           />
 
-          <FilterDropdown
-            label="Status"
-            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            minWidth={120}
-            options={statusOptions}
-          />
-
-          <FilterDropdown
-            label="Sort"
-            icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-            value={sortBy}
-            onChange={(value) => setSortBy(value as SortOption)}
-            minWidth={155}
-            options={SORT_OPTIONS}
-          />
+          <Button
+            startIcon={<LocalMallRoundedIcon />}
+            onClick={() => navigate({ to: '/orders/new' })}
+            sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            New Request
+          </Button>
+        </Box>
       </Box>
 
       {viewMode === 'table' ? (
