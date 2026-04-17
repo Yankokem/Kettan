@@ -93,9 +93,9 @@ Most multi-branch coffee chains today rely on group chats, spreadsheets, and pho
 | API | Purpose |
 |---|---|
 | **PayMongo API** | Payment gateway for tenant subscription billing |
-| **EasyPost** | Courier assignment, tracking numbers, and dispatch logistics |
 | **SendGrid** | Email notifications and billing invoice delivery |
-| **Google Maps** | Delivery distance calculation |
+
+> Note: Order fulfillment logistics use internal courier and vehicle records managed inside Kettan. No live courier/map API is required for Tier 1.
 
 ### 5.2 Algorithms
 
@@ -124,10 +124,12 @@ The following describes the primary operational flow within Kettan, from tenant 
 4. **Branch Supply Request** — The Branch Manager reviews the auto-drafted request (or creates one manually), adjusts quantities, and submits it to HQ.
 5. **Order Processing** — HQ receives the request. Small orders are auto-approved; large orders require HQ Manager sign-off. Partial fulfillment is supported if HQ stock is insufficient.
 6. **Picking and Packing** — HQ Staff are guided through retrieving the correct items by batch (FIFO enforced) and preparing them for dispatch.
-7. **Shipping and Delivery** — The packed order is dispatched via EasyPost. Courier assignment, tracking number, and estimated arrival are recorded. Google Maps calculates delivery distance.
-8. **Order Tracking** — Both HQ and the Branch Manager monitor real-time delivery status until receipt is confirmed by the branch.
+7. **Shipping and Delivery** — The packed order is dispatched by assigning a registered courier and vehicle, then setting dispatch and ETA details in-system.
+8. **Order Tracking** — Both HQ and the Branch Manager monitor status progression (Dispatched → In Transit → Delivered) until receipt is confirmed by the branch.
 9. **Returns Management** — If items arrive damaged or incorrect, the Branch Manager initiates a return. HQ processes it and issues a replacement or credit memo.
 10. **Finance & Reporting** — Each fulfilled order generates an invoice. Costs, delivery expenses, and branch performance metrics are aggregated in the Finance dashboard using Weighted Branch Performance Scoring and use Economic Order Quantity (EOQ) Algorithm.
+
+> MVP implementation note: For current scope, Kettan uses a single status-driven Order Processing workspace. Picking, Packing, Shipping, and Delivery are handled as status transitions of the same order transaction, with role-based actions and filters.
 
 ---
 
@@ -145,8 +147,8 @@ Build tiers reflect development priority for the initial release: **Tier 1** mod
 |---|---|---|---|
 | 1 | **Order Processing** | Receives and validates supply requests from branches, including item selection, quantity, urgency flagging, and approval routing (auto-approve under threshold, HQ Manager approval for large orders). | Core (OFMS) |
 | 2 | **Picking & Packing** | Guides HQ warehouse staff through retrieving and preparing approved order items. Supports partial fulfillment — system notifies branch and adjusts order if full stock is unavailable. | Core (OFMS) |
-| 3 | **Shipping & Delivery** | Manages dispatch logistics via EasyPost API, including courier assignment, estimated arrival, and Google Maps distance calculation. | Core (OFMS) |
-| 4 | **Order Tracking** | Provides real-time delivery status visibility for both HQ and branch users, from dispatch through delivery confirmation. | Core (OFMS) |
+| 3 | **Shipping & Delivery** | Manages dispatch logistics using registered couriers and vehicles, including assignment, ETA logging, and dispatch updates. | Core (OFMS) |
+| 4 | **Order Tracking** | Provides status-based visibility for both HQ and branch users from dispatch through delivery confirmation. | Core (OFMS) |
 | 5 | **Returns Management** | Handles branch-initiated returns for damaged or incorrect goods. HQ processes the return and issues a replacement or credit memo. | Core (OFMS) |
 | 6 | **Inventory Management** | Tracks stock at HQ and per branch by batch ID and expiry date. Enforces FIFO deduction, triggers low-stock alerts, and auto-drafts supply requests when branch stock falls below configurable thresholds. Uses EOQ algorithm for optimal reorder quantity suggestions. | Additional |
 | 7 | **Consumption Logging** | Branch staff record daily inventory usage via three methods: (1) direct item consumption entry, (2) sales count log with recipe-based auto-deduction, and (3) periodic physical stock count with discrepancy detection. | Additional |

@@ -247,6 +247,23 @@ MenuItemIngredients
 └─────────────┘     └─────────────┘     └──────────────┘     └──────────────┘     └───────────┘
 ```
 
+### 4.1.1 Do We Need Separate Picking/Shipping Pages?
+
+Short answer for current scope: **no, not required**.
+
+- Kettan uses **one order transaction** from request to delivery.
+- Picking, packing, shipping, and delivery are **status transitions** of the same record.
+- For a solo build and 1-month timeline, the default implementation is a **single Order Processing flow** with status tabs and detail actions.
+
+Current direction:
+- **Order Processing page** = main lifecycle workspace.
+- **Order Detail page** = where approve/reject/pick/pack/dispatch/deliver actions are done by role.
+- **Picking/Shipping pages** = optional future queue views only if volume grows.
+
+UX note:
+- Use role-based default tabs to reduce noise without adding extra pages.
+- Example: HQ Manager default tab = `PendingApproval`; HQ Staff default tab = `Approved` or `Picking`.
+
 ### 4.2 Step-by-Step
 
 #### Step 1: Branch Creates Supply Request
@@ -746,7 +763,7 @@ Given your 1-month deadline and solo status, here's what to **cut or defer**:
 | Item | Reason |
 |---|---|
 | Google Maps API | Replaced by status-based tracking |
-| EasyPost API | No courier integration needed; just text fields for courier name |
+| EasyPost live API integration | Replaced by internal courier + vehicle records for dispatch |
 | Courier/Driver user role | Not needed |
 | Warehouse Manager role | HQ Staff already does this |
 | Payment between branches & HQ | Internal transfers, no money |

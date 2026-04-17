@@ -243,6 +243,9 @@ Based on the current UI, the backend needs these endpoints:
 - `POST /api/menu/items` - Create menu item
 - `PUT /api/menu/items/:id` - Update menu item
 - `GET /api/menu/categories` - List menu categories
+- `POST /api/menu/categories` - Create menu category
+- `PUT /api/menu/categories/:id` - Update menu category
+- `DELETE /api/menu/categories/:id` - Soft delete menu category
 
 ### Staff
 - `GET /api/staff` - List staff members
@@ -256,6 +259,18 @@ Based on the current UI, the backend needs these endpoints:
 - `POST /api/branches` - Create branch
 - `PUT /api/branches/:id` - Update branch
 - `GET /api/branches/:id/inventory` - Branch inventory levels
+
+### Settings: Item Categories and Vehicles
+- `GET /api/item-categories` - List item categories
+- `POST /api/item-categories` - Create item category
+- `PUT /api/item-categories/:id` - Update item category
+- `DELETE /api/item-categories/:id` - Soft delete item category
+- `GET /api/couriers` - List couriers
+- `POST /api/couriers` - Create courier
+- `GET /api/couriers/:id/vehicles` - List vehicles by courier
+- `POST /api/vehicles` - Create vehicle
+- `PUT /api/vehicles/:id` - Update vehicle
+- `DELETE /api/vehicles/:id` - Soft delete vehicle
 
 ### Orders
 - `GET /api/orders` - List orders

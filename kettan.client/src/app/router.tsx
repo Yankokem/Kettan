@@ -16,6 +16,8 @@ import { ReportsPage } from '../features/reports/ReportsPage';
 import { OrdersPage } from '../features/orders/OrdersPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { NewOrderRequestPage } from '../features/orders/NewOrderRequestPage';
+import { PickingQueuePage } from '../features/orders/PickingQueuePage';
+import { ShippingQueuePage } from '../features/orders/ShippingQueuePage';
 import { MenuItemsPage } from '../features/menu/MenuItemsPage';
 import { AddMenuItemPage } from '../features/menu/AddMenuItemPage';
 import { MenuItemProfilePage } from '../features/menu/MenuItemProfilePage';
@@ -127,6 +129,18 @@ const newOrderRoute = createRoute({
   component: NewOrderRequestPage,
 });
 
+const pickingRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/picking',
+  component: PickingQueuePage,
+});
+
+const shippingRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/shipping',
+  component: ShippingQueuePage,
+});
+
 const orderDetailRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/orders/$orderId',
@@ -198,6 +212,8 @@ const routeTree = rootRoute.addChildren([
     ordersRoute,
     newOrderRoute,
     orderDetailRoute,
+    pickingRoute,
+    shippingRoute,
     supplyRequestsRoute,
     consumptionRoute,
     returnsRoute,
