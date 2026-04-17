@@ -4,10 +4,12 @@ import FeedRoundedIcon from '@mui/icons-material/FeedRounded';
 import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
-import { Dropdown } from '../../components/UI/Dropdown';
+import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { StatCard } from '../../components/UI/StatCard';
 import { Button } from '../../components/UI/Button';
@@ -46,6 +48,7 @@ export function AuditLogsPage() {
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
 
@@ -65,18 +68,12 @@ export function AuditLogsPage() {
 
   const actionOptions = useMemo(() => {
     const actions = Array.from(new Set(rows.map((row) => row.action)));
-    return [
-      { value: '', label: 'All Actions' },
-      ...actions.map((action) => ({ value: action, label: action })),
-    ];
+    return actions.map((action) => ({ value: action, label: action }));
   }, [rows]);
 
   const roleOptions = useMemo(() => {
     const roles = Array.from(new Set(rows.map((row) => row.actorRole)));
-    return [
-      { value: '', label: 'All Roles' },
-      ...roles.map((role) => ({ value: role, label: role })),
-    ];
+    return roles.map((role) => ({ value: role, label: role }));
   }, [rows]);
 
   const filteredRows = useMemo(() => {
@@ -104,6 +101,28 @@ export function AuditLogsPage() {
       return matchesQuery && matchesAction && matchesRole && matchesDateRange;
     });
   }, [actionFilter, endDate, roleFilter, rows, search, startDate]);
+
+  const sortedRows = useMemo(() => {
+    const copy = [...filteredRows];
+
+    copy.sort((left, right) => {
+      if (sortBy === 'oldest') {
+        return new Date(left.occurredAt).getTime() - new Date(right.occurredAt).getTime();
+      }
+
+      if (sortBy === 'actor-asc') {
+        return left.actorName.localeCompare(right.actorName);
+      }
+
+      if (sortBy === 'actor-desc') {
+        return right.actorName.localeCompare(left.actorName);
+      }
+
+      return new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime();
+    });
+
+    return copy;
+  }, [filteredRows, sortBy]);
 
   const columns: ColumnDef<AuditLogEntry>[] = [
     {
@@ -216,45 +235,77 @@ export function AuditLogsPage() {
         />
       </Box>
 
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2.5,
+          gap: 1.2,
+          flexWrap: 'nowrap',
+          overflowX: 'auto',
+          pb: 0.5,
+        }}
+      >
+        <SearchInput
+          placeholder="Search action, entity, actor, details..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          sx={{ minWidth: 280, maxWidth: 420, flexShrink: 0 }}
+        />
+
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={(start, end) => {
+            setStartDate(start);
+            setEndDate(end);
+          }}
+        />
+
+        <FilterDropdown
+          label="Sort"
+          icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={sortBy}
+          onChange={setSortBy}
+          minWidth={160}
+          options={[
+            { value: 'newest', label: 'Newest First' },
+            { value: 'oldest', label: 'Oldest First' },
+            { value: 'actor-asc', label: 'Actor A-Z' },
+            { value: 'actor-desc', label: 'Actor Z-A' },
+          ]}
+        />
+
+        <FilterDropdown
+          label="Action"
+          icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={actionFilter}
+          onChange={setActionFilter}
+          minWidth={160}
+          options={actionOptions}
+        />
+
+        <FilterDropdown
+          label="Role"
+          icon={<ManageAccountsRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={roleFilter}
+          onChange={setRoleFilter}
+          minWidth={150}
+          options={roleOptions}
+        />
+
+        <Button onClick={loadRows} sx={{ flexShrink: 0, ml: 'auto' }}>
+          Refresh Logs
+        </Button>
+      </Box>
+
       <DataTable
-        title="Audit Logs"
-        data={filteredRows}
+        data={sortedRows}
         columns={columns}
         keyExtractor={(row) => row.id}
         defaultRowsPerPage={10}
         pageSizes={[10, 25, 50]}
         emptyMessage="No audit logs for the selected filters."
-        toolbar={
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: '2fr 1fr 1fr auto auto' }, gap: 1.2, alignItems: 'center' }}>
-            <SearchInput
-              placeholder="Search action, entity, actor, details..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              sx={{ minWidth: 240 }}
-            />
-            <Dropdown
-              value={actionFilter}
-              onChange={(event) => setActionFilter(String(event.target.value))}
-              options={actionOptions}
-            />
-            <Dropdown
-              value={roleFilter}
-              onChange={(event) => setRoleFilter(String(event.target.value))}
-              options={roleOptions}
-            />
-            <DateRangePicker
-              startDate={startDate}
-              endDate={endDate}
-              onChange={(start, end) => {
-                setStartDate(start);
-                setEndDate(end);
-              }}
-            />
-            <Button onClick={loadRows}>
-              Refresh Logs
-            </Button>
-          </Box>
-        }
       />
     </Box>
   );

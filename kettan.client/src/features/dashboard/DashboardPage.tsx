@@ -135,25 +135,6 @@ export function DashboardPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      {/* Page header */}
-      <Box sx={{ mb: 2.5 }}>
-        <Typography
-          sx={{
-            fontSize: 22,
-            fontWeight: 700,
-            color: 'text.primary',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          Good morning, {user?.name?.split(' ')[0] || 'there'} 👋
-        </Typography>
-        <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.25 }}>
-          {isBranchManager 
-            ? "Here's what's happening at your branch today." 
-            : "Here's what's happening across your café chain today."}
-        </Typography>
-      </Box>
-
       {/* ── Stat Cards ── */}
       <Box
         sx={{
@@ -222,6 +203,7 @@ export function DashboardPage() {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <DataTable
+              title="Recent Operations"
               data={filteredActivity}
               columns={activityColumns}
               keyExtractor={(row) => row.id}

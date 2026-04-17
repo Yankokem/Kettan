@@ -11,6 +11,7 @@ import { useNavigate } from '@tanstack/react-router';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { Button } from '../../components/UI/Button';
+import { DateRangePicker } from '../../components/UI/DateRangePicker';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { StatCard } from '../../components/UI/StatCard';
@@ -32,6 +33,16 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'branch-desc', label: 'Branch Z-A' },
 ];
 
+function defaultStartDate() {
+  const date = new Date();
+  date.setDate(date.getDate() - 30);
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultEndDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export function ReturnsPage() {
   const navigate = useNavigate();
 
@@ -41,6 +52,8 @@ export function ReturnsPage() {
   const [search, setSearch] = useState('');
   const [resolutionFilter, setResolutionFilter] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [startDate, setStartDate] = useState(defaultStartDate());
+  const [endDate, setEndDate] = useState(defaultEndDate());
 
   const loadRows = async () => {
     try {
@@ -73,6 +86,10 @@ export function ReturnsPage() {
     const query = search.trim().toLowerCase();
 
     return safeRows.filter((row) => {
+      const occurredDate = new Date(row.loggedAt);
+      const fromDate = new Date(`${startDate}T00:00:00`);
+      const toDate = new Date(`${endDate}T23:59:59`);
+
       const matchesQuery =
         !query ||
         row.returnId.toString().includes(query) ||
@@ -82,10 +99,11 @@ export function ReturnsPage() {
         row.resolution.toLowerCase().includes(query);
 
       const matchesResolution = !resolutionFilter || row.resolution === resolutionFilter;
+      const matchesDateRange = occurredDate >= fromDate && occurredDate <= toDate;
 
-      return matchesQuery && matchesResolution;
+      return matchesQuery && matchesResolution && matchesDateRange;
     });
-  }, [resolutionFilter, safeRows, search]);
+  }, [endDate, resolutionFilter, safeRows, search, startDate]);
 
   const sortedRows = useMemo(() => {
     const copy = [...filteredRows];
@@ -271,6 +289,15 @@ export function ReturnsPage() {
           sx={{ minWidth: 300, maxWidth: 420, flexShrink: 0 }}
         />
 
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={(start, end) => {
+            setStartDate(start);
+            setEndDate(end);
+          }}
+        />
+
         <FilterDropdown
           label="Sort"
           icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
@@ -294,7 +321,7 @@ export function ReturnsPage() {
           ]}
         />
 
-        <Button onClick={() => navigate({ to: '/returns/new' })} sx={{ flexShrink: 0 }}>
+        <Button onClick={() => navigate({ to: '/returns/new' })} sx={{ flexShrink: 0, ml: 'auto' }}>
           File Return
         </Button>
       </Box>
