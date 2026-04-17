@@ -19,6 +19,9 @@ import { NewOrderRequestPage } from '../features/orders/NewOrderRequestPage';
 import { MenuItemsPage } from '../features/menu/MenuItemsPage';
 import { AddMenuItemPage } from '../features/menu/AddMenuItemPage';
 import { MenuItemProfilePage } from '../features/menu/MenuItemProfilePage';
+import { SupplyRequestsPage } from '../features/supply-requests/SupplyRequestsPage';
+import { ConsumptionPage } from '../features/consumption/ConsumptionPage';
+import { ReturnsPage } from '../features/returns/ReturnsPage';
 import { useAuthStore } from '../store/useAuthStore';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
@@ -130,6 +133,24 @@ const orderDetailRoute = createRoute({
   component: OrderDetailPage,
 });
 
+const supplyRequestsRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/supply-requests',
+  component: SupplyRequestsPage,
+});
+
+const consumptionRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/consumption',
+  component: ConsumptionPage,
+});
+
+const returnsRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/returns',
+  component: ReturnsPage,
+});
+
 const menuRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/menu',
@@ -177,6 +198,9 @@ const routeTree = rootRoute.addChildren([
     ordersRoute,
     newOrderRoute,
     orderDetailRoute,
+    supplyRequestsRoute,
+    consumptionRoute,
+    returnsRoute,
     menuRoute,
     addMenuItemRoute,
     menuItemProfileRoute

@@ -14,6 +14,8 @@ interface HeaderProps {
 
 const PAGE_TITLES: Record<string, string> = {
   '/':          'Dashboard',
+  '/supply-requests': 'Supply Requests',
+  '/consumption': 'Consumption Logs',
   '/orders':    'Order Processing',
   '/picking':   'Picking & Packing',
   '/shipping':  'Shipping & Delivery',
@@ -30,6 +32,8 @@ const PAGE_TITLES: Record<string, string> = {
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/':          'Kettan · Café Chain Operations',
+  '/supply-requests': 'Create and submit branch replenishment requests to HQ.',
+  '/consumption': 'Track branch stock consumption from direct use and sales.',
   '/branches':  'Manage branch operations, network details, and track branch inventory.',
   '/branches/add': 'Register a new branch within the tenant network.',
   '/company-profile': 'Manage your company profile and billing.',

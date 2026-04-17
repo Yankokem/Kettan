@@ -5,6 +5,7 @@ using System.Text;
 using Kettan.Server.Data;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Services.Auth;
+using Kettan.Server.Services.BranchOperations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +50,11 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ISupplyRequestService, SupplyRequestService>();
+builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
+builder.Services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
+builder.Services.AddScoped<IReturnService, ReturnService>();
 
 // Add Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

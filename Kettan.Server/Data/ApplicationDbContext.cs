@@ -28,6 +28,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<OrderAllocation> OrderAllocations { get; set; } = null!;
     public DbSet<Shipment> Shipments { get; set; } = null!;
     public DbSet<Return> Returns { get; set; } = null!;
+    public DbSet<MenuItem> MenuItems { get; set; } = null!;
+    public DbSet<MenuItemIngredient> MenuItemIngredients { get; set; } = null!;
+    public DbSet<ConsumptionLog> ConsumptionLogs { get; set; } = null!;
+    public DbSet<ConsumptionLogItem> ConsumptionLogItems { get; set; } = null!;
+    public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; } = null!;
+    public DbSet<ReturnItem> ReturnItems { get; set; } = null!;
+    public DbSet<Notification> Notifications { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,6 +57,13 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Return>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
         modelBuilder.Entity<OrderAllocation>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
         modelBuilder.Entity<SupplyRequestItem>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<MenuItem>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<MenuItemIngredient>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<ConsumptionLog>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<ConsumptionLogItem>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<OrderStatusHistory>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<ReturnItem>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<Notification>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
 
         // Custom filter for User: either they belong to the current tenant, or they are a SuperAdmin (null)
         modelBuilder.Entity<User>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == null || e.TenantId == _currentUserService.TenantId);

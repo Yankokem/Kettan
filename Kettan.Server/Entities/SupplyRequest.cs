@@ -27,6 +27,23 @@ public class SupplyRequest : ITenantEntity
     [MaxLength(50)]
     public string Status { get; set; } = "Draft"; // Draft, Auto_Drafted, PendingApproval, Approved, Rejected
 
+    [Required]
+    [MaxLength(30)]
+    public string RequestType { get; set; } = "manual";
+
+    [Required]
+    [MaxLength(30)]
+    public string Priority { get; set; } = "normal";
+
+    [Required]
+    [MaxLength(30)]
+    public string DispatchWindow { get; set; } = "today";
+
+    public DateTime? DispatchDate { get; set; }
+
+    [MaxLength(1000)]
+    public string? Notes { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
