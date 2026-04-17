@@ -1,6 +1,6 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
+import { StaticAnimatePresence, StaticMotionDiv } from "./noMotion";
 import { Check, X, ChevronDown, ArrowRight, Star, Zap, Building2, Globe } from "lucide-react";
 
 const plans = [
@@ -11,11 +11,11 @@ const plans = [
     color: "#6B4C2A",
     bg: "#FFFFFF",
     tagline: "Perfect for small coffee chains",
-    target: "1–3 branches",
+    target: "1-3 branches",
     monthlyPrice: 2999,
     annualPrice: 28800,
-    monthlyLabel: "₱2,999",
-    annualLabel: "₱28,800",
+    monthlyLabel: "PHP 2,999",
+    annualLabel: "PHP 28,800",
     popular: false,
     branches: "Up to 3",
     users: "Up to 10",
@@ -42,11 +42,11 @@ const plans = [
     color: "#FFFFFF",
     bg: "#2C1A0E",
     tagline: "For growing multi-branch chains",
-    target: "4–15 branches",
+    target: "4-15 branches",
     monthlyPrice: 7999,
     annualPrice: 76800,
-    monthlyLabel: "₱7,999",
-    annualLabel: "₱76,800",
+    monthlyLabel: "PHP 7,999",
+    annualLabel: "PHP 76,800",
     popular: true,
     branches: "Up to 15",
     users: "Up to 50",
@@ -73,8 +73,8 @@ const plans = [
     target: "16+ branches",
     monthlyPrice: 14999,
     annualPrice: 143990,
-    monthlyLabel: "₱14,999",
-    annualLabel: "₱143,990",
+    monthlyLabel: "PHP 14,999",
+    annualLabel: "PHP 143,990",
     popular: false,
     branches: "Unlimited",
     users: "Unlimited",
@@ -120,7 +120,7 @@ const allFeatures = [
 const faqs = [
   {
     q: "Can I upgrade my plan later?",
-    a: "Yes, you can upgrade at any time. The difference is prorated — you only pay the difference for the remaining billing period.",
+    a: "Yes, you can upgrade at any time. The difference is prorated - you only pay the difference for the remaining billing period.",
   },
   {
     q: "Is there a free trial?",
@@ -140,7 +140,7 @@ const faqs = [
   },
   {
     q: "Is the pricing in Philippine Peso?",
-    a: "Yes, all prices are in Philippine Peso (₱). Kettan is designed for Philippine coffee chain operators and processes payments via PayMongo.",
+    a: "Yes, all prices are in Philippine Peso (PHP). Kettan is designed for Philippine coffee chain operators and processes payments via PayMongo.",
   },
 ];
 
@@ -150,7 +150,7 @@ function PlanCard({ plan, isAnnual }: { plan: typeof plans[0]; isAnnual: boolean
   const Icon = plan.icon;
 
   return (
-    <motion.div
+    <StaticMotionDiv
       className="relative rounded-2xl p-7 flex flex-col h-full"
       style={{
         backgroundColor: plan.bg,
@@ -189,8 +189,8 @@ function PlanCard({ plan, isAnnual }: { plan: typeof plans[0]; isAnnual: boolean
           {plan.tagline}
         </p>
 
-        <AnimatePresence mode="wait">
-          <motion.div
+        <StaticAnimatePresence mode="wait">
+          <StaticMotionDiv
             key={isAnnual ? "annual" : "monthly"}
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
@@ -210,8 +210,8 @@ function PlanCard({ plan, isAnnual }: { plan: typeof plans[0]; isAnnual: boolean
                 Save 20% vs monthly billing
               </p>
             )}
-          </motion.div>
-        </AnimatePresence>
+          </StaticMotionDiv>
+        </StaticAnimatePresence>
       </div>
 
       {/* Limits */}
@@ -257,14 +257,14 @@ function PlanCard({ plan, isAnnual }: { plan: typeof plans[0]; isAnnual: boolean
           boxShadow: plan.popular ? "0 4px 16px rgba(201,168,76,0.3)" : "none",
         }}
       >
-        {plan.cta} →
+        {plan.cta} ->
       </Link>
       {plan.id !== "enterprise" && (
         <p style={{ textAlign: "center", fontSize: "11px", color: plan.popular ? "#6B5A4E" : "#A39C93", marginTop: "8px" }}>
-          14-day free trial · No credit card required
+          14-day free trial - No credit card required
         </p>
       )}
-    </motion.div>
+    </StaticMotionDiv>
   );
 }
 
@@ -281,13 +281,13 @@ function FAQItem({ q, a }: { q: string; a: string }) {
         style={{ backgroundColor: "transparent" }}
       >
         <span style={{ fontWeight: 600, color: "#2C1A0E", fontSize: "15px" }}>{q}</span>
-        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+        <StaticMotionDiv animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
           <ChevronDown size={18} style={{ color: "#6B4C2A", flexShrink: 0 }} />
-        </motion.div>
+        </StaticMotionDiv>
       </button>
-      <AnimatePresence>
+      <StaticAnimatePresence>
         {open && (
-          <motion.div
+          <StaticMotionDiv
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -306,9 +306,9 @@ function FAQItem({ q, a }: { q: string; a: string }) {
             >
               {a}
             </div>
-          </motion.div>
+          </StaticMotionDiv>
         )}
-      </AnimatePresence>
+      </StaticAnimatePresence>
     </div>
   );
 }
@@ -324,12 +324,12 @@ export function PricingPage() {
         style={{ background: "linear-gradient(160deg, #FDFAF5 0%, #F5EDD8 60%, #EDE0C4 100%)" }}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <StaticMotionDiv initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <span
               className="inline-block px-4 py-1.5 rounded-full text-sm mb-5"
               style={{ backgroundColor: "rgba(107,76,42,0.1)", color: "#6B4C2A", fontWeight: 600 }}
             >
-              💰 Simple Pricing
+             Simple Pricing
             </span>
             <h1
               style={{
@@ -377,7 +377,7 @@ export function PricingPage() {
                 </span>
               </button>
             </div>
-          </motion.div>
+          </StaticMotionDiv>
         </div>
       </section>
 
@@ -386,7 +386,7 @@ export function PricingPage() {
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {plans.map((plan, i) => (
-              <motion.div
+              <StaticMotionDiv
                 key={plan.id}
                 className="flex"
                 initial={{ opacity: 0, y: 20 }}
@@ -396,7 +396,7 @@ export function PricingPage() {
                 <div className="w-full">
                   <PlanCard plan={plan} isAnnual={isAnnual} />
                 </div>
-              </motion.div>
+              </StaticMotionDiv>
             ))}
           </div>
         </div>
@@ -490,3 +490,5 @@ export function PricingPage() {
     </div>
   );
 }
+
+

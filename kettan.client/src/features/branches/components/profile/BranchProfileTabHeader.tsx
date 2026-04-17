@@ -1,5 +1,4 @@
 import { Box } from '@mui/material';
-import { motion } from 'motion/react';
 import type { BranchProfileTabKey } from '../../types';
 import type { BranchTabDefinition } from '../../branchProfileData';
 
@@ -52,9 +51,7 @@ export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap 
             {typeof badge !== 'undefined' ? ` (${badge})` : ''}
 
             {active ? (
-              <motion.div
-                layoutId="branch-profile-tab-indicator"
-                transition={{ type: 'spring', stiffness: 460, damping: 38 }}
+              <span
                 style={{
                   position: 'absolute',
                   left: 0,
@@ -64,6 +61,7 @@ export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap 
                   borderTopLeftRadius: 999,
                   borderTopRightRadius: 999,
                   backgroundColor: '#C9A84C',
+                  display: 'block',
                 }}
               />
             ) : null}

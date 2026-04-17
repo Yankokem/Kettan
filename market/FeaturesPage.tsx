@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { motion } from "motion/react";
+import { StaticMotionDiv } from "./noMotion";
 import {
   ClipboardList,
   Package,
@@ -38,7 +38,7 @@ const coreModules = [
     badge: "Core OFMS",
     badgeColor: "#6B4C2A",
     badgeBg: "rgba(107,76,42,0.1)",
-    desc: "Receive and validate supply requests from branches. Features item selection, quantity management, urgency flagging, and intelligent approval routing — auto-approve small orders, require HQ Manager sign-off for large ones.",
+    desc: "Receive and validate supply requests from branches. Features item selection, quantity management, urgency flagging, and intelligent approval routing - auto-approve small orders, require HQ Manager sign-off for large ones.",
     highlights: ["Auto-approval under threshold", "Multi-item request support", "Urgency flagging", "Partial fulfillment support"],
   },
   {
@@ -71,7 +71,7 @@ const coreModules = [
     badge: "Core OFMS",
     badgeColor: "#8B5CF6",
     badgeBg: "rgba(139,92,246,0.1)",
-    desc: "Provide real-time delivery status visibility for both HQ and branch users — from dispatch through delivery confirmation. Clear, actionable status updates at every step. No confusing map interfaces.",
+    desc: "Provide real-time delivery status visibility for both HQ and branch users - from dispatch through delivery confirmation. Clear, actionable status updates at every step. No confusing map interfaces.",
     highlights: ["Real-time status updates", "HQ + branch visibility", "Delivery confirmation", "Status timeline view"],
   },
   {
@@ -111,7 +111,7 @@ export function FeaturesPage() {
         style={{ background: "linear-gradient(160deg, #FDFAF5 0%, #F5EDD8 60%, #EDE0C4 100%)" }}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <StaticMotionDiv initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <span
               className="inline-block px-4 py-1.5 rounded-full text-sm mb-5"
               style={{ backgroundColor: "rgba(107,76,42,0.1)", color: "#6B4C2A", fontWeight: 600 }}
@@ -132,7 +132,7 @@ export function FeaturesPage() {
             <p style={{ fontSize: "1.05rem", color: "#5C4A37", lineHeight: 1.7, maxWidth: "560px", margin: "0 auto" }}>
               18 integrated modules. One unified platform. Purpose-built for multi-branch coffee chain operations.
             </p>
-          </motion.div>
+          </StaticMotionDiv>
         </div>
       </section>
 
@@ -144,7 +144,7 @@ export function FeaturesPage() {
               className="inline-block px-4 py-1.5 rounded-full text-sm mb-4"
               style={{ backgroundColor: "rgba(107,76,42,0.08)", color: "#6B4C2A", fontWeight: 600 }}
             >
-              OFMS Core — 5 Modules
+              OFMS Core - 5 Modules
             </span>
             <h2
               style={{ fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontWeight: 800, color: "#2C1A0E", letterSpacing: "-0.02em" }}
@@ -152,13 +152,13 @@ export function FeaturesPage() {
               The 5 Order Fulfillment Modules
             </h2>
             <p className="mt-3 max-w-xl mx-auto" style={{ fontSize: "14px", color: "#5C4A37", lineHeight: 1.7 }}>
-              Based on the Order Fulfillment Management System (OFMS) framework — covering the complete supply fulfillment cycle.
+              Based on the Order Fulfillment Management System (OFMS) framework - covering the complete supply fulfillment cycle.
             </p>
           </div>
 
           <div className="space-y-6">
             {coreModules.map(({ icon: Icon, title, color, bg, badge, badgeColor, badgeBg, desc, highlights }, i) => (
-              <motion.div
+              <StaticMotionDiv
                 key={title}
                 className="rounded-2xl p-7 flex flex-col md:flex-row gap-6"
                 style={{
@@ -203,7 +203,7 @@ export function FeaturesPage() {
                     ))}
                   </div>
                 </div>
-              </motion.div>
+              </StaticMotionDiv>
             ))}
           </div>
         </div>
@@ -220,7 +220,7 @@ export function FeaturesPage() {
               className="inline-block px-4 py-1.5 rounded-full text-sm mb-4"
               style={{ backgroundColor: "rgba(84,107,63,0.1)", color: "#546B3F", fontWeight: 600 }}
             >
-              Additional Modules — 13 More
+              Additional Modules - 13 More
             </span>
             <h2
               style={{ fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontWeight: 800, color: "#2C1A0E", letterSpacing: "-0.02em" }}
@@ -234,7 +234,7 @@ export function FeaturesPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {additionalModules.map(({ icon: Icon, title, desc, color }, i) => (
-              <motion.div
+              <StaticMotionDiv
                 key={title}
                 className="rounded-2xl p-6"
                 style={{
@@ -258,7 +258,7 @@ export function FeaturesPage() {
                   {title}
                 </h3>
                 <p style={{ fontSize: "13px", color: "#5C4A37", lineHeight: 1.65 }}>{desc}</p>
-              </motion.div>
+              </StaticMotionDiv>
             ))}
           </div>
         </div>
@@ -285,11 +285,11 @@ export function FeaturesPage() {
             {[
               {
                 icon: Calculator,
-                title: "EOQ — Economic Order Quantity",
+                title: "EOQ - Economic Order Quantity",
                 color: "#6B4C2A",
                 bg: "linear-gradient(135deg, #FDF8F0 0%, #F5E8D0 100%)",
                 border: "rgba(107,76,42,0.15)",
-                desc: "When stock falls below threshold, Kettan doesn't just alert you — it calculates the mathematically optimal reorder quantity that minimizes your total inventory costs, balancing ordering frequency against holding costs.",
+                desc: "When stock falls below threshold, Kettan doesn't just alert you - it calculates the mathematically optimal reorder quantity that minimizes your total inventory costs, balancing ordering frequency against holding costs.",
                 points: [
                   "Minimizes total inventory cost (ordering + holding)",
                   "Applied when auto-drafting supply requests",
@@ -305,14 +305,14 @@ export function FeaturesPage() {
                 border: "rgba(84,107,63,0.2)",
                 desc: "Every branch gets a composite performance score calculated from four key operational metrics, weighted by importance. This turns raw fulfillment data into actionable branch rankings that identify who needs attention.",
                 points: [
-                  "Fulfillment rate — orders completed on time",
-                  "Return rate — items sent back due to errors",
-                  "Delivery speed — average time from dispatch to delivery",
-                  "Stock accuracy — physical count vs system stock",
+                  "Fulfillment rate - orders completed on time",
+                  "Return rate - items sent back due to errors",
+                  "Delivery speed - average time from dispatch to delivery",
+                  "Stock accuracy - physical count vs system stock",
                 ],
               },
             ].map(({ icon: Icon, title, color, bg, border, desc, points }) => (
-              <motion.div
+              <StaticMotionDiv
                 key={title}
                 className="rounded-2xl p-8"
                 style={{ background: bg, border: `1px solid ${border}` }}
@@ -338,7 +338,7 @@ export function FeaturesPage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </StaticMotionDiv>
             ))}
           </div>
         </div>
@@ -366,12 +366,12 @@ export function FeaturesPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon: Lock, title: "Multi-Tenant Isolation", desc: "Each coffee chain's data is completely isolated. No cross-tenant data access — ever." },
+              { icon: Lock, title: "Multi-Tenant Isolation", desc: "Each coffee chain's data is completely isolated. No cross-tenant data access - ever." },
               { icon: Shield, title: "JWT Authentication", desc: "Secure token-based authentication with server-side validation on every request." },
               { icon: UserCog, title: "6-Role RBAC", desc: "Role-Based Access Control governs every action. Users only see what their role permits." },
               { icon: BookOpen, title: "Audit Logging", desc: "Every significant action is recorded with user, timestamp, and context for full accountability." },
             ].map(({ icon: Icon, title, desc }) => (
-              <motion.div
+              <StaticMotionDiv
                 key={title}
                 className="rounded-2xl p-6 text-center"
                 style={{
@@ -391,7 +391,7 @@ export function FeaturesPage() {
                 </div>
                 <h3 style={{ fontWeight: 700, color: "#F5F0E8", fontSize: "0.95rem", marginBottom: "8px" }}>{title}</h3>
                 <p style={{ fontSize: "13px", color: "#A39C93", lineHeight: 1.65 }}>{desc}</p>
-              </motion.div>
+              </StaticMotionDiv>
             ))}
           </div>
 
@@ -454,3 +454,4 @@ export function FeaturesPage() {
     </div>
   );
 }
+

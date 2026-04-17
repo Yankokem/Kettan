@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Toolbar } from '@mui/material';
-import { Outlet, useLocation } from '@tanstack/react-router';
+import { Outlet } from '@tanstack/react-router';
 import { Sidebar, DRAWER_WIDTH } from './Sidebar';
 import { Header } from './Header';
 import { PageTransitionWrapper } from './PageTransitionWrapper';
@@ -8,7 +8,6 @@ import { PageTransitionWrapper } from './PageTransitionWrapper';
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const location = useLocation();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -53,7 +52,7 @@ export function AppLayout() {
             overflowY: 'auto',
           }}
         >
-          <PageTransitionWrapper routeKey={location.pathname}>
+          <PageTransitionWrapper>
             <Outlet />
           </PageTransitionWrapper>
         </Box>

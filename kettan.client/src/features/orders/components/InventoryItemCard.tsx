@@ -7,6 +7,7 @@ export interface InventoryItem {
   category: string;
   hqStock: number;
   unit: string;
+  unitCost?: number;
 }
 
 interface InventoryItemCardProps {

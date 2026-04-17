@@ -1,6 +1,6 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router";
-import { motion } from "motion/react";
+import { StaticMotionDiv } from "./noMotion";
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2, Coffee } from "lucide-react";
 
 export function LoginPage() {
@@ -27,7 +27,7 @@ export function LoginPage() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1600));
     setLoading(false);
-    // In production: POST /api/auth/login → JWT → redirect to /app
+    // In production: POST /api/auth/login -> JWT -> redirect to /app
     alert("Demo mode: In production, this would authenticate and redirect to the Kettan dashboard (/app).");
   };
 
@@ -65,7 +65,7 @@ export function LoginPage() {
             </svg>
             <div>
               <div style={{ fontWeight: 800, fontSize: "14px", color: "#F5F0E8", letterSpacing: "0.15em" }}>KETTAN</div>
-              <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Café Chain Operations</div>
+              <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
             </div>
           </Link>
 
@@ -111,7 +111,7 @@ export function LoginPage() {
 
       {/* Right - Form */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-        <motion.div
+        <StaticMotionDiv
           className="w-full max-w-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -146,7 +146,7 @@ export function LoginPage() {
           <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "28px" }}>
             Don't have an account?{" "}
             <Link to="/register" style={{ color: "#6B4C2A", fontWeight: 600 }}>
-              Sign up →
+              Sign up ->
             </Link>
           </p>
 
@@ -253,7 +253,7 @@ export function LoginPage() {
                   Signing in...
                 </>
               ) : (
-                "Sign In to Dashboard →"
+                "Sign In to Dashboard ->"
               )}
             </button>
           </form>
@@ -263,7 +263,7 @@ export function LoginPage() {
             style={{ backgroundColor: "rgba(107,76,42,0.05)", border: "1px solid rgba(107,76,42,0.1)" }}
           >
             <p style={{ fontSize: "12px", color: "#8C6B43", fontWeight: 600, marginBottom: "6px" }}>
-              🎯 Demo Credentials
+             Demo Credentials
             </p>
             <p style={{ fontSize: "12px", color: "#5C4A37", lineHeight: 1.6 }}>
               Email: <code style={{ fontFamily: "monospace", backgroundColor: "rgba(107,76,42,0.08)", padding: "1px 5px", borderRadius: "4px" }}>admin@demo.kettan.io</code><br />
@@ -272,10 +272,12 @@ export function LoginPage() {
           </div>
 
           <p style={{ textAlign: "center", fontSize: "12px", color: "#A39C93", marginTop: "16px" }}>
-            🔒 Secured by JWT · Your session is encrypted
+            Secured by JWT - Your session is encrypted
           </p>
-        </motion.div>
+        </StaticMotionDiv>
       </div>
     </div>
   );
 }
+
+

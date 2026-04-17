@@ -1,5 +1,5 @@
-import { Link } from "react-router";
-import { motion } from "motion/react";
+﻿import { Link } from "react-router";
+import { StaticMotionDiv } from "./noMotion";
 import { CheckCircle2, Mail, ArrowRight, Coffee } from "lucide-react";
 
 export function RegisterSuccessPage() {
@@ -11,14 +11,14 @@ export function RegisterSuccessPage() {
         background: "linear-gradient(135deg, #FDFAF5 0%, #F5EDD8 50%, #EDE0C4 100%)",
       }}
     >
-      <motion.div
+      <StaticMotionDiv
         className="w-full max-w-lg text-center"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         {/* Success Icon */}
-        <motion.div
+        <StaticMotionDiv
           className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8"
           style={{ backgroundColor: "rgba(84,107,63,0.12)", border: "2px solid rgba(84,107,63,0.2)" }}
           initial={{ scale: 0 }}
@@ -26,7 +26,7 @@ export function RegisterSuccessPage() {
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
         >
           <CheckCircle2 size={44} style={{ color: "#546B3F" }} />
-        </motion.div>
+        </StaticMotionDiv>
 
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-6">
@@ -46,7 +46,7 @@ export function RegisterSuccessPage() {
             marginBottom: "14px",
           }}
         >
-          You're All Set! ☕
+          You're All Set!
         </h1>
         <p style={{ fontSize: "1rem", color: "#5C4A37", lineHeight: 1.7, marginBottom: "32px" }}>
           Your Kettan account has been created successfully. Check your email for a confirmation and login link.
@@ -126,7 +126,9 @@ export function RegisterSuccessPage() {
             Contact support
           </a>
         </p>
-      </motion.div>
+      </StaticMotionDiv>
     </div>
   );
 }
+
+

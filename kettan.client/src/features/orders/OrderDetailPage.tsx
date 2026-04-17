@@ -1,6 +1,5 @@
 import { Box, Typography, Chip, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
@@ -133,11 +132,6 @@ export function OrderDetailPage() {
           <Button startIcon={<CheckCircleRoundedIcon />}>
             Approve & Send to Packing
           </Button>
-          <a href={`/orders/${displayId}/tracking`} style={{ textDecoration: 'none' }}>
-            <Button variant="outlined" startIcon={<LocalShippingRoundedIcon />}>
-              Tracker
-            </Button>
-          </a>
         </Box>
       </Box>
 

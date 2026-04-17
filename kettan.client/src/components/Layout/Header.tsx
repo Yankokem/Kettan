@@ -17,7 +17,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/orders':    'Order Processing',
   '/picking':   'Picking & Packing',
   '/shipping':  'Shipping & Delivery',
-  '/tracking':  'Order Tracking',
   '/returns':   'Returns Management',
   '/branches':  'Branch and Inventory',
   '/branches/add': 'Add New Branch',

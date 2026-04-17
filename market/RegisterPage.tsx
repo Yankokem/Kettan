@@ -1,6 +1,6 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { motion } from "motion/react";
+import { StaticMotionDiv } from "./noMotion";
 import {
   Eye,
   EyeOff,
@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 
 const planLabels: Record<string, { label: string; color: string; bg: string; price: string }> = {
-  starter: { label: "Starter Plan", color: "#6B4C2A", bg: "rgba(107,76,42,0.1)", price: "₱2,999/mo" },
-  growth: { label: "Growth Plan", color: "#C9A84C", bg: "rgba(201,168,76,0.15)", price: "₱7,999/mo" },
-  enterprise: { label: "Enterprise Plan", color: "#546B3F", bg: "rgba(84,107,63,0.12)", price: "₱14,999/mo" },
+  starter: { label: "Starter Plan", color: "#6B4C2A", bg: "rgba(107,76,42,0.1)", price: "PHP 2,999/mo" },
+  growth: { label: "Growth Plan", color: "#C9A84C", bg: "rgba(201,168,76,0.15)", price: "PHP 7,999/mo" },
+  enterprise: { label: "Enterprise Plan", color: "#546B3F", bg: "rgba(84,107,63,0.12)", price: "PHP 14,999/mo" },
 };
 
 function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
@@ -143,7 +143,7 @@ export function RegisterPage() {
     // Simulate API call
     await new Promise((r) => setTimeout(r, 1800));
     setLoading(false);
-    // In production: POST /api/subscription/register → redirect to PayMongo
+    // In production: POST /api/subscription/register -> redirect to PayMongo
     alert("Demo mode: In production, this would redirect to the PayMongo checkout page.");
   };
 
@@ -174,7 +174,7 @@ export function RegisterPage() {
             </svg>
             <div>
               <div style={{ fontWeight: 800, fontSize: "14px", color: "#F5F0E8", letterSpacing: "0.15em" }}>KETTAN</div>
-              <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Café Chain Operations</div>
+              <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
             </div>
           </Link>
 
@@ -204,7 +204,7 @@ export function RegisterPage() {
 
       {/* Right Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-        <motion.div
+        <StaticMotionDiv
           className="w-full max-w-md"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -232,7 +232,7 @@ export function RegisterPage() {
           </h1>
           <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "24px" }}>
             Already have an account?{" "}
-            <Link to="/login" style={{ color: "#6B4C2A", fontWeight: 600 }}>Sign in →</Link>
+            <Link to="/login" style={{ color: "#6B4C2A", fontWeight: 600 }}>Sign in -></Link>
           </p>
 
           {/* Plan badge */}
@@ -388,16 +388,18 @@ export function RegisterPage() {
                   Creating your account...
                 </>
               ) : (
-                "Create Account & Continue to Payment →"
+                "Create Account & Continue to Payment ->"
               )}
             </button>
           </form>
 
           <p style={{ textAlign: "center", fontSize: "12px", color: "#A39C93", marginTop: "16px" }}>
-            🔒 Secured by PayMongo · Your data is encrypted
+            Secured by PayMongo - Your data is encrypted
           </p>
-        </motion.div>
+        </StaticMotionDiv>
       </div>
     </div>
   );
 }
+
+

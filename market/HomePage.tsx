@@ -1,5 +1,5 @@
-import { Link } from "react-router";
-import { motion } from "motion/react";
+﻿import { Link } from "react-router";
+import { StaticMotionDiv } from "./noMotion";
 import {
   Package,
   ClipboardList,
@@ -44,7 +44,7 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
             {/* Text */}
-            <motion.div
+            <StaticMotionDiv
               className="flex-1 text-center lg:text-left"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -61,7 +61,7 @@ export function HomePage() {
                     border: "1px solid rgba(107,76,42,0.2)",
                   }}
                 >
-                  ☕ Built for Coffee Chains
+                   Built for Coffee Chains
                 </span>
               </div>
 
@@ -92,7 +92,7 @@ export function HomePage() {
                 className="mb-8 max-w-xl mx-auto lg:mx-0"
                 style={{ fontSize: "1.1rem", color: "#5C4A37", lineHeight: 1.7 }}
               >
-                Kettan manages supply orders, inventory, consumption logging, and branch operations — so you can focus on brewing great coffee.
+                Kettan manages supply orders, inventory, consumption logging, and branch operations  so you can focus on brewing great coffee.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
@@ -133,10 +133,10 @@ export function HomePage() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </StaticMotionDiv>
 
             {/* Dashboard Screenshot */}
-            <motion.div
+            <StaticMotionDiv
               className="flex-1 w-full max-w-2xl"
               initial={{ opacity: 0, y: 40, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -171,7 +171,7 @@ export function HomePage() {
                   style={{ display: "block" }}
                 />
               </div>
-            </motion.div>
+            </StaticMotionDiv>
           </div>
         </div>
 
@@ -223,7 +223,7 @@ export function HomePage() {
       {/* PROBLEM STATEMENT */}
       <section className="py-20" style={{ backgroundColor: "#FDFAF5" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <motion.div
+          <StaticMotionDiv
             className="text-center mb-14"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -244,11 +244,11 @@ export function HomePage() {
             <p className="mt-4 max-w-2xl mx-auto" style={{ fontSize: "1rem", color: "#5C4A37", lineHeight: 1.7 }}>
               Most multi-branch coffee chains today rely on group chats, spreadsheets, and phone calls to coordinate supply requests. This approach is error-prone, hard to track, and nearly impossible to audit.
             </p>
-          </motion.div>
+          </StaticMotionDiv>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Without Kettan */}
-            <motion.div
+            <StaticMotionDiv
               className="rounded-2xl p-8"
               style={{
                 backgroundColor: "#FFF5F5",
@@ -275,7 +275,7 @@ export function HomePage() {
                   "Branch managers manually follow up on every order",
                   "No visibility into which branches are underperforming",
                   "Expired stock goes undetected until it's too late",
-                  "No audit trail — accountability is impossible",
+                  "No audit trail  accountability is impossible",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
                     <XCircle size={15} style={{ color: "#EF4444", flexShrink: 0, marginTop: "2px" }} />
@@ -283,10 +283,10 @@ export function HomePage() {
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </StaticMotionDiv>
 
             {/* With Kettan */}
-            <motion.div
+            <StaticMotionDiv
               className="rounded-2xl p-8"
               style={{
                 backgroundColor: "#F0FBF4",
@@ -310,7 +310,7 @@ export function HomePage() {
                 {[
                   "Structured supply requests with one-click approval routing",
                   "Real-time inventory with batch-level FIFO tracking",
-                  "Auto-alerts before stock runs out — orders drafted automatically",
+                  "Auto-alerts before stock runs out  orders drafted automatically",
                   "Weighted branch performance scoring shows who needs attention",
                   "FIFO enforcement means expired stock is never dispatched",
                   "Full audit logs with role-based accountability",
@@ -321,7 +321,7 @@ export function HomePage() {
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </StaticMotionDiv>
           </div>
         </div>
       </section>
@@ -334,7 +334,7 @@ export function HomePage() {
         }}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <motion.div
+          <StaticMotionDiv
             className="text-center mb-14"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -354,7 +354,7 @@ export function HomePage() {
             <p className="mt-4 max-w-xl mx-auto" style={{ fontSize: "1rem", color: "#5C4A37", lineHeight: 1.7 }}>
               18 integrated modules covering every aspect of your coffee chain operations.
             </p>
-          </motion.div>
+          </StaticMotionDiv>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
@@ -370,7 +370,7 @@ export function HomePage() {
                 color: "#546B3F",
                 bg: "rgba(84,107,63,0.1)",
                 title: "Order Fulfillment",
-                desc: "From supply request to doorstep delivery — every step tracked, approved, and audited automatically.",
+                desc: "From supply request to doorstep delivery  every step tracked, approved, and audited automatically.",
               },
               {
                 icon: Coffee,
@@ -387,7 +387,7 @@ export function HomePage() {
                 desc: "See which branches perform best with Weighted Branch Performance Scoring across key metrics.",
               },
             ].map(({ icon: Icon, color, bg, title, desc }) => (
-              <motion.div
+              <StaticMotionDiv
                 key={title}
                 className="rounded-2xl p-6"
                 style={{
@@ -411,7 +411,7 @@ export function HomePage() {
                   {title}
                 </h3>
                 <p style={{ fontSize: "14px", color: "#5C4A37", lineHeight: 1.65 }}>{desc}</p>
-              </motion.div>
+              </StaticMotionDiv>
             ))}
           </div>
 
@@ -431,7 +431,7 @@ export function HomePage() {
       {/* WHO IT'S FOR */}
       <section className="py-20" style={{ backgroundColor: "#FDFAF5" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <motion.div
+          <StaticMotionDiv
             className="text-center mb-14"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -448,7 +448,7 @@ export function HomePage() {
             >
               Every Role Has a Purpose-Built Workspace
             </h2>
-          </motion.div>
+          </StaticMotionDiv>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -456,7 +456,7 @@ export function HomePage() {
                 icon: TrendingUp,
                 title: "Coffee Chain Owners",
                 subtitle: "Full visibility, zero daily involvement required",
-                desc: "Get chain-wide performance dashboards, financial reports, and branch rankings — without needing to micromanage every order.",
+                desc: "Get chain-wide performance dashboards, financial reports, and branch rankings  without needing to micromanage every order.",
                 features: ["Chain-wide analytics", "Revenue & cost reports", "Branch performance scores"],
                 color: "#6B4C2A",
                 bg: "linear-gradient(135deg, #FDF8F0 0%, #F5E8D0 100%)",
@@ -474,13 +474,13 @@ export function HomePage() {
                 icon: Users,
                 title: "Branch Managers",
                 subtitle: "Keep your branch running without the chaos",
-                desc: "Log daily consumption, submit supply requests, track deliveries in real-time, and manage your branch staff — all from one screen.",
+                desc: "Log daily consumption, submit supply requests, track deliveries in real-time, and manage your branch staff  all from one screen.",
                 features: ["Consumption logging", "Supply request tracking", "Delivery confirmation"],
                 color: "#3B82F6",
                 bg: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)",
               },
             ].map(({ icon: Icon, title, subtitle, desc, features, color, bg }) => (
-              <motion.div
+              <StaticMotionDiv
                 key={title}
                 className="rounded-2xl p-7"
                 style={{
@@ -512,7 +512,7 @@ export function HomePage() {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </StaticMotionDiv>
             ))}
           </div>
         </div>
@@ -533,7 +533,7 @@ export function HomePage() {
                 Built for the Real World of Coffee Operations
               </h2>
               <p style={{ fontSize: "15px", color: "#5C4A37", lineHeight: 1.7, marginBottom: "24px" }}>
-                From a single flagship store expanding to its second branch, to a chain with 30+ locations — Kettan scales with your business.
+                From a single flagship store expanding to its second branch, to a chain with 30+ locations  Kettan scales with your business.
               </p>
               <div className="space-y-3">
                 {[
@@ -545,7 +545,7 @@ export function HomePage() {
                     <ShieldCheck size={16} style={{ color: "#546B3F", marginTop: "2px", flexShrink: 0 }} />
                     <div>
                       <span style={{ fontWeight: 600, color: "#2C1A0E", fontSize: "14px" }}>{label}</span>
-                      <span style={{ color: "#8C6B43", fontSize: "14px" }}> — {desc}</span>
+                      <span style={{ color: "#8C6B43", fontSize: "14px" }}>  {desc}</span>
                     </div>
                   </div>
                 ))}
@@ -571,7 +571,7 @@ export function HomePage() {
         }}
       >
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <motion.div
+          <StaticMotionDiv
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -580,7 +580,7 @@ export function HomePage() {
               className="inline-block px-4 py-1.5 rounded-full text-sm mb-6"
               style={{ backgroundColor: "rgba(201,168,76,0.2)", color: "#C9A84C", fontWeight: 600 }}
             >
-              ☕ Start Today
+               Start Today
             </div>
             <h2
               style={{
@@ -608,7 +608,7 @@ export function HomePage() {
                   boxShadow: "0 4px 20px rgba(201,168,76,0.3)",
                 }}
               >
-                Get Started — It's Free to Try
+                Get Started  It's Free to Try
                 <ArrowRight size={16} />
               </Link>
               <a
@@ -621,12 +621,13 @@ export function HomePage() {
                   fontSize: "15px",
                 }}
               >
-                Talk to Sales →
+                Talk to Sales 
               </a>
             </div>
-          </motion.div>
+          </StaticMotionDiv>
         </div>
       </section>
     </div>
   );
 }
+

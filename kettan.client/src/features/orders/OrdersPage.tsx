@@ -244,11 +244,6 @@ export function OrdersPage() {
   };
 
   const handleProceed = (orderId: string) => {
-    const target = sorted.find((order) => order.id === orderId);
-    if (target?.status === 'Dispatched') {
-      navigate({ to: '/orders/$orderId/tracking', params: { orderId } });
-      return;
-    }
     navigate({ to: '/orders/$orderId', params: { orderId } });
   };
 
