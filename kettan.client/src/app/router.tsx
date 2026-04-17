@@ -16,14 +16,15 @@ import { ReportsPage } from '../features/reports/ReportsPage';
 import { OrdersPage } from '../features/orders/OrdersPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { NewOrderRequestPage } from '../features/orders/NewOrderRequestPage';
-import { PickingQueuePage } from '../features/orders/PickingQueuePage';
-import { ShippingQueuePage } from '../features/orders/ShippingQueuePage';
 import { MenuItemsPage } from '../features/menu/MenuItemsPage';
 import { AddMenuItemPage } from '../features/menu/AddMenuItemPage';
 import { MenuItemProfilePage } from '../features/menu/MenuItemProfilePage';
 import { SupplyRequestsPage } from '../features/supply-requests/SupplyRequestsPage';
 import { ConsumptionPage } from '../features/consumption/ConsumptionPage';
 import { ReturnsPage } from '../features/returns/ReturnsPage';
+import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
+import { ReturnCreatePage } from '../features/returns/ReturnCreatePage';
+import { AuditLogsPage } from '../features/audit-logs/AuditLogsPage';
 import { useAuthStore } from '../store/useAuthStore';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
@@ -129,18 +130,6 @@ const newOrderRoute = createRoute({
   component: NewOrderRequestPage,
 });
 
-const pickingRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: '/picking',
-  component: PickingQueuePage,
-});
-
-const shippingRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: '/shipping',
-  component: ShippingQueuePage,
-});
-
 const orderDetailRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/orders/$orderId',
@@ -163,6 +152,24 @@ const returnsRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/returns',
   component: ReturnsPage,
+});
+
+const returnCreateRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/returns/new',
+  component: ReturnCreatePage,
+});
+
+const returnDetailRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/returns/$returnId',
+  component: ReturnDetailPage,
+});
+
+const auditLogsRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/audit-logs',
+  component: AuditLogsPage,
 });
 
 const menuRoute = createRoute({
@@ -212,11 +219,12 @@ const routeTree = rootRoute.addChildren([
     ordersRoute,
     newOrderRoute,
     orderDetailRoute,
-    pickingRoute,
-    shippingRoute,
     supplyRequestsRoute,
     consumptionRoute,
     returnsRoute,
+    returnCreateRoute,
+    returnDetailRoute,
+    auditLogsRoute,
     menuRoute,
     addMenuItemRoute,
     menuItemProfileRoute

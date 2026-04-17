@@ -11,6 +11,8 @@ Last updated: 2026-04-17
 | Supply Requests (`/supply-requests`) | DONE | BranchManager, BranchOwner |
 | Consumption (`/consumption`) | DONE | BranchManager, BranchOwner |
 | Returns list/create (`/returns`) | DONE | BranchManager, BranchOwner, HqManager, HqStaff |
+| Return detail (`/returns/$returnId`) | DONE | BranchManager, BranchOwner, HqManager, HqStaff |
+| Audit Logs (`/audit-logs`) | DONE (frontend-only) | SuperAdmin, TenantAdmin |
 | Orders list (`/orders`) | DONE | HqManager, HqStaff, TenantAdmin |
 | Order detail (`/orders/$orderId`) | DONE | HqManager, HqStaff, TenantAdmin |
 | New internal request (`/orders/new`) | DONE | HqManager, HqStaff, TenantAdmin |
@@ -33,8 +35,8 @@ Last updated: 2026-04-17
 
 | Missing Page/Module | Status | Role Owner |
 |---|---|---|
-| Picking and Packing page (`/picking`) | OPTIONAL / DEFERRED | HqManager, HqStaff |
-| Shipping and Delivery page (`/shipping`) | OPTIONAL / DEFERRED | HqManager, HqStaff |
+| Picking and Packing page (`/picking`) | REMOVED (demo removed) | HqManager, HqStaff |
+| Shipping and Delivery page (`/shipping`) | REMOVED (demo removed) | HqManager, HqStaff |
 | Platform Analytics page (`/analytics`) | NOT DONE | SuperAdmin |
 | Platform Dashboard page (Super Admin) | NOT DONE | SuperAdmin |
 | Tenant Management list page | NOT DONE | SuperAdmin |
@@ -42,8 +44,7 @@ Last updated: 2026-04-17
 | Help and Support page | NOT DONE | SuperAdmin |
 | Supply Request detail page (`/supply-requests/$id`) | NOT DONE | BranchManager, BranchOwner, HqManager |
 | Supply Request edit draft page | NOT DONE | BranchManager, BranchOwner |
-| Return detail page (`/returns/$id`) | NOT DONE | BranchManager, BranchOwner, HqManager, HqStaff |
-| Return resolution detail view | NOT DONE | HqManager, HqStaff |
+| Return resolution backend history timeline | NOT DONE | HqManager, HqStaff |
 | Item Category management page (create/add/edit) | NOT DONE | TenantAdmin, HqManager |
 | Menu Category management page (create/add/edit) | NOT DONE | TenantAdmin, HqManager |
 | Vehicle management page (create/add/edit) | NOT DONE | TenantAdmin, HqManager |
@@ -56,11 +57,12 @@ Last updated: 2026-04-17
 |---|---|---|---|
 | Supply Requests | List + create + submit done | Detail + edit draft | BranchManager, BranchOwner |
 | Consumption | Log + list done | Detail + correction flow | BranchManager |
-| Returns | List + create + resolve action done | Full detail workflow | BranchManager, HqManager, HqStaff |
+| Returns | List + detail + resolve dialog done | Backend-persisted remarks/history timeline | BranchManager, HqManager, HqStaff |
 | Orders | List + detail + request done | Role-based default status tabs (HQ Manager: PendingApproval, HQ Staff: Approved/Picking) | HqManager, HqStaff |
 | Category management | Item/Menu category entities planned | Category CRUD pages | TenantAdmin, HqManager |
 | Vehicle management | Vehicle entity planned for dispatch | Vehicle CRUD page | TenantAdmin, HqManager |
 | Notifications | UI bell exists | Backend wiring not complete | All tenant users |
+| Audit Logs | Sidebar + route + page implemented | Backend API persistence/filtering wiring | SuperAdmin, TenantAdmin |
 
 ## CLEANUP NEEDED
 

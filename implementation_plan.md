@@ -619,6 +619,14 @@ Reports Page
 8. Done. No physical return shipping tracked.
 ```
 
+### 9.1.1 Frontend Execution Rules (Current)
+
+- Returns stay inside the same order transaction context (status-driven model).
+- Returns page handles queue/filtering; Return Detail page handles full context and resolution actions.
+- Resolution options in UI: `Credited`, `Replaced`, `Rejected`.
+- `Rejected` requires remarks in UI.
+- Key actions create audit events (file return, resolve/reject return, view detail) for admin traceability.
+
 ### 9.2 Additions to Returns Table
 
 | Field to Add | Purpose |

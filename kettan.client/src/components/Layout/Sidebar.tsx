@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import logo from '../../assets/logo.png';
 import DashboardRoundedIcon         from '@mui/icons-material/DashboardRounded';
-import LocalShippingRoundedIcon     from '@mui/icons-material/LocalShippingRounded';
 import Inventory2RoundedIcon        from '@mui/icons-material/Inventory2Rounded';
 import StoreRoundedIcon             from '@mui/icons-material/StoreRounded';
 import PeopleRoundedIcon            from '@mui/icons-material/PeopleRounded';
@@ -29,6 +28,7 @@ import ShoppingCartRoundedIcon      from '@mui/icons-material/ShoppingCartRounde
 import ScaleRoundedIcon             from '@mui/icons-material/ScaleRounded';
 import AnalyticsRoundedIcon         from '@mui/icons-material/AnalyticsRounded';
 import LocalCafeRoundedIcon         from '@mui/icons-material/LocalCafeRounded';
+import FeedRoundedIcon              from '@mui/icons-material/FeedRounded';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../../store/useAuthStore';
 import { IconButton } from '@mui/material';
@@ -54,9 +54,7 @@ const MAIN_NAV: NavItem[] = [
   { text: 'Dashboard',          icon: <DashboardRoundedIcon />,          path: '/', allowedRoles: ['SuperAdmin', 'TenantAdmin', 'HqManager', 'HqStaff', 'BranchManager', 'BranchOwner'] },
   { text: 'Supply Requests',    icon: <ShoppingCartRoundedIcon />,       path: '/supply-requests', allowedRoles: ['BranchManager', 'BranchOwner'] },
   { text: 'Order Processing',   icon: <CategoryRoundedIcon />,            path: '/orders', allowedRoles: ['HqManager', 'HqStaff', 'TenantAdmin'] },
-  { text: 'Picking & Packing',  icon: <Inventory2RoundedIcon />,          path: '/picking', allowedRoles: ['TenantAdmin', 'HqManager', 'HqStaff'] },
-  { text: 'Shipping & Delivery',icon: <LocalShippingRoundedIcon />,       path: '/shipping', allowedRoles: ['TenantAdmin', 'HqManager', 'HqStaff'] },
-  { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', allowedRoles: ['BranchManager', 'BranchOwner', 'HqStaff', 'HqManager'] },
+  { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', allowedRoles: ['TenantAdmin', 'BranchManager', 'BranchOwner', 'HqStaff', 'HqManager'] },
   { text: 'Branch and Inventory', icon: <StoreRoundedIcon />,            path: '/branches', allowedRoles: ['SuperAdmin', 'TenantAdmin', 'BranchManager', 'BranchOwner'] },
   { text: 'Company Profile',    icon: <StoreRoundedIcon />,            path: '/company-profile', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },
   { text: 'HQ Inventory',       icon: <Inventory2RoundedIcon />,       path: '/hq-inventory', allowedRoles: ['HqManager', 'HqStaff', 'TenantAdmin'] },
@@ -64,6 +62,7 @@ const MAIN_NAV: NavItem[] = [
   { text: 'Consumption',        icon: <ScaleRoundedIcon />,            path: '/consumption', allowedRoles: ['BranchManager', 'BranchOwner'] },
   { text: 'Staff Directory',    icon: <BadgeRoundedIcon />,            path: '/staff', allowedRoles: ['TenantAdmin', 'HqManager', 'BranchManager'] },
   { text: 'Settings',           icon: <ManageAccountsRoundedIcon />,   path: '/settings', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },
+  { text: 'Audit Logs',         icon: <FeedRoundedIcon />,             path: '/audit-logs', allowedRoles: ['SuperAdmin', 'TenantAdmin'] },
   { text: 'Finance & Reports',  icon: <BarChartRoundedIcon />,         path: '/reports', allowedRoles: ['TenantAdmin', 'BranchOwner', 'HqManager'] },
   { text: 'Platform Analytics', icon: <AnalyticsRoundedIcon />,        path: '/analytics', allowedRoles: ['SuperAdmin'] },
 ];

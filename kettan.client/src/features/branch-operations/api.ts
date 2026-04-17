@@ -128,6 +128,26 @@ export async function fetchReturns(resolution?: string): Promise<ReturnRecord[]>
   const response = await api.get<ReturnRecord[]>('/api/Returns', {
     params: resolution ? { resolution } : undefined,
   });
+
+  const payload = response.data as unknown;
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    Array.isArray((payload as { items?: unknown }).items)
+  ) {
+    return (payload as { items: ReturnRecord[] }).items;
+  }
+
+  return [];
+}
+
+export async function fetchReturnById(returnId: number): Promise<ReturnRecord> {
+  const response = await api.get<ReturnRecord>(`/api/Returns/${returnId}`);
   return response.data;
 }
 

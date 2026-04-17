@@ -17,8 +17,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/supply-requests': 'Supply Requests',
   '/consumption': 'Consumption Logs',
   '/orders':    'Order Processing',
-  '/picking':   'Picking & Packing',
-  '/shipping':  'Shipping & Delivery',
   '/returns':   'Returns Management',
   '/branches':  'Branch and Inventory',
   '/branches/add': 'Add New Branch',
@@ -27,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/hq-inventory/add': 'Add Inventory Item',
   '/staff':     '',
   '/settings':  'Settings',
+  '/audit-logs': 'Audit Logs',
   '/reports':   'Finance & Reports',
 };
 
@@ -41,6 +40,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/hq-inventory/add': 'Register new coffee, syrups, packaging, or equipment.',
   '/staff':     '',
   '/settings':  'System settings, user roles, and platform permissions.',
+  '/audit-logs': 'Track key actions across returns and admin workflows.',
   '/reports':   'Financial analytics, performance leaderboards, and aggregated invoices.',
 };
 
