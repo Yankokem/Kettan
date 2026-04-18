@@ -283,7 +283,9 @@ export function MenuItemsPage() {
           icon={<SortRoundedIcon fontSize="small" />}
         />
         <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-          <Button variant="outlined" startIcon={<CategoryRoundedIcon />}>Categories</Button>
+          <Link to="/menu/categories" style={{ textDecoration: 'none' }}>
+            <Button variant="outlined" startIcon={<CategoryRoundedIcon />}>Categories</Button>
+          </Link>
           <Link to="/menu/add" style={{ textDecoration: 'none' }}>
             <Button startIcon={<LocalCafeRoundedIcon />}>Add Menu Item</Button>
           </Link>

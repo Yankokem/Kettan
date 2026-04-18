@@ -46,3 +46,19 @@ export interface InventoryItemOption {
   unitCost?: number; // Cost per unit for price calculation
   stockCount?: number; // Available stock
 }
+
+export interface MenuCategory {
+  id: string;
+  name: string;
+  displayOrder: number;
+  isActive: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+}
+
+export interface MenuCategoryFormData {
+  name: string;
+  displayOrder: number;
+  isActive: boolean;
+}

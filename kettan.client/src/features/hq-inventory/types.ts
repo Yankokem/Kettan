@@ -12,6 +12,16 @@ export interface InventoryCategory {
   description?: string;
   displayOrder: number;
   isActive: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+}
+
+export interface ItemCategoryFormData {
+  name: string;
+  description: string;
+  displayOrder: number;
+  isActive: boolean;
 }
 
 // Legacy type alias for backwards compatibility

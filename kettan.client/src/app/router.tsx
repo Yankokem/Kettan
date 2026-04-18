@@ -19,6 +19,8 @@ import { NewOrderRequestPage } from '../features/orders/NewOrderRequestPage';
 import { MenuItemsPage } from '../features/menu/MenuItemsPage';
 import { AddMenuItemPage } from '../features/menu/AddMenuItemPage';
 import { MenuItemProfilePage } from '../features/menu/MenuItemProfilePage';
+import { MenuCategoriesPage } from '../features/menu/MenuCategoriesPage';
+import { ItemCategoriesPage } from '../features/hq-inventory/ItemCategoriesPage';
 import { SupplyRequestsPage } from '../features/supply-requests/SupplyRequestsPage';
 import { ConsumptionPage } from '../features/consumption/ConsumptionPage';
 import { ReturnsPage } from '../features/returns/ReturnsPage';
@@ -92,6 +94,12 @@ const inventoryTransactionRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/hq-inventory/transaction',
   component: InventoryTransactionPage,
+});
+
+const itemCategoriesRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/hq-inventory/categories',
+  component: ItemCategoriesPage,
 });
 
 const inventoryProfileRoute = createRoute({
@@ -184,6 +192,12 @@ const addMenuItemRoute = createRoute({
   component: AddMenuItemPage,
 });
 
+const menuCategoriesRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/menu/categories',
+  component: MenuCategoriesPage,
+});
+
 const menuItemProfileRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/menu/$menuItemId',
@@ -212,6 +226,7 @@ const routeTree = rootRoute.addChildren([
     staffProfileRoute,
     inventoryRoute,
     inventoryTransactionRoute,
+    itemCategoriesRoute,
     inventoryProfileRoute,
     companyProfileRoute,
     settingsRoute,
@@ -227,6 +242,7 @@ const routeTree = rootRoute.addChildren([
     auditLogsRoute,
     menuRoute,
     addMenuItemRoute,
+    menuCategoriesRoute,
     menuItemProfileRoute
   ]),
   loginRoute

@@ -18,11 +18,56 @@ export const MOCK_UNITS: Unit[] = [
 
 // Mock Inventory Categories
 export const MOCK_CATEGORIES: InventoryCategory[] = [
-  { id: 'cat1', name: 'Beans', description: 'Coffee beans and grounds', displayOrder: 1, isActive: true },
-  { id: 'cat2', name: 'Syrup', description: 'Flavored syrups', displayOrder: 2, isActive: true },
-  { id: 'cat3', name: 'Milk', description: 'Milk and dairy alternatives', displayOrder: 3, isActive: true },
-  { id: 'cat4', name: 'Packaging', description: 'Cups, lids, straws, bags', displayOrder: 4, isActive: true },
-  { id: 'cat5', name: 'Equipment', description: 'Equipment and supplies', displayOrder: 5, isActive: true },
+  {
+    id: 'cat1',
+    name: 'Beans',
+    description: 'Coffee beans and grounds',
+    displayOrder: 1,
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-01-15T08:00:00Z',
+  },
+  {
+    id: 'cat2',
+    name: 'Syrup',
+    description: 'Flavored syrups',
+    displayOrder: 2,
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-01-15T08:00:00Z',
+  },
+  {
+    id: 'cat3',
+    name: 'Milk',
+    description: 'Milk and dairy alternatives',
+    displayOrder: 3,
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-01-15T08:00:00Z',
+  },
+  {
+    id: 'cat4',
+    name: 'Packaging',
+    description: 'Cups, lids, straws, bags',
+    displayOrder: 4,
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-01-15T08:00:00Z',
+  },
+  {
+    id: 'cat5',
+    name: 'Equipment',
+    description: 'Equipment and supplies',
+    displayOrder: 5,
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-01-15T08:00:00Z',
+  },
 ];
 
 // Helper to get unit/category by id
