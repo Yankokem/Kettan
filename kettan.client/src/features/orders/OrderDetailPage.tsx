@@ -1,9 +1,16 @@
 import { Box, Typography, Chip, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
+import { useState } from 'react';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
+import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
+
+import { useAuthStore } from '../../store/useAuthStore';
+import { Dropdown } from '../../components/UI/Dropdown';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -96,6 +103,20 @@ const COLUMNS: ColumnDef<RequestItem>[] = [
 export function OrderDetailPage() {
   const { orderId } = useParams({ strict: false });
   const displayId = orderId || 'ORD-8891';
+  const { user } = useAuthStore();
+  
+  const [orderStatus, setOrderStatus] = useState<string>('PendingApproval');
+  const [selectedCourier, setSelectedCourier] = useState('van_1');
+
+  const VEHICLES = [
+    { value: 'van_1', label: 'Juan Delivery Services - Van 1' },
+    { value: 'van_2', label: 'Juan Delivery Services - Van 2' },
+    { value: 'truck_1', label: 'Metro Fleet - Truck 1' },
+  ];
+
+  const handleAction = (nextStatus: string) => {
+    setOrderStatus(nextStatus);
+  };
 
   return (
     <Box sx={{ pb: 3, pt: 1 }}>
@@ -109,10 +130,16 @@ export function OrderDetailPage() {
                 {displayId}
               </Typography>
               <Chip
-                label="Pending Approval"
-                icon={<AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} />}
+                label={orderStatus.replace(/([A-Z])/g, ' $1').trim()}
+                icon={orderStatus === 'PendingApproval' ? <AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} /> : undefined}
                 size="small"
-                sx={{ fontSize: 12, fontWeight: 600, bgcolor: 'rgba(180,83,9,0.12)', color: '#B45309', border: '1px solid rgba(180,83,9,0.28)' }}
+                sx={{ 
+                  fontSize: 12, 
+                  fontWeight: 600, 
+                  bgcolor: orderStatus === 'Rejected' ? 'rgba(185,28,28,0.1)' : 'rgba(37,99,235,0.12)', 
+                  color: orderStatus === 'Rejected' ? '#B91C1C' : '#2563EB', 
+                  border: `1px solid ${orderStatus === 'Rejected' ? 'rgba(185,28,28,0.28)' : 'rgba(37,99,235,0.28)'}` 
+                }}
               />
             </Box>
             <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
@@ -120,23 +147,70 @@ export function OrderDetailPage() {
             </Typography>
           </Box>
         </Box>
+        {/* Header Actions (Dynamic based on status and role) */}
         <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center' }}>
-          <StatusAlertIcon
-            severity="warning"
-            title="Partial Fulfillment Warning"
-            message="This order contains items with insufficient HQ stock. Approving this order will dispatch only the available quantities."
-          />
-          <Button variant="outlined" startIcon={<CancelRoundedIcon />} sx={{ color: 'error.main', borderColor: 'error.light', '&:hover': { bgcolor: 'error.50' } }}>
-            Reject Order
-          </Button>
-          <Button startIcon={<CheckCircleRoundedIcon />}>
-            Approve & Send to Packing
-          </Button>
+          
+          {orderStatus === 'PendingApproval' && (
+            <>
+              <StatusAlertIcon
+                severity="warning"
+                title="Partial Fulfillment Warning"
+                message="This order contains items with insufficient HQ stock. Approving this order will dispatch only the available quantities."
+              />
+              <Button variant="outlined" startIcon={<CancelRoundedIcon />} onClick={() => handleAction('Rejected')} sx={{ color: 'error.main', borderColor: 'error.light', '&:hover': { bgcolor: 'error.50' } }}>
+                Reject Order
+              </Button>
+              <Button startIcon={<CheckCircleRoundedIcon />} onClick={() => handleAction('Approved')}>
+                Approve & Send to Packing
+              </Button>
+            </>
+          )}
+
+          {orderStatus === 'Approved' && (
+            <Button startIcon={<InventoryRoundedIcon />} onClick={() => handleAction('Picking')}>
+              Start Picking
+            </Button>
+          )}
+
+          {orderStatus === 'Picking' && (
+            <Button startIcon={<BackpackRoundedIcon />} onClick={() => handleAction('Packed')}>
+              Confirm Items Packed
+            </Button>
+          )}
+
+          {orderStatus === 'Packed' && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ width: 200 }}>
+                <Dropdown
+                  options={VEHICLES}
+                  value={selectedCourier}
+                  onChange={(e) => setSelectedCourier(e.target.value as string)}
+                  size="small"
+                  fullWidth
+                />
+              </Box>
+              <Button startIcon={<LocalShippingRoundedIcon />} onClick={() => handleAction('Dispatched')}>
+                Dispatch Order
+              </Button>
+            </Box>
+          )}
+
+          {/* If dispatched, branch confirms delivery, HQ cannot override */}
+          {orderStatus === 'Dispatched' && user?.role !== 'BranchManager' && user?.role !== 'BranchOwner' && (
+            <Chip label="Awaiting Branch Delivery Confirmation" variant="outlined" sx={{ fontWeight: 600, color: 'text.secondary' }} />
+          )}
+
+          {orderStatus === 'Delivered' && (
+            <Button variant="outlined" startIcon={<AssignmentReturnRoundedIcon />} sx={{ color: '#B45309', borderColor: '#B45309' }}>
+              File Return
+            </Button>
+          )}
+
         </Box>
       </Box>
 
       {/* Stepper Visual */}
-      <OrderFulfillmentStepper status="PendingApproval" />
+      <OrderFulfillmentStepper status={orderStatus} />
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 3.5 }}>

@@ -16,6 +16,9 @@ import {
   submitSupplyRequest,
   type SupplyRequest,
 } from '../branch-operations/api';
+import { InventorySelectionModal } from '../orders/components/InventorySelectionModal';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import type { InventoryItem } from '../orders/components/InventoryItemCard';
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string }>;
@@ -40,6 +43,13 @@ function statusChip(status: string) {
   return { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
 }
 
+const MOCK_INVENTORY: InventoryItem[] = [
+  { id: '1', name: 'Arabica Coffee Beans (Medium Roast) - 5kg', sku: 'CF-ARB-MR-5KG', unit: 'bag', category: 'ingredients', hqStock: 120 },
+  { id: '2', name: 'Almond Milk - 1L Carton', sku: 'MLK-ALM-1L', unit: 'carton', category: 'ingredients', hqStock: 45 },
+  { id: '3', name: 'Vanilla Syrup - 750ml Bottle', sku: 'SYR-VAN-750', unit: 'bottle', category: 'ingredients', hqStock: 0 },
+  { id: '4', name: 'Paper Cups (12oz) - Box of 500', sku: 'PKG-CUP-12-500', unit: 'box', category: 'packaging', hqStock: 85 },
+];
+
 export function SupplyRequestsPage() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState('');
@@ -49,7 +59,9 @@ export function SupplyRequestsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [itemId, setItemId] = useState('');
+  const [itemName, setItemName] = useState('');
   const [quantityRequested, setQuantityRequested] = useState('');
   const [requestType, setRequestType] = useState('manual');
   const [priority, setPriority] = useState('normal');
@@ -196,6 +208,7 @@ export function SupplyRequestsPage() {
 
   function resetForm() {
     setItemId('');
+    setItemName('');
     setQuantityRequested('');
     setDispatchDate('');
     setNotes('');
@@ -204,6 +217,14 @@ export function SupplyRequestsPage() {
     setDispatchWindow('today');
     setFormError(null);
   }
+
+  const handleItemSelected = (items: { item: InventoryItem; quantity: number; notes: string }[]) => {
+    if (items.length > 0) {
+      setItemId(items[0].item.id);
+      setItemName(items[0].item.name);
+      setIsItemModalOpen(false);
+    }
+  };
 
   return (
     <Box sx={{ pb: 3, pt: 1, display: 'grid', gap: 2.5 }}>
@@ -233,7 +254,22 @@ export function SupplyRequestsPage() {
             mb: 1.25,
           }}
         >
-          <TextField label="Item ID" value={itemId} onChange={(event) => setItemId(event.target.value)} />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              startIcon={<SearchRoundedIcon />}
+              onClick={() => setIsItemModalOpen(true)}
+              sx={{ flexShrink: 0, height: 40 }}
+            >
+              Select Item
+            </Button>
+            <TextField 
+              label="Selected Item" 
+              value={itemName || 'None selected'} 
+              slotProps={{ input: { readOnly: true }, inputLabel: { shrink: true } }} 
+              sx={{ flexGrow: 1 }} 
+            />
+          </Box>
           <TextField label="Quantity Requested" type="number" value={quantityRequested} onChange={(event) => setQuantityRequested(event.target.value)} />
           <TextField label="Dispatch Date" type="date" value={dispatchDate} onChange={(event) => setDispatchDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
           <Dropdown
@@ -326,6 +362,13 @@ export function SupplyRequestsPage() {
       {loadError ? (
         <Typography sx={{ color: 'error.main', fontSize: 12.5 }}>{loadError}</Typography>
       ) : null}
+
+      <InventorySelectionModal
+        open={isItemModalOpen}
+        onClose={() => setIsItemModalOpen(false)}
+        onItemsSelected={handleItemSelected}
+        inventory={MOCK_INVENTORY}
+      />
     </Box>
   );
 }

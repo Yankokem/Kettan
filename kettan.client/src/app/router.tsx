@@ -30,6 +30,10 @@ import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
 import { ReturnCreatePage } from '../features/returns/ReturnCreatePage';
 import { AuditLogsPage } from '../features/audit-logs/AuditLogsPage';
 import { useAuthStore } from '../store/useAuthStore';
+import { TenantsPage } from '../features/super-admin/TenantsPage';
+import { TenantProfilePage } from '../features/super-admin/TenantProfilePage';
+import { AnalyticsPage } from '../features/analytics/AnalyticsPage';
+import { HelpPage } from '../features/support/HelpPage';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
 // Base root route, just rendering children
@@ -218,6 +222,30 @@ const menuItemProfileRoute = createRoute({
   component: MenuItemProfilePage,
 });
 
+const tenantsRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/tenants',
+  component: TenantsPage,
+});
+
+const tenantProfileRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/tenants/$tenantId',
+  component: TenantProfilePage,
+});
+
+const analyticsRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/analytics',
+  component: AnalyticsPage,
+});
+
+const helpRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/help',
+  component: HelpPage,
+});
+
 // The login route (independent of layout workspace)
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -259,7 +287,11 @@ const routeTree = rootRoute.addChildren([
     menuRoute,
     addMenuItemRoute,
     menuCategoriesRoute,
-    menuItemProfileRoute
+    menuItemProfileRoute,
+    tenantsRoute,
+    tenantProfileRoute,
+    analyticsRoute,
+    helpRoute
   ]),
   loginRoute
 ]);

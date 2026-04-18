@@ -16,6 +16,7 @@ import { BranchPerformance } from './components/BranchPerformance';
 import { InventoryAlerts } from './components/InventoryAlerts';
 import { FulfillmentStepper } from './components/FulfillmentStepper';
 import { DashboardChart } from './components/DashboardChart';
+import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 
 // ── Recent Activity Row ────────────────────────────────────────────────────
 interface ActivityItem {
@@ -132,6 +133,10 @@ export function DashboardPage() {
     const matchesBranch = !activityBranchFilter || row.branch === activityBranchFilter;
     return matchesStatus && matchesBranch;
   });
+
+  if (user?.role === 'SuperAdmin') {
+    return <SuperAdminDashboard />;
+  }
 
   return (
     <Box sx={{ pb: 3 }}>

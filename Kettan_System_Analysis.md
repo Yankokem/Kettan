@@ -119,13 +119,13 @@
 - [ ] Ensure OrderFulfillmentStepper reflects canonical status list
 
 ### 🟡 Week 3: Super Admin Side
-- [ ] Super Admin Dashboard (role-conditional on `/`)
-- [ ] Tenant Management list page (`/tenants`)
-- [ ] Tenant Detail page (`/tenants/$tenantId`)
+- [x] Super Admin Dashboard (role-conditional on `/`)
+- [x] Tenant Management list page (`/tenants`)
+- [x] Tenant Detail page (`/tenants/$tenantId`)
 
 ### 🟢 Week 4: Polish & Backend Prep
-- [ ] Help & Support page (static)
-- [ ] Platform Analytics page
+- [x] Help & Support page (static)
+- [x] Platform Analytics page
 - [ ] Final UI polish, notification dropdown cleanup
 - [ ] Ensure all mock data shapes match planned backend DTOs
 - [ ] Prepare API service layer structure for backend integration

@@ -1,6 +1,7 @@
 import { Box, Grid, ToggleButton, ToggleButtonGroup, Tooltip, Typography, Chip } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useAuthStore } from '../../store/useAuthStore';
 
 import LocalMallRoundedIcon from '@mui/icons-material/LocalMallRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
@@ -190,13 +191,20 @@ function getColumns(
 
 export function OrdersPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   const [startDate, setStartDate] = useState('2026-03-25');
   const [endDate, setEndDate] = useState('2026-04-14');
   const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
   const [viewMode, setViewMode] = useState<OrdersListViewMode>('card');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  
+  const initialStatusFilter = user?.role === 'HqManager' || user?.role === 'TenantAdmin' 
+    ? 'PendingApproval' 
+    : user?.role === 'HqStaff' 
+      ? 'Approved' 
+      : '';
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   const source = MOCK_ORDERS.filter((order) => {

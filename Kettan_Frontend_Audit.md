@@ -38,11 +38,11 @@ Last updated: 2026-04-18
 
 | Missing Page/Module | Status | Role Owner |
 |---|---|---|
-| Platform Analytics page (`/analytics`) | NOT DONE | SuperAdmin |
-| Platform Dashboard page (Super Admin) | NOT DONE | SuperAdmin |
-| Tenant Management list page | NOT DONE | SuperAdmin |
-| Tenant Detail page | NOT DONE | SuperAdmin |
-| Help and Support page | NOT DONE | SuperAdmin |
+| Platform Analytics page (`/analytics`) | DONE | SuperAdmin |
+| Platform Dashboard page (Super Admin) | DONE | SuperAdmin |
+| Tenant Management list page | DONE | SuperAdmin |
+| Tenant Detail page | DONE | SuperAdmin |
+| Help and Support page | DONE | SuperAdmin |
 | Supply Request detail page (`/supply-requests/$id`) | NOT DONE | BranchManager, BranchOwner, HqManager |
 | Supply Request edit draft page | NOT DONE | BranchManager, BranchOwner |
 | Return resolution backend history timeline | NOT DONE | HqManager, HqStaff |
