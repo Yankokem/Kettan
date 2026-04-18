@@ -162,6 +162,12 @@ When a branch orders 2x "Starter Kit", the system expands it to: 20 bags of bean
 
 The consumption logging module is **the branch's alternative to a POS**. Instead of ringing up sales in real-time, the Branch Manager logs what was sold/used at the end of a shift, and the system deducts inventory accordingly.
 
+Current frontend flow is split into:
+- Queue/history at `/consumption`
+- Dedicated create flow at `/consumption/new`
+
+Branch Owner can view the queue/history but cannot submit create actions.
+
 ### 3.1 Menu Items (The Recipe System)
 
 Before consumption logging works, the Tenant Admin (or HQ Manager) must create **Menu Items** — the products the branch actually sells to customers.
@@ -198,21 +204,19 @@ MenuItemIngredients
 | Medium Lid | 1 | pcs |
 | Straw | 1 | pcs |
 
-### 3.2 The Three Deduction Methods
+### 3.2 Consumption Method in Scope
 
-#### Method 1: Direct Consumption Entry
-- Branch staff manually enters: "Used 5kg of beans today"
-- System deducts from oldest branch batch (FIFO)
-- **Best for**: Bulk ingredients hard to tie to specific drinks (e.g., cleaning supplies, sugar refills)
-
-#### Method 2: Sales Count with Recipe Deduction ⭐ (Primary Method)
-- Branch Manager enters: "Sold 50 Iced Americanos, 30 Lattes, 15 Croissants"
+#### Sales Count with Recipe Deduction ⭐ (Primary Method)
+- Branch Manager opens a sold-menu-item selection modal, picks menu items sold today, and enters quantity sold for each selected item.
 - System multiplies each sale count × recipe ingredients
 - System deducts total from branch inventory (FIFO per item)
 - Creates `InventoryTransaction` records of type `Sales_Auto`
 - **Best for**: Daily end-of-shift logging
 
-#### Method 3: Physical Stock Count
+#### Manual Non-Sales Usage (Handled Outside Consumption)
+- Manual ingredient usage (wastage/spoilage/internal use) is handled by stock-out/adjustment workflows, not the consumption logger.
+
+#### Physical Stock Count
 - Branch staff counts actual stock on hand: "We have 48 cups, 3.2kg beans"
 - System compares counted vs expected (based on previous balance minus logged consumption)
 - Flags discrepancies: "Expected 50 cups, counted 48 → variance of -2"
@@ -223,9 +227,9 @@ MenuItemIngredients
 
 ```
 1. Tenant Admin creates Menu Items + Recipes (one-time setup)
-2. Daily: Branch Manager opens Consumption Logging
+2. Daily: Branch Manager opens Consumption queue (`/consumption`) then starts create flow (`/consumption/new`)
 3. Selects shift (Morning/Afternoon/Evening) and date
-4. Enters sales counts per menu item OR direct usage
+4. Enters sales counts via sold-menu-item modal
 5. System calculates total ingredient deductions (preview shown)
 6. Branch Manager confirms → system deducts from branch batches (FIFO)
 7. If any item drops below threshold → low-stock alert triggered
@@ -795,7 +799,7 @@ Given your 1-month deadline and solo status, here's what to **cut or defer**:
 | Dashboard (per-role) | Frontend exists ✅ |
 | Inventory Management (HQ + Branch) | Frontend exists ✅, needs backend |
 | Menu Items + Recipe system | **NEW — needs both frontend + backend** |
-| Consumption Logging (Method 1 & 2) | Needs frontend + backend |
+| Consumption Logging (Method 1 & 2) | Frontend queue/create flow implemented; backend sold-today menu feed still needed |
 | Supply Request → Order pipeline | Frontend exists ✅, needs backend |
 | Picking & Packing flow | Part of Order Detail page |
 | Status-based Order Tracking | Frontend exists ✅, needs revision (remove map) |

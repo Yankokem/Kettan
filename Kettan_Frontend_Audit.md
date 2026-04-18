@@ -11,6 +11,7 @@ Last updated: 2026-04-18
 | Supply Requests (`/supply-requests`) | DONE | BranchManager, BranchOwner |
 | Create Supply Request (`/supply-requests/new`) | DONE | BranchManager, BranchOwner |
 | Consumption (`/consumption`) | DONE | BranchManager (operate), BranchOwner (view-only) |
+| Create Consumption (`/consumption/new`) | DONE | BranchManager (operate), BranchOwner (view-only gate) |
 | Returns list/create (`/returns`) | DONE | BranchManager, BranchOwner, HqManager, HqStaff |
 | Return detail (`/returns/$returnId`) | DONE | BranchManager, BranchOwner, HqManager, HqStaff |
 | Audit Logs (`/audit-logs`) | DONE (frontend-only) | SuperAdmin, TenantAdmin |
@@ -55,7 +56,7 @@ Last updated: 2026-04-18
 | Page/Module | Current | Missing | Role Owner |
 |---|---|---|---|
 | Supply Requests | Queue page with stats/filter/sort/table + dedicated create route + detail route | Draft edit flow + deeper detail API wiring | BranchManager, BranchOwner |
-| Consumption | BranchManager log + BranchOwner view-only history | Detail + correction flow | BranchManager |
+| Consumption | Sales-only queue page with stat cards + search/date/sort/filter and dedicated create route | Detail + correction flow + backend sold-today menu feed | BranchManager |
 | Orders | List + detail + request done | Role-based default status tabs (HQ Manager: PendingApproval, HQ Staff: Approved/Picking) | HqManager, HqStaff |
 | Notifications | UI bell exists | Backend wiring not complete | All tenant users |
 

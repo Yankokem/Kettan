@@ -141,18 +141,22 @@ Branch Manager confirms delivery → inventory transfers to branch
 
 ## 6. Consumption Logging
 
-The consumption module is **the branch's alternative to a POS**. Branch Manager logs what was sold/used at end of shift → system deducts inventory.
+The consumption module is **the branch's alternative to a POS**. Branch Manager logs menu-item sales at end of shift → system deducts inventory via recipes.
 
-### Method 1: Direct Consumption Entry
-- Branch Manager types: "Used 5kg of coffee beans today"
-- System deducts from oldest branch batch (FIFO)
-- **Best for**: Bulk ingredients hard to tie to individual drinks (cleaning supplies, sugar refills)
+### Route Shape (Current UX)
+- Queue/history route: `/consumption` (stat cards + search/date/sort/filter + transactions table)
+- Create route: `/consumption/new` (dedicated create workflow)
+- Branch Owner can view queue/history but remains view-only for create/submit actions.
 
-### Method 2: Sales Count with Recipe Deduction ⭐ (Primary)
-- Branch Manager enters: "Sold 50 Iced Americanos, 30 Lattes"
+### Sales Count with Recipe Deduction ⭐ (Primary)
+- Branch Manager opens sold-menu-item selection modal, picks menu items sold today, and enters quantity sold per selected menu item.
 - System multiplies each sale × recipe ingredients → deducts from branch inventory (FIFO)
 - **Requires**: Menu Items with Recipes set up by Tenant Admin
 - **Best for**: Daily end-of-shift logging
+
+### Manual Non-Sales Usage (Out of Scope for Consumption)
+- Manual ingredient deductions (wastage/spoilage/internal use) should be logged through inventory stock-out/adjustment workflows.
+- Consumption logging page remains sales-only.
 
 ### Method 3: Physical Stock Count (Tier 2 — Deferred)
 - Branch staff counts actual stock on hand
@@ -163,9 +167,9 @@ The consumption module is **the branch's alternative to a POS**. Branch Manager 
 
 ```
 1. Tenant Admin creates Menu Items + Recipes (one-time setup)
-2. Daily: Branch Manager opens Consumption Logging
+2. Daily: Branch Manager opens Consumption queue (`/consumption`) then clicks Add Consumption (`/consumption/new`)
 3. Selects shift (Morning/Afternoon/Evening) and date
-4. Enters sales counts per menu item OR direct usage
+4. Enters sales counts using sold-menu-item modal
 5. System calculates total ingredient deductions (preview shown)
 6. Branch Manager confirms → system deducts from branch batches (FIFO)
 7. If any item drops below threshold → low-stock alert triggered

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import type { AxiosError } from 'axios';
 import { useNavigate } from '@tanstack/react-router';
@@ -11,18 +11,13 @@ import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { Dropdown } from '../../components/UI/Dropdown';
 import { TextField } from '../../components/UI/TextField';
 import { useAuthStore } from '../../store/useAuthStore';
-import { logDirectConsumption, logSalesConsumption } from '../branch-operations/api';
-
-interface DirectLine {
-  id: string;
-  itemId: number;
-  quantity: number;
-  reason: string;
-}
+import { logSalesConsumption } from '../branch-operations/api';
+import { SalesMenuSelectionModal, type SoldMenuItemOption } from './components/SalesMenuSelectionModal';
 
 interface SalesLine {
   id: string;
   menuItemId: number;
+  menuItemName: string;
   quantitySold: number;
 }
 
@@ -39,6 +34,17 @@ function defaultLogDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const MOCK_TODAY_SOLD_MENU_ITEMS: SoldMenuItemOption[] = [
+  { id: '101', name: 'Iced Americano', category: 'Coffee', soldToday: 38 },
+  { id: '102', name: 'Vanilla Latte', category: 'Coffee with Milk', soldToday: 29 },
+  { id: '103', name: 'Caramel Frappe', category: 'Frappe', soldToday: 16 },
+  { id: '104', name: 'Matcha Green Tea', category: 'Tea', soldToday: 13 },
+  { id: '105', name: 'Cold Brew', category: 'Coffee', soldToday: 21 },
+  { id: '106', name: 'Cafe Mocha', category: 'Coffee with Milk', soldToday: 18 },
+  { id: '107', name: 'Blueberry Cheesecake', category: 'Pastry', soldToday: 9 },
+  { id: '108', name: 'Mango Smoothie', category: 'Smoothie', soldToday: 12 },
+];
+
 export function ConsumptionCreatePage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -47,115 +53,65 @@ export function ConsumptionCreatePage() {
   const canAccessPage = role === 'BranchManager' || role === 'BranchOwner';
   const canCreateRequests = role === 'BranchManager';
 
-  const [mode, setMode] = useState<'direct' | 'sales'>('direct');
   const [shift, setShift] = useState('Morning');
   const [logDate, setLogDate] = useState(defaultLogDate());
   const [remarks, setRemarks] = useState('');
+  const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
 
-  const [itemId, setItemId] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [reason, setReason] = useState('Consumption');
-
-  const [menuItemId, setMenuItemId] = useState('');
-  const [quantitySold, setQuantitySold] = useState('');
-
-  const [directLines, setDirectLines] = useState<DirectLine[]>([]);
   const [salesLines, setSalesLines] = useState<SalesLine[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAddDirectLine = () => {
-    const parsedItemId = Number(itemId);
-    const parsedQuantity = Number(quantity);
-    const trimmedReason = reason.trim() || 'Consumption';
-
-    if (!Number.isInteger(parsedItemId) || parsedItemId <= 0) {
-      setError('Item ID must be a positive whole number.');
-      return;
-    }
-
-    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
-      setError('Quantity must be greater than zero.');
-      return;
-    }
-
-    setDirectLines((previous) => {
-      const existingIndex = previous.findIndex((line) => line.itemId === parsedItemId);
-
-      if (existingIndex >= 0) {
-        return previous.map((line, index) => {
-          if (index !== existingIndex) {
-            return line;
-          }
-
-          return {
-            ...line,
-            quantity: line.quantity + parsedQuantity,
-            reason: trimmedReason,
-          };
-        });
-      }
-
-      return [
-        ...previous,
-        {
-          id: makeLineId(),
-          itemId: parsedItemId,
-          quantity: parsedQuantity,
-          reason: trimmedReason,
-        },
-      ];
-    });
-
-    setItemId('');
-    setQuantity('');
-    setError(null);
-  };
-
-  const handleAddSalesLine = () => {
-    const parsedMenuItemId = Number(menuItemId);
-    const parsedQuantitySold = Number(quantitySold);
-
-    if (!Number.isInteger(parsedMenuItemId) || parsedMenuItemId <= 0) {
-      setError('Menu item ID must be a positive whole number.');
-      return;
-    }
-
-    if (!Number.isFinite(parsedQuantitySold) || parsedQuantitySold <= 0) {
-      setError('Quantity sold must be greater than zero.');
+  const handleSalesItemsSelected = (items: { item: SoldMenuItemOption; quantity: number }[]) => {
+    if (items.length === 0) {
       return;
     }
 
     setSalesLines((previous) => {
-      const existingIndex = previous.findIndex((line) => line.menuItemId === parsedMenuItemId);
+      let next = [...previous];
 
-      if (existingIndex >= 0) {
-        return previous.map((line, index) => {
-          if (index !== existingIndex) {
-            return line;
-          }
+      for (const selected of items) {
+        const parsedMenuItemId = Number(selected.item.id);
+        const parsedQuantitySold = Number(selected.quantity);
 
-          return {
-            ...line,
-            quantitySold: line.quantitySold + parsedQuantitySold,
-          };
+        if (!Number.isInteger(parsedMenuItemId) || parsedMenuItemId <= 0) {
+          continue;
+        }
+
+        if (!Number.isFinite(parsedQuantitySold) || parsedQuantitySold <= 0) {
+          continue;
+        }
+
+        const existingIndex = next.findIndex((line) => line.menuItemId === parsedMenuItemId);
+
+        if (existingIndex >= 0) {
+          next = next.map((line, index) => {
+            if (index !== existingIndex) {
+              return line;
+            }
+
+            return {
+              ...line,
+              quantitySold: line.quantitySold + parsedQuantitySold,
+            };
+          });
+          continue;
+        }
+
+        next.push({
+          id: makeLineId(),
+          menuItemId: parsedMenuItemId,
+          menuItemName: selected.item.name,
+          quantitySold: parsedQuantitySold,
         });
       }
 
-      return [
-        ...previous,
-        {
-          id: makeLineId(),
-          menuItemId: parsedMenuItemId,
-          quantitySold: parsedQuantitySold,
-        },
-      ];
+      return next;
     });
 
-    setMenuItemId('');
-    setQuantitySold('');
     setError(null);
+    setIsSalesModalOpen(false);
   };
 
   const handleSubmit = async () => {
@@ -164,12 +120,7 @@ export function ConsumptionCreatePage() {
       return;
     }
 
-    if (mode === 'direct' && directLines.length === 0) {
-      setError('Add at least one direct consumption line.');
-      return;
-    }
-
-    if (mode === 'sales' && salesLines.length === 0) {
+    if (salesLines.length === 0) {
       setError('Add at least one sales consumption line.');
       return;
     }
@@ -180,28 +131,15 @@ export function ConsumptionCreatePage() {
       setIsSaving(true);
       setError(null);
 
-      if (mode === 'direct') {
-        await logDirectConsumption({
-          logDate: logDateIso,
-          shift,
-          remarks: remarks || undefined,
-          items: directLines.map((line) => ({
-            itemId: line.itemId,
-            quantity: line.quantity,
-            reason: line.reason || remarks || 'Consumption',
-          })),
-        });
-      } else {
-        await logSalesConsumption({
-          logDate: logDateIso,
-          shift,
-          remarks: remarks || undefined,
-          sales: salesLines.map((line) => ({
-            menuItemId: line.menuItemId,
-            quantitySold: line.quantitySold,
-          })),
-        });
-      }
+      await logSalesConsumption({
+        logDate: logDateIso,
+        shift,
+        remarks: remarks || undefined,
+        sales: salesLines.map((line) => ({
+          menuItemId: line.menuItemId,
+          quantitySold: line.quantitySold,
+        })),
+      });
 
       navigate({ to: '/consumption' });
     } catch (saveError) {
@@ -211,61 +149,16 @@ export function ConsumptionCreatePage() {
     }
   };
 
-  const directColumns: ColumnDef<DirectLine>[] = [
-    {
-      key: 'itemId',
-      label: 'Item ID',
-      width: 100,
-      sortable: true,
-      render: (line) => (
-        <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: '#6B4C2A' }}>
-          {line.itemId}
-        </Typography>
-      ),
-    },
-    {
-      key: 'quantity',
-      label: 'Qty',
-      width: 80,
-      align: 'center',
-      sortable: true,
-      render: (line) => <Typography sx={{ fontSize: 13 }}>{line.quantity}</Typography>,
-    },
-    {
-      key: 'reason',
-      label: 'Reason',
-      sortable: true,
-      render: (line) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{line.reason}</Typography>,
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      width: 95,
-      align: 'right',
-      render: (line) => (
-        <Button
-          size="small"
-          variant="outlined"
-          sx={{ height: 32, px: 1.2, minWidth: 0 }}
-          onClick={() => setDirectLines((previous) => previous.filter((entry) => entry.id !== line.id))}
-          startIcon={<DeleteOutlineRoundedIcon sx={{ fontSize: 15 }} />}
-        >
-          Remove
-        </Button>
-      ),
-    },
-  ];
-
   const salesColumns: ColumnDef<SalesLine>[] = [
     {
-      key: 'menuItemId',
-      label: 'Menu Item ID',
-      width: 130,
+      key: 'menuItemName',
+      label: 'Menu Item',
       sortable: true,
       render: (line) => (
-        <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: '#6B4C2A' }}>
-          {line.menuItemId}
-        </Typography>
+        <Box>
+          <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>{line.menuItemName}</Typography>
+          <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontFamily: 'monospace' }}>MI-{line.menuItemId}</Typography>
+        </Box>
       ),
     },
     {
@@ -315,7 +208,7 @@ export function ConsumptionCreatePage() {
         <Box>
           <Typography sx={{ fontSize: 17, fontWeight: 800 }}>Add Consumption</Typography>
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-            Create one direct or sales consumption transaction set for this day.
+            Create sales consumption transaction set for this day.
           </Typography>
         </Box>
       </Box>
@@ -341,7 +234,7 @@ export function ConsumptionCreatePage() {
             >
               <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 0.6 }}>Transaction Details</Typography>
               <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 2 }}>
-                Set mode and metadata for this consumption transaction.
+                Set shift/date metadata for this sales consumption transaction.
               </Typography>
 
               <Box
@@ -352,14 +245,6 @@ export function ConsumptionCreatePage() {
                   mb: 1.25,
                 }}
               >
-                <Dropdown
-                  value={mode}
-                  onChange={(event) => setMode(event.target.value as 'direct' | 'sales')}
-                  options={[
-                    { value: 'direct', label: 'Direct Consumption' },
-                    { value: 'sales', label: 'Sales Consumption' },
-                  ]}
-                />
                 <Dropdown
                   value={shift}
                   onChange={(event) => setShift(String(event.target.value))}
@@ -394,49 +279,25 @@ export function ConsumptionCreatePage() {
             <Box sx={{ width: { xs: '100%', lg: '56%' }, pl: { xs: 0, lg: 2.5 }, pt: { xs: 2.5, lg: 0 } }}>
               <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 0.6 }}>Line Composer</Typography>
               <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1.4 }}>
-                Add transaction lines for the selected mode, then submit the full set.
+                Select sold menu items using the modal, then submit the full set.
               </Typography>
 
-              {mode === 'direct' ? (
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr)) auto' }, gap: 1, mb: 1.2 }}>
-                  <TextField label="Item ID" value={itemId} onChange={(event) => setItemId(event.target.value)} />
-                  <TextField label="Quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
-                  <TextField label="Reason" value={reason} onChange={(event) => setReason(event.target.value)} />
-                  <Button variant="outlined" startIcon={<AddRoundedIcon />} sx={{ minWidth: 122 }} onClick={handleAddDirectLine}>
-                    Add Line
-                  </Button>
-                </Box>
-              ) : (
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr)) auto' }, gap: 1, mb: 1.2 }}>
-                  <TextField label="Menu Item ID" value={menuItemId} onChange={(event) => setMenuItemId(event.target.value)} />
-                  <TextField label="Qty Sold" type="number" value={quantitySold} onChange={(event) => setQuantitySold(event.target.value)} />
-                  <Button variant="outlined" startIcon={<AddRoundedIcon />} sx={{ minWidth: 122 }} onClick={handleAddSalesLine}>
-                    Add Line
-                  </Button>
-                </Box>
-              )}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1.2 }}>
+                <Button variant="outlined" startIcon={<SearchRoundedIcon />} sx={{ minWidth: 188 }} onClick={() => setIsSalesModalOpen(true)}>
+                  Select Sold Menu Items
+                </Button>
+              </Box>
 
               <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 0.6 }}>Transactions Added</Typography>
 
-              {mode === 'direct' ? (
-                <DataTable
-                  data={directLines}
-                  columns={directColumns}
-                  keyExtractor={(line) => line.id}
-                  emptyMessage="No direct lines added yet."
-                  defaultRowsPerPage={5}
-                  pageSizes={[5, 10, 25]}
-                />
-              ) : (
-                <DataTable
-                  data={salesLines}
-                  columns={salesColumns}
-                  keyExtractor={(line) => line.id}
-                  emptyMessage="No sales lines added yet."
-                  defaultRowsPerPage={5}
-                  pageSizes={[5, 10, 25]}
-                />
-              )}
+              <DataTable
+                data={salesLines}
+                columns={salesColumns}
+                keyExtractor={(line) => line.id}
+                emptyMessage="No sales lines added yet. Use Select Sold Menu Items above."
+                defaultRowsPerPage={5}
+                pageSizes={[5, 10, 25]}
+              />
             </Box>
           </Box>
 
@@ -454,19 +315,26 @@ export function ConsumptionCreatePage() {
             }}
           >
             <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-              Total lines: <strong>{mode === 'direct' ? directLines.length : salesLines.length}</strong>
+              Total lines: <strong>{salesLines.length}</strong>
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Button variant="outlined" onClick={() => navigate({ to: '/consumption' })}>
                 Cancel
               </Button>
-              <Button onClick={() => void handleSubmit()} disabled={isSaving || (mode === 'direct' ? directLines.length === 0 : salesLines.length === 0)}>
+              <Button onClick={() => void handleSubmit()} disabled={isSaving || salesLines.length === 0}>
                 {isSaving ? 'Submitting...' : 'Submit Consumption'}
               </Button>
             </Box>
           </Box>
         </Paper>
       )}
+
+      <SalesMenuSelectionModal
+        open={isSalesModalOpen}
+        onClose={() => setIsSalesModalOpen(false)}
+        onItemsSelected={handleSalesItemsSelected}
+        items={MOCK_TODAY_SOLD_MENU_ITEMS}
+      />
     </Box>
   );
 }

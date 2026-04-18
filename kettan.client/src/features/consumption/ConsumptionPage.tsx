@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Chip, Grid, Paper, Typography } from '@mui/material';
 import ScaleRoundedIcon from '@mui/icons-material/ScaleRounded';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
-import PrecisionManufacturingRoundedIcon from '@mui/icons-material/PrecisionManufacturingRounded';
 import TodayRoundedIcon from '@mui/icons-material/TodayRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded';
 import type { AxiosError } from 'axios';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -27,13 +27,13 @@ function getErrorMessage(error: unknown): string {
   return axiosError.response?.data?.message ?? axiosError.message ?? 'Something went wrong.';
 }
 
-type SortOption = 'newest' | 'oldest' | 'method-asc' | 'method-desc';
+type SortOption = 'newest' | 'oldest' | 'shift-asc' | 'shift-desc';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
-  { value: 'method-asc', label: 'Method A-Z' },
-  { value: 'method-desc', label: 'Method Z-A' },
+  { value: 'shift-asc', label: 'Shift A-Z' },
+  { value: 'shift-desc', label: 'Shift Z-A' },
 ];
 
 function defaultStartDate() {
@@ -46,12 +46,8 @@ function defaultEndDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function methodChipStyle(method: string) {
-  if (method.toLowerCase() === 'sales') {
-    return { color: '#2563EB', bg: 'rgba(37,99,235,0.10)', border: 'rgba(37,99,235,0.25)' };
-  }
-
-  return { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)', border: 'rgba(107,76,42,0.25)' };
+function methodChipStyle() {
+  return { color: '#2563EB', bg: 'rgba(37,99,235,0.10)', border: 'rgba(37,99,235,0.25)' };
 }
 
 export function ConsumptionPage() {
@@ -68,19 +64,19 @@ export function ConsumptionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [methodFilter, setMethodFilter] = useState('');
+  const [shiftFilter, setShiftFilter] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
 
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       const rows = await fetchConsumptionLogs({
         from: startDate,
         to: endDate,
-        method: methodFilter || undefined,
+        method: 'Sales',
       });
       setLogs(rows);
     } catch (loadError) {
@@ -88,11 +84,11 @@ export function ConsumptionPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [endDate, startDate]);
 
   useEffect(() => {
     void loadLogs();
-  }, [endDate, methodFilter, startDate]);
+  }, [loadLogs]);
 
   const safeRows = useMemo(() => {
     return Array.isArray(logs) ? logs : [];
@@ -105,22 +101,21 @@ export function ConsumptionPage() {
       const occurredDate = new Date(log.logDate);
       const fromDate = new Date(`${startDate}T00:00:00`);
       const toDate = new Date(`${endDate}T23:59:59`);
-      const method = (log.method ?? '').toLowerCase();
+      const shift = log.shift ?? '';
 
-      const matchesMethod = !methodFilter || method === methodFilter.toLowerCase();
+      const matchesShift = !shiftFilter || shift === shiftFilter;
       const matchesDateRange = occurredDate >= fromDate && occurredDate <= toDate;
       const matchesQuery =
         !query ||
         (
           log.consumptionLogId.toString().includes(query) ||
-          method.includes(query) ||
-          (log.shift ?? '').toLowerCase().includes(query) ||
+          shift.toLowerCase().includes(query) ||
           (log.remarks ?? '').toLowerCase().includes(query)
         );
 
-      return matchesMethod && matchesDateRange && matchesQuery;
+      return matchesShift && matchesDateRange && matchesQuery;
     });
-  }, [endDate, methodFilter, safeRows, search, startDate]);
+  }, [endDate, safeRows, search, shiftFilter, startDate]);
 
   const sortedRows = useMemo(() => {
     const copy = [...filteredRows];
@@ -130,12 +125,12 @@ export function ConsumptionPage() {
         return new Date(left.logDate).getTime() - new Date(right.logDate).getTime();
       }
 
-      if (sortBy === 'method-asc') {
-        return left.method.localeCompare(right.method);
+      if (sortBy === 'shift-asc') {
+        return (left.shift ?? '').localeCompare(right.shift ?? '');
       }
 
-      if (sortBy === 'method-desc') {
-        return right.method.localeCompare(left.method);
+      if (sortBy === 'shift-desc') {
+        return (right.shift ?? '').localeCompare(left.shift ?? '');
       }
 
       return new Date(right.logDate).getTime() - new Date(left.logDate).getTime();
@@ -160,14 +155,12 @@ export function ConsumptionPage() {
       key: 'method',
       label: 'Method',
       width: 130,
-      sortable: true,
       render: (row) => {
-        const style = methodChipStyle(row.method);
-        const isSales = row.method.toLowerCase() === 'sales';
+        const style = methodChipStyle();
         return (
           <Chip
-            icon={isSales ? <LocalCafeRoundedIcon sx={{ fontSize: 15 }} /> : <PrecisionManufacturingRoundedIcon sx={{ fontSize: 15 }} />}
-            label={row.method}
+            icon={<LocalCafeRoundedIcon sx={{ fontSize: 15 }} />}
+            label={row.method || 'Sales'}
             size="small"
             sx={{
               fontSize: 11.5,
@@ -238,22 +231,22 @@ export function ConsumptionPage() {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              label="Direct Consumption"
-              value={safeRows.filter((row) => row.method.toLowerCase() === 'direct').length}
-              icon={<PrecisionManufacturingRoundedIcon />}
+              label="Sales Logs"
+              value={safeRows.filter((row) => row.method.toLowerCase() === 'sales').length}
+              icon={<LocalCafeRoundedIcon />}
               trend="up"
-              trendValue="Manual"
+              trendValue="POS bridge"
               accentClass="stat-accent-gold"
               iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              label="Sales Consumption"
-              value={safeRows.filter((row) => row.method.toLowerCase() === 'sales').length}
-              icon={<LocalCafeRoundedIcon />}
+              label="Shifts Covered"
+              value={new Set(safeRows.map((row) => row.shift ?? '--')).size}
+              icon={<ScheduleRoundedIcon />}
               trend="up"
-              trendValue="Auto"
+              trendValue="Coverage"
               accentClass="stat-accent-sage"
               iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
             />
@@ -284,7 +277,7 @@ export function ConsumptionPage() {
         }}
       >
         <SearchInput
-          placeholder="Search log ID, method, shift, or remarks..."
+          placeholder="Search log ID, shift, or remarks..."
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           sx={{ minWidth: 300, maxWidth: 420, flexShrink: 0 }}
@@ -309,14 +302,15 @@ export function ConsumptionPage() {
         />
 
         <FilterDropdown
-          label="Method"
+          label="Shift"
           icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-          value={methodFilter}
-          onChange={setMethodFilter}
+          value={shiftFilter}
+          onChange={setShiftFilter}
           minWidth={165}
           options={[
-            { value: 'Direct', label: 'Direct' },
-            { value: 'Sales', label: 'Sales' },
+            { value: 'Morning', label: 'Morning' },
+            { value: 'Afternoon', label: 'Afternoon' },
+            { value: 'Evening', label: 'Evening' },
           ]}
         />
 

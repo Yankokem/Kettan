@@ -8,7 +8,7 @@
 
 ## 1. Full Route Audit (What Exists in Code)
 
-### 28 Routes Registered in `router.tsx`
+### 30 Routes Registered in `router.tsx`
 
 | Route | Page | Status |
 |---|---|---|
@@ -33,6 +33,7 @@
 | `/supply-requests` | SupplyRequestsPage | ✅ Done |
 | `/supply-requests/new` | SupplyRequestCreatePage | ✅ Done |
 | `/consumption` | ConsumptionPage | ✅ Done |
+| `/consumption/new` | ConsumptionCreatePage | ✅ Done |
 | `/returns` | ReturnsPage | ✅ Done |
 | `/returns/new` | ReturnCreatePage | ✅ Done |
 | `/returns/$returnId` | ReturnDetailPage | ✅ Done |
@@ -68,7 +69,7 @@
 |---|---|---|
 | Supply Requests | Queue page with stat cards, filters/sort, dedicated create page, detail route | Draft edit lifecycle polish + full backend detail wiring |
 | Orders | List + detail + new request | Role-based default status tabs |
-| Consumption | Branch Manager operation + Branch Owner view-only history | Detail + correction flow |
+| Consumption | Sales-only queue page with stat cards, search/date/sort/filter, dedicated create page (`/consumption/new`), BranchOwner view-only | Detail route + correction flow |
 | Notifications | Bell icon in header | Backend wiring (mark read/unread) |
 
 ---
@@ -113,6 +114,8 @@
 - [x] Build Supply Request Detail page (`/supply-requests/$requestId`)
 - [x] Improve Supply Requests create form (item picker instead of raw ID)
 - [x] Move create flow to `/supply-requests/new` and keep queue page focused on stat cards + filters/sort + table
+- [x] Move consumption create flow to `/consumption/new` and keep queue page focused on stat cards + filters/sort + table
+- [x] Replace sales mode manual menu-item ID entry with modal-based sold-menu-item selection + quantity entry
 
 ### 🟡 Week 2: Complete the Order Lifecycle UX
 - [ ] Add role-based default tabs on OrdersPage
@@ -140,6 +143,8 @@
 |---|---|
 | Supply Requests vs Orders sidebar | Two separate items. Branch sees "Supply Requests". HQ sees "Order Processing". |
 | Supply Requests creation UX | Dedicated create page (`/supply-requests/new`) with queue page at (`/supply-requests`). |
+| Consumption creation UX | Dedicated create page (`/consumption/new`) with queue page at (`/consumption`) and modal-based sold-menu-item picker for sales mode. |
+| Direct consumption handling | Removed from Consumption module; manual non-sales deductions go through stock-out/adjustment workflows. |
 | Branch Owner permissions | Branch Owner can create/submit supply requests; consumption is view-only for owner. |
 | Branch Inventory page | Not separate — lives inside Branch Profile page as a tab |
 | Consumption correction | No editing past logs. Log new entry with corrective remarks. |
