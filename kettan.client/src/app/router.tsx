@@ -26,6 +26,7 @@ import { SupplyRequestsPage } from '../features/supply-requests/SupplyRequestsPa
 import { SupplyRequestCreatePage } from '../features/supply-requests/SupplyRequestCreatePage';
 import { SupplyRequestDetailPage } from '../features/supply-requests/SupplyRequestDetailPage';
 import { ConsumptionPage } from '../features/consumption/ConsumptionPage';
+import { ConsumptionCreatePage } from '../features/consumption/ConsumptionCreatePage';
 import { ReturnsPage } from '../features/returns/ReturnsPage';
 import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
 import { ReturnCreatePage } from '../features/returns/ReturnCreatePage';
@@ -181,6 +182,12 @@ const consumptionRoute = createRoute({
   component: ConsumptionPage,
 });
 
+const consumptionCreateRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/consumption/new',
+  component: ConsumptionCreatePage,
+});
+
 const returnsRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/returns',
@@ -288,6 +295,7 @@ const routeTree = rootRoute.addChildren([
     supplyRequestCreateRoute,
     supplyRequestDetailRoute,
     consumptionRoute,
+    consumptionCreateRoute,
     returnsRoute,
     returnCreateRoute,
     returnDetailRoute,

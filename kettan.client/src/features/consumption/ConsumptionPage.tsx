@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Paper, Typography } from '@mui/material';
+import { Box, Chip, Grid, Paper, Typography } from '@mui/material';
+import ScaleRoundedIcon from '@mui/icons-material/ScaleRounded';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import PrecisionManufacturingRoundedIcon from '@mui/icons-material/PrecisionManufacturingRounded';
+import TodayRoundedIcon from '@mui/icons-material/TodayRounded';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import type { AxiosError } from 'axios';
+import { useNavigate } from '@tanstack/react-router';
+
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { Button } from '../../components/UI/Button';
-import { Dropdown } from '../../components/UI/Dropdown';
+import { DateRangePicker } from '../../components/UI/DateRangePicker';
+import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { SearchInput } from '../../components/UI/SearchInput';
-import { TextField } from '../../components/UI/TextField';
+import { StatCard } from '../../components/UI/StatCard';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
   fetchConsumptionLogs,
-  logDirectConsumption,
-  logSalesConsumption,
   type ConsumptionLog,
 } from '../branch-operations/api';
 
@@ -21,34 +27,61 @@ function getErrorMessage(error: unknown): string {
   return axiosError.response?.data?.message ?? axiosError.message ?? 'Something went wrong.';
 }
 
+type SortOption = 'newest' | 'oldest' | 'method-asc' | 'method-desc';
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'method-asc', label: 'Method A-Z' },
+  { value: 'method-desc', label: 'Method Z-A' },
+];
+
+function defaultStartDate() {
+  const date = new Date();
+  date.setDate(date.getDate() - 30);
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultEndDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function methodChipStyle(method: string) {
+  if (method.toLowerCase() === 'sales') {
+    return { color: '#2563EB', bg: 'rgba(37,99,235,0.10)', border: 'rgba(37,99,235,0.25)' };
+  }
+
+  return { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)', border: 'rgba(107,76,42,0.25)' };
+}
+
 export function ConsumptionPage() {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
 
   const role = user?.role ?? '';
   const isBranchManager = role === 'BranchManager';
   const isBranchOwner = role === 'BranchOwner';
   const canViewPage = isBranchManager || isBranchOwner;
-  const canOperate = isBranchManager;
+  const canCreateRequests = isBranchManager;
 
-  const [mode, setMode] = useState<'direct' | 'sales'>('direct');
   const [logs, setLogs] = useState<ConsumptionLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-
-  const [itemId, setItemId] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [menuItemId, setMenuItemId] = useState('');
-  const [quantitySold, setQuantitySold] = useState('');
-  const [shift, setShift] = useState('Morning');
-  const [remarks, setRemarks] = useState('');
+  const [methodFilter, setMethodFilter] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [startDate, setStartDate] = useState(defaultStartDate());
+  const [endDate, setEndDate] = useState(defaultEndDate());
 
   const loadLogs = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const rows = await fetchConsumptionLogs();
+      const rows = await fetchConsumptionLogs({
+        from: startDate,
+        to: endDate,
+        method: methodFilter || undefined,
+      });
       setLogs(rows);
     } catch (loadError) {
       setError(getErrorMessage(loadError));
@@ -59,25 +92,57 @@ export function ConsumptionPage() {
 
   useEffect(() => {
     void loadLogs();
-  }, []);
+  }, [endDate, methodFilter, startDate]);
 
-  const filtered = useMemo(() => {
-    const source = Array.isArray(logs) ? logs : [];
+  const safeRows = useMemo(() => {
+    return Array.isArray(logs) ? logs : [];
+  }, [logs]);
+
+  const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    if (!query) {
-      return source;
-    }
+    return safeRows.filter((log) => {
+      const occurredDate = new Date(log.logDate);
+      const fromDate = new Date(`${startDate}T00:00:00`);
+      const toDate = new Date(`${endDate}T23:59:59`);
+      const method = (log.method ?? '').toLowerCase();
 
-    return source.filter((log) => {
-      return (
-        log.consumptionLogId.toString().includes(query) ||
-        log.method.toLowerCase().includes(query) ||
-        (log.shift ?? '').toLowerCase().includes(query) ||
-        (log.remarks ?? '').toLowerCase().includes(query)
-      );
+      const matchesMethod = !methodFilter || method === methodFilter.toLowerCase();
+      const matchesDateRange = occurredDate >= fromDate && occurredDate <= toDate;
+      const matchesQuery =
+        !query ||
+        (
+          log.consumptionLogId.toString().includes(query) ||
+          method.includes(query) ||
+          (log.shift ?? '').toLowerCase().includes(query) ||
+          (log.remarks ?? '').toLowerCase().includes(query)
+        );
+
+      return matchesMethod && matchesDateRange && matchesQuery;
     });
-  }, [logs, search]);
+  }, [endDate, methodFilter, safeRows, search, startDate]);
+
+  const sortedRows = useMemo(() => {
+    const copy = [...filteredRows];
+
+    copy.sort((left, right) => {
+      if (sortBy === 'oldest') {
+        return new Date(left.logDate).getTime() - new Date(right.logDate).getTime();
+      }
+
+      if (sortBy === 'method-asc') {
+        return left.method.localeCompare(right.method);
+      }
+
+      if (sortBy === 'method-desc') {
+        return right.method.localeCompare(left.method);
+      }
+
+      return new Date(right.logDate).getTime() - new Date(left.logDate).getTime();
+    });
+
+    return copy;
+  }, [filteredRows, sortBy]);
 
   const columns: ColumnDef<ConsumptionLog>[] = [
     {
@@ -95,8 +160,10 @@ export function ConsumptionPage() {
       key: 'method',
       label: 'Method',
       width: 130,
+      sortable: true,
       render: (row) => {
-        const isSales = row.method === 'Sales';
+        const style = methodChipStyle(row.method);
+        const isSales = row.method.toLowerCase() === 'sales';
         return (
           <Chip
             icon={isSales ? <LocalCafeRoundedIcon sx={{ fontSize: 15 }} /> : <PrecisionManufacturingRoundedIcon sx={{ fontSize: 15 }} />}
@@ -104,10 +171,10 @@ export function ConsumptionPage() {
             size="small"
             sx={{
               fontSize: 11.5,
-              fontWeight: 700,
-              color: isSales ? '#2563EB' : '#6B4C2A',
-              bgcolor: isSales ? 'rgba(37,99,235,0.1)' : 'rgba(107,76,42,0.12)',
-              border: `1px solid ${isSales ? 'rgba(37,99,235,0.25)' : 'rgba(107,76,42,0.25)'}`,
+              fontWeight: 600,
+              color: style.color,
+              bgcolor: style.bg,
+              border: `1px solid ${style.border}`,
             }}
           />
         );
@@ -122,13 +189,15 @@ export function ConsumptionPage() {
     {
       key: 'remarks',
       label: 'Remarks',
+      sortable: true,
       render: (row) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.remarks || '--'}</Typography>,
     },
     {
       key: 'logDate',
       label: 'Log Date',
-      width: 130,
+      width: 140,
       sortable: true,
+      sortAccessor: (row) => new Date(row.logDate).getTime(),
       render: (row) => (
         <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
           {new Date(row.logDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -136,95 +205,6 @@ export function ConsumptionPage() {
       ),
     },
   ];
-
-  const submitDirect = async () => {
-    if (!canOperate) {
-      setError('Only Branch Manager can submit consumption logs.');
-      return;
-    }
-
-    const parsedItemId = Number(itemId);
-    const parsedQuantity = Number(quantity);
-
-    if (!Number.isInteger(parsedItemId) || parsedItemId <= 0) {
-      setError('Item ID must be a positive whole number.');
-      return;
-    }
-
-    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
-      setError('Quantity must be greater than zero.');
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      setError(null);
-      await logDirectConsumption({
-        logDate: new Date().toISOString(),
-        shift,
-        remarks: remarks || undefined,
-        items: [
-          {
-            itemId: parsedItemId,
-            quantity: parsedQuantity,
-            reason: remarks || 'Consumption',
-          },
-        ],
-      });
-      setItemId('');
-      setQuantity('');
-      setRemarks('');
-      await loadLogs();
-    } catch (saveError) {
-      setError(getErrorMessage(saveError));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const submitSales = async () => {
-    if (!canOperate) {
-      setError('Only Branch Manager can submit consumption logs.');
-      return;
-    }
-
-    const parsedMenuItemId = Number(menuItemId);
-    const parsedQuantitySold = Number(quantitySold);
-
-    if (!Number.isInteger(parsedMenuItemId) || parsedMenuItemId <= 0) {
-      setError('Menu item ID must be a positive whole number.');
-      return;
-    }
-
-    if (!Number.isFinite(parsedQuantitySold) || parsedQuantitySold <= 0) {
-      setError('Quantity sold must be greater than zero.');
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      setError(null);
-      await logSalesConsumption({
-        logDate: new Date().toISOString(),
-        shift,
-        remarks: remarks || undefined,
-        sales: [
-          {
-            menuItemId: parsedMenuItemId,
-            quantitySold: parsedQuantitySold,
-          },
-        ],
-      });
-      setMenuItemId('');
-      setQuantitySold('');
-      setRemarks('');
-      await loadLogs();
-    } catch (saveError) {
-      setError(getErrorMessage(saveError));
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   if (!canViewPage) {
     return (
@@ -239,103 +219,136 @@ export function ConsumptionPage() {
     );
   }
 
+  const todayToken = new Date().toISOString().slice(0, 10);
+
   return (
-    <Box sx={{ pb: 3, pt: 1, display: 'grid', gap: 2.5 }}>
-      {canOperate ? (
-        <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Box>
-              <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Log Branch Consumption</Typography>
-              <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.4 }}>
-                Log direct wastage/usage or sales-based auto consumption.
-              </Typography>
-            </Box>
-            <Dropdown
-              value={mode}
-              onChange={(event) => setMode(event.target.value as 'direct' | 'sales')}
-              options={[
-                { value: 'direct', label: 'Direct Consumption' },
-                { value: 'sales', label: 'Sales Consumption' },
-              ]}
+    <Box sx={{ pb: 3 }}>
+      <Box sx={{ mb: 5 }}>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Logged Transactions"
+              value={safeRows.length}
+              icon={<ScaleRoundedIcon />}
+              trend="up"
+              trendValue="Queue"
+              accentClass="stat-accent-brown"
+              iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
             />
-          </Box>
-
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-              gap: 1.25,
-              mb: 1.25,
-            }}
-          >
-            {mode === 'direct' ? (
-              <>
-                <TextField label="Item ID" value={itemId} onChange={(event) => setItemId(event.target.value)} />
-                <TextField label="Quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
-              </>
-            ) : (
-              <>
-                <TextField label="Menu Item ID" value={menuItemId} onChange={(event) => setMenuItemId(event.target.value)} />
-                <TextField label="Qty Sold" type="number" value={quantitySold} onChange={(event) => setQuantitySold(event.target.value)} />
-              </>
-            )}
-            <Dropdown
-              value={shift}
-              onChange={(event) => setShift(String(event.target.value))}
-              options={[
-                { value: 'Morning', label: 'Morning Shift' },
-                { value: 'Afternoon', label: 'Afternoon Shift' },
-                { value: 'Evening', label: 'Evening Shift' },
-              ]}
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Direct Consumption"
+              value={safeRows.filter((row) => row.method.toLowerCase() === 'direct').length}
+              icon={<PrecisionManufacturingRoundedIcon />}
+              trend="up"
+              trendValue="Manual"
+              accentClass="stat-accent-gold"
+              iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
             />
-          </Box>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Sales Consumption"
+              value={safeRows.filter((row) => row.method.toLowerCase() === 'sales').length}
+              icon={<LocalCafeRoundedIcon />}
+              trend="up"
+              trendValue="Auto"
+              accentClass="stat-accent-sage"
+              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Today"
+              value={safeRows.filter((row) => row.logDate.slice(0, 10) === todayToken).length}
+              icon={<TodayRoundedIcon />}
+              trend="up"
+              trendValue="Current day"
+              accentClass="stat-accent-rust"
+              iconBg="linear-gradient(135deg, #D48C6B 0%, #EAA989 100%)"
+            />
+          </Grid>
+        </Grid>
+      </Box>
 
-          <TextField
-            label="Remarks"
-            value={remarks}
-            onChange={(event) => setRemarks(event.target.value)}
-            multiline
-            rows={2}
-          />
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2.5,
+          gap: 1.2,
+          flexWrap: 'nowrap',
+          overflowX: 'auto',
+          pb: 0.5,
+        }}
+      >
+        <SearchInput
+          placeholder="Search log ID, method, shift, or remarks..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          sx={{ minWidth: 300, maxWidth: 420, flexShrink: 0 }}
+        />
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-            <Button onClick={() => void (mode === 'direct' ? submitDirect() : submitSales())} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Submit Consumption Log'}
-            </Button>
-          </Box>
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={(start, end) => {
+            setStartDate(start);
+            setEndDate(end);
+          }}
+        />
 
-          {error ? (
-            <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 1.2 }}>{error}</Typography>
-          ) : null}
-        </Paper>
-      ) : (
-        <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
-          <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Consumption Logging</Typography>
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
+        <FilterDropdown
+          label="Sort"
+          icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={sortBy}
+          onChange={(value) => setSortBy(value as SortOption)}
+          minWidth={165}
+          options={SORT_OPTIONS}
+        />
+
+        <FilterDropdown
+          label="Method"
+          icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={methodFilter}
+          onChange={setMethodFilter}
+          minWidth={165}
+          options={[
+            { value: 'Direct', label: 'Direct' },
+            { value: 'Sales', label: 'Sales' },
+          ]}
+        />
+
+        <Button
+          startIcon={<AddRoundedIcon />}
+          sx={{ flexShrink: 0, ml: 'auto' }}
+          onClick={() => navigate({ to: '/consumption/new' })}
+          disabled={!canCreateRequests}
+        >
+          Add Consumption
+        </Button>
+      </Box>
+
+      {!canCreateRequests ? (
+        <Paper sx={{ p: 1.35, mb: 1.2, borderRadius: 2, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
             Branch Owner can view consumption history, but only Branch Manager can submit consumption logs.
           </Typography>
         </Paper>
-      )}
+      ) : null}
+
+      {error ? (
+        <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1.2 }}>{error}</Typography>
+      ) : null}
 
       <DataTable
-        title="Consumption History"
-        data={filtered || []}
+        data={sortedRows}
         columns={columns}
         keyExtractor={(row) => row.consumptionLogId.toString()}
         emptyMessage={isLoading ? 'Loading logs...' : 'No consumption logs yet.'}
-        toolbar={
-          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-            <SearchInput
-              placeholder="Search log id, method, shift..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              sx={{ minWidth: 280, maxWidth: 420 }}
-            />
-            <Button variant="outlined" onClick={() => void loadLogs()} disabled={isLoading}>
-              Refresh
-            </Button>
-          </Box>
-        }
+        defaultRowsPerPage={10}
+        pageSizes={[10, 25, 50]}
       />
     </Box>
   );
