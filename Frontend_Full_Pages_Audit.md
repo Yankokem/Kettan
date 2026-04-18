@@ -35,8 +35,6 @@ Last updated: 2026-04-17
 
 | Missing Page/Module | Status | Role Owner |
 |---|---|---|
-| Picking and Packing page (`/picking`) | REMOVED (demo removed) | HqManager, HqStaff |
-| Shipping and Delivery page (`/shipping`) | REMOVED (demo removed) | HqManager, HqStaff |
 | Platform Analytics page (`/analytics`) | NOT DONE | SuperAdmin |
 | Platform Dashboard page (Super Admin) | NOT DONE | SuperAdmin |
 | Tenant Management list page | NOT DONE | SuperAdmin |
