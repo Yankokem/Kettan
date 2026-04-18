@@ -83,7 +83,15 @@ export async function fetchSupplyRequests(status?: string): Promise<SupplyReques
   const response = await api.get<SupplyRequest[]>('/api/SupplyRequests', {
     params: status ? { status } : undefined,
   });
-  return response.data;
+  
+  const payload = response.data as unknown;
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
+    return (payload as { items: SupplyRequest[] }).items;
+  }
+  return [];
 }
 
 export async function createSupplyRequest(payload: CreateSupplyRequestPayload): Promise<SupplyRequest> {
@@ -101,7 +109,15 @@ export async function fetchConsumptionLogs(params?: {
   method?: string;
 }): Promise<ConsumptionLog[]> {
   const response = await api.get<ConsumptionLog[]>('/api/Consumption', { params });
-  return response.data;
+  
+  const payload = response.data as unknown;
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
+    return (payload as { items: ConsumptionLog[] }).items;
+  }
+  return [];
 }
 
 export async function logDirectConsumption(payload: {
@@ -172,7 +188,15 @@ export async function fetchBranchOrders(status?: string): Promise<BranchOrder[]>
   const response = await api.get<BranchOrder[]>('/api/BranchOrders', {
     params: status ? { status } : undefined,
   });
-  return response.data;
+  
+  const payload = response.data as unknown;
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
+    return (payload as { items: BranchOrder[] }).items;
+  }
+  return [];
 }
 
 export async function confirmDelivery(orderId: number, payload: {

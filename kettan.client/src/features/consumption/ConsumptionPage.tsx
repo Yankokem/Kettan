@@ -53,13 +53,14 @@ export function ConsumptionPage() {
   }, []);
 
   const filtered = useMemo(() => {
+    const source = Array.isArray(logs) ? logs : [];
     const query = search.trim().toLowerCase();
 
     if (!query) {
-      return logs;
+      return source;
     }
 
-    return logs.filter((log) => {
+    return source.filter((log) => {
       return (
         log.consumptionLogId.toString().includes(query) ||
         log.method.toLowerCase().includes(query) ||
@@ -277,7 +278,7 @@ export function ConsumptionPage() {
 
       <DataTable
         title="Consumption History"
-        data={filtered}
+        data={filtered || []}
         columns={columns}
         keyExtractor={(row) => row.consumptionLogId.toString()}
         emptyMessage={isLoading ? 'Loading logs...' : 'No consumption logs yet.'}

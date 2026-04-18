@@ -88,7 +88,7 @@ export function SupplyRequestsPage() {
   }, [statusFilter]);
 
   const rows = useMemo(() => {
-    const source = requests;
+    const source = Array.isArray(requests) ? requests : [];
     const query = searchQuery.trim().toLowerCase();
 
     if (!query) {
@@ -321,7 +321,7 @@ export function SupplyRequestsPage() {
 
       <DataTable
         title="Supply Requests"
-        data={rows}
+        data={rows || []}
         columns={columns}
         keyExtractor={(row) => row.requestId.toString()}
         emptyMessage={isLoading ? 'Loading requests...' : 'No supply requests yet.'}
