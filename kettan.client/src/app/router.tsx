@@ -23,6 +23,7 @@ import { MenuCategoriesPage } from '../features/menu/MenuCategoriesPage';
 import { ItemCategoriesPage } from '../features/hq-inventory/ItemCategoriesPage';
 import { VehicleManagementPage } from '../features/hq-inventory/VehicleManagementPage';
 import { SupplyRequestsPage } from '../features/supply-requests/SupplyRequestsPage';
+import { SupplyRequestCreatePage } from '../features/supply-requests/SupplyRequestCreatePage';
 import { SupplyRequestDetailPage } from '../features/supply-requests/SupplyRequestDetailPage';
 import { ConsumptionPage } from '../features/consumption/ConsumptionPage';
 import { ReturnsPage } from '../features/returns/ReturnsPage';
@@ -162,6 +163,12 @@ const supplyRequestsRoute = createRoute({
   component: SupplyRequestsPage,
 });
 
+const supplyRequestCreateRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/supply-requests/new',
+  component: SupplyRequestCreatePage,
+});
+
 const supplyRequestDetailRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/supply-requests/$requestId',
@@ -278,6 +285,7 @@ const routeTree = rootRoute.addChildren([
     newOrderRoute,
     orderDetailRoute,
     supplyRequestsRoute,
+    supplyRequestCreateRoute,
     supplyRequestDetailRoute,
     consumptionRoute,
     returnsRoute,

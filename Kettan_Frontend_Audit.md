@@ -9,7 +9,8 @@ Last updated: 2026-04-18
 | Login (`/login`) | DONE | All users (entry point) |
 | Dashboard (`/`) | DONE | SuperAdmin, TenantAdmin, HqManager, HqStaff, BranchManager, BranchOwner |
 | Supply Requests (`/supply-requests`) | DONE | BranchManager, BranchOwner |
-| Consumption (`/consumption`) | DONE | BranchManager, BranchOwner |
+| Create Supply Request (`/supply-requests/new`) | DONE | BranchManager, BranchOwner |
+| Consumption (`/consumption`) | DONE | BranchManager (operate), BranchOwner (view-only) |
 | Returns list/create (`/returns`) | DONE | BranchManager, BranchOwner, HqManager, HqStaff |
 | Return detail (`/returns/$returnId`) | DONE | BranchManager, BranchOwner, HqManager, HqStaff |
 | Audit Logs (`/audit-logs`) | DONE (frontend-only) | SuperAdmin, TenantAdmin |
@@ -43,7 +44,7 @@ Last updated: 2026-04-18
 | Tenant Management list page | DONE | SuperAdmin |
 | Tenant Detail page | DONE | SuperAdmin |
 | Help and Support page | DONE | SuperAdmin |
-| Supply Request detail page (`/supply-requests/$id`) | NOT DONE | BranchManager, BranchOwner, HqManager |
+| Supply Request detail page (`/supply-requests/$id`) | PARTIAL | BranchManager, BranchOwner |
 | Supply Request edit draft page | NOT DONE | BranchManager, BranchOwner |
 | Return resolution backend history timeline | NOT DONE | HqManager, HqStaff |
 | Notifications center page | NOT DONE | All tenant users |
@@ -53,8 +54,8 @@ Last updated: 2026-04-18
 
 | Page/Module | Current | Missing | Role Owner |
 |---|---|---|---|
-| Supply Requests | List + create + submit done | Detail + edit draft | BranchManager, BranchOwner |
-| Consumption | Log + list done | Detail + correction flow | BranchManager |
+| Supply Requests | Queue page with stats/filter/sort/table + dedicated create route + detail route | Draft edit flow + deeper detail API wiring | BranchManager, BranchOwner |
+| Consumption | BranchManager log + BranchOwner view-only history | Detail + correction flow | BranchManager |
 | Orders | List + detail + request done | Role-based default status tabs (HQ Manager: PendingApproval, HQ Staff: Approved/Picking) | HqManager, HqStaff |
 | Notifications | UI bell exists | Backend wiring not complete | All tenant users |
 

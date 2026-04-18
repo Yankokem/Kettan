@@ -61,8 +61,8 @@ Kettan is a **multi-tenant B2B SaaS** for multi-branch coffee chains. Each subsc
 | **Tenant Admin** | The chain owner. Configures everything: branches, staff, settings, menu items, item categories. Full visibility. |
 | **HQ Manager** | Approves/rejects supply requests. Oversees HQ inventory and fulfillment. Views chain-wide performance. |
 | **HQ Staff** | The warehouse worker. Does stock-in/out, picks, packs, dispatches. Handles physical fulfillment. |
-| **Branch Owner** | Passive oversight. Views their branch's financials, performance, staff. Read-only on most things. |
-| **Branch Manager** | Active operator. Logs consumption, submits supply requests, confirms deliveries, files returns. |
+| **Branch Owner** | Strategic branch operator. Can create/submit supply requests, track requests, confirm deliveries, and file returns. Consumption is view-only. |
+| **Branch Manager** | Daily branch operator. Logs consumption, submits supply requests, confirms deliveries, files returns. |
 
 ### Key Distinction: Users vs Employees
 
@@ -80,13 +80,13 @@ A Branch Manager is BOTH a User and an Employee. A Barista is ONLY an Employee.
 This is the heartbeat of the system:
 
 ```
-Branch staff logs daily consumption
+Branch Manager logs daily consumption
     ↓
 Item drops below threshold → system detects low stock
     ↓
-System auto-drafts a supply request (or Branch Manager creates manually)
+System auto-drafts a supply request (or Branch Owner / Branch Manager creates manually)
     ↓
-Branch Manager reviews, adjusts, submits to HQ
+Branch Owner / Branch Manager reviews, adjusts, submits to HQ
     ↓
 HQ Manager approves (full / partial / reject)
     ↓
@@ -134,7 +134,7 @@ Branch Manager confirms delivery → inventory transfers to branch
 2. When branch stock drops below threshold, system **simultaneously**:
    - Triggers an in-app alert to the Branch Manager
    - Auto-drafts a supply request pre-filled with the low-stock items
-3. Branch Manager reviews, adjusts quantities, and submits to HQ
+3. Branch Owner or Branch Manager reviews, adjusts quantities, and submits to HQ
 4. **EOQ algorithm** suggests optimal reorder quantities
 
 ---
@@ -184,7 +184,7 @@ Supply Requests is **the branch user's view** of the order lifecycle.
 
 ### Who Uses It
 - **Branch Manager** — creates, submits, tracks
-- **Branch Owner** — view only
+- **Branch Owner** — creates, submits, tracks
 
 ### Sidebar Item
 `Supply Requests` → `/supply-requests` (visible to Branch Manager, Branch Owner)
@@ -193,12 +193,12 @@ Supply Requests is **the branch user's view** of the order lifecycle.
 
 | Action | Where | Who |
 |---|---|---|
-| Create new request | Supply Requests page (inline form or `/supply-requests/new`) | Branch Manager |
-| Submit to HQ | Supply Requests page | Branch Manager |
+| Create new request | Create page (`/supply-requests/new`) | Branch Manager, Branch Owner |
+| Submit to HQ | Create page (`/supply-requests/new`) | Branch Manager, Branch Owner |
 | View request detail + track status | `/supply-requests/$requestId` | Branch Manager, Branch Owner |
-| Edit draft before submission | Supply Request Detail page (when status = Draft/AutoDrafted) | Branch Manager |
-| Confirm delivery | Supply Request Detail page (when status = InTransit/Dispatched) | Branch Manager |
-| File return | Supply Request Detail page (when status = Delivered) | Branch Manager |
+| Edit draft before submission | Supply Request Detail page (when status = Draft/AutoDrafted) | Branch Manager, Branch Owner |
+| Confirm delivery | Supply Request Detail page (when status = InTransit/Dispatched) | Branch Manager, Branch Owner |
+| File return | Supply Request Detail page (when status = Delivered) | Branch Manager, Branch Owner |
 
 ### What the Detail Page Shows
 1. Status badge + timeline (reuses OrderFulfillmentStepper)
@@ -245,7 +245,7 @@ Order Processing is **the HQ's view** of the same transactions.
 | `Picking` | HQ Staff | Confirm each item picked (FIFO batch selection shown) → **Mark as Packed** |
 | `Packed` | HQ Staff | Select Courier + Vehicle → Enter ETA → **Dispatch** |
 | `Dispatched` | System | Auto-transitions to `InTransit` |
-| `InTransit` | Branch Manager | **Confirm Delivery** (on their Supply Request Detail page) |
+| `InTransit` | Branch Manager / Branch Owner | **Confirm Delivery** (on their Supply Request Detail page) |
 | `Delivered` | — | Complete. Branch Manager can file return if needed. |
 
 ### The `/orders/new` Page (HQ-Initiated Push)
@@ -460,7 +460,7 @@ Completely separate from tenant operations. Same layout shell, different sidebar
 ↩️ Returns
 📈 Reports (my branch)
 ```
-*(Branch Inventory lives inside the Branch Profile page as a tab — no separate sidebar item.)*
+*(Branch Inventory lives inside the Branch Profile page as a tab — no separate sidebar item. Branch Owner can create/submit supply requests but has view-only access in Consumption Logging.)*
 
 ### Super Admin
 ```

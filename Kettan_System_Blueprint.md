@@ -469,8 +469,8 @@ Every branch has exactly **two key users**:
 
 | Role | Purpose | Can Do |
 |---|---|---|
-| **Branch Owner** | Passive oversight | View branch financials, performance reports, staff list. Read-only on most things. |
-| **Branch Manager** | Active operator | Log consumption, create/submit supply requests, confirm deliveries, file returns, manage daily operations. |
+| **Branch Owner** | Strategic oversight + request authority | Create/submit supply requests, track request status, confirm deliveries, file returns, view branch financials and staff data. Consumption is view-only. |
+| **Branch Manager** | Active daily operator | Log consumption, create/submit supply requests, confirm deliveries, file returns, manage daily operations. |
 
 ### 6.3 Staff Roster — Yes, Include Them (But Keep It Light)
 
@@ -748,11 +748,11 @@ No separate layout component needed — just conditional sidebar rendering based
 | Inventory (HQ) | — | View | Full | Full (stock-in/out) | — | — |
 | Inventory (Branch) | — | View All | View All | — | View Own | Full (consumption) |
 | Menu Items / Recipes | — | Full | Full | View | — | View |
-| Consumption Logging | — | View | View | — | — | Full |
-| Supply Requests | — | View | Approve/Reject | — | View Own | Create/Submit |
+| Consumption Logging | — | View | View | — | View Only | Full |
+| Supply Requests | — | View | Approve/Reject | — | Create/Submit/Track Own | Create/Submit/Track Own |
 | Order Processing | — | View | Approve | Pick/Pack/Dispatch | View Own | View Own |
 | Order Tracking | — | View All | View All | View All | View Own | View Own |
-| Returns | — | View | Resolve | — | View Own | File Returns |
+| Returns | — | View | Resolve | — | File Returns | File Returns |
 | Branches | — | Full | View | — | View Own | View Own |
 | Staff Directory | — | Full | View HQ | — | View Own Branch | View Own Branch |
 | Reports & Finance | — | Full | View | — | Branch-only | Branch-only |
@@ -865,12 +865,12 @@ Notifications
 ### Branch Owner / Branch Manager Sidebar:
 ```
 📊 Dashboard
-📋 Orders (my branch)
-📦 Branch Inventory
+📋 Supply Requests
 📝 Consumption Logging
 ↩️ Returns
 📈 Reports (my branch)
 ```
+*(Branch Owner can create/submit supply requests but has view-only access in Consumption Logging.)*
 
 ### Super Admin Sidebar:
 ```

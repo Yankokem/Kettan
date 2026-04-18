@@ -8,6 +8,7 @@ import { Button } from '../../components/UI/Button';
 import { Dropdown } from '../../components/UI/Dropdown';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { TextField } from '../../components/UI/TextField';
+import { useAuthStore } from '../../store/useAuthStore';
 import {
   fetchConsumptionLogs,
   logDirectConsumption,
@@ -21,6 +22,14 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function ConsumptionPage() {
+  const { user } = useAuthStore();
+
+  const role = user?.role ?? '';
+  const isBranchManager = role === 'BranchManager';
+  const isBranchOwner = role === 'BranchOwner';
+  const canViewPage = isBranchManager || isBranchOwner;
+  const canOperate = isBranchManager;
+
   const [mode, setMode] = useState<'direct' | 'sales'>('direct');
   const [logs, setLogs] = useState<ConsumptionLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,6 +138,11 @@ export function ConsumptionPage() {
   ];
 
   const submitDirect = async () => {
+    if (!canOperate) {
+      setError('Only Branch Manager can submit consumption logs.');
+      return;
+    }
+
     const parsedItemId = Number(itemId);
     const parsedQuantity = Number(quantity);
 
@@ -169,6 +183,11 @@ export function ConsumptionPage() {
   };
 
   const submitSales = async () => {
+    if (!canOperate) {
+      setError('Only Branch Manager can submit consumption logs.');
+      return;
+    }
+
     const parsedMenuItemId = Number(menuItemId);
     const parsedQuantitySold = Number(quantitySold);
 
@@ -207,74 +226,96 @@ export function ConsumptionPage() {
     }
   };
 
+  if (!canViewPage) {
+    return (
+      <Box sx={{ pb: 3, pt: 1 }}>
+        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+          <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Consumption Logging</Typography>
+          <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
+            This module is available for Branch Manager and Branch Owner only.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ pb: 3, pt: 1, display: 'grid', gap: 2.5 }}>
-      <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box>
-            <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Log Branch Consumption</Typography>
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.4 }}>
-              Log direct wastage/usage or sales-based auto consumption.
-            </Typography>
+      {canOperate ? (
+        <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box>
+              <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Log Branch Consumption</Typography>
+              <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.4 }}>
+                Log direct wastage/usage or sales-based auto consumption.
+              </Typography>
+            </Box>
+            <Dropdown
+              value={mode}
+              onChange={(event) => setMode(event.target.value as 'direct' | 'sales')}
+              options={[
+                { value: 'direct', label: 'Direct Consumption' },
+                { value: 'sales', label: 'Sales Consumption' },
+              ]}
+            />
           </Box>
-          <Dropdown
-            value={mode}
-            onChange={(event) => setMode(event.target.value as 'direct' | 'sales')}
-            options={[
-              { value: 'direct', label: 'Direct Consumption' },
-              { value: 'sales', label: 'Sales Consumption' },
-            ]}
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+              gap: 1.25,
+              mb: 1.25,
+            }}
+          >
+            {mode === 'direct' ? (
+              <>
+                <TextField label="Item ID" value={itemId} onChange={(event) => setItemId(event.target.value)} />
+                <TextField label="Quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+              </>
+            ) : (
+              <>
+                <TextField label="Menu Item ID" value={menuItemId} onChange={(event) => setMenuItemId(event.target.value)} />
+                <TextField label="Qty Sold" type="number" value={quantitySold} onChange={(event) => setQuantitySold(event.target.value)} />
+              </>
+            )}
+            <Dropdown
+              value={shift}
+              onChange={(event) => setShift(String(event.target.value))}
+              options={[
+                { value: 'Morning', label: 'Morning Shift' },
+                { value: 'Afternoon', label: 'Afternoon Shift' },
+                { value: 'Evening', label: 'Evening Shift' },
+              ]}
+            />
+          </Box>
+
+          <TextField
+            label="Remarks"
+            value={remarks}
+            onChange={(event) => setRemarks(event.target.value)}
+            multiline
+            rows={2}
           />
-        </Box>
 
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-            gap: 1.25,
-            mb: 1.25,
-          }}
-        >
-          {mode === 'direct' ? (
-            <>
-              <TextField label="Item ID" value={itemId} onChange={(event) => setItemId(event.target.value)} />
-              <TextField label="Quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
-            </>
-          ) : (
-            <>
-              <TextField label="Menu Item ID" value={menuItemId} onChange={(event) => setMenuItemId(event.target.value)} />
-              <TextField label="Qty Sold" type="number" value={quantitySold} onChange={(event) => setQuantitySold(event.target.value)} />
-            </>
-          )}
-          <Dropdown
-            value={shift}
-            onChange={(event) => setShift(String(event.target.value))}
-            options={[
-              { value: 'Morning', label: 'Morning Shift' },
-              { value: 'Afternoon', label: 'Afternoon Shift' },
-              { value: 'Evening', label: 'Evening Shift' },
-            ]}
-          />
-        </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
+            <Button onClick={() => void (mode === 'direct' ? submitDirect() : submitSales())} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Submit Consumption Log'}
+            </Button>
+          </Box>
 
-        <TextField
-          label="Remarks"
-          value={remarks}
-          onChange={(event) => setRemarks(event.target.value)}
-          multiline
-          rows={2}
-        />
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-          <Button onClick={() => void (mode === 'direct' ? submitDirect() : submitSales())} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Submit Consumption Log'}
-          </Button>
-        </Box>
-
-        {error ? (
-          <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 1.2 }}>{error}</Typography>
-        ) : null}
-      </Paper>
+          {error ? (
+            <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 1.2 }}>{error}</Typography>
+          ) : null}
+        </Paper>
+      ) : (
+        <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+          <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Consumption Logging</Typography>
+          <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
+            Branch Owner can view consumption history, but only Branch Manager can submit consumption logs.
+          </Typography>
+        </Paper>
+      )}
 
       <DataTable
         title="Consumption History"

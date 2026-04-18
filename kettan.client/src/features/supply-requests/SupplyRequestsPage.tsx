@@ -1,34 +1,68 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Paper, Typography } from '@mui/material';
-import { useNavigate } from '@tanstack/react-router';
-import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import SendRoundedIcon from '@mui/icons-material/SendRounded';
+import { Box, Chip, Grid, Typography } from '@mui/material';
+import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
+import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
+import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
+import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRounded';
 import type { AxiosError } from 'axios';
+import { useNavigate } from '@tanstack/react-router';
+
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { Button } from '../../components/UI/Button';
-import { Dropdown } from '../../components/UI/Dropdown';
+import { DateRangePicker } from '../../components/UI/DateRangePicker';
+import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { SearchInput } from '../../components/UI/SearchInput';
-import { TextField } from '../../components/UI/TextField';
-import {
-  createSupplyRequest,
-  fetchSupplyRequests,
-  submitSupplyRequest,
-  type SupplyRequest,
-} from '../branch-operations/api';
-import { InventorySelectionModal } from '../orders/components/InventorySelectionModal';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import type { InventoryItem } from '../orders/components/InventoryItemCard';
+import { StatCard } from '../../components/UI/StatCard';
+import { useAuthStore } from '../../store/useAuthStore';
+import { fetchSupplyRequests, type SupplyRequest } from '../branch-operations/api';
+
+type SortOption = 'newest' | 'oldest' | 'branch-asc' | 'branch-desc';
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'branch-asc', label: 'Branch A-Z' },
+  { value: 'branch-desc', label: 'Branch Z-A' },
+];
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string }>;
   return axiosError.response?.data?.message ?? axiosError.message ?? 'Something went wrong.';
 }
 
+function defaultStartDate() {
+  const date = new Date();
+  date.setDate(date.getDate() - 30);
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultEndDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatStatusLabel(status: string) {
+  if (status === 'PendingApproval') {
+    return 'Pending Approval';
+  }
+
+  if (status === 'AutoDrafted') {
+    return 'Auto Drafted';
+  }
+
+  if (status === 'PartiallyApproved') {
+    return 'Partially Approved';
+  }
+
+  return status;
+}
+
 function statusChip(status: string) {
   const normalized = status.toLowerCase();
 
-  if (normalized.includes('pending')) {
+  if (normalized.includes('pending') || normalized.includes('draft')) {
     return { color: '#B45309', bg: 'rgba(180,83,9,0.12)' };
   }
 
@@ -43,77 +77,100 @@ function statusChip(status: string) {
   return { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
 }
 
-const MOCK_INVENTORY: InventoryItem[] = [
-  { id: '1', name: 'Arabica Coffee Beans (Medium Roast) - 5kg', sku: 'CF-ARB-MR-5KG', unit: 'bag', category: 'ingredients', hqStock: 120 },
-  { id: '2', name: 'Almond Milk - 1L Carton', sku: 'MLK-ALM-1L', unit: 'carton', category: 'ingredients', hqStock: 45 },
-  { id: '3', name: 'Vanilla Syrup - 750ml Bottle', sku: 'SYR-VAN-750', unit: 'bottle', category: 'ingredients', hqStock: 0 },
-  { id: '4', name: 'Paper Cups (12oz) - Box of 500', sku: 'PKG-CUP-12-500', unit: 'box', category: 'packaging', hqStock: 85 },
-];
-
 export function SupplyRequestsPage() {
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [requests, setRequests] = useState<SupplyRequest[]>([]);
+  const { user } = useAuthStore();
+
+  const role = user?.role ?? '';
+  const canAccessPage = role === 'BranchManager' || role === 'BranchOwner';
+  const canCreateRequests = role === 'BranchManager' || role === 'BranchOwner';
+
+  const [rows, setRows] = useState<SupplyRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [startDate, setStartDate] = useState(defaultStartDate());
+  const [endDate, setEndDate] = useState(defaultEndDate());
 
-  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-  const [itemId, setItemId] = useState('');
-  const [itemName, setItemName] = useState('');
-  const [quantityRequested, setQuantityRequested] = useState('');
-  const [requestType, setRequestType] = useState('manual');
-  const [priority, setPriority] = useState('normal');
-  const [dispatchWindow, setDispatchWindow] = useState('today');
-  const [dispatchDate, setDispatchDate] = useState('');
-  const [notes, setNotes] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
-
-  const loadRequests = async () => {
+  const loadRows = async () => {
     try {
       setIsLoading(true);
-      setLoadError(null);
-      const rows = await fetchSupplyRequests(statusFilter || undefined);
-      setRequests(rows);
-    } catch (error) {
-      setLoadError(getErrorMessage(error));
+      setError(null);
+      const results = await fetchSupplyRequests();
+      setRows(Array.isArray(results) ? results : []);
+    } catch (loadError) {
+      setError(getErrorMessage(loadError));
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadRequests();
-  }, [statusFilter]);
+    void loadRows();
+  }, []);
 
-  const rows = useMemo(() => {
-    const source = Array.isArray(requests) ? requests : [];
-    const query = searchQuery.trim().toLowerCase();
+  const safeRows = useMemo(() => {
+    return Array.isArray(rows) ? rows : [];
+  }, [rows]);
 
-    if (!query) {
-      return source;
-    }
+  const filteredRows = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-    return source.filter((row) => {
-      return (
+    return safeRows.filter((row) => {
+      const occurredDate = new Date(row.updatedAt);
+      const fromDate = new Date(`${startDate}T00:00:00`);
+      const toDate = new Date(`${endDate}T23:59:59`);
+
+      const branchName = row.branchName?.toLowerCase() ?? '';
+      const requestedBy = row.requestedByName?.toLowerCase() ?? '';
+      const status = row.status?.toLowerCase() ?? '';
+
+      const matchesQuery =
+        !query ||
         row.requestId.toString().includes(query) ||
-        row.branchName.toLowerCase().includes(query) ||
-        row.requestedByName.toLowerCase().includes(query) ||
-        row.status.toLowerCase().includes(query)
-      );
+        branchName.includes(query) ||
+        requestedBy.includes(query) ||
+        status.includes(query);
+
+      const matchesStatus = !statusFilter || row.status === statusFilter;
+      const matchesDateRange = occurredDate >= fromDate && occurredDate <= toDate;
+
+      return matchesQuery && matchesStatus && matchesDateRange;
     });
-  }, [requests, searchQuery]);
+  }, [endDate, safeRows, search, startDate, statusFilter]);
+
+  const sortedRows = useMemo(() => {
+    const copy = [...filteredRows];
+    copy.sort((left, right) => {
+      if (sortBy === 'oldest') {
+        return new Date(left.updatedAt).getTime() - new Date(right.updatedAt).getTime();
+      }
+
+      if (sortBy === 'branch-asc') {
+        return left.branchName.localeCompare(right.branchName);
+      }
+
+      if (sortBy === 'branch-desc') {
+        return right.branchName.localeCompare(left.branchName);
+      }
+
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+    });
+
+    return copy;
+  }, [filteredRows, sortBy]);
 
   const columns: ColumnDef<SupplyRequest>[] = [
     {
       key: 'requestId',
-      label: 'Request',
+      label: 'Request ID',
       width: 120,
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          #{row.requestId}
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
+          SR-{row.requestId}
         </Typography>
       ),
     },
@@ -121,36 +178,52 @@ export function SupplyRequestsPage() {
       key: 'branchName',
       label: 'Branch',
       sortable: true,
-      render: (row) => <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{row.branchName || `Branch ${row.branchId}`}</Typography>,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>
+          {row.branchName || `Branch ${row.branchId}`}
+        </Typography>
+      ),
     },
     {
       key: 'requestedByName',
       label: 'Requested By',
-      render: (row) => <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>{row.requestedByName || `User ${row.requestedByUserId}`}</Typography>,
+      sortable: true,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+          {row.requestedByName || `User ${row.requestedByUserId}`}
+        </Typography>
+      ),
     },
     {
       key: 'items',
-      label: 'Lines',
+      label: 'Items',
       width: 90,
       align: 'center',
-      render: (row) => <Typography sx={{ fontSize: 13 }}>{row.items.length}</Typography>,
+      sortable: true,
+      sortAccessor: (row) => row.items.length,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+          {row.items.length}
+        </Typography>
+      ),
     },
     {
       key: 'status',
       label: 'Status',
       width: 140,
+      sortable: true,
       render: (row) => {
         const style = statusChip(row.status);
         return (
           <Chip
-            label={row.status}
+            label={formatStatusLabel(row.status)}
             size="small"
             sx={{
               fontSize: 11.5,
-              fontWeight: 700,
-              bgcolor: style.bg,
+              fontWeight: 600,
+              background: style.bg,
               color: style.color,
-              border: `1px solid ${style.color}2b`,
+              border: `1px solid ${style.color}28`,
             }}
           />
         );
@@ -158,216 +231,179 @@ export function SupplyRequestsPage() {
     },
     {
       key: 'updatedAt',
-      label: 'Updated',
-      width: 130,
+      label: 'Date Requested',
+      width: 140,
       sortable: true,
+      sortAccessor: (row) => new Date(row.updatedAt).getTime(),
       render: (row) => (
         <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
           {new Date(row.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </Typography>
       ),
     },
+    {
+      key: 'actions',
+      label: 'Actions',
+      width: 110,
+      align: 'right',
+      render: (row) => (
+        <Button
+          size="small"
+          variant="outlined"
+          sx={{ height: 32, px: 1.4 }}
+          onClick={() => navigate({ to: '/supply-requests/$requestId', params: { requestId: String(row.requestId) } })}
+        >
+          Manage
+        </Button>
+      ),
+    },
   ];
 
-  const handleSubmit = async () => {
-    setFormError(null);
-
-    const parsedItemId = Number(itemId);
-    const parsedQty = Number(quantityRequested);
-
-    if (!Number.isInteger(parsedItemId) || parsedItemId <= 0) {
-      setFormError('Item ID must be a positive whole number.');
-      return;
-    }
-
-    if (!Number.isFinite(parsedQty) || parsedQty <= 0) {
-      setFormError('Quantity requested must be greater than zero.');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const created = await createSupplyRequest({
-        requestType,
-        priority,
-        dispatchWindow,
-        dispatchDate: dispatchDate || undefined,
-        notes: notes || undefined,
-        items: [{ itemId: parsedItemId, quantityRequested: parsedQty }],
-      });
-
-      await submitSupplyRequest(created.requestId, created.notes ?? undefined);
-      resetForm();
-      await loadRequests();
-    } catch (error) {
-      setFormError(getErrorMessage(error));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  function resetForm() {
-    setItemId('');
-    setItemName('');
-    setQuantityRequested('');
-    setDispatchDate('');
-    setNotes('');
-    setRequestType('manual');
-    setPriority('normal');
-    setDispatchWindow('today');
-    setFormError(null);
-  }
-
-  const handleItemSelected = (items: { item: InventoryItem; quantity: number; notes: string }[]) => {
-    if (items.length > 0) {
-      setItemId(items[0].item.id);
-      setItemName(items[0].item.name);
-      setIsItemModalOpen(false);
-    }
-  };
-
-  return (
-    <Box sx={{ pb: 3, pt: 1, display: 'grid', gap: 2.5 }}>
-      <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box>
-            <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Create Supply Request</Typography>
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.4 }}>
-              Quick create for branch users. You can add multiple items by submitting one request per line for now.
-            </Typography>
-          </Box>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshRoundedIcon />}
-            onClick={() => void loadRequests()}
-            disabled={isLoading}
-          >
-            Refresh
-          </Button>
-        </Box>
-
+  if (!canAccessPage) {
+    return (
+      <Box sx={{ pb: 3, pt: 1 }}>
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-            gap: 1.25,
-            mb: 1.25,
+            p: 3,
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
           }}
         >
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<SearchRoundedIcon />}
-              onClick={() => setIsItemModalOpen(true)}
-              sx={{ flexShrink: 0, height: 40 }}
-            >
-              Select Item
-            </Button>
-            <TextField 
-              label="Selected Item" 
-              value={itemName || 'None selected'} 
-              slotProps={{ input: { readOnly: true }, inputLabel: { shrink: true } }} 
-              sx={{ flexGrow: 1 }} 
-            />
-          </Box>
-          <TextField label="Quantity Requested" type="number" value={quantityRequested} onChange={(event) => setQuantityRequested(event.target.value)} />
-          <TextField label="Dispatch Date" type="date" value={dispatchDate} onChange={(event) => setDispatchDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
-          <Dropdown
-            value={requestType}
-            onChange={(event) => setRequestType(String(event.target.value))}
-            options={[
-              { value: 'manual', label: 'Manual Request' },
-              { value: 'auto', label: 'Auto Triggered' },
-            ]}
-          />
-          <Dropdown
-            value={priority}
-            onChange={(event) => setPriority(String(event.target.value))}
-            options={[
-              { value: 'low', label: 'Low Priority' },
-              { value: 'normal', label: 'Normal Priority' },
-              { value: 'high', label: 'High Priority' },
-            ]}
-          />
-          <Dropdown
-            value={dispatchWindow}
-            onChange={(event) => setDispatchWindow(String(event.target.value))}
-            options={[
-              { value: 'today', label: 'Dispatch Today' },
-              { value: 'tomorrow', label: 'Dispatch Tomorrow' },
-              { value: 'scheduled', label: 'Scheduled' },
-            ]}
-          />
+          <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Supply Requests</Typography>
+          <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
+            This module is available for Branch Manager and Branch Owner only.
+          </Typography>
         </Box>
+      </Box>
+    );
+  }
 
-        <TextField
-          label="Notes"
-          value={notes}
-          onChange={(event) => setNotes(event.target.value)}
-          multiline
-          rows={2}
+  return (
+    <Box sx={{ pb: 3 }}>
+      <Box sx={{ mb: 5 }}>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Filed Requests"
+              value={safeRows.length}
+              icon={<AssignmentTurnedInRoundedIcon />}
+              trend="up"
+              trendValue="Queue"
+              accentClass="stat-accent-brown"
+              iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Pending Review"
+              value={safeRows.filter((row) => ['Draft', 'AutoDrafted', 'PendingApproval'].includes(row.status)).length}
+              icon={<PendingActionsRoundedIcon />}
+              trend="up"
+              trendValue="Needs action"
+              accentClass="stat-accent-gold"
+              iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Approved"
+              value={safeRows.filter((row) => ['Approved', 'PartiallyApproved'].includes(row.status)).length}
+              icon={<TaskAltRoundedIcon />}
+              trend="up"
+              trendValue="Processed"
+              accentClass="stat-accent-sage"
+              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Rejected"
+              value={safeRows.filter((row) => row.status === 'Rejected').length}
+              icon={<HighlightOffRoundedIcon />}
+              trend="up"
+              trendValue="Needs review"
+              accentClass="stat-accent-rust"
+              iconBg="linear-gradient(135deg, #D48C6B 0%, #EAA989 100%)"
+            />
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2.5,
+          gap: 1.2,
+          flexWrap: 'nowrap',
+          overflowX: 'auto',
+          pb: 0.5,
+        }}
+      >
+        <SearchInput
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search request ID, branch, or requestor..."
+          sx={{ minWidth: 300, maxWidth: 420, flexShrink: 0 }}
         />
 
-        {formError ? (
-          <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 1.2 }}>{formError}</Typography>
-        ) : null}
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={(start, end) => {
+            setStartDate(start);
+            setEndDate(end);
+          }}
+        />
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-          <Button startIcon={<AddShoppingCartRoundedIcon />} onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : 'Create and Submit'}
-          </Button>
-        </Box>
-      </Paper>
+        <FilterDropdown
+          label="Sort"
+          icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={sortBy}
+          onChange={(value) => setSortBy(value as SortOption)}
+          minWidth={165}
+          options={SORT_OPTIONS}
+        />
 
-      <DataTable
-        title="Supply Requests"
-        data={rows || []}
-        columns={columns}
-        keyExtractor={(row) => row.requestId.toString()}
-        emptyMessage={isLoading ? 'Loading requests...' : 'No supply requests yet.'}
-        onRowClick={(row) => navigate({ to: '/supply-requests/$requestId', params: { requestId: row.requestId.toString() } })}
-        toolbar={
-          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-            <SearchInput
-              placeholder="Search request id, branch, requestor..."
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              sx={{ minWidth: 280, maxWidth: 420 }}
-            />
-            <Dropdown
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(String(event.target.value))}
-              options={[
-                { value: '', label: 'All Statuses' },
-                { value: 'Draft', label: 'Draft' },
-                { value: 'AutoDrafted', label: 'Auto-Drafted' },
-                { value: 'PendingApproval', label: 'Pending Approval' },
-                { value: 'Approved', label: 'Approved' },
-                { value: 'PartiallyApproved', label: 'Partially Approved' },
-                { value: 'Rejected', label: 'Rejected' },
-              ]}
-            />
-            <Button
-              variant="outlined"
-              startIcon={<SendRoundedIcon />}
-              disabled
-              title="Inline submit is available from the create flow."
-            >
-              Submit Existing
-            </Button>
-          </Box>
-        }
-      />
+        <FilterDropdown
+          label="Status"
+          icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={statusFilter}
+          onChange={setStatusFilter}
+          minWidth={170}
+          options={[
+            { value: 'Draft', label: 'Draft' },
+            { value: 'AutoDrafted', label: 'Auto-Drafted' },
+            { value: 'PendingApproval', label: 'Pending Approval' },
+            { value: 'Approved', label: 'Approved' },
+            { value: 'PartiallyApproved', label: 'Partially Approved' },
+            { value: 'Rejected', label: 'Rejected' },
+          ]}
+        />
 
-      {loadError ? (
-        <Typography sx={{ color: 'error.main', fontSize: 12.5 }}>{loadError}</Typography>
+        <Button
+          startIcon={<AddShoppingCartRoundedIcon />}
+          sx={{ flexShrink: 0, ml: 'auto' }}
+          onClick={() => navigate({ to: '/supply-requests/new' })}
+          disabled={!canCreateRequests}
+        >
+          Request Supply
+        </Button>
+      </Box>
+
+      {error ? (
+        <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1.2 }}>{error}</Typography>
       ) : null}
 
-      <InventorySelectionModal
-        open={isItemModalOpen}
-        onClose={() => setIsItemModalOpen(false)}
-        onItemsSelected={handleItemSelected}
-        inventory={MOCK_INVENTORY}
+      <DataTable
+        data={sortedRows}
+        columns={columns}
+        keyExtractor={(row) => row.requestId.toString()}
+        emptyMessage={isLoading ? 'Loading supply requests...' : 'No supply requests yet.'}
+        defaultRowsPerPage={10}
+        pageSizes={[10, 25, 50]}
       />
     </Box>
   );

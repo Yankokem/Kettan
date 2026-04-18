@@ -8,7 +8,7 @@
 
 ## 1. Full Route Audit (What Exists in Code)
 
-### 27 Routes Registered in `router.tsx`
+### 28 Routes Registered in `router.tsx`
 
 | Route | Page | Status |
 |---|---|---|
@@ -31,6 +31,7 @@
 | `/orders/new` | NewOrderRequestPage | ✅ Done |
 | `/orders/$orderId` | OrderDetailPage | ✅ Done |
 | `/supply-requests` | SupplyRequestsPage | ✅ Done |
+| `/supply-requests/new` | SupplyRequestCreatePage | ✅ Done |
 | `/consumption` | ConsumptionPage | ✅ Done |
 | `/returns` | ReturnsPage | ✅ Done |
 | `/returns/new` | ReturnCreatePage | ✅ Done |
@@ -65,9 +66,9 @@
 
 | Page | What Exists | What's Missing |
 |---|---|---|
-| Supply Requests | List + inline create form | Detail page, edit draft, item picker |
+| Supply Requests | Queue page with stat cards, filters/sort, dedicated create page, detail route | Draft edit lifecycle polish + full backend detail wiring |
 | Orders | List + detail + new request | Role-based default status tabs |
-| Consumption | Log form + history table | (Complete for current scope) |
+| Consumption | Branch Manager operation + Branch Owner view-only history | Detail + correction flow |
 | Notifications | Bell icon in header | Backend wiring (mark read/unread) |
 
 ---
@@ -96,10 +97,10 @@
 - **Docs define**: `PendingApproval`, `Processing`, `Picking`, `Packed`, `Dispatched`, `InTransit`, `Delivered`, `Rejected`
 - **Fix**: Align to canonical statuses defined in `Kettan_Business_Logic.md` Section 11
 
-### Issue 5: Supply Requests uses raw Item ID input
-- **Where**: `SupplyRequestsPage.tsx` — create form
-- **Problem**: Branch Manager types a raw numeric Item ID
-- **Fix**: Replace with item picker modal (reuse `InventorySelectionModal` from `/orders/new`)
+### Issue 5: Supply Requests list design consistency
+- **Where**: `SupplyRequestsPage.tsx`
+- **Problem**: Page needed stronger consistency with Orders/Returns pattern (stat cards + explicit sort + branch role clarity)
+- **Fix**: Split into queue page (`/supply-requests`) + dedicated create page (`/supply-requests/new`), align list design to Returns, and keep BranchOwner permissions for request creation/submission.
 
 ---
 
@@ -109,8 +110,9 @@
 - [ ] Fix status alignment across all order/supply-request pages
 - [ ] Fix `NewOrderRequestPage` — remove courier field
 - [ ] Fix "Total Revenue" → "Total Fulfillment Cost" on OrdersPage
-- [ ] Build Supply Request Detail page (`/supply-requests/$requestId`)
-- [ ] Improve Supply Requests create form (item picker instead of raw ID)
+- [x] Build Supply Request Detail page (`/supply-requests/$requestId`)
+- [x] Improve Supply Requests create form (item picker instead of raw ID)
+- [x] Move create flow to `/supply-requests/new` and keep queue page focused on stat cards + filters/sort + table
 
 ### 🟡 Week 2: Complete the Order Lifecycle UX
 - [ ] Add role-based default tabs on OrdersPage
@@ -137,6 +139,8 @@
 | Decision | Answer |
 |---|---|
 | Supply Requests vs Orders sidebar | Two separate items. Branch sees "Supply Requests". HQ sees "Order Processing". |
+| Supply Requests creation UX | Dedicated create page (`/supply-requests/new`) with queue page at (`/supply-requests`). |
+| Branch Owner permissions | Branch Owner can create/submit supply requests; consumption is view-only for owner. |
 | Branch Inventory page | Not separate — lives inside Branch Profile page as a tab |
 | Consumption correction | No editing past logs. Log new entry with corrective remarks. |
 | Notifications center page | Dropdown only — no full page. |
