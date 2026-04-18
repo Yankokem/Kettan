@@ -136,7 +136,7 @@ export function OrderDetailPage() {
       </Box>
 
       {/* Stepper Visual */}
-      <OrderFulfillmentStepper activeStepIndex={0} />
+      <OrderFulfillmentStepper status="PendingApproval" />
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 3.5 }}>

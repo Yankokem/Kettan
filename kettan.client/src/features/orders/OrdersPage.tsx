@@ -33,30 +33,33 @@ interface OrderItem {
 }
 
 const MOCK_ORDERS: OrderItem[] = [
-  { id: 'ORD-8894', branch: 'Downtown Main', itemsCount: 14, totalCost: 8540.0, status: 'Pending', date: '2026-04-11' },
+  { id: 'ORD-8894', branch: 'Downtown Main', itemsCount: 14, totalCost: 8540.0, status: 'PendingApproval', date: '2026-04-11' },
   { id: 'ORD-8893', branch: 'Uptown Station', itemsCount: 5, totalCost: 3200.5, status: 'Approved', date: '2026-04-10' },
-  { id: 'ORD-8892', branch: 'Westside Market', itemsCount: 22, totalCost: 11250.0, status: 'Packing', date: '2026-04-08' },
+  { id: 'ORD-8892', branch: 'Westside Market', itemsCount: 22, totalCost: 11250.0, status: 'Picking', date: '2026-04-08' },
   { id: 'ORD-8891', branch: 'Airport Express', itemsCount: 8, totalCost: 5400.0, status: 'Dispatched', date: '2026-04-07' },
   { id: 'ORD-8890', branch: 'Uptown Station', itemsCount: 10, totalCost: 7045.5, status: 'Delivered', date: '2026-04-03', actionedBy: 'Ana Reyes' },
-  { id: 'ORD-8889', branch: 'Downtown Main', itemsCount: 9, totalCost: 4100.0, status: 'Declined', date: '2026-03-31', actionedBy: 'John Cruz' },
-  { id: 'ORD-8888', branch: 'Westside Market', itemsCount: 42, totalCost: 0, status: 'Suspended', date: '2026-03-28', actionedBy: 'System Hold' },
+  { id: 'ORD-8889', branch: 'Downtown Main', itemsCount: 9, totalCost: 4100.0, status: 'Rejected', date: '2026-03-31', actionedBy: 'John Cruz' },
+  { id: 'ORD-8888', branch: 'Westside Market', itemsCount: 3, totalCost: 2350.0, status: 'Returned', date: '2026-03-28', actionedBy: 'Maria Santos' },
 ];
 
-const STATUS_MAP = {
-  Pending: { color: '#B45309', bg: 'rgba(180,83,9,0.12)' },
+const STATUS_MAP: Record<string, { color: string; bg: string }> = {
+  PendingApproval: { color: '#B45309', bg: 'rgba(180,83,9,0.12)' },
   Approved: { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' },
-  Packing: { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' },
+  Processing: { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' },
+  Picking: { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
+  Packed: { color: '#0891B2', bg: 'rgba(8,145,178,0.12)' },
   Dispatched: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
-  Suspended: { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
+  InTransit: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
   Delivered: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
-  Declined: { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
+  Rejected: { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
+  Returned: { color: '#9333EA', bg: 'rgba(147,51,234,0.10)' },
 };
 
 type DatasetMode = 'active' | 'history';
 type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
 
-const ACTIVE_STATUSES: OrderActionStatus[] = ['Pending', 'Approved', 'Packing', 'Dispatched'];
-const HISTORY_STATUSES: OrderActionStatus[] = ['Delivered', 'Declined', 'Suspended'];
+const ACTIVE_STATUSES: OrderActionStatus[] = ['PendingApproval', 'Approved', 'Processing', 'Picking', 'Packed'];
+const HISTORY_STATUSES: OrderActionStatus[] = ['Dispatched', 'InTransit', 'Delivered', 'Rejected', 'Returned'];
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
@@ -72,7 +75,7 @@ function getColumns(
   onViewDetails: (orderId: string) => void,
   onApprove: (orderId: string) => void,
   onProceed: (orderId: string) => void,
-  onDecline: (orderId: string) => void,
+  onReject: (orderId: string) => void,
 ): ColumnDef<OrderItem>[] {
   const baseColumns: ColumnDef<OrderItem>[] = [
     {
@@ -122,10 +125,11 @@ function getColumns(
       label: 'Status',
       width: 130,
       render: (row) => {
-        const st = STATUS_MAP[row.status];
+        const st = STATUS_MAP[row.status] || { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
+        const displayLabel = row.status === 'PendingApproval' ? 'Pending Approval' : row.status === 'InTransit' ? 'In Transit' : row.status;
         return (
           <Chip
-            label={row.status}
+            label={displayLabel}
             size="small"
             sx={{
               fontSize: 11.5,
@@ -176,7 +180,7 @@ function getColumns(
         onViewDetails={onViewDetails}
         onApprove={onApprove}
         onProceed={onProceed}
-        onDecline={onDecline}
+        onReject={onReject}
       />
     ),
   };
@@ -247,7 +251,7 @@ export function OrdersPage() {
     navigate({ to: '/orders/$orderId', params: { orderId } });
   };
 
-  const handleDecline = (orderId: string) => {
+  const handleReject = (orderId: string) => {
     navigate({ to: '/orders/$orderId', params: { orderId } });
   };
 
@@ -259,7 +263,7 @@ export function OrdersPage() {
     }
   };
 
-  const columns = getColumns(datasetMode, openDetails, handleApprove, handleProceed, handleDecline);
+  const columns = getColumns(datasetMode, openDetails, handleApprove, handleProceed, handleReject);
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -269,7 +273,7 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Pending Requests"
-              value={MOCK_ORDERS.filter((o) => o.status === 'Pending').length.toString()}
+              value={MOCK_ORDERS.filter((o) => o.status === 'PendingApproval').length.toString()}
               trend="up"
               trendValue="1.5%"
               icon={<AccessTimeRoundedIcon />}
@@ -279,8 +283,8 @@ export function OrdersPage() {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              label="Orders Packing"
-              value={MOCK_ORDERS.filter((o) => o.status === 'Packing').length.toString()}
+              label="Orders Picking"
+              value={MOCK_ORDERS.filter((o) => o.status === 'Picking' || o.status === 'Packed').length.toString()}
               trend="up"
               trendValue="2.4%"
               icon={<LocalMallRoundedIcon />}
@@ -301,7 +305,7 @@ export function OrdersPage() {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              label="Total Revenue"
+              label="Total Fulfillment Cost"
               value={`₱${MOCK_ORDERS.reduce((acc, o) => acc + o.totalCost, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               trend="up"
               trendValue="1.2%"
@@ -437,7 +441,7 @@ export function OrdersPage() {
                 onOpen={openDetails}
                 onApprove={handleApprove}
                 onProceed={handleProceed}
-                onDecline={handleDecline}
+                onReject={handleReject}
               />
             ))
           ) : (

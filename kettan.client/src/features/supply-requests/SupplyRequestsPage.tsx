@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Chip, Paper, Typography } from '@mui/material';
+import { useNavigate } from '@tanstack/react-router';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRounded';
@@ -40,6 +41,7 @@ function statusChip(status: string) {
 }
 
 export function SupplyRequestsPage() {
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [requests, setRequests] = useState<SupplyRequest[]>([]);
@@ -287,6 +289,7 @@ export function SupplyRequestsPage() {
         columns={columns}
         keyExtractor={(row) => row.requestId.toString()}
         emptyMessage={isLoading ? 'Loading requests...' : 'No supply requests yet.'}
+        onRowClick={(row) => navigate({ to: '/supply-requests/$requestId', params: { requestId: row.requestId.toString() } })}
         toolbar={
           <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
             <SearchInput
@@ -301,8 +304,10 @@ export function SupplyRequestsPage() {
               options={[
                 { value: '', label: 'All Statuses' },
                 { value: 'Draft', label: 'Draft' },
+                { value: 'AutoDrafted', label: 'Auto-Drafted' },
                 { value: 'PendingApproval', label: 'Pending Approval' },
                 { value: 'Approved', label: 'Approved' },
+                { value: 'PartiallyApproved', label: 'Partially Approved' },
                 { value: 'Rejected', label: 'Rejected' },
               ]}
             />

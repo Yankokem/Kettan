@@ -7,13 +7,16 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 
 export type OrderActionStatus =
-  | 'Pending'
+  | 'PendingApproval'
   | 'Approved'
-  | 'Packing'
+  | 'Processing'
+  | 'Picking'
+  | 'Packed'
   | 'Dispatched'
-  | 'Suspended'
+  | 'InTransit'
   | 'Delivered'
-  | 'Declined';
+  | 'Rejected'
+  | 'Returned';
 
 interface OrderRowActionsMenuProps {
   orderId: string;
@@ -21,7 +24,7 @@ interface OrderRowActionsMenuProps {
   onViewDetails: (orderId: string) => void;
   onApprove: (orderId: string) => void;
   onProceed: (orderId: string) => void;
-  onDecline: (orderId: string) => void;
+  onReject: (orderId: string) => void;
 }
 
 export function OrderRowActionsMenu({
@@ -30,13 +33,13 @@ export function OrderRowActionsMenu({
   onViewDetails,
   onApprove,
   onProceed,
-  onDecline,
+  onReject,
 }: OrderRowActionsMenuProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const isPending = status === 'Pending';
-  const canProceed = status === 'Approved' || status === 'Packing' || status === 'Dispatched';
+  const isPending = status === 'PendingApproval';
+  const canProceed = status === 'Approved' || status === 'Processing' || status === 'Picking' || status === 'Packed';
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -116,11 +119,11 @@ export function OrderRowActionsMenu({
         ) : null}
 
         {isPending ? (
-          <MenuItem onClick={(event) => runAction(event, () => onDecline(orderId))}>
+          <MenuItem onClick={(event) => runAction(event, () => onReject(orderId))}>
             <ListItemIcon>
               <CancelRoundedIcon fontSize="small" sx={{ color: '#B91C1C' }} />
             </ListItemIcon>
-            <Typography sx={{ color: '#B91C1C', fontSize: 14, fontWeight: 500 }}>Decline</Typography>
+            <Typography sx={{ color: '#B91C1C', fontSize: 14, fontWeight: 500 }}>Reject</Typography>
           </MenuItem>
         ) : null}
       </Menu>

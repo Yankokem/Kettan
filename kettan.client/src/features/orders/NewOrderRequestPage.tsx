@@ -22,11 +22,6 @@ const BRANCHES = [
   { value: 'bgc', label: 'BGC Reserve - Central District' }
 ];
 
-const VEHICLES = [
-  { value: 'van_1', label: 'Juan Delivery Services - Van 1' },
-  { value: 'van_2', label: 'Juan Delivery Services - Van 2' },
-  { value: 'truck_1', label: 'Metro Fleet - Truck 1' },
-];
 
 const REQUEST_PRIORITIES = [
   { value: 'normal', label: 'Normal Priority' },
@@ -59,7 +54,6 @@ export function NewOrderRequestPage() {
   const { user } = useAuthStore();
 
   const [selectedBranch, setSelectedBranch] = useState(BRANCHES[0].value);
-  const [selectedVehicle, setSelectedVehicle] = useState(VEHICLES[0].value);
   const [selectedPriority, setSelectedPriority] = useState(REQUEST_PRIORITIES[0].value);
   const [requestType, setRequestType] = useState(REQUEST_TYPES[0].value);
   const [dispatchWindow, setDispatchWindow] = useState(DISPATCH_WINDOWS[1].value);
@@ -132,11 +126,11 @@ export function NewOrderRequestPage() {
           <Box sx={{ flex: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
               <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-                New Internal Request
+                New HQ Supply Push
               </Typography>
               <Chip label="Draft" size="small" sx={{ fontWeight: 700, fontSize: 11 }} />
               <Chip
-                label="Internal Transfer"
+                label="HQ-Initiated Transfer"
                 size="small"
                 sx={{
                   fontWeight: 700,
@@ -148,7 +142,7 @@ export function NewOrderRequestPage() {
               />
             </Box>
             <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-              Build a branch replenishment request with stock-aware line items, dispatch intent, and clear operational notes.
+              Build an HQ-initiated supply shipment to a branch — for proactive loadouts, new branch setups, or seasonal restocking.
             </Typography>
           </Box>
         </Box>
@@ -178,15 +172,6 @@ export function NewOrderRequestPage() {
                   options={BRANCHES}
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value as string)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.2, color: 'text.secondary' }}>Courier Vehicle</Typography>
-                <Dropdown
-                  options={VEHICLES}
-                  value={selectedVehicle}
-                  onChange={(e) => setSelectedVehicle(e.target.value as string)}
                   fullWidth
                 />
               </Grid>
