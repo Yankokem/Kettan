@@ -24,6 +24,37 @@ export interface ItemCategoryFormData {
   isActive: boolean;
 }
 
+export interface Courier {
+  id: string;
+  name: string;
+  contactNumber?: string;
+  isActive: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+}
+
+export interface Vehicle {
+  id: string;
+  courierId: string;
+  courier?: Courier;
+  plateNumber: string;
+  vehicleType: string;
+  description?: string;
+  isActive: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+}
+
+export interface VehicleFormData {
+  courierId: string;
+  plateNumber: string;
+  vehicleType: string;
+  description: string;
+  isActive: boolean;
+}
+
 // Legacy type alias for backwards compatibility
 export type InventoryCategoryType = 'beans' | 'syrup' | 'milk' | 'packaging' | 'equipment';
 

@@ -4,6 +4,8 @@ import type {
   InventoryItem,
   Batch,
   InventoryTransaction,
+  Courier,
+  Vehicle,
 } from './types';
 
 // Mock Units
@@ -67,6 +69,77 @@ export const MOCK_CATEGORIES: InventoryCategory[] = [
     isDeleted: false,
     deletedAt: null,
     createdAt: '2026-01-15T08:00:00Z',
+  },
+];
+
+export const MOCK_COURIERS: Courier[] = [
+  {
+    id: 'cr-1',
+    name: 'Marco Reyes',
+    contactNumber: '0917-210-4455',
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-02-12T08:00:00Z',
+  },
+  {
+    id: 'cr-2',
+    name: 'Ana Dela Cruz',
+    contactNumber: '0917-532-1188',
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-02-14T08:00:00Z',
+  },
+  {
+    id: 'cr-3',
+    name: 'Jayson Lim',
+    contactNumber: '0922-701-9322',
+    isActive: false,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-02-18T08:00:00Z',
+  },
+];
+
+const getCourier = (id: string) => MOCK_COURIERS.find((courier) => courier.id === id);
+
+export const MOCK_VEHICLES: Vehicle[] = [
+  {
+    id: 'vh-1',
+    courierId: 'cr-1',
+    courier: getCourier('cr-1'),
+    plateNumber: 'NGA-4512',
+    vehicleType: 'Van',
+    description: 'Primary route for central branches',
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-03-01T07:30:00Z',
+  },
+  {
+    id: 'vh-2',
+    courierId: 'cr-1',
+    courier: getCourier('cr-1'),
+    plateNumber: 'MCD-1407',
+    vehicleType: 'Motorcycle',
+    description: 'Small urgent shipments',
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-03-03T07:30:00Z',
+  },
+  {
+    id: 'vh-3',
+    courierId: 'cr-2',
+    courier: getCourier('cr-2'),
+    plateNumber: 'TBH-9210',
+    vehicleType: 'Pickup',
+    description: 'Bulk inventory transfer',
+    isActive: false,
+    isDeleted: false,
+    deletedAt: null,
+    createdAt: '2026-03-05T07:30:00Z',
   },
 ];
 

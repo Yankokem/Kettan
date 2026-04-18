@@ -12,6 +12,7 @@ import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
 import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
@@ -418,6 +419,13 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
           onClick={() => navigate({ to: '/hq-inventory/categories' })}
         >
           Item Categories
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<LocalShippingRoundedIcon />}
+          onClick={() => navigate({ to: '/hq-inventory/vehicles' })}
+        >
+          Vehicles
         </Button>
         <Button
           startIcon={<CallReceivedRoundedIcon />}

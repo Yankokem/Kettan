@@ -1,6 +1,6 @@
 # Frontend Done vs Not Done (Simple)
 
-Last updated: 2026-04-17
+Last updated: 2026-04-18
 
 ## DONE (with role owner)
 
@@ -22,8 +22,11 @@ Last updated: 2026-04-17
 | Company profile (`/company-profile`) | DONE | SuperAdmin, TenantAdmin |
 | HQ Inventory (`/hq-inventory`) | DONE | HqManager, HqStaff, TenantAdmin |
 | HQ Inventory transaction (`/hq-inventory/transaction`) | DONE | HqManager, HqStaff, TenantAdmin |
+| Item Category management (`/hq-inventory/categories`) | DONE (frontend-only) | TenantAdmin, HqManager, HqStaff |
+| Vehicle management (`/hq-inventory/vehicles`) | DONE (frontend-only) | TenantAdmin, HqManager, HqStaff |
 | HQ Inventory item profile (`/hq-inventory/$itemId`) | DONE | HqManager, HqStaff, TenantAdmin |
 | Menu list (`/menu`) | DONE | HqManager, HqStaff, TenantAdmin |
+| Menu Category management (`/menu/categories`) | DONE (frontend-only) | TenantAdmin, HqManager, HqStaff |
 | Add menu item (`/menu/add`) | DONE | HqManager, HqStaff, TenantAdmin |
 | Menu item profile (`/menu/$menuItemId`) | DONE | HqManager, HqStaff, TenantAdmin |
 | Staff directory (`/staff`) | DONE | TenantAdmin, HqManager, BranchManager |
@@ -43,9 +46,6 @@ Last updated: 2026-04-17
 | Supply Request detail page (`/supply-requests/$id`) | NOT DONE | BranchManager, BranchOwner, HqManager |
 | Supply Request edit draft page | NOT DONE | BranchManager, BranchOwner |
 | Return resolution backend history timeline | NOT DONE | HqManager, HqStaff |
-| Item Category management page (create/add/edit) | NOT DONE | TenantAdmin, HqManager |
-| Menu Category management page (create/add/edit) | NOT DONE | TenantAdmin, HqManager |
-| Vehicle management page (create/add/edit) | NOT DONE | TenantAdmin, HqManager |
 | Notifications center page | NOT DONE | All tenant users |
 | Bell notifications fully API-wired (read/unread, mark all read) | NOT DONE | All tenant users |
 
@@ -55,12 +55,8 @@ Last updated: 2026-04-17
 |---|---|---|---|
 | Supply Requests | List + create + submit done | Detail + edit draft | BranchManager, BranchOwner |
 | Consumption | Log + list done | Detail + correction flow | BranchManager |
-| Returns | List + detail + resolve dialog done | Backend-persisted remarks/history timeline | BranchManager, HqManager, HqStaff |
 | Orders | List + detail + request done | Role-based default status tabs (HQ Manager: PendingApproval, HQ Staff: Approved/Picking) | HqManager, HqStaff |
-| Category management | Item/Menu category entities planned | Category CRUD pages | TenantAdmin, HqManager |
-| Vehicle management | Vehicle entity planned for dispatch | Vehicle CRUD page | TenantAdmin, HqManager |
 | Notifications | UI bell exists | Backend wiring not complete | All tenant users |
-| Audit Logs | Sidebar + route + page implemented | Backend API persistence/filtering wiring | SuperAdmin, TenantAdmin |
 
 ## CLEANUP NEEDED
 
@@ -68,12 +64,6 @@ Last updated: 2026-04-17
 |---|---|---|
 | Duplicate marketing sources (`kettan.client/src/features/marketing/*` vs `market/*`) | TODO | TenantAdmin/Product owner decision |
 | `.new.tsx` marketing variants still present | TODO | Frontend dev |
-
-## Immediate next 3 pages to build
-
-1. Item Category management page - TenantAdmin, HqManager  
-2. Menu Category management page - TenantAdmin, HqManager  
-3. Vehicle management page - TenantAdmin, HqManager
 
 ## Decision Lock (Order Flow)
 

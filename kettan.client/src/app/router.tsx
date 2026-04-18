@@ -21,6 +21,7 @@ import { AddMenuItemPage } from '../features/menu/AddMenuItemPage';
 import { MenuItemProfilePage } from '../features/menu/MenuItemProfilePage';
 import { MenuCategoriesPage } from '../features/menu/MenuCategoriesPage';
 import { ItemCategoriesPage } from '../features/hq-inventory/ItemCategoriesPage';
+import { VehicleManagementPage } from '../features/hq-inventory/VehicleManagementPage';
 import { SupplyRequestsPage } from '../features/supply-requests/SupplyRequestsPage';
 import { ConsumptionPage } from '../features/consumption/ConsumptionPage';
 import { ReturnsPage } from '../features/returns/ReturnsPage';
@@ -100,6 +101,12 @@ const itemCategoriesRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/hq-inventory/categories',
   component: ItemCategoriesPage,
+});
+
+const vehiclesRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/hq-inventory/vehicles',
+  component: VehicleManagementPage,
 });
 
 const inventoryProfileRoute = createRoute({
@@ -227,6 +234,7 @@ const routeTree = rootRoute.addChildren([
     inventoryRoute,
     inventoryTransactionRoute,
     itemCategoriesRoute,
+    vehiclesRoute,
     inventoryProfileRoute,
     companyProfileRoute,
     settingsRoute,

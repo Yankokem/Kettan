@@ -1,24 +1,30 @@
 import { useMemo, useState } from 'react';
-import { Box, Grid, Paper, Typography } from '@mui/material';
+import { Box, Chip, Grid, IconButton, Paper, Typography } from '@mui/material';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
+import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
+import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
+import { ViewToggle } from '../../components/UI/ViewToggle';
 import { MenuCategoryCard } from './components/MenuCategoryCard';
 import { createMenuCategory, listMenuCategories, softDeleteMenuCategory, updateMenuCategory } from './menuCategoryApi';
 import type { MenuCategory, MenuCategoryFormData } from './types';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
 type SortFilter = 'order-asc' | 'order-desc' | 'name-asc' | 'name-desc';
+type CategoryViewMode = 'cards' | 'table';
 
 const INITIAL_FORM: MenuCategoryFormData = {
   name: '',
@@ -33,6 +39,7 @@ export function MenuCategoriesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortFilter, setSortFilter] = useState<SortFilter>('order-asc');
+  const [viewMode, setViewMode] = useState<CategoryViewMode>('cards');
   const [showDeleted, setShowDeleted] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MenuCategory | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -147,6 +154,70 @@ export function MenuCategoriesPage() {
     setDeleteTarget(null);
     reloadCategories();
   };
+
+  const tableColumns: ColumnDef<MenuCategory>[] = [
+    {
+      key: 'name',
+      label: 'Category',
+      sortable: true,
+      render: (category) => <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{category.name}</Typography>,
+    },
+    {
+      key: 'displayOrder',
+      label: 'Order',
+      width: 100,
+      align: 'center',
+      sortable: true,
+      render: (category) => <Typography sx={{ fontSize: 13 }}>{category.displayOrder}</Typography>,
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      width: 120,
+      align: 'center',
+      sortable: true,
+      sortAccessor: (category) => (category.isActive ? 1 : 0),
+      render: (category) => (
+        <Chip
+          size="small"
+          label={category.isActive ? 'Active' : 'Inactive'}
+          sx={{
+            fontSize: 11.5,
+            fontWeight: 700,
+            bgcolor: category.isActive ? 'rgba(84,107,63,0.12)' : 'rgba(148, 163, 184, 0.16)',
+            color: category.isActive ? '#546B3F' : '#475569',
+            border: `1px solid ${category.isActive ? 'rgba(84,107,63,0.22)' : 'rgba(148, 163, 184, 0.28)'}`,
+          }}
+        />
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      width: 90,
+      align: 'right',
+      render: (category) => (
+        <IconButton
+          size="small"
+          aria-label={`Delete ${category.name}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            setDeleteTarget(category);
+          }}
+          sx={{
+            width: 30,
+            height: 30,
+            color: '#B91C1C',
+            border: '1px solid rgba(185, 28, 28, 0.25)',
+            bgcolor: 'rgba(185, 28, 28, 0.04)',
+            '&:hover': { bgcolor: 'rgba(185, 28, 28, 0.1)' },
+          }}
+        >
+          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+        </IconButton>
+      ),
+    },
+  ];
 
   return (
     <Box sx={{ pb: 3, pt: 1 }}>
@@ -283,36 +354,57 @@ export function MenuCategoriesPage() {
                   { value: 'include', label: 'Include Deleted' },
                 ]}
               />
+
+              <ViewToggle
+                value={viewMode}
+                options={[
+                  { value: 'cards', label: 'Cards', icon: <ViewModuleRoundedIcon fontSize="small" /> },
+                  { value: 'table', label: 'Table', icon: <ViewListRoundedIcon fontSize="small" /> },
+                ]}
+                onChange={setViewMode}
+              />
             </Box>
 
-            <Box
-              sx={{
-                maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
-                overflowY: { xs: 'visible', lg: 'auto' },
-                pr: { xs: 0, lg: 0.8 },
-              }}
-            >
-              {visibleCategories.length === 0 ? (
-                <Box sx={{ py: 8, textAlign: 'center' }}>
-                  <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
-                    No categories found for your filters.
-                  </Typography>
-                </Box>
-              ) : (
-                <Grid container spacing={1.8}>
-                  {visibleCategories.map((category) => (
-                    <Grid key={category.id} size={{ xs: 12, md: 6 }}>
-                      <MenuCategoryCard
-                        category={category}
-                        selected={selectedCategoryId === category.id}
-                        onSelect={() => handleSelectCategory(category)}
-                        onDelete={() => setDeleteTarget(category)}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
-            </Box>
+            {viewMode === 'cards' ? (
+              <Box
+                sx={{
+                  maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
+                  overflowY: { xs: 'visible', lg: 'auto' },
+                  pr: { xs: 0, lg: 0.8 },
+                }}
+              >
+                {visibleCategories.length === 0 ? (
+                  <Box sx={{ py: 8, textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
+                      No categories found for your filters.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Grid container spacing={1.8}>
+                    {visibleCategories.map((category) => (
+                      <Grid key={category.id} size={{ xs: 12, md: 6 }}>
+                        <MenuCategoryCard
+                          category={category}
+                          selected={selectedCategoryId === category.id}
+                          onSelect={() => handleSelectCategory(category)}
+                          onDelete={() => setDeleteTarget(category)}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                )}
+              </Box>
+            ) : (
+              <DataTable
+                data={visibleCategories}
+                columns={tableColumns}
+                keyExtractor={(category) => category.id}
+                emptyMessage="No categories found for your filters."
+                defaultRowsPerPage={10}
+                pageSizes={[10, 25, 50]}
+                onRowClick={(category) => handleSelectCategory(category)}
+              />
+            )}
           </Box>
         </Box>
       </Paper>
