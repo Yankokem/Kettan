@@ -35,17 +35,16 @@ Last updated: 2026-04-18
 | Staff profile (`/staff/$staffId`) | DONE | TenantAdmin, HqManager, BranchManager |
 | Settings (`/settings`) | DONE | SuperAdmin, TenantAdmin |
 | Reports (`/reports`) | DONE | TenantAdmin, BranchOwner, HqManager |
+| Platform Analytics (`/analytics`) | DONE | SuperAdmin |
+| Tenant Management (`/tenants`) | DONE | SuperAdmin |
+| Tenant Detail (`/tenants/$tenantId`) | DONE | SuperAdmin |
+| Help and Support (`/help`) | DONE | SuperAdmin |
 
 ## NOT DONE (with role owner)
 
 | Missing Page/Module | Status | Role Owner |
 |---|---|---|
-| Platform Analytics page (`/analytics`) | DONE | SuperAdmin |
-| Platform Dashboard page (Super Admin) | DONE | SuperAdmin |
-| Tenant Management list page | DONE | SuperAdmin |
-| Tenant Detail page | DONE | SuperAdmin |
-| Help and Support page | DONE | SuperAdmin |
-| Supply Request detail page (`/supply-requests/$id`) | PARTIAL | BranchManager, BranchOwner |
+| Supply Request detail page (`/supply-requests/$requestId`) | PARTIAL (UI parity done; mock/sample-backed) | BranchManager, BranchOwner |
 | Supply Request edit draft page | NOT DONE | BranchManager, BranchOwner |
 | Return resolution backend history timeline | NOT DONE | HqManager, HqStaff |
 | Notifications center page | NOT DONE | All tenant users |
@@ -55,8 +54,8 @@ Last updated: 2026-04-18
 
 | Page/Module | Current | Missing | Role Owner |
 |---|---|---|---|
-| Supply Requests | Queue page with stats/filter/sort/table + dedicated create route + detail route | Draft edit flow + deeper detail API wiring | BranchManager, BranchOwner |
-| Consumption | Sales-only queue page with stat cards + search/date/sort/filter and dedicated create route | Detail + correction flow + backend sold-today menu feed | BranchManager |
+| Supply Requests | Queue page with stats/filter/sort/table + dedicated create route + componentized detail route matching Order detail layout; sample fallback dataset enabled for preview | Draft edit flow + deeper detail API wiring (detail currently mock-backed) | BranchManager, BranchOwner |
+| Consumption | Sales-only queue page with stat cards + search/date/sort/filter + dedicated create route + sold-item modal picker | Detail + correction flow + backend sold-today menu feed | BranchManager |
 | Orders | List + detail + request done | Role-based default status tabs (HQ Manager: PendingApproval, HQ Staff: Approved/Picking) | HqManager, HqStaff |
 | Notifications | UI bell exists | Backend wiring not complete | All tenant users |
 
