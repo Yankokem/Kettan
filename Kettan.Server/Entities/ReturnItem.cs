@@ -26,7 +26,6 @@ public class ReturnItem : ITenantEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal QuantityReturned { get; set; }
 
-    [Required]
-    [MaxLength(120)]
-    public required string Reason { get; set; }
+    [MaxLength(500)]
+    public string? Reason { get; set; }
 }

@@ -15,6 +15,18 @@ public class Tenant
     [MaxLength(50)]
     public string SubscriptionTier { get; set; } = "Starter";
 
+    [MaxLength(255)]
+    public string? Email { get; set; }
+
+    [MaxLength(50)]
+    public string? Phone { get; set; }
+
+    [MaxLength(500)]
+    public string? Address { get; set; }
+
+    [MaxLength(500)]
+    public string? LogoUrl { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public int? CurrentSubscriptionId { get; set; }

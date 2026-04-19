@@ -27,7 +27,7 @@ public class OrderStatusHistoryDto
 {
     public int HistoryId { get; set; }
     public string Status { get; set; } = string.Empty;
-    public int ChangedByUserId { get; set; }
+    public int? ChangedByUserId { get; set; }
     public string ChangedByName { get; set; } = string.Empty;
     public string? Remarks { get; set; }
     public DateTime Timestamp { get; set; }

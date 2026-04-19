@@ -64,6 +64,11 @@ public class ApplicationDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
+        // Enforce one shipment per order.
+        modelBuilder.Entity<Shipment>()
+            .HasIndex(s => s.OrderId)
+            .IsUnique();
+
         // MenuItemTag Composite Key
         modelBuilder.Entity<MenuItemTag>()
             .HasKey(mt => new { mt.MenuItemId, mt.TagId });

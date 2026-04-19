@@ -1,7 +1,7 @@
 # Kettan — Backend Implementation Checklist
 
 > Derived from a full audit of `Kettan.Server/` codebase vs `schema.sql` vs `Kettan_Backend_Blueprint.md`.
-> Last updated: 2026-04-19
+> Last updated: 2026-04-19 (Phase 1 closure patch applied and verified)
 
 ---
 
@@ -14,9 +14,9 @@
 | **Controllers** | 9 real controllers (Auth, Branches, BranchOrders, Consumption, Notifications, Returns, SupplyRequests, Tenants, Users) | Missing: ItemsController, MenuItemsController, HQ OrdersController, EmployeesController, CouriersController, SettingsController, ReportsController, SubscriptionController |
 | **Services** | Auth, CurrentUser, SupplyRequest, Consumption, OrderWorkflow, Return, Notification | Missing: InventoryService (FIFO engine), AnalyticsService, EmailService, SubscriptionService |
 | **DTOs** | Auth, Branches, Consumption, Notifications, Orders, Returns, SupplyRequests, Tenants, Users | Missing DTOs for: Items, MenuItems, Employees, Couriers/Vehicles, Settings, Reports, Subscription |
-| **Seeder** | Full generic coffee shop data (Items, Batches, Menu, Recipes) | None |
+| **Seeder** | Phase 1 seed coverage complete (lookups, items, FIFO batches, menu, employees, subscription, courier/vehicle) | None |
 | **Middleware** | None | SubscriptionCheckMiddleware, AuditLogMiddleware |
-| **Migrations** | `FullSchemaAlignment` (Migration 0) | Future operational migrations |
+| **Migrations** | `FullSchemaAlignment` + `Phase1ClosurePatch` | Future operational migrations |
 
 ---
 
@@ -81,6 +81,24 @@
   - [x] Seed SubscriptionPlans (Starter, Growth, Enterprise)
   - [x] Seed sample Courier + Vehicle
 - [x] Verify seeder runs cleanly from `dotnet run`
+
+### 1E. Phase 1 Verification Snapshot (2026-04-19)
+
+- [x] Migration `Phase1ClosurePatch` applied successfully via EF Core (`dotnet ef database update`)
+- [x] Schema checks passed:
+  - [x] `Tenants` includes `Email`, `Phone`, `Address`, `LogoUrl`
+  - [x] `OrderStatusHistories.ChangedBy_UserId` is nullable
+  - [x] `ReturnItems.Reason` is nullable `NVARCHAR(500)`
+  - [x] `Shipments.OrderId` has unique index
+- [x] Seed count checks passed in local DB (`KettanDB`):
+  - [x] `Units = 8`
+  - [x] `InventoryCategories = 5`
+  - [x] `MenuCategories = 4`
+  - [x] `Items = 10`
+  - [x] `Batches = 20` (2+ per item)
+  - [x] `Employees = 4`
+  - [x] `Couriers = 1`
+  - [x] `Vehicles = 1`
 
 ---
 

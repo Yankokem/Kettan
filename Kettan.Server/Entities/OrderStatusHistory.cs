@@ -22,7 +22,7 @@ public class OrderStatusHistory : ITenantEntity
     [MaxLength(50)]
     public required string Status { get; set; }
 
-    public int ChangedBy_UserId { get; set; }
+    public int? ChangedBy_UserId { get; set; }
 
     [ForeignKey(nameof(ChangedBy_UserId))]
     public User? ChangedBy_User { get; set; }
