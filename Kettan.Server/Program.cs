@@ -6,6 +6,7 @@ using Kettan.Server.Data;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Services.Auth;
 using Kettan.Server.Services.BranchOperations;
+using Kettan.Server.Services.Inventory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,7 @@ builder.Services.AddScoped<ISupplyRequestService, SupplyRequestService>();
 builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
 builder.Services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
 builder.Services.AddScoped<IReturnService, ReturnService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 // Add Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

@@ -108,78 +108,96 @@
 
 ### 2A. Inventory Service (CRITICAL — the heart of the system)
 
-- [ ] `Services/Inventory/IInventoryService.cs` — Interface
-- [ ] `Services/Inventory/InventoryService.cs` — Implementation:
-  - [ ] `StockIn(itemId, qty, batchNumber, expiryDate)` — Create batch at HQ, log InventoryTransaction
-  - [ ] `StockOut(itemId, qty, reason)` — FIFO deduction from HQ batches
-  - [ ] `DeductFIFO(itemId, branchId, qty)` — Core FIFO engine (iterate oldest→newest batches)
-  - [ ] `GetStockLevel(itemId, branchId?)` — Sum of batch quantities
-  - [ ] `CheckThresholds(branchId)` — Compare stock vs thresholds, return alerts
-  - [ ] `TransferToBranch(batchId, branchId, qty)` — Batch location transfer + transaction log
-- [ ] Register `IInventoryService` in `Program.cs`
+- [x] `Services/Inventory/IInventoryService.cs` — Interface
+- [x] `Services/Inventory/InventoryService.cs` — Implementation:
+  - [x] `StockIn(itemId, qty, batchNumber, expiryDate)` — Create batch at HQ, log InventoryTransaction
+  - [x] `StockOut(itemId, qty, reason)` — FIFO deduction from HQ batches
+  - [x] `DeductFIFO(itemId, branchId, qty)` — Core FIFO engine (iterate oldest→newest batches)
+  - [x] `GetStockLevel(itemId, branchId?)` — Sum of batch quantities
+  - [x] `CheckThresholds(branchId)` — Compare stock vs thresholds, return alerts
+  - [x] `TransferToBranch(batchId, branchId, qty)` — Batch location transfer + transaction log
+- [x] Register `IInventoryService` in `Program.cs`
 
 ### 2B. Items Controller & DTOs
 
-- [ ] `DTOs/Items/ItemDto.cs` (list/detail response)
-- [ ] `DTOs/Items/CreateItemDto.cs`
-- [ ] `DTOs/Items/UpdateItemDto.cs`
-- [ ] `DTOs/Items/StockInDto.cs`
-- [ ] `DTOs/Items/StockOutDto.cs`
-- [ ] `DTOs/Items/BatchDto.cs`
-- [ ] `DTOs/Items/TransactionDto.cs`
-- [ ] `Controllers/ItemsController.cs`:
-  - [ ] `GET /api/items` — List (filterable by category, type, search)
-  - [ ] `POST /api/items` — Create item
-  - [ ] `GET /api/items/{id}` — Detail + batches
-  - [ ] `PUT /api/items/{id}` — Update
-  - [ ] `POST /api/items/{id}/stock-in` — Receive stock
-  - [ ] `POST /api/items/{id}/stock-out` — Adjust stock (FIFO)
-  - [ ] `GET /api/items/{id}/batches` — Batch list
-  - [ ] `GET /api/items/{id}/transactions` — Transaction ledger
+- [x] `DTOs/Items/ItemDto.cs` (list/detail response)
+- [x] `DTOs/Items/CreateItemDto.cs`
+- [x] `DTOs/Items/UpdateItemDto.cs`
+- [x] `DTOs/Items/StockInDto.cs`
+- [x] `DTOs/Items/StockOutDto.cs`
+- [x] `DTOs/Items/BatchDto.cs`
+- [x] `DTOs/Items/TransactionDto.cs`
+- [x] `Controllers/ItemsController.cs`:
+  - [x] `GET /api/items` — List (filterable by category, type, search)
+  - [x] `POST /api/items` — Create item
+  - [x] `GET /api/items/{id}` — Detail + batches
+  - [x] `PUT /api/items/{id}` — Update
+  - [x] `POST /api/items/{id}/stock-in` — Receive stock
+  - [x] `POST /api/items/{id}/stock-out` — Adjust stock (FIFO)
+  - [x] `GET /api/items/{id}/batches` — Batch list
+  - [x] `GET /api/items/{id}/transactions` — Transaction ledger
 
 ### 2C. Menu Items Controller & DTOs
 
-- [ ] `DTOs/MenuItems/MenuItemDto.cs`
-- [ ] `DTOs/MenuItems/CreateMenuItemDto.cs`
-- [ ] `DTOs/MenuItems/UpdateMenuItemDto.cs`
-- [ ] `DTOs/MenuItems/VariantDto.cs`
-- [ ] `Controllers/MenuItemsController.cs`:
-  - [ ] `GET /api/menu-items` — List
-  - [ ] `POST /api/menu-items` — Create with recipe (variants + ingredients)
-  - [ ] `GET /api/menu-items/{id}` — Detail with ingredients
-  - [ ] `PUT /api/menu-items/{id}` — Update
-  - [ ] `DELETE /api/menu-items/{id}` — Soft delete
+- [x] `DTOs/MenuItems/MenuItemDto.cs`
+- [x] `DTOs/MenuItems/CreateMenuItemDto.cs`
+- [x] `DTOs/MenuItems/UpdateMenuItemDto.cs`
+- [x] `DTOs/MenuItems/VariantDto.cs`
+- [x] `Controllers/MenuItemsController.cs`:
+  - [x] `GET /api/menu-items` — List
+  - [x] `POST /api/menu-items` — Create with recipe (variants + ingredients)
+  - [x] `GET /api/menu-items/{id}` — Detail with ingredients
+  - [x] `PUT /api/menu-items/{id}` — Update
+  - [x] `DELETE /api/menu-items/{id}` — Soft delete
 
 ### 2D. Settings Controllers (Lookup Tables CRUD)
 
-- [ ] `Controllers/SettingsController.cs` or separate per resource:
-  - [ ] `GET/POST /api/item-categories`
-  - [ ] `GET/POST /api/inventory-categories`
-  - [ ] `GET/POST /api/units`
-  - [ ] `GET/POST /api/menu-categories`
-  - [ ] `GET/POST /api/menu-tags`
-- [ ] DTOs for each lookup type
+- [x] `Controllers/SettingsController.cs` or separate per resource:
+  - [x] `GET/POST /api/item-categories`
+  - [x] `GET/POST /api/inventory-categories`
+  - [x] `GET/POST /api/units`
+  - [x] `GET/POST /api/menu-categories`
+  - [x] `GET/POST /api/menu-tags`
+- [x] DTOs for each lookup type
 
 ### 2E. Employees Controller
 
-- [ ] `DTOs/Employees/EmployeeDto.cs`
-- [ ] `DTOs/Employees/CreateEmployeeDto.cs`
-- [ ] `DTOs/Employees/UpdateEmployeeDto.cs`
-- [ ] `Controllers/EmployeesController.cs`:
-  - [ ] `GET /api/employees` — List (filterable by branch)
-  - [ ] `GET /api/employees/{id}` — Detail
-  - [ ] `POST /api/employees` — Create
-  - [ ] `PUT /api/employees/{id}` — Update
+- [x] `DTOs/Employees/EmployeeDto.cs`
+- [x] `DTOs/Employees/CreateEmployeeDto.cs`
+- [x] `DTOs/Employees/UpdateEmployeeDto.cs`
+- [x] `Controllers/EmployeesController.cs`:
+  - [x] `GET /api/employees` — List (filterable by branch)
+  - [x] `GET /api/employees/{id}` — Detail
+  - [x] `POST /api/employees` — Create
+  - [x] `PUT /api/employees/{id}` — Update
 
 ### 2F. Couriers & Vehicles Controller
 
-- [ ] `DTOs/Couriers/CourierDto.cs`
-- [ ] `DTOs/Couriers/VehicleDto.cs`
-- [ ] `Controllers/CouriersController.cs`:
-  - [ ] `GET /api/couriers` — List
-  - [ ] `POST /api/couriers` — Create courier
-  - [ ] `GET /api/couriers/{id}/vehicles` — Vehicles for courier
-  - [ ] `POST /api/vehicles` — Create vehicle
+- [x] `DTOs/Couriers/CourierDto.cs`
+- [x] `DTOs/Couriers/VehicleDto.cs`
+- [x] `Controllers/CouriersController.cs`:
+  - [x] `GET /api/couriers` — List
+  - [x] `POST /api/couriers` — Create courier
+  - [x] `GET /api/couriers/{id}/vehicles` — Vehicles for courier
+  - [x] `POST /api/vehicles` — Create vehicle
+
+### 2G. Phase 2 Verification Snapshot (2026-04-19)
+
+- [x] Build checks passed:
+  - [x] `dotnet build Kettan.Server.csproj -o .\\tmp-build3` succeeded
+  - [x] Runtime build lock issue handled by alternate output folder while another debug process held `bin/Debug`
+- [x] Runtime smoke checks passed (Development env, local DB):
+  - [x] Unauthenticated route checks return `401` for new secured endpoints (`/api/items`, `/api/menu-items`, `/api/item-categories`, `/api/inventory-categories`, `/api/units`, `/api/menu-categories`, `/api/menu-tags`, `/api/employees`, `/api/couriers`)
+  - [x] Authenticated HQ Manager (`hqmanager@dummycorp.local` / `password123`) gets `200` on new Phase 2 GET endpoints
+  - [x] Inventory write flow validated: `POST /api/items/{id}/stock-in` and `POST /api/items/{id}/stock-out` both return `200`
+  - [x] CRUD write smoke validated:
+    - [x] `POST /api/item-categories` → `200`
+    - [x] `POST /api/units` valid payload → `200`
+    - [x] `POST /api/units` oversized symbol → `400` (validation guard)
+    - [x] `POST /api/employees` → `201`
+    - [x] `POST /api/couriers` → `200`
+    - [x] `POST /api/vehicles` → `200`
+    - [x] `POST /api/menu-items` → `201`
 
 ---
 
