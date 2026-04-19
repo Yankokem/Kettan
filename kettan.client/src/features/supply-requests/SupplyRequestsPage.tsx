@@ -29,6 +29,26 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 const SAMPLE_SUPPLY_REQUESTS: SupplyRequest[] = [
   {
+    requestId: 8900,
+    branchId: 3,
+    branchName: 'Downtown Main',
+    requestedByUserId: 21,
+    requestedByName: 'Maria Santos',
+    status: 'Draft',
+    requestType: 'Manual Internal Request',
+    priority: 'Normal',
+    dispatchWindow: 'Next Business Day',
+    dispatchDate: null,
+    notes: 'Weekly restocking draft — confirm quantities before submitting.',
+    createdAt: '2026-04-19T06:10:00Z',
+    updatedAt: '2026-04-19T06:10:00Z',
+    items: [
+      { requestItemId: 10, itemId: 1001, itemName: 'Arabica Coffee Beans', itemSku: 'CF-ARB-MR-5KG', quantityRequested: 6, quantityApproved: null },
+      { requestItemId: 11, itemId: 1005, itemName: 'Whole Milk - 1L', itemSku: 'MLK-WHL-1L', quantityRequested: 20, quantityApproved: null },
+      { requestItemId: 12, itemId: 1004, itemName: 'Paper Cups (12oz)', itemSku: 'PKG-CUP-12-500', quantityRequested: 3, quantityApproved: null },
+    ],
+  },
+  {
     requestId: 8894,
     branchId: 3,
     branchName: 'Downtown Main',

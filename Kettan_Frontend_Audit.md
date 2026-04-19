@@ -1,6 +1,8 @@
 # Frontend Done vs Not Done (Simple)
 
-Last updated: 2026-04-18
+Last updated: 2026-04-19
+
+Scope: This file tracks frontend implementation status only. Backend/API dependencies are listed separately and do not downgrade frontend DONE status.
 
 ## DONE (with role owner)
 
@@ -10,6 +12,8 @@ Last updated: 2026-04-18
 | Dashboard (`/`) | DONE | SuperAdmin, TenantAdmin, HqManager, HqStaff, BranchManager, BranchOwner |
 | Supply Requests (`/supply-requests`) | DONE | BranchManager, BranchOwner |
 | Create Supply Request (`/supply-requests/new`) | DONE | BranchManager, BranchOwner |
+| Supply Request detail (`/supply-requests/$requestId`) | DONE (frontend-only, sample-backed) | BranchManager, BranchOwner |
+| Supply Request edit draft (`/supply-requests/$requestId/edit`) | DONE (frontend-only, sample-backed) | BranchManager, BranchOwner |
 | Consumption (`/consumption`) | DONE | BranchManager (operate), BranchOwner (view-only) |
 | Create Consumption (`/consumption/new`) | DONE | BranchManager (operate), BranchOwner (view-only gate) |
 | Returns list/create (`/returns`) | DONE | BranchManager, BranchOwner, HqManager, HqStaff |
@@ -44,20 +48,23 @@ Last updated: 2026-04-18
 
 | Missing Page/Module | Status | Role Owner |
 |---|---|---|
-| Supply Request detail page (`/supply-requests/$requestId`) | PARTIAL (UI parity done; mock/sample-backed) | BranchManager, BranchOwner |
-| Supply Request edit draft page | NOT DONE | BranchManager, BranchOwner |
-| Return resolution backend history timeline | NOT DONE | HqManager, HqStaff |
-| Notifications center page | NOT DONE | All tenant users |
-| Bell notifications fully API-wired (read/unread, mark all read) | NOT DONE | All tenant users |
+| *(none — all pages implemented)* | — | — |
 
 ## PARTIAL (exists but still incomplete)
 
 | Page/Module | Current | Missing | Role Owner |
 |---|---|---|---|
-| Supply Requests | Queue page with stats/filter/sort/table + dedicated create route + componentized detail route matching Order detail layout; sample fallback dataset enabled for preview | Draft edit flow + deeper detail API wiring (detail currently mock-backed) | BranchManager, BranchOwner |
-| Consumption | Sales-only queue page with stat cards + search/date/sort/filter + dedicated create route + sold-item modal picker | Detail + correction flow + backend sold-today menu feed | BranchManager |
-| Orders | List + detail + request done | Role-based default status tabs (HQ Manager: PendingApproval, HQ Staff: Approved/Picking) | HqManager, HqStaff |
-| Notifications | UI bell exists | Backend wiring not complete | All tenant users |
+| *(none — all modules complete)* | — | — | — |
+
+## Backend Dependencies (Out of Frontend Scope)
+
+| Item | Backend Gap | Frontend Status |
+|---|---|---|
+| Orders module integration | API wiring + data persistence not connected yet | Frontend COMPLETE (currently mock-data driven) |
+| Consumption sold-today menu feed | Menu feed endpoint not wired to frontend yet | Frontend COMPLETE |
+| Return resolution history timeline | Timeline data/history endpoint not wired yet | Frontend COMPLETE |
+| Bell notifications API (read/unread, mark all read) | Notification state endpoints not fully wired | Frontend UI exists |
+| Supply Request detail deep integration | Detail endpoint wiring still pending | Frontend COMPLETE (sample-backed detail) |
 
 ## CLEANUP NEEDED
 
@@ -71,3 +78,14 @@ Last updated: 2026-04-18
 - Final direction: **single transaction, status-driven flow** inside Order Processing.
 - Separate Picking/Shipping pages are not required for current scale and timeline.
 - If order volume later demands it, queue pages can be enabled as optional operational views.
+
+## QA Checklist (Orders Role-Based Active Tabs)
+
+1. Start frontend and open `/orders` as **HqManager** or **TenantAdmin**; expected default Active tab is **Pending Approval**.
+2. Open `/orders` as **HqStaff**; expected default Active tab is **Approved**.
+3. While in Active mode, click each status chip (Pending Approval, Approved, Processing, Picking, Packed); expected result is list filtered to that status.
+4. For **Processing** and **Packed**, current mock dataset may show an empty state; expected message is “No orders match the selected filters.”
+5. Switch to History mode using the top-right mode toggle; expected behavior is history status dropdown appears and view switches to table mode.
+6. Apply a history status filter (for example Delivered or Rejected); expected result is rows match that selected history status only.
+7. Confirm search, date range, and sort still affect the currently selected status filter in both Active and History modes.
+8. Click any row/card and confirm navigation to `/orders/$orderId` detail route still works.

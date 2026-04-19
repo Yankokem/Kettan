@@ -14,3 +14,12 @@ The following steps were used to generate this project:
 - Update proxy endpoint to be the backend server endpoint.
 - Add project to the startup projects list.
 - Write this file.
+
+## 2026-04-18
+
+- Implemented role-based default Active status tabs on Orders page (`/orders`).
+- Role default behavior:
+	- HqManager and TenantAdmin default to PendingApproval.
+	- HqStaff defaults to Approved.
+- Active mode now uses status chips/tabs; History mode continues using status dropdown.
+- Orders list remains mock-data driven while backend/API persistence is pending.

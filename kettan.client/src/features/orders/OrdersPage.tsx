@@ -58,9 +58,11 @@ const STATUS_MAP: Record<string, { color: string; bg: string }> = {
 
 type DatasetMode = 'active' | 'history';
 type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
+type ActiveStatusTab = 'PendingApproval' | 'Approved' | 'Processing' | 'Picking' | 'Packed';
 
 const ACTIVE_STATUSES: OrderActionStatus[] = ['PendingApproval', 'Approved', 'Processing', 'Picking', 'Packed'];
 const HISTORY_STATUSES: OrderActionStatus[] = ['Dispatched', 'InTransit', 'Delivered', 'Rejected', 'Returned'];
+const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['PendingApproval', 'Approved', 'Processing', 'Picking', 'Packed'];
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
@@ -70,6 +72,30 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'items-high', label: 'Most Items' },
   { value: 'items-low', label: 'Least Items' },
 ];
+
+function getStatusDisplayLabel(status: OrderActionStatus): string {
+  if (status === 'PendingApproval') {
+    return 'Pending Approval';
+  }
+
+  if (status === 'InTransit') {
+    return 'In Transit';
+  }
+
+  return status;
+}
+
+function getDefaultActiveStatusByRole(role?: string): ActiveStatusTab {
+  if (role === 'HqManager' || role === 'TenantAdmin') {
+    return 'PendingApproval';
+  }
+
+  if (role === 'HqStaff') {
+    return 'Approved';
+  }
+
+  return 'PendingApproval';
+}
 
 function getColumns(
   mode: DatasetMode,
@@ -127,7 +153,7 @@ function getColumns(
       width: 130,
       render: (row) => {
         const st = STATUS_MAP[row.status] || { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
-        const displayLabel = row.status === 'PendingApproval' ? 'Pending Approval' : row.status === 'InTransit' ? 'In Transit' : row.status;
+        const displayLabel = getStatusDisplayLabel(row.status);
         return (
           <Chip
             label={displayLabel}
@@ -198,13 +224,9 @@ export function OrdersPage() {
   const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
   const [viewMode, setViewMode] = useState<OrdersListViewMode>('card');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const initialStatusFilter = user?.role === 'HqManager' || user?.role === 'TenantAdmin' 
-    ? 'PendingApproval' 
-    : user?.role === 'HqStaff' 
-      ? 'Approved' 
-      : '';
-  const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
+
+  const [activeStatusTab, setActiveStatusTab] = useState<ActiveStatusTab>(() => getDefaultActiveStatusByRole(user?.role));
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<OrderActionStatus | ''>('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   const source = MOCK_ORDERS.filter((order) => {
@@ -219,7 +241,9 @@ export function OrdersPage() {
       order.id.toLowerCase().includes(query) ||
       order.branch.toLowerCase().includes(query) ||
       (order.actionedBy || '').toLowerCase().includes(query);
-    const matchesStatus = !statusFilter || order.status === statusFilter;
+    const matchesStatus = datasetMode === 'active'
+      ? order.status === activeStatusTab
+      : !historyStatusFilter || order.status === historyStatusFilter;
     const inRange = order.date >= startDate && order.date <= endDate;
     return matchesQuery && matchesStatus && inRange;
   });
@@ -242,9 +266,9 @@ export function OrdersPage() {
     }
   });
 
-  const statusOptions = (datasetMode === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES).map((status) => ({
+  const historyStatusOptions = HISTORY_STATUSES.map((status) => ({
     value: status,
-    label: status,
+    label: getStatusDisplayLabel(status),
   }));
 
   const openDetails = (orderId: string) => {
@@ -265,8 +289,8 @@ export function OrdersPage() {
 
   const handleDatasetModeChange = (nextMode: DatasetMode) => {
     setDatasetMode(nextMode);
-    setStatusFilter('');
     if (nextMode === 'history') {
+      setHistoryStatusFilter('');
       setViewMode('table');
     }
   };
@@ -362,14 +386,61 @@ export function OrdersPage() {
           options={SORT_OPTIONS}
         />
 
-        <FilterDropdown
-          label="Status"
-          icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-          value={statusFilter}
-          onChange={setStatusFilter}
-          minWidth={120}
-          options={statusOptions}
-        />
+        {datasetMode === 'active' ? (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.8,
+              px: 0.75,
+              py: 0.5,
+              border: '1px solid',
+              borderColor: 'rgba(107, 76, 42, 0.3)',
+              borderRadius: 2,
+              bgcolor: 'background.paper',
+              flexShrink: 0,
+              overflowX: 'auto',
+            }}
+          >
+            {ACTIVE_STATUS_TABS.map((status) => {
+              const isSelected = activeStatusTab === status;
+
+              return (
+                <Chip
+                  key={status}
+                  label={getStatusDisplayLabel(status)}
+                  size="small"
+                  onClick={() => setActiveStatusTab(status)}
+                  sx={{
+                    height: 30,
+                    borderRadius: 1.5,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    bgcolor: isSelected ? '#6B4C2A' : 'transparent',
+                    color: isSelected ? '#fff' : 'text.secondary',
+                    border: '1px solid',
+                    borderColor: isSelected ? '#6B4C2A' : 'divider',
+                    '&:hover': {
+                      borderColor: '#6B4C2A',
+                      color: isSelected ? '#fff' : '#6B4C2A',
+                      bgcolor: isSelected ? '#5A3E23' : 'rgba(107, 76, 42, 0.06)',
+                    },
+                  }}
+                />
+              );
+            })}
+          </Box>
+        ) : (
+          <FilterDropdown
+            label="Status"
+            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+            value={historyStatusFilter}
+            onChange={(value) => setHistoryStatusFilter(value as OrderActionStatus | '')}
+            minWidth={120}
+            options={historyStatusOptions}
+          />
+        )}
 
         <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.2, flexShrink: 0 }}>
           <Tooltip title="Active Orders">

@@ -28,6 +28,56 @@ export function getSupplyRequestStatusLabel(status: SupplyRequestLifecycleStatus
 }
 
 const SAMPLE_DETAIL_BY_REQUEST_ID: Record<number, SupplyRequestDetailViewModel> = {
+  8900: {
+    requestNumber: 'SR-08900',
+    status: 'Draft',
+    branchName: 'Downtown Main',
+    requestedByName: 'Maria Santos',
+    requestedByRole: 'Branch Manager',
+    submittedAtLabel: 'Apr 19, 2026 - 2:10 PM',
+    priority: 'Normal',
+    requestType: 'Manual Internal Request',
+    dispatchWindow: 'Next Business Day',
+    notes: 'Weekly restocking draft — confirm quantities before submitting.',
+    linkedOrderId: undefined,
+    items: [
+      {
+        id: '1',
+        name: 'Arabica Coffee Beans (Medium Roast) - 5kg',
+        sku: 'CF-ARB-MR-5KG',
+        requestedQty: 6,
+        approvedQty: null,
+        hqStock: 120,
+        availability: 'Available',
+      },
+      {
+        id: '2',
+        name: 'Whole Milk - 1L',
+        sku: 'MLK-WHL-1L',
+        requestedQty: 20,
+        approvedQty: null,
+        hqStock: 60,
+        availability: 'Available',
+      },
+      {
+        id: '3',
+        name: 'Paper Cups (12oz) - Box of 500',
+        sku: 'PKG-CUP-12-500',
+        requestedQty: 3,
+        approvedQty: null,
+        hqStock: 45,
+        availability: 'Available',
+      },
+    ],
+    timeline: [
+      {
+        status: 'Draft',
+        timestamp: '2026-04-19T06:10:00Z',
+        actor: 'Maria Santos',
+        remarks: 'Draft created for weekly replenishment cycle.',
+      },
+    ],
+  },
   8894: {
     requestNumber: 'SR-08894',
     status: 'PendingApproval',

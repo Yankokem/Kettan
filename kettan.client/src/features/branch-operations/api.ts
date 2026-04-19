@@ -103,6 +103,14 @@ export async function submitSupplyRequest(requestId: number, notes?: string): Pr
   await api.post(`/api/SupplyRequests/${requestId}/submit`, { notes });
 }
 
+export async function updateSupplyRequest(
+  requestId: number,
+  payload: Omit<CreateSupplyRequestPayload, 'branchId'>,
+): Promise<SupplyRequest> {
+  const response = await api.put<SupplyRequest>(`/api/SupplyRequests/${requestId}`, payload);
+  return response.data;
+}
+
 export async function fetchConsumptionLogs(params?: {
   from?: string;
   to?: string;

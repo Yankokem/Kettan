@@ -25,6 +25,7 @@ import { VehicleManagementPage } from '../features/hq-inventory/VehicleManagemen
 import { SupplyRequestsPage } from '../features/supply-requests/SupplyRequestsPage';
 import { SupplyRequestCreatePage } from '../features/supply-requests/SupplyRequestCreatePage';
 import { SupplyRequestDetailPage } from '../features/supply-requests/SupplyRequestDetailPage';
+import { SupplyRequestEditDraftPage } from '../features/supply-requests/SupplyRequestEditDraftPage';
 import { ConsumptionPage } from '../features/consumption/ConsumptionPage';
 import { ConsumptionCreatePage } from '../features/consumption/ConsumptionCreatePage';
 import { ReturnsPage } from '../features/returns/ReturnsPage';
@@ -176,6 +177,12 @@ const supplyRequestDetailRoute = createRoute({
   component: SupplyRequestDetailPage,
 });
 
+const supplyRequestEditRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/supply-requests/$requestId/edit',
+  component: SupplyRequestEditDraftPage,
+});
+
 const consumptionRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/consumption',
@@ -293,6 +300,7 @@ const routeTree = rootRoute.addChildren([
     orderDetailRoute,
     supplyRequestsRoute,
     supplyRequestCreateRoute,
+    supplyRequestEditRoute,
     supplyRequestDetailRoute,
     consumptionRoute,
     consumptionCreateRoute,

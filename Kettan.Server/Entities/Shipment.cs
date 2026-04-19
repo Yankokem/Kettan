@@ -30,4 +30,17 @@ public class Shipment : ITenantEntity
     public DateTime? DispatchDate { get; set; }
 
     public DateTime? EstimatedArrival { get; set; }
+
+    public int? CourierId { get; set; }
+
+    [ForeignKey(nameof(CourierId))]
+    public Courier? Courier { get; set; }
+
+    public int? VehicleId { get; set; }
+
+    [ForeignKey(nameof(VehicleId))]
+    public Vehicle? Vehicle { get; set; }
+
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
 }

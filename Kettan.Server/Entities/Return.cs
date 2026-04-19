@@ -44,5 +44,8 @@ public class Return : ITenantEntity
 
     public DateTime LoggedAt { get; set; } = DateTime.UtcNow;
 
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+
     public ICollection<ReturnItem> Items { get; set; } = [];
 }

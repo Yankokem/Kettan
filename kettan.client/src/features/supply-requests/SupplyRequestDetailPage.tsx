@@ -20,6 +20,7 @@ export function SupplyRequestDetailPage() {
   return (
     <Box sx={{ pb: 3, pt: 1 }}>
       <SupplyRequestDetailHeader
+        requestId={requestId ?? ''}
         requestNumber={request.requestNumber}
         status={request.status}
         branchName={request.branchName}

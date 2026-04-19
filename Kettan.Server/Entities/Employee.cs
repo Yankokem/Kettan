@@ -3,18 +3,16 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Kettan.Server.Entities;
 
-public class User
+public class Employee : ITenantEntity
 {
     [Key]
-    public int UserId { get; set; }
+    public int EmployeeId { get; set; }
 
-    // Nullable for SuperAdmins (Platform level)
-    public int? TenantId { get; set; }
+    public int TenantId { get; set; }
 
     [ForeignKey(nameof(TenantId))]
     public Tenant? Tenant { get; set; }
 
-    // Nullable for HQ Roles
     public int? BranchId { get; set; }
 
     [ForeignKey(nameof(BranchId))]
@@ -29,17 +27,13 @@ public class User
     public required string LastName { get; set; }
 
     [Required]
-    [EmailAddress]
-    [MaxLength(255)]
-    public required string Email { get; set; }
+    [MaxLength(100)]
+    public required string Position { get; set; }
 
-    [Required]
-    [MaxLength(255)]
-    public required string PasswordHash { get; set; }
-
-    [Required]
     [MaxLength(50)]
-    public required string Role { get; set; }
+    public string? ContactNumber { get; set; }
+
+    public DateTime? DateHired { get; set; }
 
     public bool IsActive { get; set; } = true;
 

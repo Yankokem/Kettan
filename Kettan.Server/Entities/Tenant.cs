@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Kettan.Server.Entities;
 
@@ -15,6 +16,21 @@ public class Tenant
     public string SubscriptionTier { get; set; } = "Starter";
 
     public bool IsActive { get; set; } = true;
+
+    public int? CurrentSubscriptionId { get; set; }
+
+    [ForeignKey(nameof(CurrentSubscriptionId))]
+    public TenantSubscription? CurrentSubscription { get; set; }
+
+    [Required]
+    [MaxLength(30)]
+    public string SubscriptionStatus { get; set; } = "Active";
+
+    public DateTime? SubscriptionPeriodStart { get; set; }
+    public DateTime? SubscriptionPeriodEnd { get; set; }
+
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -24,5 +24,8 @@ public class Order : ITenantEntity
 
     public DateTime PushedToFulfillmentAt { get; set; } = DateTime.UtcNow;
 
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+
     public ICollection<OrderAllocation> Allocations { get; set; } = [];
 }

@@ -4,6 +4,7 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
+import { useNavigate } from '@tanstack/react-router';
 
 import { BackButton } from '../../../components/UI/BackButton';
 import { Button } from '../../../components/UI/Button';
@@ -14,16 +15,19 @@ import {
 import type { SupplyRequestLifecycleStatus } from './SupplyRequestDetail.types';
 
 interface SupplyRequestDetailHeaderProps {
+  requestId: string;
   requestNumber: string;
   status: SupplyRequestLifecycleStatus;
   branchName: string;
 }
 
 export function SupplyRequestDetailHeader({
+  requestId,
   requestNumber,
   status,
   branchName,
 }: SupplyRequestDetailHeaderProps) {
+  const navigate = useNavigate();
   const isDraft = status === 'Draft' || status === 'AutoDrafted';
   const isDelivered = status === 'Delivered';
   const isAwaitingDelivery = status === 'Dispatched' || status === 'InTransit';
@@ -60,7 +64,11 @@ export function SupplyRequestDetailHeader({
       <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
         {isDraft ? (
           <>
-            <Button variant="outlined" startIcon={<EditRoundedIcon />}>
+            <Button
+              variant="outlined"
+              startIcon={<EditRoundedIcon />}
+              onClick={() => navigate({ to: '/supply-requests/$requestId/edit', params: { requestId } })}
+            >
               Edit Draft
             </Button>
             <Button startIcon={<SendRoundedIcon />}>Submit to HQ</Button>

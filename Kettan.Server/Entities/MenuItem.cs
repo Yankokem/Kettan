@@ -17,15 +17,28 @@ public class MenuItem : ITenantEntity
     [MaxLength(255)]
     public required string Name { get; set; }
 
-    [MaxLength(100)]
-    public string? Category { get; set; }
+    public int CategoryId { get; set; }
+
+    [ForeignKey(nameof(CategoryId))]
+    public MenuCategory? MenuCategory { get; set; }
+
+    public string? Description { get; set; }
+
+    [MaxLength(500)]
+    public string? ImageUrl { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
-    public decimal SellingPrice { get; set; }
+    public decimal BasePrice { get; set; } = 0;
 
-    public bool IsActive { get; set; } = true;
+    [Required]
+    [MaxLength(20)]
+    public string Status { get; set; } = "Active";
+
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<MenuItemIngredient> Ingredients { get; set; } = [];
 }
