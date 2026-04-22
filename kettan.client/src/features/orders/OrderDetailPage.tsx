@@ -1,0 +1,237 @@
+import { Box, Typography, Chip, Grid } from '@mui/material';
+import { useParams } from '@tanstack/react-router';
+import { useState } from 'react';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
+import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
+
+import { useAuthStore } from '../../store/useAuthStore';
+import { Dropdown } from '../../components/UI/Dropdown';
+
+import { BackButton } from '../../components/UI/BackButton';
+import { Button } from '../../components/UI/Button';
+import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
+import { TextField } from '../../components/UI/TextField';
+import { OrderFulfillmentStepper } from './components/OrderFulfillmentStepper';
+import { StatusAlertIcon } from './components/StatusAlertIcon';
+import { OrderDetailsPanel } from './components/OrderDetailsPanel';
+
+interface RequestItem {
+  id: string;
+  name: string;
+  requestedQty: number;
+  hqStock: number;
+  approvedQty: number;
+  status: 'Available' | 'Low Stock' | 'Out of Stock';
+}
+
+const MOCK_ITEMS: RequestItem[] = [
+  { id: '1', name: 'Arabica Coffee Beans (Medium Roast) - 5kg', requestedQty: 4,  hqStock: 120, approvedQty: 4,  status: 'Available' },
+  { id: '2', name: 'Almond Milk - 1L Carton',                  requestedQty: 24, hqStock: 10,  approvedQty: 10, status: 'Low Stock' },
+  { id: '3', name: 'Vanilla Syrup - 750ml Bottle',             requestedQty: 6,  hqStock: 0,   approvedQty: 0,  status: 'Out of Stock' },
+  { id: '4', name: 'Paper Cups (12oz) - Box of 500',           requestedQty: 2,  hqStock: 45,  approvedQty: 2,  status: 'Available' },
+];
+
+const COLUMNS: ColumnDef<RequestItem>[] = [
+  {
+    key: 'name',
+    label: 'Requested Item',
+    render: (row) => (
+      <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
+        {row.name}
+      </Typography>
+    ),
+  },
+  {
+    key: 'hqStock',
+    label: 'HQ Stock',
+    width: 110,
+    sortable: true,
+    render: (row) => (
+      <Typography sx={{ fontSize: 13, color: row.hqStock < row.requestedQty ? 'error.main' : 'text.secondary', fontWeight: row.hqStock < row.requestedQty ? 700 : 500 }}>
+        {row.hqStock} units
+      </Typography>
+    ),
+  },
+  {
+    key: 'requestedQty',
+    label: 'Requested',
+    width: 110,
+    sortable: true,
+    render: (row) => (
+      <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>
+        {row.requestedQty} units
+      </Typography>
+    ),
+  },
+  {
+    key: 'status',
+    label: 'Availability',
+    width: 140,
+    render: (row) => {
+      const color = row.status === 'Available' ? '#546B3F' : (row.status === 'Low Stock' ? '#B45309' : '#B91C1C');
+      const bg    = row.status === 'Available' ? 'rgba(84,107,63,0.12)' : (row.status === 'Low Stock' ? 'rgba(180,83,9,0.12)' : 'rgba(185,28,28,0.10)');
+      return (
+        <Chip
+          label={row.status}
+          size="small"
+          sx={{ fontSize: 11.5, fontWeight: 600, background: bg, color, border: `1px solid ${color}28` }}
+        />
+      );
+    },
+  },
+  {
+    key: 'approvedQty',
+    label: 'Approved Qty',
+    width: 140,
+    render: (row) => (
+      <TextField
+        size="small"
+        type="number"
+        defaultValue={row.approvedQty}
+        inputProps={{ min: 0, max: row.hqStock, sx: { fontSize: 13, fontWeight: 600, py: 0.5 } }}
+        sx={{ width: 80, '& .MuiOutlinedInput-notchedOutline': { borderColor: row.hqStock < row.requestedQty ? 'error.main' : 'divider' } }}
+      />
+    ),
+  }
+];
+
+export function OrderDetailPage() {
+  const { orderId } = useParams({ strict: false });
+  const displayId = orderId || 'ORD-8891';
+  const { user } = useAuthStore();
+  
+  const [orderStatus, setOrderStatus] = useState<string>('PendingApproval');
+  const [selectedCourier, setSelectedCourier] = useState('van_1');
+
+  const VEHICLES = [
+    { value: 'van_1', label: 'Juan Delivery Services - Van 1' },
+    { value: 'van_2', label: 'Juan Delivery Services - Van 2' },
+    { value: 'truck_1', label: 'Metro Fleet - Truck 1' },
+  ];
+
+  const handleAction = (nextStatus: string) => {
+    setOrderStatus(nextStatus);
+  };
+
+  return (
+    <Box sx={{ pb: 3, pt: 1 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <BackButton to="/orders" />
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}>
+                {displayId}
+              </Typography>
+              <Chip
+                label={orderStatus.replace(/([A-Z])/g, ' $1').trim()}
+                icon={orderStatus === 'PendingApproval' ? <AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} /> : undefined}
+                size="small"
+                sx={{ 
+                  fontSize: 12, 
+                  fontWeight: 600, 
+                  bgcolor: orderStatus === 'Rejected' ? 'rgba(185,28,28,0.1)' : 'rgba(37,99,235,0.12)', 
+                  color: orderStatus === 'Rejected' ? '#B91C1C' : '#2563EB', 
+                  border: `1px solid ${orderStatus === 'Rejected' ? 'rgba(185,28,28,0.28)' : 'rgba(37,99,235,0.28)'}` 
+                }}
+              />
+            </Box>
+            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
+              Requested by <strong>Downtown Main</strong> on Apr 02, 2026
+            </Typography>
+          </Box>
+        </Box>
+        {/* Header Actions (Dynamic based on status and role) */}
+        <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center' }}>
+          
+          {orderStatus === 'PendingApproval' && (
+            <>
+              <StatusAlertIcon
+                severity="warning"
+                title="Partial Fulfillment Warning"
+                message="This order contains items with insufficient HQ stock. Approving this order will dispatch only the available quantities."
+              />
+              <Button variant="outlined" startIcon={<CancelRoundedIcon />} onClick={() => handleAction('Rejected')} sx={{ color: 'error.main', borderColor: 'error.light', '&:hover': { bgcolor: 'error.50' } }}>
+                Reject Order
+              </Button>
+              <Button startIcon={<CheckCircleRoundedIcon />} onClick={() => handleAction('Approved')}>
+                Approve & Send to Packing
+              </Button>
+            </>
+          )}
+
+          {orderStatus === 'Approved' && (
+            <Button startIcon={<InventoryRoundedIcon />} onClick={() => handleAction('Picking')}>
+              Start Picking
+            </Button>
+          )}
+
+          {orderStatus === 'Picking' && (
+            <Button startIcon={<BackpackRoundedIcon />} onClick={() => handleAction('Packed')}>
+              Confirm Items Packed
+            </Button>
+          )}
+
+          {orderStatus === 'Packed' && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ width: 200 }}>
+                <Dropdown
+                  options={VEHICLES}
+                  value={selectedCourier}
+                  onChange={(e) => setSelectedCourier(e.target.value as string)}
+                  size="small"
+                  fullWidth
+                />
+              </Box>
+              <Button startIcon={<LocalShippingRoundedIcon />} onClick={() => handleAction('Dispatched')}>
+                Dispatch Order
+              </Button>
+            </Box>
+          )}
+
+          {/* If dispatched, branch confirms delivery, HQ cannot override */}
+          {orderStatus === 'Dispatched' && user?.role !== 'BranchManager' && user?.role !== 'BranchOwner' && (
+            <Chip label="Awaiting Branch Delivery Confirmation" variant="outlined" sx={{ fontWeight: 600, color: 'text.secondary' }} />
+          )}
+
+          {orderStatus === 'Delivered' && (
+            <Button variant="outlined" startIcon={<AssignmentReturnRoundedIcon />} sx={{ color: '#B45309', borderColor: '#B45309' }}>
+              File Return
+            </Button>
+          )}
+
+        </Box>
+      </Box>
+
+      {/* Stepper Visual */}
+      <OrderFulfillmentStepper status={orderStatus} />
+
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 3.5 }}>
+          <OrderDetailsPanel orderId={displayId} />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 8.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, px: 0.5 }}>
+            <InventoryRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+            <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Item Reconciliation</Typography>
+          </Box>
+          <DataTable
+            data={MOCK_ITEMS}
+            columns={COLUMNS}
+            keyExtractor={(row) => row.id}
+            defaultRowsPerPage={10}
+            rowsPerPageOptions={[10, 25, 50]}
+          />
+        </Grid>
+      </Grid>
+    </Box>
+  );
+}
+

@@ -1,0 +1,6 @@
+@Kettan.Server_HostAddress = http://localhost:5140
+
+GET {{Kettan.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

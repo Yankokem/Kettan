@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kettan Updated Use Case Diagram</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f3f4f6;
+      color: #1f2937;
+    }
+
+    .page {
+      padding: 10px;
+    }
+
+    .frame {
+      margin: 0 auto;
+      width: min(1880px, 100%);
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #ffffff;
+    }
+
+    .title {
+      font-size: 30px;
+      font-weight: 700;
+      fill: #111827;
+      text-anchor: middle;
+    }
+
+    .scope-label {
+      font-size: 24px;
+      font-weight: 700;
+      fill: #1f2937;
+    }
+
+    .scope-divider {
+      stroke: #cbd5e1;
+      stroke-width: 2;
+      stroke-dasharray: 8 8;
+    }
+
+    .usecase {
+      fill: #ffffff;
+      stroke: #4b5563;
+      stroke-width: 2;
+    }
+
+    .usecase-label {
+      font-size: 19px;
+      fill: #1f2937;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .actor-label {
+      font-size: 24px;
+      font-weight: 700;
+      text-anchor: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="frame">
+      <svg id="diagram" viewBox="0 0 1800 1880" aria-label="Kettan Updated Use Case Diagram"></svg>
+    </div>
+  </div>
+
+  <script>
+    const svg = document.getElementById('diagram');
+
+    const useCases = [
+      { id: 'UC01', scope: 1, label: 'Manage tenants', x: 760, y: 170 },
+      { id: 'UC02', scope: 1, label: 'View platform analytics', x: 760, y: 250 },
+      { id: 'UC03', scope: 1, label: 'Handle support tickets', x: 760, y: 330 },
+      { id: 'UC04', scope: 1, label: 'View platform audit logs', x: 760, y: 410 },
+
+      { id: 'UC05', scope: 2, label: 'Register and manage branches', x: 760, y: 590 },
+      { id: 'UC06', scope: 2, label: 'Manage user accounts', x: 760, y: 650 },
+      { id: 'UC07', scope: 2, label: 'Assign roles and access', x: 760, y: 710 },
+      { id: 'UC08', scope: 2, label: 'Configure reorder thresholds', x: 760, y: 770 },
+      { id: 'UC09', scope: 2, label: 'Maintain inventory items', x: 760, y: 830 },
+      { id: 'UC10', scope: 2, label: 'Log inventory movements', x: 760, y: 890 },
+      { id: 'UC11', scope: 2, label: 'Review and approve requests', x: 760, y: 950 },
+      { id: 'UC12', scope: 2, label: 'Create fulfillment orders', x: 760, y: 1010 },
+      { id: 'UC13', scope: 2, label: 'Pick and pack orders', x: 760, y: 1070 },
+      { id: 'UC14', scope: 2, label: 'Ship orders and tracking', x: 760, y: 1130 },
+      { id: 'UC15', scope: 2, label: 'Resolve returns and credits', x: 760, y: 1190 },
+      { id: 'UC16', scope: 2, label: 'Maintain menu items', x: 760, y: 1250 },
+
+      { id: 'UC17', scope: 3, label: 'Monitor stock levels', x: 760, y: 1440 },
+      { id: 'UC18', scope: 3, label: 'Log branch consumption', x: 760, y: 1515 },
+      { id: 'UC19', scope: 3, label: 'Submit supply request', x: 760, y: 1590 },
+      { id: 'UC20', scope: 3, label: 'Track delivery status', x: 760, y: 1665 },
+      { id: 'UC21', scope: 3, label: 'Initiate return request', x: 760, y: 1740 },
+      { id: 'UC22', scope: 3, label: 'Receive notifications', x: 760, y: 1815 }
+    ];
+
+    const actors = {
+      superAdmin: { label: 'Super Admin', color: '#6f61d8', x: 190, y: 290 },
+      tenantAdmin: { label: 'Tenant Admin', color: '#1f9d7a', x: 190, y: 720 },
+      hqManager: { label: 'HQ Manager', color: '#e76f51', x: 190, y: 980 },
+      hqStaff: { label: 'HQ Staff', color: '#c57f1f', x: 190, y: 1230 },
+      branchOwner: { label: 'Branch Owner', color: '#d95f8d', x: 190, y: 1530 },
+      branchManager: { label: 'Branch Manager', color: '#2f80ed', x: 190, y: 1770 }
+    };
+
+    const associations = {
+      superAdmin: ['UC01', 'UC02', 'UC03', 'UC04'],
+      tenantAdmin: ['UC05', 'UC06', 'UC07', 'UC08', 'UC16'],
+      hqManager: ['UC11', 'UC12', 'UC15'],
+      hqStaff: ['UC09', 'UC10', 'UC12', 'UC13', 'UC14'],
+      branchOwner: ['UC17', 'UC20', 'UC22'],
+      branchManager: ['UC17', 'UC18', 'UC19', 'UC20', 'UC21', 'UC22']
+    };
+
+    function createSvgElement(tag, attrs = {}) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, String(value)));
+      return el;
+    }
+
+    function append(parent, tag, attrs = {}, text = null) {
+      const el = createSvgElement(tag, attrs);
+      if (text !== null) {
+        el.textContent = text;
+      }
+      parent.appendChild(el);
+      return el;
+    }
+
+    function splitLabel(label, maxChars = 28) {
+      if (label.length <= maxChars) {
+        return [label];
+      }
+
+      const words = label.split(' ');
+      const lines = [];
+      let current = '';
+
+      for (const word of words) {
+        const candidate = current ? `${current} ${word}` : word;
+        if (candidate.length <= maxChars) {
+          current = candidate;
+        } else {
+          if (current) {
+            lines.push(current);
+          }
+          current = word;
+        }
+      }
+
+      if (current) {
+        lines.push(current);
+      }
+
+      return lines.slice(0, 2);
+    }
+
+    function drawActor(parent, actor) {
+      const g = append(parent, 'g', { class: 'actor' });
+
+      append(g, 'circle', {
+        cx: actor.x,
+        cy: actor.y - 52,
+        r: 16,
+        fill: 'none',
+        stroke: actor.color,
+        'stroke-width': 4
+      });
+
+      append(g, 'line', {
+        x1: actor.x,
+        y1: actor.y - 36,
+        x2: actor.x,
+        y2: actor.y + 14,
+        stroke: actor.color,
+        'stroke-width': 4
+      });
+
+      append(g, 'line', {
+        x1: actor.x - 26,
+        y1: actor.y - 4,
+        x2: actor.x + 26,
+        y2: actor.y - 4,
+        stroke: actor.color,
+        'stroke-width': 4
+      });
+
+      append(g, 'line', {
+        x1: actor.x,
+        y1: actor.y + 14,
+        x2: actor.x - 22,
+        y2: actor.y + 44,
+        stroke: actor.color,
+        'stroke-width': 4
+      });
+
+      append(g, 'line', {
+        x1: actor.x,
+        y1: actor.y + 14,
+        x2: actor.x + 22,
+        y2: actor.y + 44,
+        stroke: actor.color,
+        'stroke-width': 4
+      });
+
+      append(g, 'text', {
+        x: actor.x,
+        y: actor.y + 72,
+        class: 'actor-label',
+        fill: actor.color
+      }, actor.label);
+    }
+
+    function edgePoint(uc, targetX, targetY) {
+      const dx = targetX - uc.x;
+      const dy = targetY - uc.y;
+      const angle = Math.atan2(dy, dx);
+      return {
+        x: uc.x + Math.cos(angle) * uc.rx,
+        y: uc.y + Math.sin(angle) * uc.ry
+      };
+    }
+
+    const useCaseMap = new Map(useCases.map((uc) => [uc.id, { ...uc, rx: 235, ry: 26 }]));
+
+    append(svg, 'text', { x: 900, y: 38, class: 'title' }, 'Kettan Updated Use Case Diagram');
+
+    append(svg, 'text', { x: 290, y: 92, class: 'scope-label' }, 'Scope 1: Super Admin');
+    append(svg, 'line', { x1: 270, y1: 500, x2: 1680, y2: 500, class: 'scope-divider' });
+
+    append(svg, 'text', { x: 290, y: 542, class: 'scope-label' }, 'Scope 2: Tenant Admin, HQ Manager, HQ Staff');
+    append(svg, 'line', { x1: 270, y1: 1350, x2: 1680, y2: 1350, class: 'scope-divider' });
+
+    append(svg, 'text', { x: 290, y: 1392, class: 'scope-label' }, 'Scope 3: Branch Owner, Branch Manager');
+
+    const assocLayer = append(svg, 'g', { id: 'associations' });
+
+    Object.entries(associations).forEach(([actorId, ucIds]) => {
+      const actor = actors[actorId];
+      const total = ucIds.length;
+
+      ucIds.forEach((ucId, index) => {
+        const uc = useCaseMap.get(ucId);
+        if (!uc) {
+          return;
+        }
+
+        const startX = actor.x + 32;
+        const spread = (index - (total - 1) / 2) * 18;
+        const startY = actor.y + spread * 0.5;
+        const end = edgePoint(uc, startX, startY);
+        const c1x = startX + 95;
+        const c1y = startY + spread;
+        const c2x = end.x - 140;
+        const c2y = end.y - spread * 0.7;
+
+        append(assocLayer, 'path', {
+          d: `M ${startX} ${startY} C ${c1x} ${c1y} ${c2x} ${c2y} ${end.x} ${end.y}`,
+          fill: 'none',
+          stroke: actor.color,
+          'stroke-width': 2.2,
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          'stroke-opacity': 0.58
+        });
+      });
+    });
+
+    const useCaseLayer = append(svg, 'g', { id: 'usecases' });
+
+    useCaseMap.forEach((uc) => {
+      append(useCaseLayer, 'ellipse', {
+        cx: uc.x,
+        cy: uc.y,
+        rx: uc.rx,
+        ry: uc.ry,
+        class: 'usecase'
+      });
+
+      const lines = splitLabel(uc.label);
+      if (lines.length === 1) {
+        append(useCaseLayer, 'text', {
+          x: uc.x,
+          y: uc.y,
+          class: 'usecase-label'
+        }, lines[0]);
+      } else {
+        const text = append(useCaseLayer, 'text', {
+          x: uc.x,
+          y: uc.y - 9,
+          class: 'usecase-label'
+        });
+
+        lines.forEach((line, index) => {
+          append(text, 'tspan', {
+            x: uc.x,
+            dy: index === 0 ? 0 : 19
+          }, line);
+        });
+      }
+    });
+
+    const actorLayer = append(svg, 'g', { id: 'actors' });
+    Object.values(actors).forEach((actor) => drawActor(actorLayer, actor));
+  </script>
+</body>
+</html>
