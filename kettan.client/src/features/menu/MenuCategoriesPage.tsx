@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Chip, Grid, IconButton, Paper, Typography } from '@mui/material';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
@@ -18,9 +18,9 @@ import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { ViewToggle } from '../../components/UI/ViewToggle';
+import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { MenuCategoryCard } from './components/MenuCategoryCard';
-import { createMenuCategory, listMenuCategories, softDeleteMenuCategory, updateMenuCategory } from './menuCategoryApi';
-import type { MenuCategory, MenuCategoryFormData } from './types';
+import { createMenuCategory, listMenuCategories, deleteMenuCategory, updateMenuCategory, type MenuCategory, type MenuCategoryFormData } from './menuCategoryApi';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
 type SortFilter = 'order-asc' | 'order-desc' | 'name-asc' | 'name-desc';
@@ -34,22 +34,35 @@ const INITIAL_FORM: MenuCategoryFormData = {
 
 export function MenuCategoriesPage() {
   const [form, setForm] = useState<MenuCategoryFormData>(INITIAL_FORM);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [categories, setCategories] = useState<MenuCategory[]>(() => listMenuCategories());
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortFilter, setSortFilter] = useState<SortFilter>('order-asc');
   const [viewMode, setViewMode] = useState<CategoryViewMode>('cards');
-  const [showDeleted, setShowDeleted] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MenuCategory | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const reloadCategories = (includeDeleted = showDeleted) => {
-    setCategories(listMenuCategories({ includeDeleted }));
+  const reloadCategories = async () => {
+    try {
+      const data = await listMenuCategories();
+      setCategories(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to load menu categories'));
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    reloadCategories();
+  }, []);
+
   const selectedCategory = useMemo(
-    () => categories.find((category) => category.id === selectedCategoryId) ?? null,
+    () => categories.find((category) => category.categoryId === selectedCategoryId) ?? null,
     [categories, selectedCategoryId],
   );
 
@@ -71,15 +84,12 @@ export function MenuCategoriesPage() {
       if (sortFilter === 'order-desc') {
         return right.displayOrder - left.displayOrder;
       }
-
       if (sortFilter === 'name-asc') {
         return left.name.localeCompare(right.name);
       }
-
       if (sortFilter === 'name-desc') {
         return right.name.localeCompare(left.name);
       }
-
       return left.displayOrder - right.displayOrder;
     });
 
@@ -93,7 +103,7 @@ export function MenuCategoriesPage() {
   };
 
   const handleSelectCategory = (category: MenuCategory) => {
-    setSelectedCategoryId(category.id);
+    setSelectedCategoryId(category.categoryId);
     setForm({
       name: category.name,
       displayOrder: category.displayOrder,
@@ -102,57 +112,44 @@ export function MenuCategoriesPage() {
     setErrorMessage(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) {
       setErrorMessage('Category name is required.');
       return;
     }
 
-    if (form.name.trim().length > 100) {
-      setErrorMessage('Category name must be 100 characters or less.');
-      return;
-    }
-
-    if (form.displayOrder < 0) {
-      setErrorMessage('Display order must be zero or greater.');
-      return;
-    }
-
     setErrorMessage(null);
+    setLoading(true);
 
-    if (!selectedCategoryId) {
-      const created = createMenuCategory(form);
-      reloadCategories();
-      handleSelectCategory(created);
-      return;
-    }
-
-    const updated = updateMenuCategory(selectedCategoryId, form);
-
-    if (!updated) {
-      setErrorMessage('Selected category no longer exists. Please refresh and try again.');
-      reloadCategories();
+    try {
+      if (!selectedCategoryId) {
+        await createMenuCategory(form);
+      } else {
+        await updateMenuCategory(selectedCategoryId, form);
+      }
+      await reloadCategories();
       resetForm();
-      return;
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to save category');
+      setLoading(false);
     }
-
-    reloadCategories();
-    handleSelectCategory(updated);
   };
 
-  const handleDelete = () => {
-    if (!deleteTarget) {
-      return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
+    setLoading(true);
+    try {
+      await deleteMenuCategory(deleteTarget.categoryId);
+      if (selectedCategoryId === deleteTarget.categoryId) {
+        resetForm();
+      }
+      setDeleteTarget(null);
+      await reloadCategories();
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to delete category');
+      setLoading(false);
     }
-
-    softDeleteMenuCategory(deleteTarget.id);
-
-    if (selectedCategoryId === deleteTarget.id) {
-      resetForm();
-    }
-
-    setDeleteTarget(null);
-    reloadCategories();
   };
 
   const tableColumns: ColumnDef<MenuCategory>[] = [
@@ -294,10 +291,10 @@ export function MenuCategoriesPage() {
             ) : null}
 
             <Box sx={{ mt: 2.7, display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} loading={loading}>
                 {selectedCategory ? 'Update Category' : 'Save Category'}
               </Button>
-              <Button variant="outlined" startIcon={<ReplayRoundedIcon />} onClick={resetForm}>
+              <Button variant="outlined" startIcon={<ReplayRoundedIcon />} onClick={resetForm} disabled={loading}>
                 Reset
               </Button>
             </Box>
@@ -339,22 +336,6 @@ export function MenuCategoriesPage() {
                 ]}
               />
 
-              <FilterDropdown
-                label="Visibility"
-                icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-                value={showDeleted ? 'include' : 'active'}
-                onChange={(value) => {
-                  const includeDeleted = value === 'include';
-                  setShowDeleted(includeDeleted);
-                  reloadCategories(includeDeleted);
-                }}
-                minWidth={150}
-                options={[
-                  { value: 'active', label: 'Active Only' },
-                  { value: 'include', label: 'Include Deleted' },
-                ]}
-              />
-
               <ViewToggle
                 value={viewMode}
                 options={[
@@ -365,46 +346,45 @@ export function MenuCategoriesPage() {
               />
             </Box>
 
-            {viewMode === 'cards' ? (
-              <Box
-                sx={{
-                  maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
-                  overflowY: { xs: 'visible', lg: 'auto' },
-                  pr: { xs: 0, lg: 0.8 },
-                }}
-              >
-                {visibleCategories.length === 0 ? (
-                  <Box sx={{ py: 8, textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
-                      No categories found for your filters.
-                    </Typography>
-                  </Box>
-                ) : (
+            <DataStateWrapper
+              loading={loading && categories.length === 0}
+              error={error}
+              isEmpty={visibleCategories.length === 0}
+              emptyMessage="No categories found for your filters."
+            >
+              {viewMode === 'cards' ? (
+                <Box
+                  sx={{
+                    maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
+                    overflowY: { xs: 'visible', lg: 'auto' },
+                    pr: { xs: 0, lg: 0.8 },
+                  }}
+                >
                   <Grid container spacing={1.8}>
                     {visibleCategories.map((category) => (
-                      <Grid key={category.id} size={{ xs: 12, md: 6 }}>
+                      <Grid key={category.categoryId} size={{ xs: 12, md: 6 }}>
                         <MenuCategoryCard
                           category={category}
-                          selected={selectedCategoryId === category.id}
+                          selected={selectedCategoryId === category.categoryId}
                           onSelect={() => handleSelectCategory(category)}
                           onDelete={() => setDeleteTarget(category)}
                         />
                       </Grid>
                     ))}
                   </Grid>
-                )}
-              </Box>
-            ) : (
-              <DataTable
-                data={visibleCategories}
-                columns={tableColumns}
-                keyExtractor={(category) => category.id}
-                emptyMessage="No categories found for your filters."
-                defaultRowsPerPage={10}
-                pageSizes={[10, 25, 50]}
-                onRowClick={(category) => handleSelectCategory(category)}
-              />
-            )}
+                </Box>
+              ) : (
+                <DataTable
+                  data={visibleCategories}
+                  columns={tableColumns}
+                  keyExtractor={(category) => category.categoryId.toString()}
+                  emptyMessage="No categories found for your filters."
+                  defaultRowsPerPage={10}
+                  pageSizes={[10, 25, 50]}
+                  onRowClick={(category) => handleSelectCategory(category)}
+                />
+              )}
+            </DataStateWrapper>
           </Box>
         </Box>
       </Paper>
@@ -412,7 +392,7 @@ export function MenuCategoriesPage() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete menu category"
-        message={`Delete ${deleteTarget?.name || 'this category'}? It will be soft-deleted and hidden from active lists.`}
+        message={`Delete ${deleteTarget?.name || 'this category'}? This action is permanent.`}
         confirmText="Delete"
         confirmColor="error"
         onConfirm={handleDelete}

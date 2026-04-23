@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Card, Chip, Divider, Grid, InputAdornment, Stack, TextField as MuiTextField, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
@@ -10,17 +10,16 @@ import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
 import { Dropdown } from '../../components/UI/Dropdown';
 import { useAuthStore } from '../../store/useAuthStore';
+import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
+import { fetchBranches } from '../branches/branchesApi';
+import { createOrder } from '../branch-operations/api';
 
 import { SelectedItemsTable } from './components/SelectedItemsTable';
 import { InventorySelectionModal } from './components/InventorySelectionModal';
 import { RequestSnapshotCards } from './components/RequestSnapshotCards';
 import type { InventoryItem } from './components/InventoryItemCard';
 
-const BRANCHES = [
-  { value: 'downtown', label: 'Downtown Main - Metro Core' },
-  { value: 'qc', label: 'Quezon City Branch - North Hub' },
-  { value: 'bgc', label: 'BGC Reserve - Central District' }
-];
+const BRANCHES = [{ value: '', label: 'Loading branches...' }];
 
 
 const REQUEST_PRIORITIES = [
@@ -41,17 +40,15 @@ const DISPATCH_WINDOWS = [
   { value: 'next_day', label: 'Next Business Day' },
 ];
 
-const MOCK_INVENTORY: InventoryItem[] = [
-  { id: '1', name: 'Arabica Coffee Beans (Medium Roast)', sku: 'CF-ARB-MR-5KG', category: 'Raw Materials', hqStock: 120, unit: '5kg bag', unitCost: 850 },
-  { id: '2', name: 'Almond Milk', sku: 'MLK-ALM-1L', category: 'Dairy & Alternatives', hqStock: 10, unit: '1L carton', unitCost: 145 },
-  { id: '3', name: 'Vanilla Syrup', sku: 'SYR-VAN-750', category: 'Flavorings', hqStock: 0, unit: '750ml bottle', unitCost: 320 },
-  { id: '4', name: 'Paper Cups (12oz)', sku: 'PKG-CUP-12-500', category: 'Packaging', hqStock: 45, unit: 'Box of 500', unitCost: 510 },
-  { id: '5', name: 'Matcha Powder (Premium)', sku: 'TEA-MAT-PRM-1KG', category: 'Raw Materials', hqStock: 30, unit: '1kg pack', unitCost: 1240 },
-];
-
 export function NewOrderRequestPage() {
   const navigate = useNavigate({ from: '/orders/new' });
   const { user } = useAuthStore();
+  const isHqRole = user?.role === 'TenantAdmin' || user?.role === 'HqManager' || user?.role === 'HqStaff';
+
+  const [branchOptions, setBranchOptions] = useState(BRANCHES);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [selectedBranch, setSelectedBranch] = useState(BRANCHES[0].value);
   const [selectedPriority, setSelectedPriority] = useState(REQUEST_PRIORITIES[0].value);
@@ -79,6 +76,43 @@ export function NewOrderRequestPage() {
   );
 
   const requesterLabel = user ? `${user.name} (${user.role})` : 'Current User (Admin)';
+
+  useEffect(() => {
+    const loadContext = async () => {
+      try {
+        setError(null);
+        const [branches, items] = await Promise.all([fetchBranches(), fetchInventoryItems()]);
+
+        const mappedBranches = branches
+          .filter((branch) => branch.isActive)
+          .map((branch) => ({
+            value: String(branch.branchId),
+            label: branch.location ? `${branch.name} - ${branch.location}` : branch.name,
+          }));
+
+        setBranchOptions(mappedBranches.length > 0 ? mappedBranches : [{ value: '', label: 'No active branches' }]);
+        if (mappedBranches.length > 0) {
+          setSelectedBranch((prev) => (prev ? prev : mappedBranches[0].value));
+        }
+
+        const mappedInventory: InventoryItem[] = items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          sku: item.sku,
+          category: item.category?.name ?? 'Uncategorized',
+          hqStock: item.totalStock,
+          unit: item.unit?.symbol ?? item.unit?.name ?? 'unit',
+          unitCost: item.unitCost,
+        }));
+
+        setInventory(mappedInventory);
+      } catch {
+        setError('Failed to load branches or inventory items.');
+      }
+    };
+
+    void loadContext();
+  }, []);
 
   const handleItemsSelected = (newItems: { item: InventoryItem; quantity: number; notes: string }[]) => {
     setSelectedItems((prev) => {
@@ -110,12 +144,49 @@ export function NewOrderRequestPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedItems.length === 0) {
-      alert('Please add at least one item to your request.');
-      return;
-    }
 
-    navigate({ to: '/orders' });
+    const submit = async () => {
+      if (!isHqRole) {
+        setError('Only HQ roles can create HQ-initiated orders.');
+        return;
+      }
+
+      if (!selectedBranch) {
+        setError('Please select a destination branch.');
+        return;
+      }
+
+      if (selectedItems.length === 0) {
+        setError('Please add at least one item to your request.');
+        return;
+      }
+
+      try {
+        setIsSaving(true);
+        setError(null);
+
+        const created = await createOrder({
+          branchId: Number(selectedBranch),
+          requestType,
+          priority: selectedPriority,
+          dispatchWindow,
+          dispatchDate: dispatchDate ? new Date(`${dispatchDate}T00:00:00`).toISOString() : undefined,
+          notes: requestNotes || undefined,
+          items: selectedItems.map((line) => ({
+            itemId: Number(line.item.id),
+            quantityRequested: Number(line.quantity),
+          })),
+        });
+
+        navigate({ to: '/orders/$orderId', params: { orderId: String(created.orderId) } });
+      } catch {
+        setError('Failed to submit internal request.');
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    void submit();
   };
 
   return (
@@ -169,7 +240,7 @@ export function NewOrderRequestPage() {
               <Grid size={{ xs: 12, md: 4 }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.2, color: 'text.secondary' }}>Destination Branch</Typography>
                 <Dropdown
-                  options={BRANCHES}
+                  options={branchOptions}
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value as string)}
                   fullWidth
@@ -291,6 +362,12 @@ export function NewOrderRequestPage() {
             </Alert>
           ) : null}
 
+          {error ? (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          ) : null}
+
           <Box sx={{ pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
             <Button
               variant="outlined"
@@ -302,7 +379,7 @@ export function NewOrderRequestPage() {
               variant="outlined"
               onClick={(event) => {
                 event.preventDefault();
-                alert('Draft saved locally in this prototype.');
+                setError('Draft save is not yet implemented in backend.');
               }}
             >
               Save Draft
@@ -310,8 +387,9 @@ export function NewOrderRequestPage() {
             <Button
               type="submit"
               variant="contained"
+              disabled={isSaving}
             >
-              Submit Internal Request
+              {isSaving ? 'Submitting...' : 'Submit Internal Request'}
             </Button>
           </Box>
         </form>
@@ -320,7 +398,7 @@ export function NewOrderRequestPage() {
       <InventorySelectionModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        inventory={MOCK_INVENTORY}
+        inventory={inventory}
         onItemsSelected={handleItemsSelected}
       />
     </Box>

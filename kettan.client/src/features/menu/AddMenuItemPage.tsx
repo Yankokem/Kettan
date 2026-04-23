@@ -1,7 +1,13 @@
+import { createMenuItem, type CreateMenuItemDto } from './menuItemsApi';
+import { listMenuCategories, type MenuCategory } from './menuCategoryApi';
+import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
+import type { InventoryItemOption, MenuItemFormData, MenuVariant } from './types';
+
 import { Box, Typography, Paper, Divider, Button } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
+import { useNavigate } from '@tanstack/react-router';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
@@ -9,14 +15,6 @@ import { FormActions } from '../../components/Form/FormActions';
 import { ImageUpload } from '../../components/UI/ImageUpload';
 import { VariantsBuilder } from './components/VariantsBuilder';
 import { PriceSuggestion } from './components/PriceSuggestion';
-import type { MenuItemFormData, MenuVariant } from './types';
-
-const MENU_CATEGORIES = [
-  { value: 'Coffee', label: 'Coffee' },
-  { value: 'Coffee with Milk', label: 'Coffee with Milk' },
-  { value: 'Frappe', label: 'Frappe' },
-  { value: 'Non-Coffee', label: 'Non-Coffee' },
-];
 
 const STATUS_OPTIONS = [
   { value: 'Active', label: 'Active' },
@@ -24,6 +22,11 @@ const STATUS_OPTIONS = [
 ];
 
 export function AddMenuItemPage() {
+  const navigate = useNavigate();
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemOption[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState<MenuItemFormData>({
     name: '',
     category: '',
@@ -34,12 +37,38 @@ export function AddMenuItemPage() {
     variants: [],
   });
 
+  useEffect(() => {
+    async function loadInitialData() {
+      try {
+        const [cats, items] = await Promise.all([
+          listMenuCategories(),
+          fetchInventoryItems()
+        ]);
+        setCategories(cats);
+        
+        // Map InventoryItem to InventoryItemOption
+        const options: InventoryItemOption[] = items.map(item => ({
+          id: item.id,
+          name: item.name,
+          sku: item.sku,
+          uom: item.unit?.symbol || '',
+          category: item.category?.name || 'Uncategorized',
+          unitCost: item.unitCost,
+          stockCount: item.totalStock
+        }));
+        setInventoryItems(options);
+      } catch (err) {
+        console.error('Failed to load menu setup data:', err);
+      }
+    }
+    loadInitialData();
+  }, []);
+
   const handleVariantChange = (variants: MenuVariant[]) => {
     setFormData(prev => ({ ...prev, variants }));
   };
 
   const handleImageUpload = (file: File) => {
-    // Convert file to base64 string for storage
     const reader = new FileReader();
     reader.onloadend = () => {
       setFormData(prev => ({ ...prev, image: reader.result as string }));
@@ -47,8 +76,7 @@ export function AddMenuItemPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = () => {
-    // Validate form
+  const handleSubmit = async () => {
     if (!formData.name.trim()) {
       alert('Please enter a menu item name');
       return;
@@ -66,9 +94,39 @@ export function AddMenuItemPage() {
       return;
     }
 
-    // TODO: Submit to API
-    console.log('Submitting menu item:', formData);
-    alert('Menu item saved successfully! (Mock)');
+    setIsSubmitting(true);
+    try {
+      const payload: CreateMenuItemDto = {
+        name: formData.name,
+        categoryId: parseInt(formData.category),
+        description: formData.description,
+        imageUrl: formData.image,
+        basePrice: formData.sellingPrice,
+        status: formData.status,
+        ingredients: [], // Primary recipe can be added here if needed
+        variants: formData.variants.map((v, idx) => ({
+          name: v.name,
+          pricingMode: 'absolute',
+          price: formData.sellingPrice, // Simple implementation: all variants share base price for now
+          displayOrder: idx,
+          isActive: true,
+          ingredients: v.ingredients.map(ing => ({
+            itemId: parseInt(ing.itemId),
+            quantity: ing.qtyPerUnit
+          }))
+        })),
+        tagIds: []
+      };
+
+      await createMenuItem(payload);
+      alert('Menu item saved successfully!');
+      navigate({ to: '/menu' });
+    } catch (err) {
+      console.error('Failed to save menu item:', err);
+      alert(err instanceof Error ? err.message : 'Failed to save menu item');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -172,7 +230,7 @@ export function AddMenuItemPage() {
                   displayEmpty
                   options={[
                     { value: '', label: 'Select a category' },
-                    ...MENU_CATEGORIES,
+                    ...categories.map(c => ({ value: String(c.categoryId), label: c.name })),
                   ]}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as string }))}
                   fullWidth
@@ -218,6 +276,7 @@ export function AddMenuItemPage() {
                 <VariantsBuilder
                   variants={formData.variants}
                   onVariantsChange={handleVariantChange}
+                  inventoryOptions={inventoryItems}
                 />
               </Box>
 
@@ -256,9 +315,10 @@ export function AddMenuItemPage() {
         <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
           <FormActions 
             cancelTo="/menu" 
-            saveText="Save Menu Item" 
+            saveText={isSubmitting ? 'Saving...' : 'Save Menu Item'} 
             saveIcon={<LocalCafeRoundedIcon />}
             onSave={handleSubmit}
+            saveDisabled={isSubmitting}
           />
         </Box>
       </Paper>

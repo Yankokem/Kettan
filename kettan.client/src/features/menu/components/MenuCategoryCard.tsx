@@ -1,7 +1,7 @@
 import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import DragIndicatorRoundedIcon from '@mui/icons-material/DragIndicatorRounded';
-import type { MenuCategory } from '../types';
+import type { MenuCategory } from '../menuCategoryApi';
 
 interface MenuCategoryCardProps {
   category: MenuCategory;

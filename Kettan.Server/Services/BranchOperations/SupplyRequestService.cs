@@ -48,7 +48,15 @@ public class SupplyRequestService : ISupplyRequestService
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            query = query.Where(r => r.Status == status);
+            var normalizedStatus = NormalizeStatus(status);
+            if (normalizedStatus == SupplyRequestStatuses.AutoDrafted)
+            {
+                query = query.Where(r => r.Status == SupplyRequestStatuses.AutoDrafted || r.Status == "Auto_Drafted");
+            }
+            else
+            {
+                query = query.Where(r => r.Status == normalizedStatus);
+            }
         }
 
         var requests = await query
@@ -146,7 +154,7 @@ public class SupplyRequestService : ISupplyRequestService
             return null;
         }
 
-        if (request.Status is not (SupplyRequestStatuses.Draft or SupplyRequestStatuses.AutoDrafted))
+        if (!IsDraftLike(request.Status))
         {
             throw new InvalidOperationException("Only draft requests can be updated.");
         }
@@ -205,7 +213,7 @@ public class SupplyRequestService : ISupplyRequestService
             return false;
         }
 
-        if (request.Status is not (SupplyRequestStatuses.Draft or SupplyRequestStatuses.AutoDrafted))
+        if (!IsDraftLike(request.Status))
         {
             throw new InvalidOperationException("Only draft requests can be submitted.");
         }
@@ -310,7 +318,10 @@ public class SupplyRequestService : ISupplyRequestService
 
         await using var transaction = await _context.Database.BeginTransactionAsync();
 
-        request.Status = SupplyRequestStatuses.Approved;
+        var hasAnyPartialApproval = request.Items.Any(i => (i.QuantityApproved ?? 0) < i.QuantityRequested);
+        request.Status = hasAnyPartialApproval
+            ? SupplyRequestStatuses.PartiallyApproved
+            : SupplyRequestStatuses.Approved;
         request.UpdatedAt = now;
 
         var normalizedNotes = NormalizeOptional(dto.Notes);
@@ -343,8 +354,10 @@ public class SupplyRequestService : ISupplyRequestService
 
         await _notificationService.CreateForUsersAsync(
             [request.RequestedBy_UserId],
-            "Supply Request Approved",
-            $"Your request #{request.RequestId} was approved and moved to order processing.",
+            hasAnyPartialApproval ? "Supply Request Partially Approved" : "Supply Request Approved",
+            hasAnyPartialApproval
+                ? $"Your request #{request.RequestId} was partially approved and moved to order processing."
+                : $"Your request #{request.RequestId} was approved and moved to order processing.",
             type: "SupplyRequestApproved",
             referenceType: nameof(SupplyRequest),
             referenceId: request.RequestId);
@@ -437,7 +450,7 @@ public class SupplyRequestService : ISupplyRequestService
         var existingDraft = await _context.SupplyRequests
             .Include(r => r.Items)
             .FirstOrDefaultAsync(r => r.BranchId == branchId && 
-                                     (r.Status == SupplyRequestStatuses.Draft || r.Status == SupplyRequestStatuses.AutoDrafted));
+                                     (r.Status == SupplyRequestStatuses.Draft || r.Status == SupplyRequestStatuses.AutoDrafted || r.Status == "Auto_Drafted"));
 
         var now = DateTime.UtcNow;
 
@@ -637,7 +650,7 @@ public class SupplyRequestService : ISupplyRequestService
             RequestedByName = request.RequestedBy_User == null
                 ? string.Empty
                 : $"{request.RequestedBy_User.FirstName} {request.RequestedBy_User.LastName}".Trim(),
-            Status = request.Status,
+            Status = NormalizeStatus(request.Status),
             RequestType = request.RequestType,
             Priority = request.Priority,
             DispatchWindow = request.DispatchWindow,
@@ -655,5 +668,21 @@ public class SupplyRequestService : ISupplyRequestService
                 QuantityApproved = item.QuantityApproved
             }).ToList()
         };
+    }
+
+    private static bool IsDraftLike(string? status)
+    {
+        var normalized = NormalizeStatus(status);
+        return normalized is SupplyRequestStatuses.Draft or SupplyRequestStatuses.AutoDrafted;
+    }
+
+    private static string NormalizeStatus(string? status)
+    {
+        if (string.Equals(status, "Auto_Drafted", StringComparison.OrdinalIgnoreCase))
+        {
+            return SupplyRequestStatuses.AutoDrafted;
+        }
+
+        return NormalizeOption(status, SupplyRequestStatuses.Draft);
     }
 }

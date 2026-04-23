@@ -31,6 +31,9 @@ public class OrderWorkflowService : IOrderWorkflowService
         var query = _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Branch)
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+                    .ThenInclude(i => i.Item)
             .AsQueryable();
 
         if (IsBranchScopedUser())
@@ -51,6 +54,83 @@ public class OrderWorkflowService : IOrderWorkflowService
         return orders.Select(MapToBranchOrderDto).ToList();
     }
 
+    public async Task<OrderDetailDto> CreateHqOrderAsync(CreateOrderDto dto)
+    {
+        if (!_currentUser.TenantId.HasValue || !_currentUser.UserId.HasValue)
+        {
+            throw new InvalidOperationException("Authenticated tenant user is required.");
+        }
+
+        await ValidateCreateOrderItemsAsync(dto.Items);
+
+        var branchExists = await _context.Branches.AnyAsync(b => b.BranchId == dto.BranchId && b.IsActive);
+        if (!branchExists)
+        {
+            throw new InvalidOperationException("Target branch was not found.");
+        }
+
+        var now = DateTime.UtcNow;
+        var tenantId = _currentUser.TenantId.Value;
+        var userId = _currentUser.UserId.Value;
+
+        await using var tx = await _context.Database.BeginTransactionAsync();
+
+        var request = new SupplyRequest
+        {
+            TenantId = tenantId,
+            BranchId = dto.BranchId,
+            RequestedBy_UserId = userId,
+            Status = SupplyRequestStatuses.Approved,
+            RequestType = NormalizeOptional(dto.RequestType) ?? "hq_initiated",
+            Priority = NormalizeOptional(dto.Priority) ?? "normal",
+            DispatchWindow = NormalizeOptional(dto.DispatchWindow) ?? "today",
+            DispatchDate = dto.DispatchDate,
+            Notes = NormalizeOptional(dto.Notes),
+            CreatedAt = now,
+            UpdatedAt = now,
+            Items = dto.Items.Select(i => new SupplyRequestItem
+            {
+                TenantId = tenantId,
+                ItemId = i.ItemId,
+                QuantityRequested = i.QuantityRequested,
+                QuantityApproved = i.QuantityRequested,
+            }).ToList(),
+        };
+
+        _context.SupplyRequests.Add(request);
+        await _context.SaveChangesAsync();
+
+        var order = new Order
+        {
+            TenantId = tenantId,
+            RequestId = request.RequestId,
+            Status = OrderStatuses.Processing,
+            PushedToFulfillmentAt = now,
+        };
+
+        _context.Orders.Add(order);
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = tenantId,
+            Order = order,
+            Status = OrderStatuses.Processing,
+            ChangedBy_UserId = userId,
+            Remarks = "HQ initiated order created and moved to processing.",
+            Timestamp = now,
+        });
+
+        await _context.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        var created = await GetOrderDetailAsync(order.OrderId);
+        if (created == null)
+        {
+            throw new InvalidOperationException("Unable to load created order.");
+        }
+
+        return created;
+    }
+
     public async Task<OrderDetailDto?> GetOrderDetailAsync(int orderId)
     {
         var order = await _context.Orders
@@ -58,6 +138,9 @@ public class OrderWorkflowService : IOrderWorkflowService
                 .ThenInclude(r => r!.Branch)
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.RequestedBy_User)
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+                    .ThenInclude(i => i.Item)
             .Include(o => o.Allocations)
                 .ThenInclude(a => a.Batch)
                     .ThenInclude(b => b!.Item)
@@ -218,7 +301,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         var now = DateTime.UtcNow;
 
-        order.Status = OrderStatuses.Dispatched;
+        order.Status = OrderStatuses.InTransit;
 
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -227,6 +310,16 @@ public class OrderWorkflowService : IOrderWorkflowService
             Status = OrderStatuses.Dispatched,
             ChangedBy_UserId = _currentUser.UserId.Value,
             Remarks = NormalizeOptional(dto.Remarks),
+            Timestamp = now
+        });
+
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = _currentUser.TenantId.Value,
+            OrderId = order.OrderId,
+            Status = OrderStatuses.InTransit,
+            ChangedBy_UserId = _currentUser.UserId.Value,
+            Remarks = "System auto-transition after dispatch.",
             Timestamp = now
         });
 
@@ -273,7 +366,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             return false;
         }
 
-        if (order.Status is not (OrderStatuses.Dispatched or OrderStatuses.Packed))
+        if (order.Status is not (OrderStatuses.Dispatched or OrderStatuses.InTransit or OrderStatuses.Packed))
         {
             throw new InvalidOperationException("Only dispatched orders can be confirmed as delivered.");
         }
@@ -423,6 +516,8 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     private static BranchOrderDto MapToBranchOrderDto(Order order)
     {
+        var requestItems = order.SupplyRequest?.Items ?? [];
+
         return new BranchOrderDto
         {
             OrderId = order.OrderId,
@@ -430,7 +525,9 @@ public class OrderWorkflowService : IOrderWorkflowService
             BranchId = order.SupplyRequest?.BranchId ?? 0,
             BranchName = order.SupplyRequest?.Branch?.Name ?? string.Empty,
             Status = order.Status,
-            PushedToFulfillmentAt = order.PushedToFulfillmentAt
+            PushedToFulfillmentAt = order.PushedToFulfillmentAt,
+            ItemsCount = requestItems.Count,
+            FulfillmentCost = requestItems.Sum(i => (i.QuantityApproved ?? i.QuantityRequested) * (i.Item?.UnitCost ?? 0))
         };
     }
 
@@ -457,6 +554,17 @@ public class OrderWorkflowService : IOrderWorkflowService
             VehicleId = shipment?.VehicleId,
             DispatchDate = shipment?.DispatchDate,
             EstimatedArrival = shipment?.EstimatedArrival,
+            RequestedItems = (order.SupplyRequest?.Items ?? [])
+                .Select(i => new OrderRequestItemDto
+                {
+                    ItemId = i.ItemId,
+                    ItemName = i.Item?.Name ?? string.Empty,
+                    ItemSku = i.Item?.SKU ?? string.Empty,
+                    QuantityRequested = i.QuantityRequested,
+                    QuantityApproved = i.QuantityApproved,
+                    UnitCost = i.Item?.UnitCost ?? 0,
+                })
+                .ToList(),
             Allocations = order.Allocations.Select(a => new OrderAllocationDto
             {
                 AllocationId = a.AllocationId,
@@ -495,6 +603,36 @@ public class OrderWorkflowService : IOrderWorkflowService
         }
 
         return parts.Count == 0 ? null : string.Join(" | ", parts);
+    }
+
+    private async Task ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items)
+    {
+        var rows = items.ToList();
+        if (rows.Count == 0)
+        {
+            throw new InvalidOperationException("At least one item is required.");
+        }
+
+        if (rows.Any(i => i.QuantityRequested <= 0))
+        {
+            throw new InvalidOperationException("Requested quantities must be greater than zero.");
+        }
+
+        var itemIds = rows.Select(i => i.ItemId).ToList();
+        if (itemIds.Distinct().Count() != itemIds.Count)
+        {
+            throw new InvalidOperationException("Duplicate item lines are not allowed.");
+        }
+
+        var validIds = await _context.Items
+            .Where(i => itemIds.Contains(i.ItemId))
+            .Select(i => i.ItemId)
+            .ToListAsync();
+
+        if (validIds.Count != itemIds.Count)
+        {
+            throw new InvalidOperationException("One or more requested items are invalid.");
+        }
     }
 
     private bool IsBranchScopedUser()

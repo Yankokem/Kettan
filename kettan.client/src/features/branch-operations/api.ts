@@ -77,6 +77,70 @@ export interface BranchOrder {
   branchName: string;
   status: string;
   pushedToFulfillmentAt: string;
+  itemsCount: number;
+  fulfillmentCost: number;
+}
+
+export interface OrderRequestItem {
+  itemId: number;
+  itemName: string;
+  itemSku: string;
+  quantityRequested: number;
+  quantityApproved: number | null;
+  unitCost: number;
+}
+
+export interface OrderAllocation {
+  allocationId: number;
+  batchId: number;
+  batchNumber: string;
+  itemId: number;
+  itemName: string;
+  quantityPicked: number;
+  remainingBatchQuantity: number;
+}
+
+export interface OrderDetail extends BranchOrder {
+  requestStatus: string;
+  requestedByUserId: number;
+  requestedByName: string;
+  notes: string | null;
+  trackingNumber: string | null;
+  courierId: number | null;
+  vehicleId: number | null;
+  dispatchDate: string | null;
+  estimatedArrival: string | null;
+  requestedItems: OrderRequestItem[];
+  allocations: OrderAllocation[];
+}
+
+export interface CreateOrderPayload {
+  branchId: number;
+  requestType?: string;
+  priority?: string;
+  dispatchWindow?: string;
+  dispatchDate?: string;
+  notes?: string;
+  items: Array<{
+    itemId: number;
+    quantityRequested: number;
+  }>;
+}
+
+function normalizeSupplyRequestStatus(status: string): string {
+  if (status === 'Auto_Drafted') {
+    return 'AutoDrafted';
+  }
+
+  return status;
+}
+
+function normalizeOrderStatus(status: string): string {
+  if (status === 'DeliveredWithVariance') {
+    return 'Delivered';
+  }
+
+  return status;
 }
 
 export async function fetchSupplyRequests(status?: string): Promise<SupplyRequest[]> {
@@ -86,12 +150,26 @@ export async function fetchSupplyRequests(status?: string): Promise<SupplyReques
   
   const payload = response.data as unknown;
   if (Array.isArray(payload)) {
-    return payload;
+    return payload.map((row) => ({
+      ...row,
+      status: normalizeSupplyRequestStatus(row.status),
+    }));
   }
   if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
-    return (payload as { items: SupplyRequest[] }).items;
+    return (payload as { items: SupplyRequest[] }).items.map((row) => ({
+      ...row,
+      status: normalizeSupplyRequestStatus(row.status),
+    }));
   }
   return [];
+}
+
+export async function fetchSupplyRequestById(requestId: number): Promise<SupplyRequest> {
+  const response = await api.get<SupplyRequest>(`/api/SupplyRequests/${requestId}`);
+  return {
+    ...response.data,
+    status: normalizeSupplyRequestStatus(response.data.status),
+  };
 }
 
 export async function createSupplyRequest(payload: CreateSupplyRequestPayload): Promise<SupplyRequest> {
@@ -199,12 +277,95 @@ export async function fetchBranchOrders(status?: string): Promise<BranchOrder[]>
   
   const payload = response.data as unknown;
   if (Array.isArray(payload)) {
-    return payload;
+    return payload.map((row) => ({
+      ...row,
+      status: normalizeOrderStatus(row.status),
+    }));
   }
   if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
-    return (payload as { items: BranchOrder[] }).items;
+    return (payload as { items: BranchOrder[] }).items.map((row) => ({
+      ...row,
+      status: normalizeOrderStatus(row.status),
+    }));
   }
   return [];
+}
+
+export async function fetchOrders(status?: string): Promise<BranchOrder[]> {
+  const response = await api.get<BranchOrder[]>('/api/Orders', {
+    params: status ? { status } : undefined,
+  });
+
+  const payload = response.data as unknown;
+  if (Array.isArray(payload)) {
+    return payload.map((row) => ({
+      ...row,
+      status: normalizeOrderStatus(row.status),
+    }));
+  }
+  if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
+    return (payload as { items: BranchOrder[] }).items.map((row) => ({
+      ...row,
+      status: normalizeOrderStatus(row.status),
+    }));
+  }
+  return [];
+}
+
+export async function fetchOrderById(orderId: number): Promise<OrderDetail> {
+  const response = await api.get<OrderDetail>(`/api/Orders/${orderId}`);
+  return {
+    ...response.data,
+    status: normalizeOrderStatus(response.data.status),
+  };
+}
+
+export async function createOrder(payload: CreateOrderPayload): Promise<OrderDetail> {
+  const response = await api.post<OrderDetail>('/api/Orders', payload);
+  return {
+    ...response.data,
+    status: normalizeOrderStatus(response.data.status),
+  };
+}
+
+export async function pickOrder(orderId: number, remarks?: string): Promise<void> {
+  await api.put(`/api/Orders/${orderId}/pick`, { remarks });
+}
+
+export async function packOrder(orderId: number, remarks?: string): Promise<void> {
+  await api.put(`/api/Orders/${orderId}/pack`, { remarks });
+}
+
+export async function dispatchOrder(orderId: number, payload: {
+  courierId?: number;
+  vehicleId?: number;
+  trackingNumber?: string;
+  estimatedArrival?: string;
+  remarks?: string;
+}): Promise<void> {
+  await api.put(`/api/Orders/${orderId}/dispatch`, payload);
+}
+
+export async function approveSupplyRequest(requestId: number, payload: {
+  notes?: string;
+  items: Array<{ requestItemId: number; quantityApproved: number }>;
+}): Promise<SupplyRequest> {
+  const response = await api.put<SupplyRequest>(`/api/SupplyRequests/${requestId}/approve`, payload);
+  return {
+    ...response.data,
+    status: normalizeSupplyRequestStatus(response.data.status),
+  };
+}
+
+export async function rejectSupplyRequest(requestId: number, payload: {
+  reason?: string;
+  notes?: string;
+}): Promise<SupplyRequest> {
+  const response = await api.put<SupplyRequest>(`/api/SupplyRequests/${requestId}/reject`, payload);
+  return {
+    ...response.data,
+    status: normalizeSupplyRequestStatus(response.data.status),
+  };
 }
 
 export async function confirmDelivery(orderId: number, payload: {

@@ -10,46 +10,7 @@ import { Button } from '../../components/UI/Button';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
-
-interface TenantDetail {
-  tenant: {
-    tenantId: number;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    address: string | null;
-    subscriptionTier: string;
-    subscriptionStatus: string;
-    isActive: boolean;
-    createdAt: string;
-  };
-  branches: { branchId: number; name: string; city: string | null; isActive: boolean }[];
-  userCount: number;
-  subscription: {
-    tenantSubscriptionId: number;
-    status: string;
-    billingCycle: string;
-    startDate: string;
-    periodStart: string | null;
-    periodEnd: string | null;
-    autoRenew: boolean;
-    planName: string | null;
-    planPrice: number;
-  } | null;
-  payments: { paymentId: number; amount: number; currency: string; paymentMethod: string | null; status: string; paidAt: string | null }[];
-}
-
-async function fetchTenantDetail(id: string): Promise<TenantDetail> {
-  const res = await fetch(`/api/admin/tenants/${id}`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load tenant');
-  return res.json();
-}
-
-async function toggleTenantStatus(id: string, activate: boolean): Promise<void> {
-  const endpoint = activate ? 'activate' : 'deactivate';
-  const res = await fetch(`/api/admin/tenants/${id}/${endpoint}`, { method: 'PUT', credentials: 'include' });
-  if (!res.ok) throw new Error(`Failed to ${endpoint} tenant`);
-}
+import { fetchTenantDetail, toggleTenantStatus, type TenantDetail } from './tenantsApi';
 
 export function TenantProfilePage() {
   const { tenantId } = useParams({ strict: false });

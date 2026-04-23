@@ -1,139 +1,74 @@
-import { MOCK_COURIERS, MOCK_VEHICLES } from './mockData';
-import type { Courier, Vehicle, VehicleFormData } from './types';
+/**
+ * Vehicles & Couriers API — live backend adapter.
+ * Replaces the previous localStorage mock with calls to /api/vehicles and /api/couriers.
+ */
 
-const STORAGE_KEY = 'kettan.inventory.vehicles.v1';
-
-const SEED_VEHICLES: Vehicle[] = MOCK_VEHICLES.map((vehicle) => ({ ...vehicle }));
-const SEED_COURIERS: Courier[] = MOCK_COURIERS.map((courier) => ({ ...courier }));
-
-function hasWindow() {
-  return typeof window !== 'undefined';
+export interface Courier {
+  courierId: number;
+  name: string;
+  contactNumber?: string | null;
+  isActive: boolean;
+  createdAt: string;
 }
 
-function readStore(): Vehicle[] {
-  if (!hasWindow()) {
-    return [...SEED_VEHICLES];
-  }
-
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-
-  if (!raw) {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_VEHICLES));
-    return [...SEED_VEHICLES];
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as Vehicle[];
-    return Array.isArray(parsed) ? parsed : [...SEED_VEHICLES];
-  } catch {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_VEHICLES));
-    return [...SEED_VEHICLES];
-  }
+export interface Vehicle {
+  vehicleId: number;
+  courierId: number;
+  courierName: string;
+  plateNumber: string;
+  vehicleType: string;
+  description?: string | null;
+  isActive: boolean;
+  createdAt: string;
 }
 
-function writeStore(rows: Vehicle[]) {
-  if (!hasWindow()) {
-    return;
-  }
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+export interface VehicleFormData {
+  courierId: number;
+  plateNumber: string;
+  vehicleType: string;
+  description: string;
+  isActive: boolean;
 }
 
-function sortRows(rows: Vehicle[]) {
-  return [...rows].sort((a, b) => {
-    return a.plateNumber.localeCompare(b.plateNumber);
+async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(url, { credentials: 'include', ...options });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { message?: string }).message ?? `Request failed: ${res.status}`);
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
+export async function listCouriers(includeInactive = false): Promise<Courier[]> {
+  const params = includeInactive ? '?includeInactive=true' : '';
+  return request<Courier[]>(`/api/couriers${params}`);
+}
+
+export async function listVehicles(courierId?: number, includeInactive = false): Promise<Vehicle[]> {
+  const params = new URLSearchParams();
+  if (courierId) params.set('courierId', courierId.toString());
+  if (includeInactive) params.set('includeInactive', 'true');
+  const qs = params.toString();
+  return request<Vehicle[]>(`/api/vehicles${qs ? `?${qs}` : ''}`);
+}
+
+export async function createVehicle(input: VehicleFormData): Promise<Vehicle> {
+  return request<Vehicle>('/api/vehicles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
   });
 }
 
-function makeId() {
-  return `vh-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+export async function updateVehicle(vehicleId: number, input: VehicleFormData): Promise<Vehicle> {
+  return request<Vehicle>(`/api/vehicles/${vehicleId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
 }
 
-function courierLookup() {
-  return new Map(SEED_COURIERS.map((courier) => [courier.id, courier]));
-}
-
-export function listCouriers(options?: { includeInactive?: boolean }): Courier[] {
-  const includeInactive = options?.includeInactive ?? false;
-  return SEED_COURIERS.filter((courier) => !courier.isDeleted && (includeInactive || courier.isActive));
-}
-
-export function listVehicles(options?: { includeDeleted?: boolean }): Vehicle[] {
-  const includeDeleted = options?.includeDeleted ?? false;
-  const couriers = courierLookup();
-  const rows = readStore();
-  const visibleRows = includeDeleted ? rows : rows.filter((row) => !row.isDeleted);
-
-  return sortRows(visibleRows).map((vehicle) => ({
-    ...vehicle,
-    courier: couriers.get(vehicle.courierId),
-  }));
-}
-
-export function createVehicle(input: VehicleFormData): Vehicle {
-  const rows = readStore();
-  const couriers = courierLookup();
-
-  const created: Vehicle = {
-    id: makeId(),
-    courierId: input.courierId,
-    courier: couriers.get(input.courierId),
-    plateNumber: input.plateNumber.trim().toUpperCase(),
-    vehicleType: input.vehicleType.trim(),
-    description: input.description.trim() || undefined,
-    isActive: input.isActive,
-    isDeleted: false,
-    deletedAt: null,
-    createdAt: new Date().toISOString(),
-  };
-
-  const nextRows = sortRows([...rows, created]);
-  writeStore(nextRows);
-  return created;
-}
-
-export function updateVehicle(vehicleId: string, input: VehicleFormData): Vehicle | null {
-  const rows = readStore();
-  const index = rows.findIndex((row) => row.id === vehicleId);
-
-  if (index < 0) {
-    return null;
-  }
-
-  const couriers = courierLookup();
-
-  const updated: Vehicle = {
-    ...rows[index],
-    courierId: input.courierId,
-    courier: couriers.get(input.courierId),
-    plateNumber: input.plateNumber.trim().toUpperCase(),
-    vehicleType: input.vehicleType.trim(),
-    description: input.description.trim() || undefined,
-    isActive: input.isActive,
-  };
-
-  const nextRows = [...rows];
-  nextRows[index] = updated;
-  writeStore(sortRows(nextRows));
-  return updated;
-}
-
-export function softDeleteVehicle(vehicleId: string): Vehicle | null {
-  const rows = readStore();
-  const index = rows.findIndex((row) => row.id === vehicleId);
-
-  if (index < 0) {
-    return null;
-  }
-
-  const deleted: Vehicle = {
-    ...rows[index],
-    isDeleted: true,
-    deletedAt: new Date().toISOString(),
-  };
-
-  const nextRows = [...rows];
-  nextRows[index] = deleted;
-  writeStore(nextRows);
-  return deleted;
+export async function deleteVehicle(vehicleId: number): Promise<void> {
+  return request<void>(`/api/vehicles/${vehicleId}`, { method: 'DELETE' });
 }

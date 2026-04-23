@@ -4,10 +4,14 @@ import type { CompanyProfile, CompanyProfileFormData } from './types';
 interface TenantDto {
   tenantId: number;
   name: string;
+  legalName?: string | null;
+  taxId?: string | null;
+  website?: string | null;
   subscriptionTier: string;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  supportEmail?: string | null;
   subscriptionStatus: string;
   subscriptionPeriodEnd?: string | null;
   isActive: boolean;
@@ -16,8 +20,12 @@ interface TenantDto {
 
 interface UpdateTenantDto {
   name: string;
+  legalName?: string | null;
+  taxId?: string | null;
+  website?: string | null;
   subscriptionTier: string;
   email?: string | null;
+  supportEmail?: string | null;
   phone?: string | null;
   address?: string | null;
 }
@@ -160,12 +168,12 @@ function toCompanyProfile(tenant: TenantDto, activeBranches: number, activeStaff
   const normalizedTier = normalizeTier(tenant.subscriptionTier);
   const limits = PLAN_LIMITS[normalizedTier];
   const billingEmail = tenant.email?.trim() ?? '';
-  const supportEmail = billingEmail;
+  const supportEmail = tenant.supportEmail?.trim() ?? billingEmail;
   const headquartersAddress = tenant.address?.trim() || 'Not Set';
 
   return {
     name: tenant.name,
-    legalName: tenant.name,
+    legalName: tenant.legalName?.trim() ?? tenant.name,
     organizationId: `TEN-${String(tenant.tenantId).padStart(5, '0')}`,
     planName: toPlanName(tenant.subscriptionTier),
     headquartersCity: resolveHeadquartersCity(tenant.address),
@@ -173,8 +181,8 @@ function toCompanyProfile(tenant: TenantDto, activeBranches: number, activeStaff
     billingEmail,
     supportEmail,
     phoneContact: tenant.phone?.trim() ?? '',
-    website: '',
-    taxId: 'N/A',
+    website: tenant.website?.trim() ?? '',
+    taxId: tenant.taxId?.trim() ?? 'N/A',
     activeBranches,
     branchLimit: limits.branchLimit,
     activeStaff,
@@ -204,8 +212,12 @@ export async function updateCompanyProfile(
 ): Promise<void> {
   const payload: UpdateTenantDto = {
     name: formData.name.trim(),
+    legalName: toNullable(formData.legalName),
+    taxId: toNullable(formData.taxId),
+    website: toNullable(formData.website),
     subscriptionTier: subscriptionTier.trim() || 'Starter',
-    email: toNullable(formData.billingEmail) ?? toNullable(formData.supportEmail),
+    email: toNullable(formData.billingEmail),
+    supportEmail: toNullable(formData.supportEmail),
     phone: toNullable(formData.phoneContact),
     address: toNullable(formData.headquartersAddress),
   };

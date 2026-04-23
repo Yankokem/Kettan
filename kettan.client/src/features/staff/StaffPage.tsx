@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Grid } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
@@ -19,15 +19,9 @@ import { SearchInput } from '../../components/UI/SearchInput';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { StatCard } from '../../components/UI/StatCard';
-import { BRANCHES_MOCK } from '../branches/mockData';
-
-const MOCK_STAFF: StaffMember[] = [
-  { id: 1, name: 'Sarah Jenkins', email: 's.jenkins@kettan.co', role: 'Branch Manager', location: 'Makati Headquarters', status: 'active', avatar: 'SJ', imageUrl: null },
-  { id: 2, name: 'Miguel Santos', email: 'm.santos@kettan.co', role: 'Branch Manager', location: 'BGC High Street', status: 'active', avatar: 'MS', imageUrl: null },
-  { id: 3, name: 'Anna Cruz', email: 'a.cruz@kettan.co', role: 'HQ Executive', location: 'Global HQ', status: 'active', avatar: 'AC', imageUrl: null },
-  { id: 4, name: 'David Lee', email: 'd.lee@kettan.co', role: 'Store Staff', location: 'Ortigas Center', status: 'inactive', avatar: 'DL', imageUrl: null },
-  { id: 5, name: 'Lea Robles', email: 'l.robles@kettan.co', role: 'Store Staff', location: 'Eastwood', status: 'archived', avatar: 'LR', imageUrl: null },
-];
+import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
+import { fetchEmployees, type EmployeeDto } from './staffApi';
+import { fetchBranches, type BranchDto } from '../branches/branchesApi';
 
 const ROLE_LABEL_MAP: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
   hq: 'HQ Executive',
@@ -38,13 +32,29 @@ const ROLE_LABEL_MAP: Record<Exclude<AddStaffFormValues['role'], ''>, string> = 
 const getInitials = (firstName: string, lastName: string) =>
   `${firstName.trim().charAt(0)}${lastName.trim().charAt(0)}`.toUpperCase();
 
+function toStaffMember(e: EmployeeDto): StaffMember {
+  return {
+    id: e.employeeId,
+    name: `${e.firstName} ${e.lastName}`.trim(),
+    email: '',
+    role: e.position,
+    location: e.branchName ?? 'Unassigned',
+    status: e.isActive ? 'active' : 'inactive',
+    avatar: `${e.firstName.charAt(0)}${e.lastName.charAt(0)}`.toUpperCase(),
+    imageUrl: null,
+  };
+}
+
 type StaffViewMode = 'card' | 'table';
 type StaffStatusFilter = 'all' | StaffMember['status'];
 type SortOption = 'name-asc' | 'name-desc' | 'recent';
 
 export function StaffPage() {
   const navigate = useNavigate();
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>(MOCK_STAFF);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [branchOptions, setBranchOptions] = useState<{ value: string; label: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -52,14 +62,16 @@ export function StaffPage() {
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [viewMode, setViewMode] = useState<StaffViewMode>('card');
 
-  const branchOptions = useMemo(
-    () =>
-      BRANCHES_MOCK.map((branch) => ({
-        value: branch.id.toString(),
-        label: branch.name,
-      })),
-    []
-  );
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([fetchEmployees(), fetchBranches()])
+      .then(([employees, branches]: [EmployeeDto[], BranchDto[]]) => {
+        setStaffMembers(employees.map(toStaffMember));
+        setBranchOptions(branches.map((b) => ({ value: b.branchId.toString(), label: b.name })));
+      })
+      .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleCreateStaff = (formValues: AddStaffFormValues) => {
     const roleValue = formValues.role;
@@ -257,33 +269,40 @@ export function StaffPage() {
         </Button>
       </Box>
 
-      {viewMode === 'card' ? (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' },
-            gap: 2,
-          }}
-        >
-          {filteredStaff.map((staff) => (
-            <StaffCard
-              key={staff.id}
-              staff={staff}
-              onEdit={handleEditStaff}
-              onInactivate={handleInactivateStaff}
-              onArchive={handleArchiveStaff}
-            />
-          ))}
-        </Box>
-      ) : (
-        <StaffTableView
-          data={filteredStaff}
-          onOpenProfile={handleOpenProfile}
-          onEdit={handleEditStaff}
-          onInactivate={handleInactivateStaff}
-          onArchive={handleArchiveStaff}
-        />
-      )}
+      <DataStateWrapper
+        loading={loading}
+        error={error}
+        isEmpty={filteredStaff.length === 0}
+        emptyMessage={searchTerm ? 'No staff match your search.' : 'No staff found. Add your first staff member.'}
+      >
+        {viewMode === 'card' ? (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' },
+              gap: 2,
+            }}
+          >
+            {filteredStaff.map((staff) => (
+              <StaffCard
+                key={staff.id}
+                staff={staff}
+                onEdit={handleEditStaff}
+                onInactivate={handleInactivateStaff}
+                onArchive={handleArchiveStaff}
+              />
+            ))}
+          </Box>
+        ) : (
+          <StaffTableView
+            data={filteredStaff}
+            onOpenProfile={handleOpenProfile}
+            onEdit={handleEditStaff}
+            onInactivate={handleInactivateStaff}
+            onArchive={handleArchiveStaff}
+          />
+        )}
+      </DataStateWrapper>
 
       <AddStaffModal
         open={isAddStaffModalOpen}

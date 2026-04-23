@@ -26,10 +26,10 @@
 
 | Frontend Area | Status | Current Reality | Remaining Work |
 |---|---|---|---|
-| HQ Inventory | PARTIAL | Core pages now API-backed (`InventoryPage`, `InventoryItemProfilePage`, `InventoryTransactionPage`) | Replace localStorage adapters (`itemCategoryApi`, `vehicleApi`) and remove residual `mockData` runtime dependency |
-| Company Profile | PARTIAL | Reads/saves core tenant fields through `/api/tenants/me`; dev header connectivity signal is live | Persist full profile fields (`legalName`, `taxId`, `website`, dedicated `supportEmail`) via backend schema/DTO expansion |
-| Branches & Staff | NOT DONE | Staff/branch flows still tracked for upcoming migration | Move listing/profile flows to `/api/branches` and `/api/employees`, remove mock fallbacks |
-| Menu & Consumption | NOT DONE | Menu/consumption migration not yet executed | Replace menu + consumption mock sources with `/api/menu-items`, `/api/items`, and related lookups |
+| HQ Inventory | DONE | Core pages + categories/vehicles now API-backed | None |
+| Company Profile | DONE | Reads/saves core tenant fields through `/api/tenants/me` | None |
+| Branches & Staff | DONE | Staff/branch flows now call `/api/branches` and `/api/employees` | None |
+| Menu & Consumption | PARTIAL | Menu migration complete; consumption flow pending | Migrate consumption create flow to live menu/items sources |
 | Supply Requests & Orders | NOT DONE | Sample/fallback rows remain in current frontend flows | Remove fallback constants and wire create/edit/detail/order pages to real APIs |
 | Tenant Dashboard & Reports | NOT DONE | Mock dashboards/reports still present in several views | Replace tenant/report mocks where endpoints exist; show NotAvailable for missing backend endpoints |
 
@@ -364,21 +364,21 @@
   - [x] `PUT /api/tenants/me` — Updates core tenant profile fields (`Name`, `SubscriptionTier`, `Email`, `Phone`, `Address`)
 - [x] Development diagnostics endpoint:
   - [x] `GET /api/tenants/dev-connection-status` — Returns API/DB/tenant-read status + safe environment/database metadata (development only)
-- [ ] Super Admin expansion:
-  - [ ] `GET /api/tenants` — List all tenants (SuperAdmin only)
-  - [ ] `GET /api/tenants/{id}` — Tenant detail + subscription status
-  - [ ] `PUT /api/tenants/{id}/deactivate` — Kill-switch
-  - [ ] `GET /api/tenants/{id}/stats` — Usage stats
+- [x] Super Admin expansion:
+  - [x] `GET /api/tenants` — List all tenants (SuperAdmin only)
+  - [x] `GET /api/tenants/{id}` — Tenant detail + subscription status
+  - [x] `PUT /api/tenants/{id}/deactivate` — Kill-switch
+  - [x] `GET /api/tenants/{id}/stats` — Usage stats
 
 ### 5B. Audit Log Middleware
 
-- [ ] `Middleware/AuditLogMiddleware.cs` — Auto-log: who, what, when, which entity
-- [ ] OR use EF `SaveChangesInterceptor` to capture changes on save
+- [x] `Middleware/AuditLogMiddleware.cs` — Auto-log: who, what, when, which entity
+- [x] OR use EF `SaveChangesInterceptor` to capture changes on save
 
 ### 5C. Data Export
 
-- [ ] CSV export endpoints for inventory, orders, returns
-- [ ] PDF generation for reports (optional — depends on scope)
+- [x] CSV export endpoints for inventory, orders, returns
+- [x] PDF generation for reports (optional — depends on scope)
 
 ### 5D. Frontend ↔ Backend Wiring
 
@@ -388,21 +388,24 @@
 
 #### 5D.1. Guardrails and Standards
 
-- [ ] Capture baseline screenshots and expected UI states before each feature migration.
-- [ ] Build shared adapter conventions for int/decimal/date mapping across all frontend modules.
-  - Status: PARTIAL — implemented for HQ Inventory in `kettan.client/src/features/hq-inventory/hqInventoryApi.ts`.
-- [ ] Apply unified loading/error/empty/not-available UX patterns across migrated pages.
-  - Status: PARTIAL — implemented in current HQ Inventory migration scope.
-- [ ] Maintain truthful DONE/PARTIAL/NOT DONE tracking for every migrated page and endpoint gap.
+- [x] Capture baseline screenshots and expected UI states before each feature migration.
+- [x] Build shared adapter conventions for int/decimal/date mapping across all frontend modules.
+  - Status: DONE — implemented in `kettan.client/src/utils/formatters.ts`.
+- [x] Apply unified loading/error/empty/not-available UX patterns across migrated pages.
+  - Status: DONE — implemented via `DataStateWrapper.tsx`.
+- [x] Maintain truthful DONE/PARTIAL/NOT DONE tracking for every migrated page and endpoint gap.
 
 #### 5D.2. Phase 1 — HQ Inventory (In Progress)
 
 - [x] Replace mocks in `kettan.client/src/features/hq-inventory/InventoryPage.tsx` with live `/api/items` + `/api/items/{id}/transactions` reads.
 - [x] Replace mocks in `kettan.client/src/features/hq-inventory/InventoryItemProfilePage.tsx` with live detail/batches/transactions and real update save flow.
 - [x] Replace mocks in `kettan.client/src/features/hq-inventory/InventoryTransactionPage.tsx` with live catalog and real stock-in/stock-out persistence.
-- [ ] Replace localStorage adapter in `kettan.client/src/features/hq-inventory/itemCategoryApi.ts` with real settings endpoints.
-- [ ] Replace localStorage adapter in `kettan.client/src/features/hq-inventory/vehicleApi.ts` with real courier/vehicle endpoints.
-- [ ] Remove remaining runtime dependence on `kettan.client/src/features/hq-inventory/mockData.ts` after category/vehicle migration.
+- [x] Replace localStorage adapter in `kettan.client/src/features/hq-inventory/itemCategoryApi.ts` with real settings endpoints.
+  - Status: DONE — now calls `/api/inventory-categories`.
+- [x] Replace localStorage adapter in `kettan.client/src/features/hq-inventory/vehicleApi.ts` with real courier/vehicle endpoints.
+  - Status: DONE — now calls `/api/vehicles` and `/api/couriers`.
+- [x] Remove remaining runtime dependence on `kettan.client/src/features/hq-inventory/mockData.ts` after category/vehicle migration.
+  - Status: DONE — itemCategoryApi and vehicleApi no longer import from mockData.
 
 #### 5D.2A. Tenant Company Profile + Dev Connectivity (Implemented 2026-04-20)
 
@@ -410,18 +413,26 @@
 - [x] Replace local-only profile save with `/api/tenants/me` update + post-save API refresh.
 - [x] Add adapter in `kettan.client/src/features/company/companyProfileApi.ts` to map tenant payloads and fetch diagnostics.
 - [x] Add development-only header connectivity indicator in `kettan.client/src/components/Layout/Header.tsx` using `/api/tenants/dev-connection-status`.
-- [ ] Persist full company profile form fields (`legalName`, `taxId`, `website`, dedicated `supportEmail`) once tenant schema/DTO coverage is expanded.
+- [x] Persist full company profile form fields (`legalName`, `taxId`, `website`, dedicated `supportEmail`) once tenant schema/DTO coverage is expanded.
+  - Status: DONE — EF migration `ExpandTenantProfile` added 4 new columns; DTOs, controller, and `companyProfileApi.ts` all updated.
 
 #### 5D.3. Phase 2 — Branches and Staff
 
-- [ ] Migrate branch listing/profile pages to live branches endpoints.
-- [ ] Migrate staff page to `/api/employees`.
-- [ ] Remove branch/staff mocks; if backend data is unavailable, show NotAvailable state.
+- [x] Migrate branch listing/profile pages to live branches endpoints.
+  - Status: DONE — `branchesApi.ts` created; `BranchesPage.tsx` migrated to live `/api/branches` with `DataStateWrapper`.
+- [x] Migrate staff page to `/api/employees`.
+  - Status: DONE — `staffApi.ts` created; `StaffPage.tsx` migrated to live `/api/employees` with `DataStateWrapper`.
+- [x] Remove branch/staff mocks; if backend data is unavailable, show NotAvailable state.
+  - Status: DONE — `BranchesPage` and `StaffPage` no longer import from any mock files.
 
-#### 5D.4. Phase 3 — Menu and Consumption
+#### 5D.4. Phase 3 — Menu and Consumption (Partially Done)
 
-- [ ] Migrate menu listing/profile/add/edit flows to `/api/menu-items` and settings lookups.
-- [ ] Migrate recipe/variant inventory selectors to live `/api/items`.
+- [x] Migrate menu listing/profile/add/edit flows to `/api/menu-items` and settings lookups.
+  - Status: DONE — `MenuItemsPage`, `AddMenuItemPage`, and `MenuItemProfilePage` migrated.
+- [x] Migrate recipe/variant inventory selectors to live `/api/items`.
+  - Status: DONE — `VariantsBuilder` and `InventorySelectionModal` now fetch from live items.
+- [x] Migrate menu category management to live `/api/menu-categories`.
+  - Status: DONE — `MenuCategoriesPage` migrated.
 - [ ] Migrate consumption create flow to live menu/items sources.
 
 #### 5D.5. Phase 4 — Supply Requests and Orders

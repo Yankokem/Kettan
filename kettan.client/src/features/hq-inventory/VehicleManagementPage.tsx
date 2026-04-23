@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Chip, Grid, IconButton, Paper, Typography } from '@mui/material';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
@@ -18,16 +18,16 @@ import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { ViewToggle } from '../../components/UI/ViewToggle';
+import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { VehicleCard } from './components/VehicleCard';
-import { createVehicle, listCouriers, listVehicles, softDeleteVehicle, updateVehicle } from './vehicleApi';
-import type { Courier, Vehicle, VehicleFormData } from './types';
+import { createVehicle, listCouriers, listVehicles, deleteVehicle, updateVehicle, type Vehicle, type Courier, type VehicleFormData } from './vehicleApi';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
 type SortFilter = 'plate-asc' | 'plate-desc' | 'type-asc' | 'type-desc';
 type VehicleViewMode = 'cards' | 'table';
 
 const INITIAL_FORM: VehicleFormData = {
-  courierId: '',
+  courierId: 0,
   plateNumber: '',
   vehicleType: '',
   description: '',
@@ -41,41 +41,55 @@ const VIEW_OPTIONS = [
 
 export function VehicleManagementPage() {
   const [form, setForm] = useState<VehicleFormData>(INITIAL_FORM);
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(() => listVehicles());
-  const [couriers] = useState<Courier[]>(() => listCouriers({ includeInactive: true }));
+  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [couriers, setCouriers] = useState<Courier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortFilter, setSortFilter] = useState<SortFilter>('plate-asc');
-  const [showDeleted, setShowDeleted] = useState(false);
   const [viewMode, setViewMode] = useState<VehicleViewMode>('cards');
   const [deleteTarget, setDeleteTarget] = useState<Vehicle | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const reloadVehicles = (includeDeleted = showDeleted) => {
-    setVehicles(listVehicles({ includeDeleted }));
+  const fetchData = async () => {
+    try {
+      const [vData, cData] = await Promise.all([listVehicles(), listCouriers(true)]);
+      setVehicles(vData);
+      setCouriers(cData);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to load data'));
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const selectedVehicle = useMemo(
-    () => vehicles.find((vehicle) => vehicle.id === selectedVehicleId) ?? null,
+    () => vehicles.find((v) => v.vehicleId === selectedVehicleId) ?? null,
     [vehicles, selectedVehicleId],
   );
 
   const visibleVehicles = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    const filtered = vehicles.filter((vehicle) => {
+    const filtered = vehicles.filter((v) => {
       const matchesQuery =
         !query ||
-        vehicle.plateNumber.toLowerCase().includes(query) ||
-        vehicle.vehicleType.toLowerCase().includes(query) ||
-        (vehicle.description || '').toLowerCase().includes(query) ||
-        (vehicle.courier?.name || '').toLowerCase().includes(query);
+        v.plateNumber.toLowerCase().includes(query) ||
+        v.vehicleType.toLowerCase().includes(query) ||
+        (v.description || '').toLowerCase().includes(query) ||
+        (v.courierName || '').toLowerCase().includes(query);
 
       const matchesStatus =
         statusFilter === 'all' ||
-        (statusFilter === 'active' && vehicle.isActive) ||
-        (statusFilter === 'inactive' && !vehicle.isActive);
+        (statusFilter === 'active' && v.isActive) ||
+        (statusFilter === 'inactive' && !v.isActive);
 
       return matchesQuery && matchesStatus;
     });
@@ -85,15 +99,12 @@ export function VehicleManagementPage() {
       if (sortFilter === 'plate-desc') {
         return right.plateNumber.localeCompare(left.plateNumber);
       }
-
       if (sortFilter === 'type-asc') {
         return left.vehicleType.localeCompare(right.vehicleType);
       }
-
       if (sortFilter === 'type-desc') {
         return right.vehicleType.localeCompare(left.vehicleType);
       }
-
       return left.plateNumber.localeCompare(right.plateNumber);
     });
 
@@ -106,19 +117,19 @@ export function VehicleManagementPage() {
     setErrorMessage(null);
   };
 
-  const handleSelectVehicle = (vehicle: Vehicle) => {
-    setSelectedVehicleId(vehicle.id);
+  const handleSelectVehicle = (v: Vehicle) => {
+    setSelectedVehicleId(v.vehicleId);
     setForm({
-      courierId: vehicle.courierId,
-      plateNumber: vehicle.plateNumber,
-      vehicleType: vehicle.vehicleType,
-      description: vehicle.description || '',
-      isActive: vehicle.isActive,
+      courierId: v.courierId,
+      plateNumber: v.plateNumber,
+      vehicleType: v.vehicleType,
+      description: v.description || '',
+      isActive: v.isActive,
     });
     setErrorMessage(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const normalizedPlate = form.plateNumber.trim().toUpperCase();
 
     if (!form.courierId) {
@@ -131,79 +142,38 @@ export function VehicleManagementPage() {
       return;
     }
 
-    if (normalizedPlate.length > 50) {
-      setErrorMessage('Plate number must be 50 characters or less.');
-      return;
-    }
-
-    if (!/^[A-Z0-9-]{2,50}$/.test(normalizedPlate)) {
-      setErrorMessage('Plate number can only contain letters, numbers, and hyphen.');
-      return;
-    }
-
-    if (!form.vehicleType.trim()) {
-      setErrorMessage('Vehicle type is required.');
-      return;
-    }
-
-    if (form.vehicleType.trim().length > 50) {
-      setErrorMessage('Vehicle type must be 50 characters or less.');
-      return;
-    }
-
-    if (form.description.trim().length > 255) {
-      setErrorMessage('Description must be 255 characters or less.');
-      return;
-    }
-
-    const duplicate = vehicles.find((vehicle) => {
-      if (vehicle.id === selectedVehicleId) {
-        return false;
-      }
-
-      return vehicle.plateNumber.toUpperCase() === normalizedPlate;
-    });
-
-    if (duplicate) {
-      setErrorMessage('Plate number already exists.');
-      return;
-    }
-
     setErrorMessage(null);
+    setLoading(true);
 
-    if (!selectedVehicleId) {
-      const created = createVehicle({ ...form, plateNumber: normalizedPlate });
-      reloadVehicles();
-      handleSelectVehicle(created);
-      return;
-    }
-
-    const updated = updateVehicle(selectedVehicleId, { ...form, plateNumber: normalizedPlate });
-
-    if (!updated) {
-      setErrorMessage('Selected vehicle no longer exists. Please refresh and try again.');
-      reloadVehicles();
+    try {
+      if (!selectedVehicleId) {
+        await createVehicle({ ...form, plateNumber: normalizedPlate });
+      } else {
+        await updateVehicle(selectedVehicleId, { ...form, plateNumber: normalizedPlate });
+      }
+      await fetchData();
       resetForm();
-      return;
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to save vehicle');
+      setLoading(false);
     }
-
-    reloadVehicles();
-    handleSelectVehicle(updated);
   };
 
-  const handleDelete = () => {
-    if (!deleteTarget) {
-      return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
+    setLoading(true);
+    try {
+      await deleteVehicle(deleteTarget.vehicleId);
+      if (selectedVehicleId === deleteTarget.vehicleId) {
+        resetForm();
+      }
+      setDeleteTarget(null);
+      await fetchData();
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to delete vehicle');
+      setLoading(false);
     }
-
-    softDeleteVehicle(deleteTarget.id);
-
-    if (selectedVehicleId === deleteTarget.id) {
-      resetForm();
-    }
-
-    setDeleteTarget(null);
-    reloadVehicles();
   };
 
   const tableColumns: ColumnDef<Vehicle>[] = [
@@ -211,25 +181,24 @@ export function VehicleManagementPage() {
       key: 'plateNumber',
       label: 'Plate Number',
       sortable: true,
-      render: (vehicle) => (
+      render: (v) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          {vehicle.plateNumber}
+          {v.plateNumber}
         </Typography>
       ),
     },
     {
-      key: 'courier',
+      key: 'courierName',
       label: 'Courier',
       sortable: true,
-      sortAccessor: (vehicle) => vehicle.courier?.name || '',
-      render: (vehicle) => <Typography sx={{ fontSize: 13 }}>{vehicle.courier?.name || '--'}</Typography>,
+      render: (v) => <Typography sx={{ fontSize: 13 }}>{v.courierName || '--'}</Typography>,
     },
     {
       key: 'vehicleType',
       label: 'Vehicle Type',
       width: 140,
       sortable: true,
-      render: (vehicle) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{vehicle.vehicleType}</Typography>,
+      render: (v) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{v.vehicleType}</Typography>,
     },
     {
       key: 'isActive',
@@ -237,31 +206,19 @@ export function VehicleManagementPage() {
       width: 120,
       align: 'center',
       sortable: true,
-      sortAccessor: (vehicle) => (vehicle.isActive ? 1 : 0),
-      render: (vehicle) => (
+      sortAccessor: (v) => (v.isActive ? 1 : 0),
+      render: (v) => (
         <Chip
-          label={vehicle.isActive ? 'Active' : 'Inactive'}
+          label={v.isActive ? 'Active' : 'Inactive'}
           size="small"
           sx={{
             fontSize: 11.5,
             fontWeight: 700,
-            bgcolor: vehicle.isActive ? 'rgba(84,107,63,0.12)' : 'rgba(148, 163, 184, 0.16)',
-            color: vehicle.isActive ? '#546B3F' : '#475569',
-            border: `1px solid ${vehicle.isActive ? 'rgba(84,107,63,0.22)' : 'rgba(148, 163, 184, 0.28)'}`,
+            bgcolor: v.isActive ? 'rgba(84,107,63,0.12)' : 'rgba(148, 163, 184, 0.16)',
+            color: v.isActive ? '#546B3F' : '#475569',
+            border: `1px solid ${v.isActive ? 'rgba(84,107,63,0.22)' : 'rgba(148, 163, 184, 0.28)'}`,
           }}
         />
-      ),
-    },
-    {
-      key: 'createdAt',
-      label: 'Created',
-      width: 130,
-      sortable: true,
-      sortAccessor: (vehicle) => new Date(vehicle.createdAt).getTime(),
-      render: (vehicle) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-          {new Date(vehicle.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-        </Typography>
       ),
     },
     {
@@ -269,13 +226,13 @@ export function VehicleManagementPage() {
       label: 'Actions',
       width: 90,
       align: 'right',
-      render: (vehicle) => (
+      render: (v) => (
         <IconButton
           size="small"
-          aria-label={`Delete ${vehicle.plateNumber}`}
+          aria-label={`Delete ${v.plateNumber}`}
           onClick={(event) => {
             event.stopPropagation();
-            setDeleteTarget(vehicle);
+            setDeleteTarget(v);
           }}
           sx={{
             width: 30,
@@ -334,13 +291,11 @@ export function VehicleManagementPage() {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2 }}>
               <FormDropdown
                 label="Courier"
-                value={form.courierId}
-                onChange={(event) => setForm((prev) => ({ ...prev, courierId: String(event.target.value) }))}
+                value={form.courierId.toString()}
+                onChange={(event) => setForm((prev) => ({ ...prev, courierId: Number(event.target.value) }))}
                 options={[
-                  { value: '', label: 'Select courier' },
-                  ...couriers
-                    .filter((courier) => !courier.isDeleted)
-                    .map((courier) => ({ value: courier.id, label: `${courier.name}${courier.isActive ? '' : ' (Inactive)'}` })),
+                  { value: '0', label: 'Select courier' },
+                  ...couriers.map((c) => ({ value: c.courierId.toString(), label: `${c.name}${c.isActive ? '' : ' (Inactive)'}` })),
                 ]}
               />
 
@@ -386,8 +341,8 @@ export function VehicleManagementPage() {
             ) : null}
 
             <Box sx={{ mt: 2.7, display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-              <Button onClick={handleSave}>{selectedVehicle ? 'Update Vehicle' : 'Save Vehicle'}</Button>
-              <Button variant="outlined" startIcon={<ReplayRoundedIcon />} onClick={resetForm}>
+              <Button onClick={handleSave} loading={loading}>{selectedVehicle ? 'Update Vehicle' : 'Save Vehicle'}</Button>
+              <Button variant="outlined" startIcon={<ReplayRoundedIcon />} onClick={resetForm} disabled={loading}>
                 Reset
               </Button>
             </Box>
@@ -429,65 +384,48 @@ export function VehicleManagementPage() {
                 ]}
               />
 
-              <FilterDropdown
-                label="Visibility"
-                icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-                value={showDeleted ? 'include' : 'active'}
-                onChange={(value) => {
-                  const includeDeleted = value === 'include';
-                  setShowDeleted(includeDeleted);
-                  reloadVehicles(includeDeleted);
-                }}
-                minWidth={150}
-                options={[
-                  { value: 'active', label: 'Active Only' },
-                  { value: 'include', label: 'Include Deleted' },
-                ]}
-              />
-
               <ViewToggle value={viewMode} options={VIEW_OPTIONS} onChange={(value) => setViewMode(value as VehicleViewMode)} />
             </Box>
 
-            <Box
-              sx={{
-                maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
-                overflowY: { xs: 'visible', lg: 'auto' },
-                pr: { xs: 0, lg: 0.8 },
-              }}
+            <DataStateWrapper
+              loading={loading && vehicles.length === 0}
+              error={error}
+              isEmpty={visibleVehicles.length === 0}
+              emptyMessage="No vehicles found for your filters."
             >
               {viewMode === 'cards' ? (
-                visibleVehicles.length === 0 ? (
-                  <Box sx={{ py: 8, textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
-                      No vehicles found for your filters.
-                    </Typography>
-                  </Box>
-                ) : (
+                <Box
+                  sx={{
+                    maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
+                    overflowY: { xs: 'visible', lg: 'auto' },
+                    pr: { xs: 0, lg: 0.8 },
+                  }}
+                >
                   <Grid container spacing={1.8}>
-                    {visibleVehicles.map((vehicle) => (
-                      <Grid key={vehicle.id} size={{ xs: 12, md: 6 }}>
+                    {visibleVehicles.map((v) => (
+                      <Grid key={v.vehicleId} size={{ xs: 12, md: 6 }}>
                         <VehicleCard
-                          vehicle={vehicle}
-                          selected={selectedVehicleId === vehicle.id}
-                          onSelect={() => handleSelectVehicle(vehicle)}
-                          onDelete={() => setDeleteTarget(vehicle)}
+                          vehicle={v}
+                          selected={selectedVehicleId === v.vehicleId}
+                          onSelect={() => handleSelectVehicle(v)}
+                          onDelete={() => setDeleteTarget(v)}
                         />
                       </Grid>
                     ))}
                   </Grid>
-                )
+                </Box>
               ) : (
                 <DataTable
                   data={visibleVehicles}
                   columns={tableColumns}
-                  keyExtractor={(vehicle) => vehicle.id}
+                  keyExtractor={(v) => v.vehicleId.toString()}
                   emptyMessage="No vehicles found for your filters."
                   defaultRowsPerPage={10}
                   pageSizes={[10, 25, 50]}
-                  onRowClick={(vehicle) => handleSelectVehicle(vehicle)}
+                  onRowClick={(v) => handleSelectVehicle(v)}
                 />
               )}
-            </Box>
+            </DataStateWrapper>
           </Box>
         </Box>
       </Paper>
@@ -495,7 +433,7 @@ export function VehicleManagementPage() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete vehicle"
-        message={`Delete ${deleteTarget?.plateNumber || 'this vehicle'}? It will be soft-deleted and hidden from active lists.`}
+        message={`Delete ${deleteTarget?.plateNumber || 'this vehicle'}? This action is permanent.`}
         confirmText="Delete"
         confirmColor="error"
         onConfirm={handleDelete}

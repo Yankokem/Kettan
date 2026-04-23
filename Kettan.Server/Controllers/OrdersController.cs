@@ -17,6 +17,21 @@ public class OrdersController : ControllerBase
         _service = service;
     }
 
+    [HttpPost]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<OrderDetailDto>> CreateOrder([FromBody] CreateOrderDto dto)
+    {
+        try
+        {
+            var created = await _service.CreateHqOrderAsync(dto);
+            return CreatedAtAction(nameof(GetOrder), new { id = created.OrderId }, created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpGet]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
     public async Task<ActionResult<List<BranchOrderDto>>> GetOrders([FromQuery] string? status = null)

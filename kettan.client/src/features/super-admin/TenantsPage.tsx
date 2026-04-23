@@ -4,27 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 
 import { DataTable, type ColumnDef, type QuickFilter } from '../../components/UI/DataTable';
 import { SearchInput } from '../../components/UI/SearchInput';
-
-interface TenantRow {
-  tenantId: number;
-  name: string;
-  email: string | null;
-  subscriptionTier: string;
-  subscriptionStatus: string;
-  isActive: boolean;
-  createdAt: string;
-  branchCount: number;
-  userCount: number;
-}
-
-async function fetchTenants(search?: string, status?: string): Promise<TenantRow[]> {
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  if (status) params.set('status', status);
-  const res = await fetch(`/api/admin/tenants?${params}`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load tenants');
-  return res.json();
-}
+import { fetchTenants, type TenantRow } from './tenantsApi';
 
 export function TenantsPage() {
   const navigate = useNavigate();

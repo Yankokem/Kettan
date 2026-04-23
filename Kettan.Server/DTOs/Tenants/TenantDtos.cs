@@ -4,10 +4,14 @@ public class TenantDto
 {
     public int TenantId { get; set; }
     public required string Name { get; set; }
+    public string? LegalName { get; set; }
+    public string? TaxId { get; set; }
+    public string? Website { get; set; }
     public string SubscriptionTier { get; set; } = "Starter";
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public string? Address { get; set; }
+    public string? SupportEmail { get; set; }
     public string SubscriptionStatus { get; set; } = "Active";
     public DateTime? SubscriptionPeriodEnd { get; set; }
     public bool IsActive { get; set; }
@@ -17,8 +21,12 @@ public class TenantDto
 public class UpdateTenantDto
 {
     public required string Name { get; set; }
+    public string? LegalName { get; set; }
+    public string? TaxId { get; set; }
+    public string? Website { get; set; }
     public string SubscriptionTier { get; set; } = "Starter";
     public string? Email { get; set; }
+    public string? SupportEmail { get; set; }
     public string? Phone { get; set; }
     public string? Address { get; set; }
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
@@ -14,6 +14,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { createSupplyRequest, submitSupplyRequest } from '../branch-operations/api';
 import { InventorySelectionModal } from '../orders/components/InventorySelectionModal';
 import type { InventoryItem } from '../orders/components/InventoryItemCard';
+import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 
 interface RequestLineItem {
   id: string;
@@ -22,13 +23,6 @@ interface RequestLineItem {
   itemSku: string;
   quantityRequested: number;
 }
-
-const MOCK_INVENTORY: InventoryItem[] = [
-  { id: '1', name: 'Arabica Coffee Beans (Medium Roast) - 5kg', sku: 'CF-ARB-MR-5KG', unit: 'bag', category: 'ingredients', hqStock: 120 },
-  { id: '2', name: 'Almond Milk - 1L Carton', sku: 'MLK-ALM-1L', unit: 'carton', category: 'ingredients', hqStock: 45 },
-  { id: '3', name: 'Vanilla Syrup - 750ml Bottle', sku: 'SYR-VAN-750', unit: 'bottle', category: 'ingredients', hqStock: 0 },
-  { id: '4', name: 'Paper Cups (12oz) - Box of 500', sku: 'PKG-CUP-12-500', unit: 'box', category: 'packaging', hqStock: 85 },
-];
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string }>;
@@ -49,6 +43,7 @@ export function SupplyRequestCreatePage() {
 
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [requestLines, setRequestLines] = useState<RequestLineItem[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [requestType, setRequestType] = useState('manual');
   const [priority, setPriority] = useState('normal');
   const [dispatchWindow, setDispatchWindow] = useState('today');
@@ -57,6 +52,28 @@ export function SupplyRequestCreatePage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        const rows = await fetchInventoryItems();
+        const mapped: InventoryItem[] = rows.map((item) => ({
+          id: item.id,
+          name: item.name,
+          sku: item.sku,
+          unit: item.unit?.symbol ?? item.unit?.name ?? 'unit',
+          category: item.category?.name ?? 'Uncategorized',
+          hqStock: item.totalStock,
+          unitCost: item.unitCost,
+        }));
+        setInventory(mapped);
+      } catch {
+        setError('Failed to load inventory items.');
+      }
+    };
+
+    void loadInventory();
+  }, []);
 
   const resetForm = () => {
     setRequestLines([]);
@@ -359,7 +376,7 @@ export function SupplyRequestCreatePage() {
         open={isItemModalOpen}
         onClose={() => setIsItemModalOpen(false)}
         onItemsSelected={handleItemSelected}
-        inventory={MOCK_INVENTORY}
+        inventory={inventory}
       />
     </Box>
   );

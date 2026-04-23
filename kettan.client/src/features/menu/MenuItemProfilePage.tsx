@@ -1,5 +1,5 @@
 import { Box, Typography, Paper, Divider, Avatar, IconButton, Chip } from '@mui/material';
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from '@tanstack/react-router';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import CameraAltRoundedIcon from '@mui/icons-material/CameraAltRounded';
@@ -11,62 +11,11 @@ import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { VariantsBuilder } from './components/VariantsBuilder';
 import { PriceSuggestion } from './components/PriceSuggestion';
-import type { MenuItemFormData, MenuItem, MenuVariant } from './types';
-
-const MOCK_MENU_ITEMS: MenuItem[] = [
-  {
-    id: '1',
-    name: 'Iced Americano',
-    category: 'Coffee',
-    sellingPrice: 120.00,
-    status: 'Active',
-    variants: [
-      {
-        id: 'v1',
-        name: 'Small',
-        ingredients: [
-          { id: 'i1', itemId: '1', itemName: 'Arabica Coffee Beans', qtyPerUnit: 0.015, uom: 'kg' },
-          { id: 'i2', itemId: '3', itemName: 'Ice', qtyPerUnit: 150, uom: 'ml' },
-        ],
-      },
-      {
-        id: 'v2',
-        name: 'Medium',
-        ingredients: [
-          { id: 'i1', itemId: '1', itemName: 'Arabica Coffee Beans', qtyPerUnit: 0.018, uom: 'kg' },
-          { id: 'i2', itemId: '3', itemName: 'Ice', qtyPerUnit: 200, uom: 'ml' },
-        ],
-      },
-    ],
-    createdAt: '2026-03-15',
-  },
-  {
-    id: '2',
-    name: 'Vanilla Latte',
-    category: 'Coffee with Milk',
-    sellingPrice: 150.00,
-    status: 'Active',
-    variants: [
-      {
-        id: 'v3',
-        name: 'Regular',
-        ingredients: [
-          { id: 'i3', itemId: '2', itemName: 'Espresso Blend', qtyPerUnit: 0.02, uom: 'kg' },
-          { id: 'i4', itemId: '3', itemName: 'Almond Milk', qtyPerUnit: 0.3, uom: 'L' },
-          { id: 'i5', itemId: '4', itemName: 'Vanilla Syrup', qtyPerUnit: 0.03, uom: 'L' },
-        ],
-      },
-    ],
-    createdAt: '2026-03-14',
-  },
-];
-
-const MENU_CATEGORIES = [
-  { value: 'Coffee', label: 'Coffee' },
-  { value: 'Coffee with Milk', label: 'Coffee with Milk' },
-  { value: 'Frappe', label: 'Frappe' },
-  { value: 'Non-Coffee', label: 'Non-Coffee' },
-];
+import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
+import { fetchMenuItem, updateMenuItem, type MenuItemDto, type CreateMenuItemDto } from './menuItemsApi';
+import { listMenuCategories, type MenuCategory } from './menuCategoryApi';
+import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
+import type { InventoryItemOption, MenuItemFormData, MenuVariant } from './types';
 
 const STATUS_OPTIONS = [
   { value: 'Active', label: 'Active' },
@@ -75,19 +24,82 @@ const STATUS_OPTIONS = [
 
 export function MenuItemProfilePage() {
   const { menuItemId } = useParams({ strict: false });
-  const menuItem = MOCK_MENU_ITEMS.find(item => item.id === menuItemId as string);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [menuItem, setMenuItem] = useState<MenuItemDto | null>(null);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState<MenuItemFormData>({
-    name: menuItem?.name || '',
-    category: menuItem?.category || '',
-    description: menuItem?.description || '',
-    sellingPrice: menuItem?.sellingPrice || 0,
-    status: menuItem?.status || 'Active',
-    image: menuItem?.image,
-    variants: menuItem?.variants || [],
+    name: '',
+    category: '',
+    description: '',
+    sellingPrice: 0,
+    status: 'Active',
+    image: undefined,
+    variants: [],
   });
+
+  const fetchData = async () => {
+    if (!menuItemId) return;
+    setLoading(true);
+    try {
+      const [item, cats, invItems] = await Promise.all([
+        fetchMenuItem(parseInt(menuItemId as string)),
+        listMenuCategories(),
+        fetchInventoryItems()
+      ]);
+
+      setMenuItem(item);
+      setCategories(cats);
+      
+      const options: InventoryItemOption[] = invItems.map(inv => ({
+        id: inv.id,
+        name: inv.name,
+        sku: inv.sku,
+        uom: inv.unit?.symbol || '',
+        category: inv.category?.name || 'Uncategorized',
+        unitCost: inv.unitCost,
+        stockCount: inv.totalStock
+      }));
+      setInventoryItems(options);
+
+      // Map API DTO to Form State
+      setFormData({
+        name: item.name,
+        category: String(item.categoryId || ''),
+        description: item.description || '',
+        sellingPrice: item.basePrice,
+        status: item.status as 'Active' | 'Inactive',
+        image: item.imageUrl || undefined,
+        variants: item.variants.map(v => ({
+          id: String(v.variantId),
+          name: v.name,
+          ingredients: v.ingredients.map(ing => ({
+            id: String(ing.variantIngredientId),
+            itemId: String(ing.itemId),
+            itemName: ing.itemName,
+            qtyPerUnit: ing.quantity,
+            uom: '', // We could resolve this if needed
+            unitCost: options.find(o => o.id === String(ing.itemId))?.unitCost || 0
+          }))
+        }))
+      });
+    } catch (err) {
+      console.error('Failed to fetch menu item detail:', err);
+      setError(err instanceof Error ? err : new Error('An error occurred while fetching data'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [menuItemId]);
 
   const handleVariantsChange = (variants: MenuVariant[]) => {
     setFormData(prev => ({ ...prev, variants }));
@@ -110,8 +122,7 @@ export function MenuItemProfilePage() {
     }
   };
 
-  const handleSubmit = () => {
-    // Validate form
+  const handleSubmit = async () => {
     if (!formData.name.trim()) {
       alert('Please enter a menu item name');
       return;
@@ -124,89 +135,127 @@ export function MenuItemProfilePage() {
       alert('Please add at least one variant');
       return;
     }
-    if (formData.sellingPrice <= 0) {
-      alert('Please enter a valid selling price');
-      return;
-    }
 
-    // TODO: Submit to API
-    console.log('Updating menu item:', formData);
-    alert('Menu item updated successfully! (Mock)');
-    setIsEditing(false);
+    setIsSubmitting(true);
+    try {
+      const payload: CreateMenuItemDto = {
+        name: formData.name,
+        categoryId: parseInt(formData.category),
+        description: formData.description,
+        imageUrl: formData.image,
+        basePrice: formData.sellingPrice,
+        status: formData.status,
+        ingredients: [],
+        variants: formData.variants.map((v, idx) => ({
+          name: v.name,
+          pricingMode: 'absolute',
+          price: formData.sellingPrice,
+          displayOrder: idx,
+          isActive: true,
+          ingredients: v.ingredients.map(ing => ({
+            itemId: parseInt(ing.itemId),
+            quantity: ing.qtyPerUnit
+          }))
+        })),
+        tagIds: []
+      };
+
+      await updateMenuItem(parseInt(menuItemId as string), payload);
+      alert('Menu item updated successfully!');
+      setIsEditing(false);
+      fetchData();
+    } catch (err) {
+      console.error('Failed to update menu item:', err);
+      alert(err instanceof Error ? err.message : 'Failed to update menu item');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
-    // Reset form data to original menu item
     if (menuItem) {
+      // Re-map from original item
       setFormData({
         name: menuItem.name,
-        category: menuItem.category,
-        description: menuItem.description,
-        sellingPrice: menuItem.sellingPrice,
-        status: menuItem.status,
-        image: menuItem.image,
-        variants: menuItem.variants,
+        category: String(menuItem.categoryId || ''),
+        description: menuItem.description || '',
+        sellingPrice: menuItem.basePrice,
+        status: menuItem.status as 'Active' | 'Inactive',
+        image: menuItem.imageUrl || undefined,
+        variants: menuItem.variants.map(v => ({
+          id: String(v.variantId),
+          name: v.name,
+          ingredients: v.ingredients.map(ing => ({
+            id: String(ing.variantIngredientId),
+            itemId: String(ing.itemId),
+            itemName: ing.itemName,
+            qtyPerUnit: ing.quantity,
+            uom: '',
+            unitCost: inventoryItems.find(o => o.id === String(ing.itemId))?.unitCost || 0
+          }))
+        }))
       });
     }
     setIsEditing(false);
   };
 
-  if (!menuItem) {
-    return (
-      <Box sx={{ py: 5, textAlign: 'center' }}>
-        <Typography color="error">Menu item not found</Typography>
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ pb: 3, pt: 1 }}>
-      {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/menu" />
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            {menuItem.name}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5 }}>
-            <Chip
-              label={menuItem.category}
-              size="small"
-              sx={{ 
-                bgcolor: 'background.default', 
-                border: '1px solid', 
-                borderColor: 'divider', 
-                fontSize: 11, 
-                height: 22,
-                fontWeight: 600
-              }}
-            />
-            <Chip
-              label={menuItem.status}
-              size="small"
-              sx={{
-                bgcolor: menuItem.status === 'Active' ? 'success.main' : 'warning.main',
-                color: 'white',
-                fontSize: 11,
-                height: 22,
-                fontWeight: 700,
-              }}
-            />
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: 12 }}>
-              • ₱{menuItem.sellingPrice.toFixed(2)}
-            </Typography>
-          </Box>
-        </Box>
-        {!isEditing && (
-          <Button
-            variant="outlined"
-            startIcon={<EditRoundedIcon />}
-            onClick={() => setIsEditing(true)}
-          >
-            Edit Menu Item
-          </Button>
-        )}
-      </Box>
+      <DataStateWrapper
+        loading={loading}
+        error={error}
+        isEmpty={!menuItem}
+        emptyMessage="Menu item not found"
+        onRetry={fetchData}
+      >
+        {menuItem && (
+          <>
+            {/* Header */}
+            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+              <BackButton to="/menu" />
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+                  {menuItem.name}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5 }}>
+                  <Chip
+                    label={menuItem.categoryName}
+                    size="small"
+                    sx={{ 
+                      bgcolor: 'background.default', 
+                      border: '1px solid', 
+                      borderColor: 'divider', 
+                      fontSize: 11, 
+                      height: 22,
+                      fontWeight: 600
+                    }}
+                  />
+                  <Chip
+                    label={menuItem.status}
+                    size="small"
+                    sx={{
+                      bgcolor: menuItem.status === 'Active' ? 'rgba(84,107,63,0.12)' : 'rgba(148, 163, 184, 0.16)',
+                      color: menuItem.status === 'Active' ? '#546B3F' : '#475569',
+                      fontSize: 11,
+                      height: 22,
+                      fontWeight: 700,
+                    }}
+                  />
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: 12 }}>
+                    • ₱{menuItem.basePrice.toFixed(2)}
+                  </Typography>
+                </Box>
+              </Box>
+              {!isEditing && (
+                <Button
+                  variant="outlined"
+                  startIcon={<EditRoundedIcon />}
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit Menu Item
+                </Button>
+              )}
+            </Box>
 
       <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4 }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
@@ -337,7 +386,7 @@ export function MenuItemProfilePage() {
               <FormDropdown
                 label="Category"
                 value={formData.category}
-                options={MENU_CATEGORIES}
+                options={categories.map(c => ({ value: String(c.categoryId), label: c.name }))}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as string }))}
                 disabled={!isEditing}
                 fullWidth
@@ -385,6 +434,7 @@ export function MenuItemProfilePage() {
               <VariantsBuilder
                 variants={formData.variants}
                 onVariantsChange={handleVariantsChange}
+                inventoryOptions={inventoryItems}
                 readOnly={!isEditing}
               />
             </Box>
@@ -425,16 +475,23 @@ export function MenuItemProfilePage() {
         {isEditing && (
           <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-              <Button variant="outlined" onClick={handleCancel}>
+              <Button variant="outlined" onClick={handleCancel} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button startIcon={<LocalCafeRoundedIcon />} onClick={handleSubmit}>
-                Save Changes
+              <Button 
+                startIcon={<LocalCafeRoundedIcon />} 
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>
             </Box>
           </Box>
         )}
       </Paper>
+          </>
+        )}
+      </DataStateWrapper>
     </Box>
   );
 }

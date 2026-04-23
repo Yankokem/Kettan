@@ -12,6 +12,7 @@ using Kettan.Server.Services.Inventory;
 using Kettan.Server.Services.Email;
 using Kettan.Server.Services.Subscription;
 using Kettan.Server.Services.Analytics;
+using Kettan.Server.Services.Export;
 using Kettan.Server.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -66,6 +67,8 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddHttpClient<IEmailService, MailtrapEmailService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<ICsvExportService, CsvExportService>();
+builder.Services.AddScoped<IPdfExportService, PdfExportService>();
 
 // Add Rate Limiting
 builder.Services.AddRateLimiter(options =>

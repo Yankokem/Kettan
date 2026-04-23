@@ -16,6 +16,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { updateSupplyRequest } from '../branch-operations/api';
 import { InventorySelectionModal } from '../orders/components/InventorySelectionModal';
 import type { InventoryItem } from '../orders/components/InventoryItemCard';
+import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 import { getSampleSupplyRequestDetail } from './components/SupplyRequestDetail.constants';
 import {
   getSupplyRequestStatusLabel,
@@ -29,17 +30,6 @@ interface EditLineItem {
   itemSku: string;
   quantityRequested: number;
 }
-
-const MOCK_INVENTORY: InventoryItem[] = [
-  { id: '1', name: 'Arabica Coffee Beans (Medium Roast) - 5kg', sku: 'CF-ARB-MR-5KG', unit: 'bag', category: 'ingredients', hqStock: 120 },
-  { id: '2', name: 'Almond Milk - 1L Carton', sku: 'MLK-ALM-1L', unit: 'carton', category: 'ingredients', hqStock: 45 },
-  { id: '3', name: 'Vanilla Syrup - 750ml Bottle', sku: 'SYR-VAN-750', unit: 'bottle', category: 'ingredients', hqStock: 0 },
-  { id: '4', name: 'Paper Cups (12oz) - Box of 500', sku: 'PKG-CUP-12-500', unit: 'box', category: 'packaging', hqStock: 85 },
-  { id: '5', name: 'Whole Milk - 1L', sku: 'MLK-WHL-1L', unit: 'carton', category: 'ingredients', hqStock: 60 },
-  { id: '6', name: 'Cup Lids (12oz)', sku: 'PKG-LID-12-500', unit: 'box', category: 'packaging', hqStock: 12 },
-  { id: '7', name: 'Sugar Sachet Box', sku: 'SUG-SCH-1K', unit: 'box', category: 'ingredients', hqStock: 9 },
-  { id: '8', name: 'Chocolate Syrup - 750ml', sku: 'SYR-CHO-750', unit: 'bottle', category: 'ingredients', hqStock: 2 },
-];
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string }>;
@@ -71,6 +61,7 @@ export function SupplyRequestEditDraftPage() {
   const [dispatchDate, setDispatchDate] = useState('');
   const [notes, setNotes] = useState('');
   const [requestLines, setRequestLines] = useState<EditLineItem[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -93,6 +84,28 @@ export function SupplyRequestEditDraftPage() {
       })),
     );
   }, [request]);
+
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        const rows = await fetchInventoryItems();
+        const mapped: InventoryItem[] = rows.map((item) => ({
+          id: item.id,
+          name: item.name,
+          sku: item.sku,
+          unit: item.unit?.symbol ?? item.unit?.name ?? 'unit',
+          category: item.category?.name ?? 'Uncategorized',
+          hqStock: item.totalStock,
+          unitCost: item.unitCost,
+        }));
+        setInventory(mapped);
+      } catch {
+        setError('Failed to load inventory items.');
+      }
+    };
+
+    void loadInventory();
+  }, []);
 
   // ── Map display labels back to form values ──────────────────────────────
   function mapRequestType(label: string): string {
@@ -477,7 +490,7 @@ export function SupplyRequestEditDraftPage() {
         open={isItemModalOpen}
         onClose={() => setIsItemModalOpen(false)}
         onItemsSelected={handleItemSelected}
-        inventory={MOCK_INVENTORY}
+        inventory={inventory}
       />
 
       <ConfirmDialog

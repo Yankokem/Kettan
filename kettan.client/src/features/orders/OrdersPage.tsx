@@ -1,5 +1,5 @@
 import { Box, Grid, ToggleButton, ToggleButtonGroup, Tooltip, Typography, Chip } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -21,6 +21,7 @@ import { SearchInput } from '../../components/UI/SearchInput';
 import { OrdersListViewSwitcher, type OrdersListViewMode } from './components/OrdersListViewSwitcher';
 import { OrderRowActionsMenu, type OrderActionStatus } from './components/OrderRowActionsMenu';
 import { OrderListCard } from './components/OrderListCard';
+import { fetchOrders, type BranchOrder } from '../branch-operations/api';
 
 // Mock Data for Orders
 interface OrderItem {
@@ -32,16 +33,6 @@ interface OrderItem {
   date: string;
   actionedBy?: string;
 }
-
-const MOCK_ORDERS: OrderItem[] = [
-  { id: 'ORD-8894', branch: 'Downtown Main', itemsCount: 14, totalCost: 8540.0, status: 'PendingApproval', date: '2026-04-11' },
-  { id: 'ORD-8893', branch: 'Uptown Station', itemsCount: 5, totalCost: 3200.5, status: 'Approved', date: '2026-04-10' },
-  { id: 'ORD-8892', branch: 'Westside Market', itemsCount: 22, totalCost: 11250.0, status: 'Picking', date: '2026-04-08' },
-  { id: 'ORD-8891', branch: 'Airport Express', itemsCount: 8, totalCost: 5400.0, status: 'Dispatched', date: '2026-04-07' },
-  { id: 'ORD-8890', branch: 'Uptown Station', itemsCount: 10, totalCost: 7045.5, status: 'Delivered', date: '2026-04-03', actionedBy: 'Ana Reyes' },
-  { id: 'ORD-8889', branch: 'Downtown Main', itemsCount: 9, totalCost: 4100.0, status: 'Rejected', date: '2026-03-31', actionedBy: 'John Cruz' },
-  { id: 'ORD-8888', branch: 'Westside Market', itemsCount: 3, totalCost: 2350.0, status: 'Returned', date: '2026-03-28', actionedBy: 'Maria Santos' },
-];
 
 const STATUS_MAP: Record<string, { color: string; bg: string }> = {
   PendingApproval: { color: '#B45309', bg: 'rgba(180,83,9,0.12)' },
@@ -111,7 +102,7 @@ function getColumns(
       width: 120,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          {row.id}
+          ORD-{row.id}
         </Typography>
       ),
     },
@@ -228,8 +219,37 @@ export function OrdersPage() {
   const [activeStatusTab, setActiveStatusTab] = useState<ActiveStatusTab>(() => getDefaultActiveStatusByRole(user?.role));
   const [historyStatusFilter, setHistoryStatusFilter] = useState<OrderActionStatus | ''>('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const source = MOCK_ORDERS.filter((order) => {
+  useEffect(() => {
+    const loadOrders = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const rows = await fetchOrders();
+        const mapped = rows.map((row: BranchOrder) => ({
+          id: String(row.orderId),
+          branch: row.branchName || `Branch ${row.branchId}`,
+          itemsCount: Number(row.itemsCount || 0),
+          totalCost: Number(row.fulfillmentCost || 0),
+          status: row.status as OrderActionStatus,
+          date: row.pushedToFulfillmentAt,
+        }));
+        setOrders(mapped);
+      } catch {
+        setError('Failed to load orders.');
+        setOrders([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadOrders();
+  }, []);
+
+  const source = orders.filter((order) => {
     const statuses = datasetMode === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES;
     return statuses.includes(order.status);
   });
@@ -305,7 +325,7 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Pending Requests"
-              value={MOCK_ORDERS.filter((o) => o.status === 'PendingApproval').length.toString()}
+              value={orders.filter((o) => o.status === 'PendingApproval').length.toString()}
               trend="up"
               trendValue="1.5%"
               icon={<AccessTimeRoundedIcon />}
@@ -316,7 +336,7 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Orders Picking"
-              value={MOCK_ORDERS.filter((o) => o.status === 'Picking' || o.status === 'Packed').length.toString()}
+              value={orders.filter((o) => o.status === 'Picking' || o.status === 'Packed').length.toString()}
               trend="up"
               trendValue="2.4%"
               icon={<LocalMallRoundedIcon />}
@@ -327,7 +347,7 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="In Transit"
-              value={MOCK_ORDERS.filter((o) => o.status === 'Dispatched').length.toString()}
+              value={orders.filter((o) => o.status === 'Dispatched' || o.status === 'InTransit').length.toString()}
               trend="up"
               trendValue="5.1%"
               icon={<LocalShippingRoundedIcon />}
@@ -338,7 +358,7 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Total Fulfillment Cost"
-              value={`₱${MOCK_ORDERS.reduce((acc, o) => acc + o.totalCost, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              value={`₱${orders.reduce((acc, o) => acc + o.totalCost, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               trend="up"
               trendValue="1.2%"
               icon={<MonetizationOnRoundedIcon />}
@@ -493,6 +513,10 @@ export function OrdersPage() {
         </Box>
       </Box>
 
+      {error ? (
+        <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1.2 }}>{error}</Typography>
+      ) : null}
+
       {viewMode === 'table' ? (
         <DataTable
           data={sorted}
@@ -501,7 +525,7 @@ export function OrdersPage() {
           defaultRowsPerPage={10}
           rowsPerPageOptions={[10, 25, 50]}
           onRowClick={(row) => openDetails(row.id)}
-          emptyMessage="No orders match the selected filters."
+          emptyMessage={isLoading ? 'Loading orders...' : 'No orders match the selected filters.'}
         />
       ) : (
         <Box

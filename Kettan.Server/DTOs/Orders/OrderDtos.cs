@@ -8,6 +8,18 @@ public class BranchOrderDto
     public string BranchName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public DateTime PushedToFulfillmentAt { get; set; }
+    public int ItemsCount { get; set; }
+    public decimal FulfillmentCost { get; set; }
+}
+
+public class OrderRequestItemDto
+{
+    public int ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public string ItemSku { get; set; } = string.Empty;
+    public decimal QuantityRequested { get; set; }
+    public decimal? QuantityApproved { get; set; }
+    public decimal UnitCost { get; set; }
 }
 
 public class OrderAllocationDto
@@ -32,7 +44,25 @@ public class OrderDetailDto : BranchOrderDto
     public int? VehicleId { get; set; }
     public DateTime? DispatchDate { get; set; }
     public DateTime? EstimatedArrival { get; set; }
+    public List<OrderRequestItemDto> RequestedItems { get; set; } = [];
     public List<OrderAllocationDto> Allocations { get; set; } = [];
+}
+
+public class CreateOrderItemDto
+{
+    public int ItemId { get; set; }
+    public decimal QuantityRequested { get; set; }
+}
+
+public class CreateOrderDto
+{
+    public int BranchId { get; set; }
+    public string RequestType { get; set; } = "hq_initiated";
+    public string Priority { get; set; } = "normal";
+    public string DispatchWindow { get; set; } = "today";
+    public DateTime? DispatchDate { get; set; }
+    public string? Notes { get; set; }
+    public List<CreateOrderItemDto> Items { get; set; } = [];
 }
 
 public class UpdateOrderStatusDto

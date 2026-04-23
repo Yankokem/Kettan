@@ -1,7 +1,7 @@
 import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import type { Vehicle } from '../types';
+import type { Vehicle } from '../vehicleApi';
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -36,7 +36,7 @@ export function VehicleCard({ vehicle, selected, onSelect, onDelete }: VehicleCa
             {vehicle.plateNumber}
           </Typography>
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.5 }}>
-            {vehicle.courier?.name || 'Unknown Courier'}
+            {vehicle.courierName || 'Unknown Courier'}
           </Typography>
         </Box>
 

@@ -24,6 +24,18 @@ public class Tenant
     [MaxLength(500)]
     public string? Address { get; set; }
 
+    [MaxLength(255)]
+    public string? LegalName { get; set; }
+
+    [MaxLength(100)]
+    public string? TaxId { get; set; }
+
+    [MaxLength(255)]
+    public string? Website { get; set; }
+
+    [MaxLength(255)]
+    public string? SupportEmail { get; set; }
+
     [MaxLength(500)]
     public string? LogoUrl { get; set; }
 

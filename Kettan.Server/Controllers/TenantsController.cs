@@ -39,10 +39,14 @@ public class TenantsController : ControllerBase
         {
             TenantId = tenant.TenantId,
             Name = tenant.Name,
+            LegalName = tenant.LegalName,
+            TaxId = tenant.TaxId,
+            Website = tenant.Website,
             SubscriptionTier = tenant.SubscriptionTier,
             Email = tenant.Email,
             Phone = tenant.Phone,
             Address = tenant.Address,
+            SupportEmail = tenant.SupportEmail,
             SubscriptionStatus = tenant.SubscriptionStatus,
             SubscriptionPeriodEnd = tenant.SubscriptionPeriodEnd,
             IsActive = tenant.IsActive,
@@ -64,10 +68,14 @@ public class TenantsController : ControllerBase
         if (tenant == null) return NotFound();
 
         tenant.Name = dto.Name.Trim();
+        tenant.LegalName = NormalizeNullable(dto.LegalName);
+        tenant.TaxId = NormalizeNullable(dto.TaxId);
+        tenant.Website = NormalizeNullable(dto.Website);
         tenant.SubscriptionTier = string.IsNullOrWhiteSpace(dto.SubscriptionTier)
             ? tenant.SubscriptionTier
             : dto.SubscriptionTier.Trim();
         tenant.Email = NormalizeNullable(dto.Email);
+        tenant.SupportEmail = NormalizeNullable(dto.SupportEmail);
         tenant.Phone = NormalizeNullable(dto.Phone);
         tenant.Address = NormalizeNullable(dto.Address);
 
