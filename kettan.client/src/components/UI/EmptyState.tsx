@@ -1,49 +1,84 @@
 import { Box, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
 import InboxRoundedIcon from '@mui/icons-material/InboxRounded';
+import { Button } from './Button';
 
 interface EmptyStateProps {
-  title: string;
+  title?: string;
   message: string;
-  icon?: ReactNode;
-  action?: ReactNode;
+  icon?: React.ReactNode;
+  minHeight?: number | string;
 }
 
-export function EmptyState({ 
-  title, 
-  message, 
-  icon = <InboxRoundedIcon sx={{ fontSize: 64, color: 'text.secondary', opacity: 0.8 }} />,
-  action 
+export function EmptyState({
+  title = 'No records found',
+  message,
+  icon,
+  minHeight = 360,
 }: EmptyStateProps) {
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      py: 10,
-      px: 3,
-      textAlign: 'center',
-      bgcolor: 'background.default',
-      borderRadius: 4,
-      border: '1px dashed',
-      borderColor: 'divider',
-      minHeight: 250
-    }}>
-      <Box sx={{ mb: 2 }}>
-        {icon}
-      </Box>
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, letterSpacing: -0.5 }}>
-        {title}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 4, maxWidth: 360, fontWeight: 500 }}>
-        {message}
-      </Typography>
-      {action && (
-        <Box>
-          {action}
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight,
+        p: 4,
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+        {/* Visual focal point */}
+        <Box
+          sx={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            bgcolor: 'rgba(201,168,77,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mb: 1,
+            color: '#8C6B43',
+            border: '1px solid rgba(201,168,77,0.15)',
+          }}
+        >
+          {icon ? (
+            // Clone the icon to fix its size
+            <Box sx={{ '& svg': { fontSize: 40 } }}>{icon}</Box>
+          ) : (
+            <InboxRoundedIcon sx={{ fontSize: 40 }} />
+          )}
         </Box>
-      )}
+
+        <Box>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 800,
+              color: '#2E1F0C',
+              letterSpacing: '-0.01em',
+              mb: 0.5,
+              '.dark &': { color: '#E8D3A9' },
+            }}
+          >
+            {title}
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: 14.5,
+              color: 'text.secondary',
+              maxWidth: 320,
+              mx: 'auto',
+              lineHeight: 1.5,
+            }}
+          >
+            {message}
+          </Typography>
+        </Box>
+      </Box>
     </Box>
   );
 }

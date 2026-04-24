@@ -190,7 +190,7 @@ export function NewOrderRequestPage() {
   };
 
   return (
-    <Box sx={{ pb: 4, pt: 1 }}>
+    <Box sx={{ pb: 4 }}>
       <Stack spacing={2.2} sx={{ mb: 3.2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <BackButton to="/orders" />

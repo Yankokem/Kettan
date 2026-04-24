@@ -17,7 +17,7 @@ export function HelpPage() {
   const [issueType, setIssueType] = useState('technical');
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       {/* ── Header ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
         <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: 'rgba(107,76,42,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

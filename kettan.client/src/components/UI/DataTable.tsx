@@ -3,6 +3,7 @@ import { Box, Chip, TablePagination, Typography } from '@mui/material';
 import UnfoldMoreRoundedIcon from '@mui/icons-material/UnfoldMoreRounded';
 import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import { EmptyState } from './EmptyState';
 
 export interface ColumnDef<T> {
   key: string;
@@ -29,7 +30,9 @@ export interface DataTableProps<T> {
   defaultRowsPerPage?: number;
   pageSizes?: number[];
   rowsPerPageOptions?: number[];
+  emptyTitle?: string;
   emptyMessage?: string;
+  emptyIcon?: React.ReactNode;
   onRowClick?: (row: T) => void;
   toolbar?: React.ReactNode;
   quickFilters?: QuickFilter[];
@@ -52,7 +55,9 @@ export function DataTable<T>({
   defaultRowsPerPage,
   pageSizes = [5, 10, 25],
   rowsPerPageOptions,
-  emptyMessage = 'No records found.',
+  emptyTitle = 'No results found',
+  emptyMessage = 'No records match the current criteria.',
+  emptyIcon,
   onRowClick,
   toolbar,
   quickFilters,
@@ -388,21 +393,12 @@ export function DataTable<T>({
           </Box>
         ))
       ) : (
-        <Box
-          sx={{
-            px: 3,
-            py: 8,
-            borderBottom: 1,
-            borderColor: 'divider',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Typography sx={{ fontSize: 13, color: 'text.secondary', fontStyle: 'italic' }}>
-            {emptyMessage}
-          </Typography>
-        </Box>
+        <EmptyState
+          title={emptyTitle}
+          message={emptyMessage}
+          icon={emptyIcon}
+          minHeight={280}
+        />
       )}
 
       {/* Pagination component from MUI */}

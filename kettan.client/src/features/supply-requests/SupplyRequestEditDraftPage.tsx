@@ -270,7 +270,7 @@ export function SupplyRequestEditDraftPage() {
   // ── Guards ──────────────────────────────────────────────────────────────
   if (!canAccessPage) {
     return (
-      <Box sx={{ pb: 3, pt: 1 }}>
+      <Box sx={{ pb: 3 }}>
         <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Edit Supply Request</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
@@ -285,7 +285,7 @@ export function SupplyRequestEditDraftPage() {
     const statusColor = SUPPLY_REQUEST_STATUS_COLORS[request.status];
 
     return (
-      <Box sx={{ pb: 3, pt: 1 }}>
+      <Box sx={{ pb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 2 }}>
           <BackButton to={`/supply-requests/${requestId}`} />
           <Box>
@@ -323,7 +323,7 @@ export function SupplyRequestEditDraftPage() {
   const statusColor = SUPPLY_REQUEST_STATUS_COLORS[request.status];
 
   return (
-    <Box sx={{ pb: 3, pt: 1, display: 'grid', gap: 2.2 }}>
+    <Box sx={{ pb: 3, display: 'grid', gap: 2.2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
         <BackButton to={`/supply-requests/${requestId}`} />
         <Box sx={{ flex: 1 }}>

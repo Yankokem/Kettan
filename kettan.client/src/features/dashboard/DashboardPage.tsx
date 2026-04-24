@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Typography, Chip } from '@mui/material';
 import LocalShippingRoundedIcon    from '@mui/icons-material/LocalShippingRounded';
 import SettingsBackupRestoreRoundedIcon from '@mui/icons-material/SettingsBackupRestoreRounded';
@@ -17,35 +17,25 @@ import { InventoryAlerts } from './components/InventoryAlerts';
 import { FulfillmentStepper } from './components/FulfillmentStepper';
 import { DashboardChart } from './components/DashboardChart';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
+import { fetchBranchOrders, type BranchOrder } from '../branch-operations/api';
 
 // ── Recent Activity Row ────────────────────────────────────────────────────
 interface ActivityItem {
   id: string;
   branch: string;
   type: string;
-  status: 'completed' | 'in-transit' | 'pending' | 'returned';
+  status: 'processing' | 'picking' | 'packed' | 'dispatched' | 'in-transit' | 'delivered' | 'returned';
   time: string;
 }
 
-const RECENT_ACTIVITY: ActivityItem[] = [
-  { id: 'ORD-0091', branch: 'BGC Branch',        type: 'Supplies Reorder',   status: 'completed',  time: '2 min ago' },
-  { id: 'ORD-0090', branch: 'Makati HQ',         type: 'Batch Packing',      status: 'in-transit', time: '18 min ago' },
-  { id: 'ORD-0089', branch: 'Ortigas Branch',    type: 'Urgent Restock',     status: 'pending',    time: '45 min ago' },
-  { id: 'ORD-0088', branch: 'Alabang Branch',    type: 'Returns Processing', status: 'returned',   time: '1 hr ago' },
-  { id: 'ORD-0087', branch: 'QC Branch',         type: 'Supplies Reorder',   status: 'completed',  time: '2 hr ago' },
-  { id: 'ORD-0086', branch: 'Manila Branch',     type: 'Equipment Upgrade',  status: 'in-transit', time: '3 hr ago' },
-  { id: 'ORD-0085', branch: 'Cebu Branch',       type: 'Supplies Reorder',   status: 'completed',  time: '4 hr ago' },
-  { id: 'ORD-0084', branch: 'Davao Branch',      type: 'Urgent Restock',     status: 'pending',    time: '5 hr ago' },
-  { id: 'ORD-0083', branch: 'Iloilo Branch',     type: 'Batch Packing',      status: 'in-transit', time: '6 hr ago' },
-  { id: 'ORD-0082', branch: 'Bacolod Branch',    type: 'Supplies Reorder',   status: 'completed',  time: '7 hr ago' },
-  { id: 'ORD-0081', branch: 'Clark HQ',          type: 'Returns Processing', status: 'returned',   time: '8 hr ago' },
-];
-
 const STATUS_MAP = {
-  completed:  { label: 'Completed',  color: '#546B3F', bg: 'rgba(84,107,63,0.12)',  icon: <CheckCircleOutlineRoundedIcon sx={{ fontSize: 12 }} /> },
+  processing: { label: 'Processing', color: '#B45309', bg: 'rgba(180,83,9,0.12)', icon: <RadioButtonCheckedRoundedIcon sx={{ fontSize: 12 }} /> },
+  picking: { label: 'Picking', color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)', icon: <LocalMallRoundedIcon sx={{ fontSize: 12 }} /> },
+  packed: { label: 'Packed', color: '#546B3F', bg: 'rgba(84,107,63,0.12)', icon: <CheckCircleOutlineRoundedIcon sx={{ fontSize: 12 }} /> },
+  dispatched: { label: 'Dispatched', color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)', icon: <LocalShippingRoundedIcon sx={{ fontSize: 12 }} /> },
   'in-transit': { label: 'In Transit', color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)', icon: <LocalShippingRoundedIcon sx={{ fontSize: 12 }} /> },
-  pending:    { label: 'Pending',    color: '#B45309', bg: 'rgba(180,83,9,0.12)',   icon: <RadioButtonCheckedRoundedIcon sx={{ fontSize: 12 }} /> },
-  returned:   { label: 'Returned',   color: '#B91C1C', bg: 'rgba(185,28,28,0.10)', icon: <WarningAmberRoundedIcon sx={{ fontSize: 12 }} /> },
+  delivered: { label: 'Delivered', color: '#546B3F', bg: 'rgba(84,107,63,0.12)', icon: <CheckCircleOutlineRoundedIcon sx={{ fontSize: 12 }} /> },
+  returned: { label: 'Returned', color: '#B91C1C', bg: 'rgba(185,28,28,0.10)', icon: <WarningAmberRoundedIcon sx={{ fontSize: 12 }} /> },
 };
 
 const activityColumns: ColumnDef<ActivityItem>[] = [
@@ -115,10 +105,13 @@ const activityColumns: ColumnDef<ActivityItem>[] = [
 ];
 
 const ACTIVITY_QUICK_FILTERS = [
-  { value: 'completed',  label: 'Completed' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'picking', label: 'Picking' },
+  { value: 'packed', label: 'Packed' },
+  { value: 'dispatched', label: 'Dispatched' },
   { value: 'in-transit', label: 'In Transit' },
-  { value: 'pending',    label: 'Pending' },
-  { value: 'returned',   label: 'Returned' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'returned', label: 'Returned' },
 ];
 
 export function DashboardPage() {
@@ -126,8 +119,32 @@ export function DashboardPage() {
   const isBranchManager = user?.role === 'BranchManager';
   const [activityStatusFilter, setActivityStatusFilter] = useState('');
   const [activityBranchFilter, setActivityBranchFilter] = useState('');
+  const [activityRows, setActivityRows] = useState<ActivityItem[]>([]);
 
-  const baseActivity = isBranchManager ? RECENT_ACTIVITY.slice(0, 4) : RECENT_ACTIVITY;
+  useEffect(() => {
+    const loadActivity = async () => {
+      try {
+        const orders = await fetchBranchOrders();
+        setActivityRows(
+          orders
+            .slice(0, 11)
+            .map((order: BranchOrder) => ({
+              id: `ORD-${order.orderId}`,
+              branch: order.branchName,
+              type: `Order ${order.status}`,
+              status: order.status.toLowerCase() as ActivityItem['status'],
+              time: new Date(order.pushedToFulfillmentAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            })),
+        );
+      } catch {
+        setActivityRows([]);
+      }
+    };
+
+    void loadActivity();
+  }, []);
+
+  const baseActivity = useMemo(() => (isBranchManager ? activityRows.slice(0, 4) : activityRows), [activityRows, isBranchManager]);
   const filteredActivity = baseActivity.filter((row) => {
     const matchesStatus = !activityStatusFilter || row.status === activityStatusFilter;
     const matchesBranch = !activityBranchFilter || row.branch === activityBranchFilter;

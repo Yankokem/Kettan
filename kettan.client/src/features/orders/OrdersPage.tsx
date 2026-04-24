@@ -11,6 +11,11 @@ import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
+import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
+
+import { EmptyState } from '../../components/UI/EmptyState';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { StatCard } from '../../components/UI/StatCard';
@@ -18,7 +23,7 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
-import { OrdersListViewSwitcher, type OrdersListViewMode } from './components/OrdersListViewSwitcher';
+import { ViewToggle } from '../../components/UI/ViewToggle';
 import { OrderRowActionsMenu, type OrderActionStatus } from './components/OrderRowActionsMenu';
 import { OrderListCard } from './components/OrderListCard';
 import { fetchOrders, type BranchOrder } from '../branch-operations/api';
@@ -54,6 +59,7 @@ type ActiveStatusTab = 'PendingApproval' | 'Approved' | 'Processing' | 'Picking'
 const ACTIVE_STATUSES: OrderActionStatus[] = ['PendingApproval', 'Approved', 'Processing', 'Picking', 'Packed'];
 const HISTORY_STATUSES: OrderActionStatus[] = ['Dispatched', 'InTransit', 'Delivered', 'Rejected', 'Returned'];
 const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['PendingApproval', 'Approved', 'Processing', 'Picking', 'Packed'];
+type OrdersListViewMode = 'card' | 'table';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
@@ -320,7 +326,7 @@ export function OrdersPage() {
   return (
     <Box sx={{ pb: 3 }}>
       {/* Stat Cards Grid */}
-      <Box sx={{ mb: 5 }}>
+      <Box sx={{ mb: 4 }}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
@@ -497,10 +503,13 @@ export function OrdersPage() {
             </ToggleButtonGroup>
           </Tooltip>
 
-          <OrdersListViewSwitcher
+          <ViewToggle
             value={viewMode}
             onChange={setViewMode}
-            allowCard={datasetMode === 'active'}
+            options={[
+              ...(datasetMode === 'active' ? [{ value: 'card' as const, label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> }] : []),
+              { value: 'table' as const, label: '', icon: <TableRowsRoundedIcon sx={{ fontSize: 16 }} /> },
+            ]}
           />
 
           <Button
@@ -525,7 +534,9 @@ export function OrdersPage() {
           defaultRowsPerPage={10}
           rowsPerPageOptions={[10, 25, 50]}
           onRowClick={(row) => openDetails(row.id)}
+          emptyTitle="No orders found"
           emptyMessage={isLoading ? 'Loading orders...' : 'No orders match the selected filters.'}
+          emptyIcon={<Inventory2RoundedIcon />}
         />
       ) : (
         <Box
@@ -548,19 +559,12 @@ export function OrdersPage() {
               />
             ))
           ) : (
-            <Box
-              sx={{
-                gridColumn: '1 / -1',
-                py: 8,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
-                textAlign: 'center',
-              }}
-            >
-              <Typography sx={{ fontSize: 13, color: 'text.secondary', fontStyle: 'italic' }}>
-                No orders match the selected filters.
-              </Typography>
+            <Box sx={{ gridColumn: '1 / -1' }}>
+              <EmptyState
+                title="No orders found"
+                message="We couldn't find any orders that match your current search and filters."
+                icon={<Inventory2RoundedIcon />}
+              />
             </Box>
           )}
         </Box>

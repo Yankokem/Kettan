@@ -77,6 +77,11 @@ export interface CompanyProfileResult {
   subscriptionTier: string;
 }
 
+export interface CompanyUtilizationCounts {
+  activeBranches: number;
+  activeStaff: number;
+}
+
 const PLAN_LIMITS: Record<string, { branchLimit: number; staffLimit: number }> = {
   starter: { branchLimit: 3, staffLimit: 10 },
   growth: { branchLimit: 20, staffLimit: 50 },
@@ -192,17 +197,38 @@ function toCompanyProfile(tenant: TenantDto, activeBranches: number, activeStaff
 }
 
 export async function fetchCompanyProfile(): Promise<CompanyProfileResult> {
-  const [tenantResponse, activeBranches, activeStaff] = await Promise.all([
-    api.get<TenantDto>('/api/tenants/me'),
+  const core = await fetchCompanyProfileCore();
+  const counts = await fetchCompanyUtilizationCounts();
+
+  return {
+    subscriptionTier: core.subscriptionTier,
+    profile: {
+      ...core.profile,
+      activeBranches: counts.activeBranches,
+      activeStaff: counts.activeStaff,
+    },
+  };
+}
+
+export async function fetchCompanyProfileCore(): Promise<CompanyProfileResult> {
+  const tenantResponse = await api.get<TenantDto>('/api/tenants/me');
+  const tenant = tenantResponse.data;
+
+  return {
+    profile: toCompanyProfile(tenant, 0, 0),
+    subscriptionTier: tenant.subscriptionTier,
+  };
+}
+
+export async function fetchCompanyUtilizationCounts(): Promise<CompanyUtilizationCounts> {
+  const [activeBranches, activeStaff] = await Promise.all([
     fetchActiveBranchesCount(),
     fetchActiveStaffCount(),
   ]);
 
-  const tenant = tenantResponse.data;
-
   return {
-    profile: toCompanyProfile(tenant, activeBranches, activeStaff),
-    subscriptionTier: tenant.subscriptionTier,
+    activeBranches,
+    activeStaff,
   };
 }
 

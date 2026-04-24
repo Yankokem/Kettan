@@ -1,22 +1,46 @@
+import { useEffect, useState } from 'react';
 import { Box, Typography, Card, LinearProgress } from '@mui/material';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
+import { fetchBranchScorecard } from '../../reports/reportsApi';
 
 interface BranchScore {
   id: string;
   name: string;
   score: number;
-  fulfillmentTime: string;
-  accuracy: string;
+  salesVolume: number;
+  returnsCount: number;
 }
 
-const LEADERBOARD: BranchScore[] = [
-  { id: 'b1', name: 'BGC Branch', score: 98, fulfillmentTime: '1.2 hrs', accuracy: '99%' },
-  { id: 'b2', name: 'Makati HQ', score: 95, fulfillmentTime: '1.5 hrs', accuracy: '98%' },
-  { id: 'b3', name: 'Ortigas Branch', score: 88, fulfillmentTime: '2.1 hrs', accuracy: '95%' },
-  { id: 'b4', name: 'QC Branch', score: 76, fulfillmentTime: '3.4 hrs', accuracy: '90%' },
-];
-
 export function BranchPerformance() {
+  const [branches, setBranches] = useState<BranchScore[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const endDate = new Date();
+      const startDate = new Date(endDate);
+      startDate.setDate(endDate.getDate() - 30);
+
+      try {
+        const rows = await fetchBranchScorecard(startDate.toISOString(), endDate.toISOString());
+        setBranches(
+          rows
+            .map((row) => ({
+              id: String(row.branchId),
+              name: row.branchName,
+              score: row.scorePercentage,
+              salesVolume: row.salesVolume,
+              returnsCount: row.returnsCount,
+            }))
+            .sort((left, right) => right.score - left.score),
+        );
+      } catch {
+        setBranches([]);
+      }
+    };
+
+    void load();
+  }, []);
+
   return (
     <Card
       elevation={0}
@@ -36,7 +60,11 @@ export function BranchPerformance() {
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-        {LEADERBOARD.map((branch, index) => (
+        {branches.length === 0 ? (
+          <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
+            No branch scorecard data is available yet.
+          </Typography>
+        ) : branches.map((branch, index) => (
           <Box key={branch.id}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography sx={{ fontSize: 13.5, fontWeight: 500, color: 'text.primary' }}>
@@ -64,10 +92,10 @@ export function BranchPerformance() {
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
               <Typography sx={{ fontSize: 11, color: 'text.disabled' }}>
-                Fulfillment: {branch.fulfillmentTime}
+                Sales volume: {branch.salesVolume.toLocaleString()}
               </Typography>
               <Typography sx={{ fontSize: 11, color: 'text.disabled' }}>
-                Accuracy: {branch.accuracy}
+                Returns: {branch.returnsCount.toLocaleString()}
               </Typography>
             </Box>
           </Box>

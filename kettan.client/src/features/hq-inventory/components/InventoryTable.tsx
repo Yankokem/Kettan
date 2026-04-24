@@ -13,6 +13,7 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
 import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
@@ -445,7 +446,9 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
         data={filteredTransactions}
         keyExtractor={(row) => row.id}
         toolbar={toolbar}
-        emptyMessage="No transactions found"
+        emptyTitle="No transactions found"
+        emptyMessage={searchQuery ? "We couldn't find any transactions matching your search." : "There are no inventory movements recorded yet."}
+        emptyIcon={<ReceiptLongRoundedIcon />}
         defaultRowsPerPage={15}
         rowsPerPageOptions={[15, 25, 50]}
       />
@@ -459,7 +462,9 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
       keyExtractor={(row) => row.id.toString()}
       toolbar={toolbar}
       onRowClick={(row) => onRowClick ? onRowClick(row.id) : navigate({ to: '/hq-inventory/$itemId', params: { itemId: row.id.toString() } })}
-      emptyMessage="No inventory items match your search or filter."
+      emptyTitle="No items found"
+      emptyMessage={searchQuery ? "We couldn't find any inventory items matching your search." : "The inventory catalog is currently empty."}
+      emptyIcon={<Inventory2RoundedIcon />}
       defaultRowsPerPage={15}
       rowsPerPageOptions={[15, 25, 50]}
     />

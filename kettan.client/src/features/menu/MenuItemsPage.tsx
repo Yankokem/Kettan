@@ -41,14 +41,13 @@ export function MenuItemsPage() {
   const outOfStockCount = menuItems.filter(item => item.status === 'Out of Stock').length;
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       {/* Stat Cards */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             label="Total Items"
             value={menuItems.length.toString()}
-            sub="Currently configured"
             trend="up"
             trendValue="+1"
             icon={<LocalCafeRoundedIcon />}
@@ -60,7 +59,6 @@ export function MenuItemsPage() {
           <StatCard
             label="Active"
             value={activeCount.toString()}
-            sub="Available for order"
             trend="up"
             trendValue="+2"
             icon={<CheckCircleRoundedIcon />}
@@ -72,7 +70,6 @@ export function MenuItemsPage() {
           <StatCard
             label="Inactive"
             value={inactiveCount.toString()}
-            sub="Disabled items"
             trend="down"
             trendValue="-1"
             icon={<CancelRoundedIcon />}
@@ -84,7 +81,6 @@ export function MenuItemsPage() {
           <StatCard
             label="Out of Stock"
             value={outOfStockCount.toString()}
-            sub="Needs replenishment"
             trend="up"
             trendValue="+3"
             icon={<ErrorOutlineRoundedIcon />}
@@ -131,7 +127,9 @@ export function MenuItemsPage() {
         loading={loading}
         error={error}
         isEmpty={filteredItems.length === 0}
-        emptyMessage={searchTerm ? 'No menu items match your search.' : 'No menu items found. Add your first item.'}
+        emptyTitle={searchTerm ? 'No results found' : 'Your menu is empty'}
+        emptyMessage={searchTerm ? 'We couldn\'t find any menu items matching your search.' : 'Start building your coffee and food selection to get things brewing.'}
+        emptyIcon={<LocalCafeRoundedIcon />}
       >
         <Grid container spacing={3} columns={60}>
           {filteredItems.map(item => (

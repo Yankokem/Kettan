@@ -91,7 +91,7 @@ export function TenantProfilePage() {
   ];
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       {/* ── Header ── */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

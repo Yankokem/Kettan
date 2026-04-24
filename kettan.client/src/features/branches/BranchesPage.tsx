@@ -6,6 +6,7 @@ import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
+import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { Dropdown } from '../../components/UI/Dropdown';
@@ -42,7 +43,7 @@ export function BranchesPage() {
   });
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       {/* KPI Stats */}
       <Box sx={{ mb: 4 }}>
         <Grid container spacing={3}>
@@ -126,7 +127,9 @@ export function BranchesPage() {
         loading={loading}
         error={error}
         isEmpty={filteredBranches.length === 0}
-        emptyMessage={searchTerm ? 'No branches match your search.' : 'No branches found. Add your first branch to get started.'}
+        emptyTitle={searchTerm ? 'No matches found' : 'No branches yet'}
+        emptyMessage={searchTerm ? 'We couldn\'t find any branches matching your search criteria.' : 'Start expanding your network by adding your first branch location.'}
+        emptyIcon={<StoreRoundedIcon />}
       >
         <Box
           sx={{

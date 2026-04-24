@@ -27,7 +27,11 @@ const PAGE_TITLES: Record<string, string> = {
   '/company-profile': 'Company Profile',
   '/hq-inventory': 'HQ Inventory & Stock',
   '/hq-inventory/add': 'Add Inventory Item',
-  '/staff':     '',
+  '/menu':      'Menu & Recipes',
+  '/staff':     'Staff Directory',
+  '/tenants':   'Tenant Management',
+  '/analytics': 'Platform Analytics',
+  '/help':      'Help & Support',
   '/settings':  'Settings',
   '/audit-logs': 'Audit Logs',
   '/reports':   'Finance & Reports',
@@ -42,7 +46,11 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/company-profile': 'Manage your company profile and billing.',
   '/hq-inventory': 'Track warehouse stock, raw ingredients, and reorder levels globally.',
   '/hq-inventory/add': 'Register new coffee, syrups, packaging, or equipment.',
-  '/staff':     '',
+  '/menu':      'Manage your coffee menu, recipes, and ingredient compositions.',
+  '/staff':     'Manage your team members, roles, and branch assignments.',
+  '/tenants':   'Monitor and manage tenant accounts, subscriptions, and platform access.',
+  '/analytics': 'Deep dive into platform-wide performance, growth, and usage metrics.',
+  '/help':      'Access support resources, documentation, and contact platform helpdesk.',
   '/settings':  'System settings, user roles, and platform permissions.',
   '/audit-logs': 'Track key actions across returns and admin workflows.',
   '/reports':   'Financial analytics, performance leaderboards, and aggregated invoices.',
@@ -98,55 +106,36 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
         }
 
         setConnectionState('offline');
-        setConnectionTooltip(`Backend reached, database check failed | ${diagnostics}`);
-      } catch (error) {
+        setConnectionTooltip(`Database unreachable | ${diagnostics}`);
+      } catch (err) {
         if (!isMounted) {
           return;
         }
-
-        const responseStatus = (error as { response?: { status?: number } }).response?.status;
-        const message = (error as { message?: string }).message ?? 'Unable to reach backend diagnostics endpoint.';
-
-        if (responseStatus === 404) {
-          setConnectionState('disabled');
-          setConnectionTooltip('Development diagnostics endpoint is not available yet.');
-          return;
-        }
-
         setConnectionState('offline');
-        setConnectionTooltip(`Connection check failed: ${message}`);
+        setConnectionTooltip(`Connection failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
     };
 
     void checkConnection();
-    const intervalId = window.setInterval(() => {
+
+    const interval = setInterval(() => {
       void checkConnection();
-    }, 25000);
+    }, 30000);
 
     return () => {
       isMounted = false;
-      window.clearInterval(intervalId);
+      clearInterval(interval);
     };
-  }, [location.pathname, showDevConnectionIndicator]);
+  }, [showDevConnectionIndicator]);
 
   const connectionColor = useMemo(() => {
-    if (connectionState === 'online') {
-      return '#2E7D32';
+    switch (connectionState) {
+      case 'online':   return '#546B3F';
+      case 'degraded': return '#B45309';
+      case 'offline':  return '#B91C1C';
+      case 'checking': return '#6B4C2A';
+      default:         return 'text.disabled';
     }
-
-    if (connectionState === 'degraded') {
-      return '#ED6C02';
-    }
-
-    if (connectionState === 'checking') {
-      return '#8C6B43';
-    }
-
-    if (connectionState === 'disabled') {
-      return '#757575';
-    }
-
-    return '#C62828';
   }, [connectionState]);
 
   const getParentResource = (path: string) => {
@@ -158,8 +147,8 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   };
   
   const basePath = getParentResource(location.pathname);
-  const pageTitle = PAGE_TITLES[basePath] ?? PAGE_TITLES[location.pathname] ?? 'Kettan';
-  const pageDesc = PAGE_DESCRIPTIONS[basePath] ?? PAGE_DESCRIPTIONS[location.pathname] ?? 'Kettan · Café Chain Operations';
+  const pageTitle = PAGE_TITLES[location.pathname] ?? PAGE_TITLES[basePath] ?? 'Kettan';
+  const pageDesc = PAGE_DESCRIPTIONS[location.pathname] ?? PAGE_DESCRIPTIONS[basePath] ?? 'Kettan · Café Chain Operations';
   const showPageMeta = Boolean(pageTitle.trim());
 
   return (

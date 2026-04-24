@@ -119,9 +119,9 @@ export function RegisterOtpPage() {
       }}
     >
       <div
-        className="hidden lg:flex flex-col justify-between w-2/5 p-12"
+        className="hidden lg:flex flex-col justify-between w-[70%] flex-shrink-0 p-10"
         style={{
-          background: "linear-gradient(160deg, #2C1A0E 0%, #4A3418 50%, #3D5029 100%)",
+          background: "linear-gradient(180deg, #2C1A0E 0%, #6B4C2A 60%, #C9A87D 100%)",
         }}
       >
         <div>
@@ -155,7 +155,7 @@ export function RegisterOtpPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+      <div className="w-[30%] flex items-center justify-center p-6 lg:p-12">
         <StaticMotionDiv className="w-full max-w-md" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <Link to={`/market/register?plan=${encodeURIComponent(planId)}` as any} className="inline-flex items-center gap-1.5 mb-7 text-sm" style={{ color: "#8C6B43", fontWeight: 500 }}>
             <ArrowLeft size={14} />

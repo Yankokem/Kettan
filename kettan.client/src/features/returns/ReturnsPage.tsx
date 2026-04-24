@@ -216,7 +216,7 @@ export function ReturnsPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ mb: 5 }}>
+      <Box sx={{ mb: 4 }}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
@@ -315,7 +315,11 @@ export function ReturnsPage() {
           ]}
         />
 
-        <Button onClick={() => navigate({ to: '/returns/new' })} sx={{ flexShrink: 0, ml: 'auto' }}>
+        <Button
+          startIcon={<AssignmentReturnRoundedIcon />}
+          onClick={() => navigate({ to: '/returns/new' })}
+          sx={{ flexShrink: 0, ml: 'auto' }}
+        >
           File Return
         </Button>
       </Box>
@@ -328,7 +332,9 @@ export function ReturnsPage() {
         data={sortedRows}
         columns={columns}
         keyExtractor={(row) => row.returnId.toString()}
-        emptyMessage={isLoading ? 'Loading returns...' : 'No return records yet.'}
+        emptyTitle={search ? 'No matches found' : 'No return records yet'}
+        emptyMessage={isLoading ? 'Loading returns...' : search ? 'We couldn\'t find any returns matching your search.' : 'There are no return requests logged in the system.'}
+        emptyIcon={<AssignmentReturnRoundedIcon />}
         defaultRowsPerPage={10}
         pageSizes={[10, 25, 50]}
       />

@@ -25,10 +25,13 @@ api.interceptors.response.use(
   (error) => {
     // If the backend returns 401 Unauthorized, automatically log the user out
     // Skip this for the login endpoint itself so the user can see the "Invalid credentials" error
-    if (error.response?.status === 401 && !error.config.url?.endsWith('/api/auth/login')) {
+    if (error.response?.status === 401 && 
+        !error.config.url?.endsWith('/api/auth/login') &&
+        !window.location.pathname.startsWith('/market/register')) {
       useAuthStore.getState().logout();
-      window.location.href = '/login'; // Alternatively, route using history
+      window.location.href = '/login';
     }
+
     
     // If the backend returns 402 Payment Required (Subscription disabled/pending)
     // Redirect to company profile or billing page

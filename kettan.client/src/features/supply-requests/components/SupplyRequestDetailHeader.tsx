@@ -19,6 +19,8 @@ interface SupplyRequestDetailHeaderProps {
   requestNumber: string;
   status: SupplyRequestLifecycleStatus;
   branchName: string;
+  onSubmit?: () => void;
+  onFileReturn?: () => void;
 }
 
 export function SupplyRequestDetailHeader({
@@ -26,6 +28,8 @@ export function SupplyRequestDetailHeader({
   requestNumber,
   status,
   branchName,
+  onSubmit,
+  onFileReturn,
 }: SupplyRequestDetailHeaderProps) {
   const navigate = useNavigate();
   const isDraft = status === 'Draft' || status === 'AutoDrafted';
@@ -71,7 +75,9 @@ export function SupplyRequestDetailHeader({
             >
               Edit Draft
             </Button>
-            <Button startIcon={<SendRoundedIcon />}>Submit to HQ</Button>
+            <Button startIcon={<SendRoundedIcon />} onClick={onSubmit}>
+              Submit to HQ
+            </Button>
           </>
         ) : null}
 
@@ -89,7 +95,12 @@ export function SupplyRequestDetailHeader({
 
         {isDelivered ? (
           <>
-            <Button variant="outlined" startIcon={<AssignmentReturnRoundedIcon />} sx={{ color: '#B45309', borderColor: '#B45309' }}>
+            <Button
+              variant="outlined"
+              startIcon={<AssignmentReturnRoundedIcon />}
+              onClick={onFileReturn}
+              sx={{ color: '#B45309', borderColor: '#B45309' }}
+            >
               File Return
             </Button>
           </>

@@ -209,8 +209,8 @@ export function AuditLogsPage() {
   const deletedEvents = rows.filter((row) => row.action === 'Deleted').length;
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, gap: 2.5, mb: 2.5 }}>
+    <Box sx={{ pb: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, gap: 2.5, mb: 4 }}>
         <StatCard
           label="Total Events"
           value={totalCount}
@@ -319,7 +319,9 @@ export function AuditLogsPage() {
         keyExtractor={(row) => String(row.id)}
         defaultRowsPerPage={10}
         pageSizes={[10, 25, 50]}
-        emptyMessage={loading ? 'Loading audit logs…' : 'No audit logs for the selected filters.'}
+        emptyTitle={search ? 'No matches found' : 'No audit logs yet'}
+        emptyMessage={loading ? 'Loading audit logs…' : search ? 'We couldn\'t find any log entries matching your search.' : 'There are no activities recorded in the audit log for this period.'}
+        emptyIcon={<FeedRoundedIcon />}
       />
     </Box>
   );

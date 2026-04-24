@@ -30,7 +30,8 @@ public class SubscriptionCheckMiddleware
         // Always allow auth and tenant endpoints to pass through so users can log in, check their session, log out, and manage their subscription
         var path = context.Request.Path.Value ?? string.Empty;
         if (path.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/api/tenants", StringComparison.OrdinalIgnoreCase))
+            path.StartsWith("/api/tenants", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/api/subscription", StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);
             return;
@@ -61,12 +62,12 @@ public class SubscriptionCheckMiddleware
 
         if (tenant == null)
         {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new { message = "Tenant not found." });
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsJsonAsync(new { message = "Tenant session is invalid. Please log in again." });
             return;
         }
 
-        if (tenant.SubscriptionStatus != "Active")
+        if (tenant.SubscriptionStatus != "Active" && tenant.SubscriptionStatus != "PendingPayment")
         {
             context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
             await context.Response.WriteAsJsonAsync(new { message = "Your subscription is not active. Please renew your plan." });

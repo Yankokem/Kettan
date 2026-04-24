@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { StaticMotionDiv } from "./noMotion";
 import { ArrowLeft, Building2, Loader2, Lock, MapPinHouse, Phone, User } from "lucide-react";
+import axios from "axios";
 import { api } from "../../utils/api";
 import { MarketingAuthInput } from "./components/MarketingAuthInput";
 import { resolvePlan } from "./registerPlans";
@@ -129,8 +130,12 @@ export function RegisterOnboardingPage() {
         window.location.assign(successUrl);
       }
     } catch (error) {
-      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message
-        ?? "Unable to complete registration right now. Please try again.";
+      const errorMessage = axios.isAxiosError(error)
+        ? ((error.response?.data as { message?: string; detail?: string; title?: string } | undefined)?.message
+            ?? (error.response?.data as { message?: string; detail?: string; title?: string } | undefined)?.detail
+            ?? (error.response?.data as { message?: string; detail?: string; title?: string } | undefined)?.title
+            ?? error.message)
+        : (error instanceof Error ? error.message : "Unable to complete registration right now. Please try again.");
       setSubmitError(errorMessage);
     } finally {
       setLoading(false);
@@ -146,9 +151,9 @@ export function RegisterOnboardingPage() {
       }}
     >
       <div
-        className="hidden lg:flex flex-col justify-between w-2/5 p-12"
+        className="hidden lg:flex flex-col justify-between w-[70%] flex-shrink-0 p-10"
         style={{
-          background: "linear-gradient(160deg, #2C1A0E 0%, #4A3418 50%, #3D5029 100%)",
+          background: "linear-gradient(180deg, #2C1A0E 0%, #6B4C2A 60%, #C9A87D 100%)",
         }}
       >
         <div>
@@ -173,7 +178,7 @@ export function RegisterOnboardingPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+      <div className="w-[30%] flex items-center justify-center p-6 lg:p-12">
         <StaticMotionDiv className="w-full max-w-md" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <Link
             to={`/market/register/otp?email=${encodeURIComponent(email)}&plan=${encodeURIComponent(planId)}` as any}

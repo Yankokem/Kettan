@@ -460,7 +460,7 @@ export default function InventoryTransactionPage() {
 
   if (isLoadingCatalog) {
     return (
-      <Box sx={{ pb: 3, pt: 1 }}>
+      <Box sx={{ pb: 3 }}>
         <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
           <BackButton to="/hq-inventory" />
           <Box>
@@ -477,7 +477,7 @@ export default function InventoryTransactionPage() {
   }
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
         <BackButton to="/hq-inventory" />
         <Box>

@@ -15,7 +15,8 @@ import { Button } from '../../components/UI/Button';
 import { CompanyProfileEditModal } from './components/CompanyProfileEditModal';
 import type { CompanyProfile } from './types';
 import { toCompanyProfileFormData, type CompanyProfileFormData } from './types';
-import { fetchCompanyProfile, updateCompanyProfile } from './companyProfileApi';
+import { fetchCompanyProfile, fetchCompanyProfileCore, fetchCompanyUtilizationCounts, updateCompanyProfile } from './companyProfileApi';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const EMPTY_COMPANY_PROFILE: CompanyProfile = {
   name: 'Company Profile',
@@ -72,17 +73,17 @@ function UtilizationMeter({
   const toneStyles =
     tone === 'gold'
       ? {
-          track: 'rgba(201,168,76,0.15)',
-          fill: 'linear-gradient(90deg, #9F7B3A 0%, #C9A84C 100%)',
-          chipBg: 'rgba(201,168,76,0.16)',
-          chipColor: '#6B4C2A',
-        }
+        track: 'rgba(201,168,76,0.15)',
+        fill: 'linear-gradient(90deg, #9F7B3A 0%, #C9A84C 100%)',
+        chipBg: 'rgba(201,168,76,0.16)',
+        chipColor: '#6B4C2A',
+      }
       : {
-          track: 'rgba(113,143,88,0.18)',
-          fill: 'linear-gradient(90deg, #5F7C49 0%, #7FA45E 100%)',
-          chipBg: 'rgba(113,143,88,0.15)',
-          chipColor: '#3F5831',
-        };
+        track: 'rgba(113,143,88,0.18)',
+        fill: 'linear-gradient(90deg, #5F7C49 0%, #7FA45E 100%)',
+        chipBg: 'rgba(113,143,88,0.15)',
+        chipColor: '#3F5831',
+      };
 
   return (
     <Box sx={{ p: 1.75, borderRadius: 2.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
@@ -114,12 +115,34 @@ function UtilizationMeter({
 }
 
 export function CompanyProfilePage() {
-  const [profile, setProfile] = useState<CompanyProfile>(EMPTY_COMPANY_PROFILE);
-  const [subscriptionTier, setSubscriptionTier] = useState('Starter');
-  const [editDraft, setEditDraft] = useState<CompanyProfileFormData>(toCompanyProfileFormData(EMPTY_COMPANY_PROFILE));
+  const sessionTenant = useAuthStore((state) => state.user?.tenant);
+
+  const initialProfile = useMemo<CompanyProfile>(() => {
+    if (!sessionTenant) {
+      return EMPTY_COMPANY_PROFILE;
+    }
+
+    const normalizedTier = sessionTenant.subscriptionTier?.trim().toLowerCase();
+    const planName = normalizedTier === 'enterprise'
+      ? 'Enterprise Plan'
+      : normalizedTier === 'growth'
+        ? 'Growth Plan'
+        : 'Starter Plan';
+
+    return {
+      ...EMPTY_COMPANY_PROFILE,
+      name: sessionTenant.name || EMPTY_COMPANY_PROFILE.name,
+      legalName: sessionTenant.name || EMPTY_COMPANY_PROFILE.legalName,
+      planName,
+    };
+  }, [sessionTenant]);
+
+  const [profile, setProfile] = useState<CompanyProfile>(initialProfile);
+  const [subscriptionTier, setSubscriptionTier] = useState(sessionTenant?.subscriptionTier ?? 'Starter');
+  const [editDraft, setEditDraft] = useState<CompanyProfileFormData>(toCompanyProfileFormData(initialProfile));
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!sessionTenant);
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -129,27 +152,37 @@ export function CompanyProfilePage() {
 
     const loadProfile = async () => {
       try {
-        setIsLoading(true);
         setLoadError(null);
 
-        const result = await fetchCompanyProfile();
+        const core = await fetchCompanyProfileCore();
         if (!isMounted) {
           return;
         }
 
-        setProfile(result.profile);
-        setSubscriptionTier(result.subscriptionTier);
-        setEditDraft(toCompanyProfileFormData(result.profile));
+        setProfile(core.profile);
+        setSubscriptionTier(core.subscriptionTier);
+        setEditDraft(toCompanyProfileFormData(core.profile));
+        setIsLoading(false);
+
+        const counts = await fetchCompanyUtilizationCounts();
+        if (!isMounted) {
+          return;
+        }
+
+        setProfile((previous) => ({
+          ...previous,
+          activeBranches: counts.activeBranches,
+          activeStaff: counts.activeStaff,
+        }));
       } catch {
         if (!isMounted) {
           return;
         }
 
         setLoadError('Unable to load company profile from API.');
+        setIsLoading(false);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        // no-op: loading is settled once core profile call resolves
       }
     };
 
@@ -212,7 +245,7 @@ export function CompanyProfilePage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && profile.name === EMPTY_COMPANY_PROFILE.name) {
     return (
       <Box sx={{ pb: 5, pt: 4 }}>
         <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>Loading company profile...</Typography>
@@ -238,13 +271,15 @@ export function CompanyProfilePage() {
           mb: 3,
         }}
       >
+        {/* ── Banner ── */}
         <Box
           sx={{
             position: 'relative',
-            height: 138,
+            height: 140,
             background: 'linear-gradient(135deg, #6A4120 0%, #8C5F2B 34%, #B78644 68%, #E1C26F 100%)',
           }}
         >
+          {/* Dot texture overlay */}
           <Box
             sx={{
               position: 'absolute',
@@ -254,80 +289,133 @@ export function CompanyProfilePage() {
               backgroundSize: '28px 28px',
             }}
           />
+
+          {/* Action buttons — top-right of banner */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              pr: { xs: 3, sm: 4 },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.2,
+            }}
+          >
+            <Button
+              variant="outlined"
+              startIcon={<BuildRoundedIcon sx={{ fontSize: 18 }} />}
+              sx={{
+                borderColor: 'rgba(255,255,255,0.5)',
+                color: '#FAF5EF',
+                '&:hover': { borderColor: '#FAF5EF', bgcolor: 'rgba(255,255,255,0.1)' },
+              }}
+            >
+              Manage Subscription
+            </Button>
+
+            <Button
+              startIcon={<EditRoundedIcon sx={{ fontSize: 18 }} />}
+              onClick={handleOpenEditModal}
+              disabled={isSaving}
+              sx={{
+                bgcolor: '#2E1F14',
+                color: '#FAF5EF',
+                '&:hover': { bgcolor: '#1A1209' },
+              }}
+            >
+              Edit Company Profile
+            </Button>
+          </Box>
+
+          {/* Company name — pinned to bottom-left of banner, after avatar width */}
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 12,
+              left: { xs: 3, sm: '184px' },
+              right: { xs: 3, sm: '420px' },
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: { xs: 20, sm: 26 },
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+                color: '#FAF5EF',
+                textShadow: '0 1px 6px rgba(0,0,0,0.3)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {profile.name}
+            </Typography>
+          </Box>
         </Box>
 
-        <Box sx={{ px: { xs: 3, sm: 4 }, pb: 3.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mt: -8.5, flexWrap: 'wrap' }}>
+        {/* ── Below-banner row: avatar + chips + meta ── */}
+        <Box sx={{ px: { xs: 3, sm: 4 }, pb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2.5, mt: -5, flexWrap: 'wrap' }}>
+            {/* Avatar centered on the seam — half above, half below */}
             <Avatar
               variant="rounded"
               sx={{
-                width: 108,
-                height: 108,
-                borderRadius: 3,
+                width: 132,
+                height: 132,
+                borderRadius: 4,
                 bgcolor: '#2E1F14',
-                border: '4px solid #FFFFFF',
+                border: '5px solid',
+                borderColor: 'background.paper',
                 color: '#FAF5EF',
+                flexShrink: 0,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
               }}
             >
-              <BusinessRoundedIcon sx={{ fontSize: 46 }} />
+              <BusinessRoundedIcon sx={{ fontSize: 64 }} />
             </Avatar>
 
-            <Box sx={{ minWidth: 0, flex: 1, pt: 1.25 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
-                <Box>
-                  <Typography sx={{ fontSize: { xs: 24, sm: 36 }, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.07 }}>
-                    {profile.name}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mt: 1.2 }}>
-                    <Chip
-                      icon={<MapRoundedIcon fontSize="small" />}
-                      label={`${profile.headquartersCity} HQ`}
-                      size="small"
-                      sx={{
-                        bgcolor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        height: 28,
-                        fontWeight: 600,
-                      }}
-                    />
-                    <Chip
-                      label={profile.planName}
-                      size="small"
-                      sx={{
-                        bgcolor: 'rgba(201,168,76,0.18)',
-                        color: '#6B4C2A',
-                        borderRadius: 999,
-                        height: 28,
-                        fontWeight: 800,
-                      }}
-                    />
-                    <Chip
-                      label={profile.organizationId}
-                      size="small"
-                      sx={{
-                        bgcolor: 'rgba(107,76,42,0.10)',
-                        color: '#5C4518',
-                        borderRadius: 999,
-                        height: 24,
-                        fontWeight: 700,
-                        fontSize: 11,
-                      }}
-                    />
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-                  <Button variant="outlined" startIcon={<BuildRoundedIcon sx={{ fontSize: 18 }} />}>
-                    Manage Subscription
-                  </Button>
-
-                  <Button startIcon={<EditRoundedIcon sx={{ fontSize: 18 }} />} onClick={handleOpenEditModal} disabled={isSaving}>
-                    Edit Company Profile
-                  </Button>
-                </Box>
+            {/* Chips + meta below the avatar */}
+            <Box sx={{ minWidth: 0, flex: 1, pb: 0.5, pt: 3.5 }}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
+                <Chip
+                  icon={<MapRoundedIcon fontSize="small" />}
+                  label={`${profile.headquartersCity} HQ`}
+                  size="small"
+                  sx={{
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    height: 28,
+                    fontWeight: 600,
+                  }}
+                />
+                <Chip
+                  label={profile.planName}
+                  size="small"
+                  sx={{
+                    bgcolor: 'rgba(201,168,76,0.18)',
+                    color: '#6B4C2A',
+                    borderRadius: 999,
+                    height: 28,
+                    fontWeight: 800,
+                  }}
+                />
+                <Chip
+                  label={profile.organizationId}
+                  size="small"
+                  sx={{
+                    bgcolor: 'rgba(107,76,42,0.10)',
+                    color: '#5C4518',
+                    borderRadius: 999,
+                    height: 24,
+                    fontWeight: 700,
+                    fontSize: 11,
+                  }}
+                />
               </Box>
 
               <Box
@@ -335,8 +423,7 @@ export function CompanyProfilePage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1.8,
-                  mt: 1.25,
-                  pt: 1.15,
+                  pt: 0.75,
                   borderTop: '1px solid',
                   borderColor: 'divider',
                   flexWrap: 'wrap',

@@ -79,7 +79,7 @@ export function ReturnCreatePage() {
   };
 
   return (
-    <Box sx={{ pb: 3, pt: 1, display: 'grid', gap: 2.2 }}>
+    <Box sx={{ pb: 3, display: 'grid', gap: 2.2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
         <BackButton to="/returns" />
         <Box>

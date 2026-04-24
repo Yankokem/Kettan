@@ -35,8 +35,8 @@ const INITIAL_FORM: VehicleFormData = {
 };
 
 const VIEW_OPTIONS = [
-  { value: 'cards' as const, label: 'Cards', icon: <ViewModuleRoundedIcon fontSize="small" /> },
-  { value: 'table' as const, label: 'Table', icon: <ViewListRoundedIcon fontSize="small" /> },
+  { value: 'cards' as const, label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> },
+  { value: 'table' as const, label: '', icon: <ViewListRoundedIcon sx={{ fontSize: 16 }} /> },
 ];
 
 export function VehicleManagementPage() {
@@ -250,7 +250,7 @@ export function VehicleManagementPage() {
   ];
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       <Box sx={{ mb: 3.5, display: 'flex', alignItems: 'center', gap: 2 }}>
         <BackButton to="/hq-inventory" />
         <Box>
@@ -391,7 +391,9 @@ export function VehicleManagementPage() {
               loading={loading && vehicles.length === 0}
               error={error}
               isEmpty={visibleVehicles.length === 0}
-              emptyMessage="No vehicles found for your filters."
+              emptyTitle="No vehicles found"
+              emptyMessage={search ? "We couldn't find any vehicles matching your search." : "There are currently no vehicles registered in the fleet."}
+              emptyIcon={<LocalShippingRoundedIcon />}
             >
               {viewMode === 'cards' ? (
                 <Box

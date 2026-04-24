@@ -133,7 +133,7 @@ export function AddBranchPage() {
   };
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       {/* Header section */}
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
         <BackButton to="/branches" />

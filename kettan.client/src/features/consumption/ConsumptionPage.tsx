@@ -201,7 +201,7 @@ export function ConsumptionPage() {
 
   if (!canViewPage) {
     return (
-      <Box sx={{ pb: 3, pt: 1 }}>
+      <Box sx={{ pb: 3 }}>
         <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Consumption Logging</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
@@ -216,7 +216,7 @@ export function ConsumptionPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ mb: 5 }}>
+      <Box sx={{ mb: 4 }}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
@@ -340,7 +340,9 @@ export function ConsumptionPage() {
         data={sortedRows}
         columns={columns}
         keyExtractor={(row) => row.consumptionLogId.toString()}
-        emptyMessage={isLoading ? 'Loading logs...' : 'No consumption logs yet.'}
+        emptyTitle={search ? 'No matches found' : 'No consumption logs yet'}
+        emptyMessage={isLoading ? 'Loading logs...' : search ? 'We couldn\'t find any consumption logs matching your search.' : 'There are no consumption logs recorded for this period.'}
+        emptyIcon={<ScaleRoundedIcon />}
         defaultRowsPerPage={10}
         pageSizes={[10, 25, 50]}
       />

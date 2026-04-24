@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography, Card } from '@mui/material';
 import SsidChartRoundedIcon from '@mui/icons-material/SsidChartRounded';
 import { Dropdown } from '../../../components/UI/Dropdown';
+import { fetchBranchScorecard, fetchConsumptionTrends } from '../../reports/reportsApi';
 
 type SeriesFilter = 'orders' | 'inventory' | 'returns';
 type RangeFilter = '7days' | '30days';
@@ -12,23 +13,6 @@ interface MetricPoint {
   inventory: number;
   returns: number;
 }
-
-const METRICS: MetricPoint[] = [
-  { label: 'Mon', orders: 43, inventory: 8, returns: 3 },
-  { label: 'Tue', orders: 48, inventory: 6, returns: 2 },
-  { label: 'Wed', orders: 52, inventory: 7, returns: 4 },
-  { label: 'Thu', orders: 58, inventory: 5, returns: 3 },
-  { label: 'Fri', orders: 62, inventory: 4, returns: 2 },
-  { label: 'Sat', orders: 55, inventory: 6, returns: 4 },
-  { label: 'Sun', orders: 50, inventory: 5, returns: 3 },
-  { label: 'W2-M', orders: 60, inventory: 4, returns: 2 },
-  { label: 'W2-T', orders: 64, inventory: 3, returns: 2 },
-  { label: 'W2-W', orders: 67, inventory: 4, returns: 1 },
-  { label: 'W2-T', orders: 69, inventory: 3, returns: 2 },
-  { label: 'W2-F', orders: 72, inventory: 2, returns: 1 },
-  { label: 'W2-S', orders: 66, inventory: 4, returns: 2 },
-  { label: 'W2-S', orders: 61, inventory: 5, returns: 3 },
-];
 
 const SERIES_META: Record<SeriesFilter, { label: string; color: string }> = {
   orders: { label: 'Orders Fulfilled', color: '#6B4C2A' },
@@ -41,6 +25,9 @@ export function DashboardChart() {
   const [rangeFilter, setRangeFilter] = useState<RangeFilter>('7days');
   const chartHostRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(760);
+  const [metrics, setMetrics] = useState<MetricPoint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const host = chartHostRef.current;
@@ -64,13 +51,47 @@ export function DashboardChart() {
     };
   }, []);
 
-  const data = useMemo(() => {
-    if (rangeFilter === '30days') {
-      return METRICS;
-    }
+  useEffect(() => {
+    const loadMetrics = async () => {
+      const endDate = new Date();
+      const startDate = new Date(endDate);
+      startDate.setDate(endDate.getDate() - (rangeFilter === '30days' ? 30 : 7));
 
-    return METRICS.slice(-7);
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const [scorecard, trends] = await Promise.all([
+          fetchBranchScorecard(startDate.toISOString(), endDate.toISOString()),
+          fetchConsumptionTrends(startDate.toISOString(), endDate.toISOString()),
+        ]);
+
+        const merged = scorecard
+          .map<MetricPoint>((branch) => {
+            const trend = trends.find((entry) => entry.branchId === branch.branchId);
+
+            return {
+              label: branch.branchName,
+              orders: trend?.logCount ?? 0,
+              inventory: trend?.totalConsumptionVolume ?? 0,
+              returns: branch.returnsCount,
+            };
+          })
+          .sort((left, right) => right.orders - left.orders);
+
+        setMetrics(merged);
+      } catch {
+        setError('Live report data is not available yet.');
+        setMetrics([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadMetrics();
   }, [rangeFilter]);
+
+  const data = useMemo(() => metrics, [metrics]);
 
   const chart = useMemo(() => {
     const width = Math.max(chartWidth, 520);
@@ -78,6 +99,19 @@ export function DashboardChart() {
     const padding = { top: 18, right: 22, bottom: 44, left: 44 };
     const plotWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
+
+    if (data.length === 0) {
+      return {
+        width,
+        height,
+        padding,
+        chartHeight,
+        axisMax: 1,
+        points: [],
+        linePath: '',
+        areaPath: '',
+      };
+    }
 
     const values = data.map((point) => point[seriesFilter]);
     const maxValue = Math.max(...values, 1);
@@ -104,6 +138,26 @@ export function DashboardChart() {
   }, [chartWidth, data, seriesFilter]);
 
   const seriesMeta = SERIES_META[seriesFilter];
+
+  if (error) {
+    return (
+      <Card
+        elevation={0}
+        sx={{
+          p: 2.5,
+          height: '100%',
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}
+      >
+        <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>{error}</Typography>
+      </Card>
+    );
+  }
 
   return (
     <Card
@@ -150,6 +204,11 @@ export function DashboardChart() {
       </Box>
 
       <Box ref={chartHostRef} sx={{ flex: 1, minHeight: 240, width: '100%', mt: 1 }}>
+        {isLoading && (
+          <Typography sx={{ color: 'text.secondary', fontSize: 14, mb: 2 }}>
+            Loading live metrics…
+          </Typography>
+        )}
         <svg viewBox={`0 0 ${chart.width} ${chart.height}`} style={{ width: '100%', height: 250, overflow: 'visible' }} preserveAspectRatio="xMidYMid meet">
           {[0, 1, 2, 3, 4].map((line) => {
             const yPosition = chart.padding.top + (chart.chartHeight / 4) * line;

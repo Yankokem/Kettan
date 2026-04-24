@@ -99,7 +99,7 @@ export function AnalyticsPage() {
   ];
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       {/* ── Header ── */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', mb: 0.5 }}>

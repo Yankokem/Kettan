@@ -233,7 +233,7 @@ export function ItemCategoriesPage() {
   ];
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       <Box sx={{ mb: 3.5, display: 'flex', alignItems: 'center', gap: 2 }}>
         <BackButton to="/hq-inventory" />
         <Box>
@@ -365,8 +365,8 @@ export function ItemCategoriesPage() {
               <ViewToggle
                 value={viewMode}
                 options={[
-                  { value: 'cards', label: 'Cards', icon: <ViewModuleRoundedIcon fontSize="small" /> },
-                  { value: 'table', label: 'Table', icon: <ViewListRoundedIcon fontSize="small" /> },
+                  { value: 'cards', label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> },
+                  { value: 'table', label: '', icon: <ViewListRoundedIcon sx={{ fontSize: 16 }} /> },
                 ]}
                 onChange={setViewMode}
               />
@@ -376,7 +376,9 @@ export function ItemCategoriesPage() {
               loading={loading && categories.length === 0}
               error={error}
               isEmpty={visibleCategories.length === 0}
-              emptyMessage="No categories found for your filters."
+              emptyTitle="No categories found"
+              emptyMessage={search ? "We couldn't find any categories matching your search." : "There are no inventory categories defined yet."}
+              emptyIcon={<CategoryRoundedIcon />}
             >
               {viewMode === 'cards' ? (
                 <Box

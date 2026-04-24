@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Kettan.Server.DTOs.Subscription;
 using Kettan.Server.Services.Subscription;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kettan.Server.Controllers;
 
@@ -11,10 +12,17 @@ namespace Kettan.Server.Controllers;
 public class SubscriptionController : ControllerBase
 {
     private readonly ISubscriptionService _subscriptionService;
+    private readonly ILogger<SubscriptionController> _logger;
+    private readonly IHostEnvironment _environment;
 
-    public SubscriptionController(ISubscriptionService subscriptionService)
+    public SubscriptionController(
+        ISubscriptionService subscriptionService,
+        ILogger<SubscriptionController> logger,
+        IHostEnvironment environment)
     {
         _subscriptionService = subscriptionService;
+        _logger = logger;
+        _environment = environment;
     }
 
     [HttpGet("plans")]
@@ -107,6 +115,22 @@ public class SubscriptionController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Registration failed with DbUpdateException.");
+            var detail = _environment.IsDevelopment()
+                ? ex.InnerException?.Message ?? ex.Message
+                : "A database error occurred while completing registration.";
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = detail });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected registration failure.");
+            var detail = _environment.IsDevelopment()
+                ? ex.InnerException?.Message ?? ex.Message
+                : "Unable to complete registration right now.";
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = detail });
         }
     }
 

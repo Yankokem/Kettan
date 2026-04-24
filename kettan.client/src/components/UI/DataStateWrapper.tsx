@@ -1,4 +1,5 @@
-import { Box, Typography, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, CircularProgress, Button as MuiButton } from '@mui/material';
+import { EmptyState } from './EmptyState';
 
 interface DataStateWrapperProps {
   loading: boolean;
@@ -6,7 +7,9 @@ interface DataStateWrapperProps {
   isEmpty: boolean;
   notAvailable?: boolean;
   loadingMessage?: string;
+  emptyTitle?: string;
   emptyMessage?: string;
+  emptyIcon?: React.ReactNode;
   notAvailableMessage?: string;
   onRetry?: () => void;
   children: React.ReactNode;
@@ -18,7 +21,9 @@ export function DataStateWrapper({
   isEmpty,
   notAvailable = false,
   loadingMessage = 'Loading...',
+  emptyTitle,
   emptyMessage = 'No data available.',
+  emptyIcon,
   notAvailableMessage = 'Feature not available in this environment.',
   onRetry,
   children,
@@ -51,14 +56,14 @@ export function DataStateWrapper({
           {error.message || 'An error occurred while loading data.'}
         </Typography>
         {onRetry && (
-          <Button 
+          <MuiButton 
             variant="outlined" 
             size="small" 
             onClick={onRetry}
             sx={{ borderColor: 'error.main', color: 'error.main', '&:hover': { bgcolor: 'error.lighter', borderColor: 'error.dark' } }}
           >
             Try Again
-          </Button>
+          </MuiButton>
         )}
       </Box>
     );
@@ -66,11 +71,11 @@ export function DataStateWrapper({
 
   if (isEmpty) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-        <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>
-          {emptyMessage}
-        </Typography>
-      </Box>
+      <EmptyState
+        title={emptyTitle}
+        message={emptyMessage}
+        icon={emptyIcon}
+      />
     );
   }
 

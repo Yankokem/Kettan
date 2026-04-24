@@ -200,7 +200,7 @@ export function MenuItemProfilePage() {
   };
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       <DataStateWrapper
         loading={loading}
         error={error}

@@ -115,7 +115,7 @@ export function TenantsPage() {
   ];
 
   return (
-    <Box sx={{ pb: 3, pt: 1, display: 'grid', gap: 3 }}>
+    <Box sx={{ pb: 3, display: 'grid', gap: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', mb: 0.5 }}>

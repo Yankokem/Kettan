@@ -102,9 +102,9 @@ export function LoginPage() {
     >
       {/* Left decorative panel */}
       <div
-        className="hidden lg:flex flex-col justify-between w-2/5 p-12 relative overflow-hidden"
+        className="hidden lg:flex flex-col justify-between w-[70%] flex-shrink-0 p-10 relative overflow-hidden"
         style={{
-          background: "linear-gradient(160deg, #2C1A0E 0%, #4A3418 50%, #3D5029 100%)",
+          background: "linear-gradient(180deg, #2C1A0E 0%, #6B4C2A 60%, #C9A87D 100%)",
         }}
       >
         {/* Decorative circles */}
@@ -171,7 +171,7 @@ export function LoginPage() {
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+      <div className="w-[30%] flex items-center justify-center p-6 lg:p-12">
         <StaticMotionDiv
           className="w-full max-w-sm"
           initial={{ opacity: 0, y: 20 }}
@@ -351,5 +351,3 @@ export function LoginPage() {
     </div>
   );
 }
-
-

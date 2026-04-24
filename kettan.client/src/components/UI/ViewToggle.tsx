@@ -28,20 +28,25 @@ export function ViewToggle<T extends string>({ value, options, onChange, sx, ...
       size="small"
       sx={{
         bgcolor: 'background.paper',
+        borderRadius: 2,
         '& .MuiToggleButton-root': {
-          px: 2,
+          px: 1.5,
           height: 40,
           fontSize: 13,
           fontWeight: 600,
-          color: 'text.secondary',
-          borderColor: 'divider',
+          color: '#6B4C2A',
+          borderColor: 'rgba(107, 76, 42, 0.25)',
           textTransform: 'none',
+          transition: 'all 0.2s ease',
           '&.Mui-selected': {
-            bgcolor: 'primary.main',
-            color: 'primary.contrastText',
+            bgcolor: 'rgba(107, 76, 42, 0.12)',
+            color: '#4A3424',
             '&:hover': {
-              bgcolor: 'primary.dark',
+              bgcolor: 'rgba(107, 76, 42, 0.18)',
             },
+          },
+          '&:hover': {
+            bgcolor: 'rgba(107, 76, 42, 0.04)',
           },
         },
         ...sx,
@@ -51,7 +56,7 @@ export function ViewToggle<T extends string>({ value, options, onChange, sx, ...
       {options.map((option) => (
         <ToggleButton key={option.value} value={option.value}>
           {option.icon && (
-            <span style={{ display: 'flex', alignItems: 'center', marginRight: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center', marginRight: option.label ? 8 : 0 }}>
               {option.icon}
             </span>
           )}

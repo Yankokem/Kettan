@@ -144,7 +144,7 @@ export function BranchProfilePage() {
 
   if (!selectedBranch || !formData) {
     return (
-      <Box sx={{ pb: 4, pt: 1, display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ pb: 4, display: 'flex', justifyContent: 'center' }}>
         <Paper
           elevation={0}
           sx={{
@@ -233,7 +233,7 @@ export function BranchProfilePage() {
   };
 
   return (
-    <Box sx={{ pb: 5, pt: 1 }}>
+    <Box sx={{ pb: 5 }}>
       <Box sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
           <button

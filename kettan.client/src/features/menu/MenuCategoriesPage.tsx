@@ -7,7 +7,7 @@ import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
-import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
+import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -217,7 +217,7 @@ export function MenuCategoriesPage() {
   ];
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       <Box sx={{ mb: 3.5, display: 'flex', alignItems: 'center', gap: 2 }}>
         <BackButton to="/menu" />
         <Box>
@@ -339,10 +339,10 @@ export function MenuCategoriesPage() {
               <ViewToggle
                 value={viewMode}
                 options={[
-                  { value: 'cards', label: 'Cards', icon: <ViewModuleRoundedIcon fontSize="small" /> },
-                  { value: 'table', label: 'Table', icon: <ViewListRoundedIcon fontSize="small" /> },
+                  { value: 'cards' as const, label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> },
+                  { value: 'table' as const, label: '', icon: <TableRowsRoundedIcon sx={{ fontSize: 16 }} /> },
                 ]}
-                onChange={setViewMode}
+                onChange={(val) => setViewMode(val)}
               />
             </Box>
 
@@ -350,7 +350,9 @@ export function MenuCategoriesPage() {
               loading={loading && categories.length === 0}
               error={error}
               isEmpty={visibleCategories.length === 0}
-              emptyMessage="No categories found for your filters."
+              emptyTitle="No categories found"
+              emptyMessage={search ? "We couldn't find any menu categories matching your search." : "There are no menu categories defined yet."}
+              emptyIcon={<CategoryRoundedIcon />}
             >
               {viewMode === 'cards' ? (
                 <Box

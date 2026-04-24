@@ -38,4 +38,10 @@
     </ProjectReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Templates\Email\*.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>  
+
 </Project>

@@ -158,14 +158,13 @@ export function StaffPage() {
   }, [staffMembers]);
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       <Box sx={{ mb: 4 }}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Total Staff"
               value={stats.total}
-              sub="Across all branches"
               trend="up"
               trendValue="+1"
               icon={<Groups2RoundedIcon />}
@@ -177,7 +176,6 @@ export function StaffPage() {
             <StatCard
               label="Active Staff"
               value={stats.active}
-              sub="Currently operational"
               trend="up"
               trendValue="+2"
               icon={<VerifiedUserRoundedIcon />}
@@ -189,7 +187,6 @@ export function StaffPage() {
             <StatCard
               label="Inactive Staff"
               value={stats.inactive}
-              sub="Temporarily unavailable"
               trend="down"
               trendValue="-1"
               icon={<PersonOffRoundedIcon />}
@@ -201,7 +198,6 @@ export function StaffPage() {
             <StatCard
               label="Archived Staff"
               value={stats.archived}
-              sub="No longer active records"
               trend="down"
               trendValue="-1"
               icon={<ArchiveRoundedIcon />}
@@ -259,8 +255,8 @@ export function StaffPage() {
           value={viewMode}
           onChange={setViewMode}
           options={[
-            { value: 'card', label: 'Card', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> },
-            { value: 'table', label: 'Table', icon: <TableRowsRoundedIcon sx={{ fontSize: 16 }} /> },
+            { value: 'card', label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> },
+            { value: 'table', label: '', icon: <TableRowsRoundedIcon sx={{ fontSize: 16 }} /> },
           ]}
         />
 
@@ -273,7 +269,9 @@ export function StaffPage() {
         loading={loading}
         error={error}
         isEmpty={filteredStaff.length === 0}
-        emptyMessage={searchTerm ? 'No staff match your search.' : 'No staff found. Add your first staff member.'}
+        emptyTitle={searchTerm ? 'No staff found' : 'Your directory is empty'}
+        emptyMessage={searchTerm ? 'We couldn\'t find any staff members matching your search terms.' : 'Ready to onboard your team? Start by adding your first staff member to the directory.'}
+        emptyIcon={<Groups2RoundedIcon />}
       >
         {viewMode === 'card' ? (
           <Box

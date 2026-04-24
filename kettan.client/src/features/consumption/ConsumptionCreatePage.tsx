@@ -190,7 +190,7 @@ export function ConsumptionCreatePage() {
 
   if (!canAccessPage) {
     return (
-      <Box sx={{ pb: 3, pt: 1 }}>
+      <Box sx={{ pb: 3 }}>
         <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Create Consumption Log</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
@@ -202,7 +202,7 @@ export function ConsumptionCreatePage() {
   }
 
   return (
-    <Box sx={{ pb: 3, pt: 1, display: 'grid', gap: 2.2 }}>
+    <Box sx={{ pb: 3, display: 'grid', gap: 2.2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
         <BackButton to="/consumption" />
         <Box>

@@ -88,6 +88,8 @@ public class AuditLogInterceptor : SaveChangesInterceptor
             // Swallow — seeding or background tasks might not have a request scope
         }
 
+        userId = await NormalizePersistedUserIdAsync(context, userId, cancellationToken);
+
         foreach (var entry in context.ChangeTracker.Entries())
         {
             var typeName = entry.Entity.GetType().Name;
@@ -124,20 +126,38 @@ public class AuditLogInterceptor : SaveChangesInterceptor
             var entityId = GetPrimaryKeyValue(entry);
 
             // Resolve tenant context from the entity itself if possible
-            var entityTenantId = tenantId;
+            var entityTenantId = (int?)null; // Default to null for safety (especially during registration)
+
             if (entry.Entity is ITenantEntity tenantEntity)
             {
                 entityTenantId = tenantEntity.TenantId;
             }
-            else if (entry.Entity is Tenant t && entry.State == EntityState.Modified)
+            else if (entry.Entity is Tenant t)
             {
-                entityTenantId = t.TenantId;
+                // For Tenant entity itself, the TenantId is its own ID
+                entityTenantId = t.TenantId > 0 ? t.TenantId : null;
+            }
+            else if (entry.Entity is User u)
+            {
+                // For User, use its TenantId property
+                entityTenantId = u.TenantId;
+            }
+
+            // Ignore temporary/unresolved keys (e.g. EF temporary negative IDs during Added state)
+            // so AuditLog FK does not reference non-existent tenants.
+            entityTenantId = NormalizePersistedId(entityTenantId);
+
+            // Fallback to session tenantId ONLY if we haven't found one and it's NOT a new Tenant/User
+            // This prevents stale cookies from causing FK conflicts during registration
+            if (!entityTenantId.HasValue && entry.State != EntityState.Added)
+            {
+                entityTenantId = NormalizePersistedId(tenantId);
             }
 
             auditEntries.Add(new AuditLog
             {
                 TenantId = entityTenantId,
-                UserId = userId,
+                UserId = entry.State == EntityState.Added && typeName == "User" ? null : userId,
                 Action = action,
                 EntityName = typeName,
                 EntityId = entityId,
@@ -148,6 +168,7 @@ public class AuditLogInterceptor : SaveChangesInterceptor
                 UserAgent = userAgent,
                 OccurredAt = DateTime.UtcNow
             });
+
         }
 
         if (auditEntries.Count > 0)
@@ -156,6 +177,28 @@ public class AuditLogInterceptor : SaveChangesInterceptor
         }
 
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
+    private static int? NormalizePersistedId(int? id)
+    {
+        return id.HasValue && id.Value > 0 ? id.Value : null;
+    }
+
+    private static async Task<int?> NormalizePersistedUserIdAsync(
+        DbContext context,
+        int? currentUserId,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUserId.HasValue || currentUserId.Value <= 0)
+        {
+            return null;
+        }
+
+        var exists = await context.Set<User>()
+            .IgnoreQueryFilters()
+            .AnyAsync(u => u.UserId == currentUserId.Value, cancellationToken);
+
+        return exists ? currentUserId : null;
     }
 
     private static Dictionary<string, (object? Old, object? New)> GetChangedProperties(EntityEntry entry)

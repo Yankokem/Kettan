@@ -157,7 +157,7 @@ export function ReturnDetailPage() {
   const style = resolutionStyle(row.resolution);
 
   return (
-    <Box sx={{ pb: 3, pt: 1, display: 'grid', gap: 2.2 }}>
+    <Box sx={{ pb: 3, display: 'grid', gap: 2.2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
           <BackButton to="/returns" />
@@ -208,7 +208,7 @@ export function ReturnDetailPage() {
               Credit Amount
             </Typography>
             <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>
-              {row.creditAmount ? row.creditAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '--'}
+              {row.creditAmount ? row.creditAmount.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' }) : '--'}
             </Typography>
           </Box>
         </Box>

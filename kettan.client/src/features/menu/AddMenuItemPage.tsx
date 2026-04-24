@@ -130,7 +130,7 @@ export function AddMenuItemPage() {
   };
 
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       {/* Header */}
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
         <BackButton to="/menu" />

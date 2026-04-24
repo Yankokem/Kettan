@@ -19,15 +19,18 @@ public class SubscriptionService : ISubscriptionService
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<SubscriptionService> _logger;
 
     public SubscriptionService(
         ApplicationDbContext context,
         IEmailService emailService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<SubscriptionService> logger)
     {
         _context = context;
         _emailService = emailService;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<RequestOtpResponse> RequestOtpAsync(
@@ -274,27 +277,31 @@ public class SubscriptionService : ISubscriptionService
             Email = normalizedEmail,
             Phone = request.PhoneContact.Trim(),
             Address = request.HeadquartersAddress.Trim(),
-            IsActive = true, // Set to true so they can login (but SubscriptionStatus blocks API access until paid)
+            IsActive = true,
             SubscriptionTier = plan.Name,
             SubscriptionStatus = "PendingPayment",
             SubscriptionPeriodStart = null,
             SubscriptionPeriodEnd = null,
         };
 
-        _context.Tenants.Add(tenant);
-        await _context.SaveChangesAsync(cancellationToken);
-
         var (firstName, lastName) = SplitFullName(request.FullName);
         var adminUser = new User
         {
-            TenantId = tenant.TenantId,
+            Tenant = tenant,
             FirstName = firstName,
             LastName = lastName,
             Email = normalizedEmail,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = "TenantAdmin",
-            IsActive = true, // Ensure the user can log in immediately and finish payment from dashboard if needed
+            IsActive = true,
         };
+
+        var providerReference = $"chk_{Guid.NewGuid():N}";
+
+        // Save tenant and admin first so TenantId exists before creating dependent records.
+        _context.Tenants.Add(tenant);
+        _context.Users.Add(adminUser);
+        await _context.SaveChangesAsync(cancellationToken);
 
         var tenantSubscription = new TenantSubscription
         {
@@ -309,13 +316,9 @@ public class SubscriptionService : ISubscriptionService
             UpdatedAt = nowUtc,
         };
 
-        _context.Users.Add(adminUser);
         _context.TenantSubscriptions.Add(tenantSubscription);
         await _context.SaveChangesAsync(cancellationToken);
 
-        tenant.CurrentSubscriptionId = tenantSubscription.TenantSubscriptionId;
-
-        var providerReference = $"chk_{Guid.NewGuid():N}";
         var invoice = new SubscriptionInvoice
         {
             TenantSubscriptionId = tenantSubscription.TenantSubscriptionId,
@@ -330,6 +333,9 @@ public class SubscriptionService : ISubscriptionService
 
         _context.SubscriptionInvoices.Add(invoice);
 
+        // Second Save: Now that we have IDs, we can link the Tenant back to its Subscription
+        // and mark the verification session as used.
+        tenant.CurrentSubscriptionId = tenantSubscription.TenantSubscriptionId;
         verificationSession.IsUsed = true;
         verificationSession.UsedAtUtc = nowUtc;
 
@@ -529,9 +535,9 @@ public class SubscriptionService : ISubscriptionService
         CancellationToken cancellationToken)
     {
         var secretKey = _configuration["PayMongo:SecretKey"];
-        if (string.IsNullOrWhiteSpace(secretKey))
+        if (string.IsNullOrWhiteSpace(secretKey) || secretKey == "YOUR_PAYMONGO_SECRET_KEY")
         {
-            throw new InvalidOperationException("PayMongo configuration is missing.");
+            throw new InvalidOperationException("PayMongo configuration is missing or using placeholder keys. Please update your settings with valid API keys.");
         }
 
         var frontendBaseUrl = _configuration["Onboarding:FrontendBaseUrl"]?.TrimEnd('/')

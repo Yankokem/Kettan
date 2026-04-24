@@ -9,26 +9,37 @@ public class MailtrapEmailService : IEmailService
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<MailtrapEmailService> _logger;
+    private readonly IWebHostEnvironment _environment;
 
     public MailtrapEmailService(
         HttpClient httpClient,
         IConfiguration configuration,
-        ILogger<MailtrapEmailService> logger)
+        ILogger<MailtrapEmailService> logger,
+        IWebHostEnvironment environment)
     {
         _httpClient = httpClient;
         _configuration = configuration;
         _logger = logger;
+        _environment = environment;
     }
 
-    public Task SendRegistrationOtpEmailAsync(
+    public async Task SendRegistrationOtpEmailAsync(
         string email,
         string otpCode,
         int expiryMinutes,
         CancellationToken cancellationToken = default)
     {
         var subject = "Your Kettan verification code";
+
+        var htmlBody = await GetHtmlTemplateAsync("VerificationOtp");
+        htmlBody = htmlBody
+            .Replace("{{otpCode}}", otpCode)
+            .Replace("{{expiryMinutes}}", expiryMinutes.ToString());
+
+        // Plain-text fallback for clients that don't render HTML
         var textBody = $"Your Kettan verification code is {otpCode}. It expires in {expiryMinutes} minutes.";
-        return SendAsync(email, subject, textBody, "Registration OTP", cancellationToken);
+
+        await SendAsync(email, subject, textBody, htmlBody, "Registration OTP", cancellationToken);
     }
 
     public Task SendWelcomeEmailAsync(
@@ -39,7 +50,7 @@ public class MailtrapEmailService : IEmailService
     {
         var subject = "Welcome to Kettan";
         var textBody = $"Welcome to Kettan, {tenantName}! You can login here: {loginUrl}";
-        return SendAsync(email, subject, textBody, "Welcome", cancellationToken);
+        return SendAsync(email, subject, textBody, null, "Welcome", cancellationToken);
     }
 
     public Task SendLowStockAlertAsync(
@@ -49,7 +60,7 @@ public class MailtrapEmailService : IEmailService
     {
         var subject = "Kettan: Low Stock Alert";
         var textBody = $"The following items are running low on stock:\n- {string.Join("\n- ", items)}";
-        return SendAsync(email, subject, textBody, "Alert", cancellationToken);
+        return SendAsync(email, subject, textBody, null, "Alert", cancellationToken);
     }
 
     public Task SendOrderStatusUpdateAsync(
@@ -60,7 +71,7 @@ public class MailtrapEmailService : IEmailService
     {
         var subject = $"Order #{orderId} Update";
         var textBody = $"The status of your order #{orderId} has been updated to: {status}.";
-        return SendAsync(email, subject, textBody, "Order", cancellationToken);
+        return SendAsync(email, subject, textBody, null, "Order", cancellationToken);
     }
 
     public Task SendPasswordResetAsync(
@@ -70,13 +81,42 @@ public class MailtrapEmailService : IEmailService
     {
         var subject = "Password Reset Request";
         var textBody = $"Your password reset token is: {resetToken}";
-        return SendAsync(email, subject, textBody, "Auth", cancellationToken);
+        return SendAsync(email, subject, textBody, null, "Auth", cancellationToken);
+    }
+
+    /// <summary>
+    /// Reads an HTML email template from the Templates/Email/ folder.
+    /// The <paramref name="templateName"/> should be the filename without extension,
+    /// e.g. "VerificationOtp" for "VerificationOtp.html".
+    /// </summary>
+    private async Task<string> GetHtmlTemplateAsync(string templateName)
+    {
+        var templatePath = Path.Combine(
+            _environment.ContentRootPath,
+            "Templates",
+            "Email",
+            $"{templateName}.html");
+
+        if (!File.Exists(templatePath))
+        {
+            _logger.LogWarning(
+                "Email template '{TemplateName}' not found at path: {TemplatePath}",
+                templateName,
+                templatePath);
+
+            throw new FileNotFoundException(
+                $"Email template '{templateName}.html' was not found.",
+                templatePath);
+        }
+
+        return await File.ReadAllTextAsync(templatePath);
     }
 
     private async Task SendAsync(
         string email,
         string subject,
         string textBody,
+        string? htmlBody,
         string category,
         CancellationToken cancellationToken)
     {
@@ -93,14 +133,21 @@ public class MailtrapEmailService : IEmailService
         }
 
         var url = $"{host.TrimEnd('/')}/api/send/{sandboxId}";
-        var payload = new
+
+        // Build the payload dynamically so `html` is only included when provided
+        var payload = new Dictionary<string, object>
         {
-            from = new { email = fromEmail, name = fromName },
-            to = new[] { new { email } },
-            subject,
-            text = textBody,
-            category,
+            ["from"]     = new { email = fromEmail, name = fromName },
+            ["to"]       = new[] { new { email } },
+            ["subject"]  = subject,
+            ["text"]     = textBody,
+            ["category"] = category,
         };
+
+        if (!string.IsNullOrWhiteSpace(htmlBody))
+        {
+            payload["html"] = htmlBody;
+        }
 
         var request = new HttpRequestMessage(HttpMethod.Post, url)
         {

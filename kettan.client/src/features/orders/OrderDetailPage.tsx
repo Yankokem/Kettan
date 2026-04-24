@@ -1,6 +1,6 @@
 import { Box, Typography, Chip, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
@@ -19,6 +19,14 @@ import { TextField } from '../../components/UI/TextField';
 import { OrderFulfillmentStepper } from './components/OrderFulfillmentStepper';
 import { StatusAlertIcon } from './components/StatusAlertIcon';
 import { OrderDetailsPanel } from './components/OrderDetailsPanel';
+import {
+  fetchOrderById,
+  pickOrder,
+  packOrder,
+  dispatchOrder,
+  type OrderDetail,
+  type OrderRequestItem,
+} from '../branch-operations/api';
 
 interface RequestItem {
   id: string;
@@ -28,13 +36,6 @@ interface RequestItem {
   approvedQty: number;
   status: 'Available' | 'Low Stock' | 'Out of Stock';
 }
-
-const MOCK_ITEMS: RequestItem[] = [
-  { id: '1', name: 'Arabica Coffee Beans (Medium Roast) - 5kg', requestedQty: 4,  hqStock: 120, approvedQty: 4,  status: 'Available' },
-  { id: '2', name: 'Almond Milk - 1L Carton',                  requestedQty: 24, hqStock: 10,  approvedQty: 10, status: 'Low Stock' },
-  { id: '3', name: 'Vanilla Syrup - 750ml Bottle',             requestedQty: 6,  hqStock: 0,   approvedQty: 0,  status: 'Out of Stock' },
-  { id: '4', name: 'Paper Cups (12oz) - Box of 500',           requestedQty: 2,  hqStock: 45,  approvedQty: 2,  status: 'Available' },
-];
 
 const COLUMNS: ColumnDef<RequestItem>[] = [
   {
@@ -102,11 +103,13 @@ const COLUMNS: ColumnDef<RequestItem>[] = [
 
 export function OrderDetailPage() {
   const { orderId } = useParams({ strict: false });
-  const displayId = orderId || 'ORD-8891';
   const { user } = useAuthStore();
   
   const [orderStatus, setOrderStatus] = useState<string>('PendingApproval');
   const [selectedCourier, setSelectedCourier] = useState('van_1');
+  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const VEHICLES = [
     { value: 'van_1', label: 'Juan Delivery Services - Van 1' },
@@ -114,12 +117,92 @@ export function OrderDetailPage() {
     { value: 'truck_1', label: 'Metro Fleet - Truck 1' },
   ];
 
+  useEffect(() => {
+    const loadOrder = async () => {
+      if (!orderId) {
+        setError('Missing order id.');
+        return;
+      }
+
+      try {
+        setError(null);
+        const row = await fetchOrderById(Number(orderId));
+        setOrder(row);
+        setOrderStatus(row.status);
+      } catch {
+        setError('Failed to load order details.');
+      }
+    };
+
+    void loadOrder();
+  }, [orderId]);
+
+  const itemRows: RequestItem[] = useMemo(() => {
+    return (order?.requestedItems ?? []).map((item: OrderRequestItem) => ({
+      id: String(item.itemId),
+      name: item.itemName,
+      requestedQty: Number(item.quantityRequested),
+      hqStock: Number(item.quantityApproved ?? item.quantityRequested),
+      approvedQty: Number(item.quantityApproved ?? 0),
+      status: (item.quantityApproved ?? item.quantityRequested) >= item.quantityRequested ? 'Available' : 'Low Stock',
+    }));
+  }, [order]);
+
   const handleAction = (nextStatus: string) => {
     setOrderStatus(nextStatus);
   };
 
+  const handleWorkflowAction = async (action: 'pick' | 'pack' | 'dispatch') => {
+    if (!orderId) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      if (action === 'pick') {
+        await pickOrder(Number(orderId), 'Picking started from frontend.');
+      } else if (action === 'pack') {
+        await packOrder(Number(orderId), 'Packing confirmed from frontend.');
+      } else if (action === 'dispatch') {
+        await dispatchOrder(Number(orderId), {
+          courierId: undefined,
+          vehicleId: undefined,
+          trackingNumber: undefined,
+          estimatedArrival: undefined,
+          remarks: 'Dispatched from frontend.',
+        });
+      }
+
+      const refreshed = await fetchOrderById(Number(orderId));
+      setOrder(refreshed);
+      setOrderStatus(refreshed.status);
+    } catch {
+      setError('Failed to update order workflow.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (error) {
+    return (
+      <Box sx={{ pb: 3 }}>
+        <Typography sx={{ color: 'error.main', fontSize: 14 }}>{error}</Typography>
+      </Box>
+    );
+  }
+
+  if (!order) {
+    return (
+      <Box sx={{ pb: 3 }}>
+        <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>Loading order…</Typography>
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ pb: 3, pt: 1 }}>
+    <Box sx={{ pb: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -127,53 +210,37 @@ export function OrderDetailPage() {
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}>
-                {displayId}
+                ORD-{order.orderId}
               </Typography>
               <Chip
                 label={orderStatus.replace(/([A-Z])/g, ' $1').trim()}
-                icon={orderStatus === 'PendingApproval' ? <AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} /> : undefined}
+                icon={orderStatus === 'Processing' ? <AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} /> : undefined}
                 size="small"
                 sx={{ 
                   fontSize: 12, 
                   fontWeight: 600, 
-                  bgcolor: orderStatus === 'Rejected' ? 'rgba(185,28,28,0.1)' : 'rgba(37,99,235,0.12)', 
-                  color: orderStatus === 'Rejected' ? '#B91C1C' : '#2563EB', 
-                  border: `1px solid ${orderStatus === 'Rejected' ? 'rgba(185,28,28,0.28)' : 'rgba(37,99,235,0.28)'}` 
+                  bgcolor: orderStatus === 'Returned' ? 'rgba(185,28,28,0.1)' : 'rgba(37,99,235,0.12)', 
+                  color: orderStatus === 'Returned' ? '#B91C1C' : '#2563EB', 
+                  border: `1px solid ${orderStatus === 'Returned' ? 'rgba(185,28,28,0.28)' : 'rgba(37,99,235,0.28)'}` 
                 }}
               />
             </Box>
             <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-              Requested by <strong>Downtown Main</strong> on Apr 02, 2026
+              Requested by <strong>{order.branchName}</strong> on {new Date(order.pushedToFulfillmentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </Typography>
           </Box>
         </Box>
         {/* Header Actions (Dynamic based on status and role) */}
         <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center' }}>
           
-          {orderStatus === 'PendingApproval' && (
-            <>
-              <StatusAlertIcon
-                severity="warning"
-                title="Partial Fulfillment Warning"
-                message="This order contains items with insufficient HQ stock. Approving this order will dispatch only the available quantities."
-              />
-              <Button variant="outlined" startIcon={<CancelRoundedIcon />} onClick={() => handleAction('Rejected')} sx={{ color: 'error.main', borderColor: 'error.light', '&:hover': { bgcolor: 'error.50' } }}>
-                Reject Order
-              </Button>
-              <Button startIcon={<CheckCircleRoundedIcon />} onClick={() => handleAction('Approved')}>
-                Approve & Send to Packing
-              </Button>
-            </>
-          )}
-
-          {orderStatus === 'Approved' && (
-            <Button startIcon={<InventoryRoundedIcon />} onClick={() => handleAction('Picking')}>
+          {orderStatus === 'Processing' && (
+            <Button startIcon={<InventoryRoundedIcon />} onClick={() => void handleWorkflowAction('pick')} disabled={isSaving}>
               Start Picking
             </Button>
           )}
 
           {orderStatus === 'Picking' && (
-            <Button startIcon={<BackpackRoundedIcon />} onClick={() => handleAction('Packed')}>
+            <Button startIcon={<BackpackRoundedIcon />} onClick={() => void handleWorkflowAction('pack')} disabled={isSaving}>
               Confirm Items Packed
             </Button>
           )}
@@ -189,7 +256,7 @@ export function OrderDetailPage() {
                   fullWidth
                 />
               </Box>
-              <Button startIcon={<LocalShippingRoundedIcon />} onClick={() => handleAction('Dispatched')}>
+              <Button startIcon={<LocalShippingRoundedIcon />} onClick={() => void handleWorkflowAction('dispatch')} disabled={isSaving}>
                 Dispatch Order
               </Button>
             </Box>
@@ -214,7 +281,7 @@ export function OrderDetailPage() {
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 3.5 }}>
-          <OrderDetailsPanel orderId={displayId} />
+          <OrderDetailsPanel orderId={`ORD-${order.orderId}`} />
         </Grid>
 
         <Grid size={{ xs: 12, md: 8.5 }}>
@@ -223,7 +290,7 @@ export function OrderDetailPage() {
             <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Item Reconciliation</Typography>
           </Box>
           <DataTable
-            data={MOCK_ITEMS}
+            data={itemRows}
             columns={COLUMNS}
             keyExtractor={(row) => row.id}
             defaultRowsPerPage={10}
