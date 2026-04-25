@@ -34,6 +34,7 @@ public class BranchesController : ControllerBase
                 Location = b.Location,
                 CustomThresholds = b.CustomThresholds,
                 IsActive = b.IsActive,
+                ImageUrl = b.ImageUrl,
                 CreatedAt = b.CreatedAt
             })
             .ToListAsync();
@@ -55,6 +56,7 @@ public class BranchesController : ControllerBase
             Location = branch.Location,
             CustomThresholds = branch.CustomThresholds,
             IsActive = branch.IsActive,
+            ImageUrl = branch.ImageUrl,
             CreatedAt = branch.CreatedAt
         });
     }
@@ -71,6 +73,7 @@ public class BranchesController : ControllerBase
             Name = dto.Name,
             Location = dto.Location,
             CustomThresholds = dto.CustomThresholds,
+            ImageUrl = dto.ImageUrl,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -86,6 +89,7 @@ public class BranchesController : ControllerBase
             Location = branch.Location,
             CustomThresholds = branch.CustomThresholds,
             IsActive = branch.IsActive,
+            ImageUrl = branch.ImageUrl,
             CreatedAt = branch.CreatedAt
         });
     }
@@ -99,6 +103,7 @@ public class BranchesController : ControllerBase
         branch.Name = dto.Name;
         branch.Location = dto.Location;
         branch.CustomThresholds = dto.CustomThresholds;
+        branch.ImageUrl = dto.ImageUrl;
         branch.IsActive = dto.IsActive;
 
         await _context.SaveChangesAsync();

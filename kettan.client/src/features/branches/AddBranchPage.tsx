@@ -1,13 +1,14 @@
-import { Box, Typography, Paper, Divider, Button, Grid } from '@mui/material';
+import { Box, Typography, Paper, Divider, Grid } from '@mui/material';
 import { useState, useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
-import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormActions } from '../../components/Form/FormActions';
-import { ImageUpload } from '../../components/UI/ImageUpload';
+import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { TimePicker } from '../../components/UI/TimePicker';
+import { createBranch } from './branchesApi';
 import type { BranchFormData, BranchStatus } from './types';
 
 interface UserDto {
@@ -37,6 +38,7 @@ const parseTimeToMinutes = (value: string) => {
 };
 
 export function AddBranchPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<BranchFormData>({
     name: '',
     address: '',
@@ -50,6 +52,8 @@ export function AddBranchPage() {
     picture: undefined,
     notes: '',
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [users, setUsers] = useState<UserDto[]>([]);
 
@@ -70,28 +74,7 @@ export function AddBranchPage() {
     ...users.map(u => ({ value: String(u.userId), label: `${u.firstName} ${u.lastName} (${u.role})` }))
   ];
 
-  const handleImageUpload = (file: File) => {
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    const maxSizeBytes = 5 * 1024 * 1024;
-
-    if (!allowedTypes.includes(file.type)) {
-      alert('Please upload a PNG or JPG image.');
-      return;
-    }
-
-    if (file.size > maxSizeBytes) {
-      alert('Branch image must be 5MB or smaller.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData((prev) => ({ ...prev, picture: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim()) {
       alert('Please enter a branch name.');
       return;
@@ -140,16 +123,44 @@ export function AddBranchPage() {
       return;
     }
 
-    const managerLabel = managerOptions.find((manager) => manager.value === formData.managerUserId)?.label;
-    const ownerLabel = ownerOptions.find((owner) => owner.value === formData.ownerUserId)?.label;
+    setIsSubmitting(true);
+    try {
+      // Upload image first if one was selected
+      let imageUrl: string | null = null;
+      if (imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', imageFile);
+        const uploadRes = await fetch('/api/uploads/image', {
+          method: 'POST',
+          credentials: 'include',
+          body: uploadFormData,
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          // Backend returns { Url, PublicId } (PascalCase)
+          imageUrl = uploadData.Url ?? uploadData.url ?? null;
+          console.log('[Upload] Branch image URL:', imageUrl);
+        } else {
+          const errData = await uploadRes.json().catch(() => ({}));
+          console.error('[Upload] Branch image upload failed:', uploadRes.status, errData);
+        }
+      }
 
-    console.log('Submitting branch:', {
-      ...formData,
-      managerName: managerLabel,
-      ownerName: ownerLabel || null,
-    });
+      // Create branch via API
+      await createBranch({
+        name: formData.name.trim(),
+        location: [formData.address.trim(), formData.city.trim()].filter(Boolean).join(', '),
+        imageUrl,
+      });
 
-    alert('Branch registered successfully! (Mock)');
+      alert('Branch registered successfully!');
+      void navigate({ to: '/branches' });
+    } catch (err) {
+      console.error('Failed to create branch:', err);
+      alert('An error occurred while registering the branch. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -201,39 +212,14 @@ export function AddBranchPage() {
                 Branch Picture
               </Typography>
 
-              {formData.picture ? (
-                <Box sx={{ position: 'relative', maxWidth: 250 }}>
-                  <Box
-                    component="img"
-                    src={formData.picture}
-                    alt="Branch preview"
-                    sx={{
-                      width: '100%',
-                      aspectRatio: '1/1',
-                      objectFit: 'cover',
-                      borderRadius: 3,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  />
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => setFormData((prev) => ({ ...prev, picture: undefined }))}
-                    sx={{ mt: 1, width: '100%' }}
-                  >
-                    Remove Image
-                  </Button>
-                </Box>
-              ) : (
-                <Box sx={{ maxWidth: 250 }}>
-                  <ImageUpload
-                    onUpload={handleImageUpload}
-                    label="Upload Branch Picture"
-                    helperText="PNG or JPG up to 5MB"
-                  />
-                </Box>
-              )}
+              <Box sx={{ maxWidth: 250 }}>
+                <ProfileImageUploader
+                  imageFile={imageFile ?? undefined}
+                  label="Upload Branch Picture"
+                  subLabel="PNG or JPG up to 5MB"
+                  onFileChange={(file) => setImageFile(file)}
+                />
+              </Box>
             </Box>
 
             <Box sx={{ mb: 2.5 }}>
@@ -374,9 +360,9 @@ export function AddBranchPage() {
         <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
           <FormActions
             cancelTo="/branches"
-            saveText="Register Branch"
+            saveText={isSubmitting ? 'Registering...' : 'Register Branch'}
             saveIcon={<BusinessRoundedIcon />}
-            onSave={handleSubmit}
+            onSave={() => { void handleSubmit(); }}
           />
         </Box>
       </Paper>

@@ -6,7 +6,7 @@ import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import AlternateEmailRoundedIcon from '@mui/icons-material/AlternateEmailRounded';
 import { Button } from '../../../components/UI/Button';
 import { TextField } from '../../../components/UI/TextField';
-import { ImageUpload } from '../../../components/UI/ImageUpload';
+import { ProfileImageUploader } from '../../../components/UI/ProfileImageUploader';
 import type { CompanyProfileFormData, CompanyProfileFormErrors } from '../types';
 
 interface CompanyProfileEditModalProps {
@@ -146,32 +146,16 @@ export function CompanyProfileEditModal({ open, formData, onClose, onSave, isSav
         <Grid container spacing={2.5}>
           <Grid size={{ xs: 12 }}>
             <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary', mb: 0.8 }}>Company Logo</Typography>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              {(draft.logoFile || draft.logoUrl) ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Box 
-                    component="img" 
-                    src={draft.logoFile ? URL.createObjectURL(draft.logoFile) : draft.logoUrl!} 
-                    sx={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: '#FAF5EF' }} 
-                  />
-                  <Button 
-                    size="small" 
-                    variant="outlined" 
-                    onClick={() => { updateField('logoFile', null); updateField('logoUrl', null); }}
-                    sx={{ color: '#B91C1C', borderColor: 'rgba(185,28,28,0.35)', '&:hover': { borderColor: '#B91C1C', bgcolor: 'rgba(185,28,28,0.06)' } }}
-                  >
-                    Remove Logo
-                  </Button>
-                </Box>
-              ) : (
-                <Box sx={{ width: 240 }}>
-                  <ImageUpload 
-                    onUpload={(file) => updateField('logoFile', file)} 
-                    label="Upload Logo" 
-                  />
-                </Box>
-              )}
-            </Box>
+            <ProfileImageUploader
+              imageUrl={draft.logoUrl}
+              imageFile={draft.logoFile ?? undefined}
+              label="Upload Logo"
+              subLabel="PNG, JPG or WEBP up to 5MB"
+              onFileChange={(file) => {
+                updateField('logoFile', file);
+                if (!file) updateField('logoUrl', null);
+              }}
+            />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary', mb: 0.8 }}>Organization Name</Typography>

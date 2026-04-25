@@ -235,10 +235,19 @@ export function CompanyProfilePage() {
         const formData = new FormData();
         formData.append('file', nextData.logoFile);
         try {
-          const uploadRes = await fetch('/api/uploads/image', { method: 'POST', body: formData });
+          const uploadRes = await fetch('/api/uploads/image', {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+          });
           if (uploadRes.ok) {
             const uploadData = await uploadRes.json();
-            finalLogoUrl = uploadData.url;
+            // Backend returns { Url, PublicId } (PascalCase)
+            finalLogoUrl = uploadData.Url ?? uploadData.url ?? null;
+            console.log('[Upload] Logo URL:', finalLogoUrl);
+          } else {
+            const errData = await uploadRes.json().catch(() => ({}));
+            console.error('[Upload] Logo upload failed:', uploadRes.status, errData);
           }
         } catch (err) {
           console.error('Failed to upload company logo:', err);

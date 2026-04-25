@@ -20,7 +20,7 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
-import { fetchEmployees, type EmployeeDto } from './staffApi';
+import { fetchEmployees, createEmployee, type EmployeeDto } from './staffApi';
 import { fetchBranches, type BranchDto } from '../branches/branchesApi';
 
 const ROLE_LABEL_MAP: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
@@ -83,12 +83,21 @@ export function StaffPage() {
     let uploadedImageUrl = null;
     if (formValues.imageFile) {
       try {
-        const formData = new FormData();
-        formData.append('file', formValues.imageFile);
-        const uploadRes = await fetch('/api/uploads/image', { method: 'POST', body: formData });
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', formValues.imageFile);
+        const uploadRes = await fetch('/api/uploads/image', {
+          method: 'POST',
+          credentials: 'include',
+          body: uploadFormData,
+        });
         if (uploadRes.ok) {
           const uploadData = await uploadRes.json();
-          uploadedImageUrl = uploadData.url;
+          // Backend returns { Url, PublicId } (PascalCase)
+          uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
+          console.log('[Upload] Cloudinary URL:', uploadedImageUrl);
+        } else {
+          const errData = await uploadRes.json().catch(() => ({}));
+          console.error('[Upload] Image upload failed:', uploadRes.status, errData);
         }
       } catch (err) {
         console.error('Failed to upload image:', err);

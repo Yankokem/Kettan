@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Avatar, Box, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Typography } from '@mui/material';
-import CameraAltRoundedIcon from '@mui/icons-material/CameraAltRounded';
-import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
+import { useEffect, useState } from 'react';
+import { Avatar, Box, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Typography } from '@mui/material';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import { Button } from '../../../components/UI/Button';
 import { FormTextField } from '../../../components/Form/FormTextField';
 import { FormDropdown } from '../../../components/Form/FormDropdown';
+import { ProfileImageUploader } from '../../../components/UI/ProfileImageUploader';
 
 export interface AddStaffFormValues {
   firstName: string;
@@ -56,9 +54,6 @@ export function AddStaffModal({
   const [formValues, setFormValues] = useState<AddStaffFormValues>(() => buildInitialFormValues());
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const previewObjectUrlRef = useRef<string | null>(null);
-
   useEffect(() => {
     if (!open) {
       return;
@@ -68,52 +63,22 @@ export function AddStaffModal({
     setErrors({});
   }, [open]);
 
-  useEffect(
-    () => () => {
-      if (previewObjectUrlRef.current) {
-        URL.revokeObjectURL(previewObjectUrlRef.current);
-      }
-    },
-    []
-  );
-
   const updateField = <K extends keyof AddStaffFormValues>(field: K, value: AddStaffFormValues[K]) => {
     setFormValues((previous) => ({ ...previous, [field]: value }));
     setErrors((previous) => ({ ...previous, [field]: undefined }));
   };
 
   const clearImage = () => {
-    if (previewObjectUrlRef.current) {
-      URL.revokeObjectURL(previewObjectUrlRef.current);
-      previewObjectUrlRef.current = null;
-    }
-
     updateField('imageFile', null);
     updateField('imagePreviewUrl', null);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
-  const handleFileSelection = (file: File | undefined) => {
+  const handleFileSelection = (file: File | null) => {
     if (!file) {
+      clearImage();
       return;
     }
-
-    if (previewObjectUrlRef.current) {
-      URL.revokeObjectURL(previewObjectUrlRef.current);
-    }
-
-    const nextPreviewUrl = URL.createObjectURL(file);
-    previewObjectUrlRef.current = nextPreviewUrl;
-
     updateField('imageFile', file);
-    updateField('imagePreviewUrl', nextPreviewUrl);
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileSelection(event.target.files?.[0]);
   };
 
   const validate = () => {
@@ -194,86 +159,11 @@ export function AddStaffModal({
               Upload an optional image for this staff profile.
             </Typography>
 
-            <Box
-              onClick={() => fileInputRef.current?.click()}
-              sx={{
-                width: '100%',
-                maxWidth: { xs: '100%', md: 240 },
-                mx: 'auto',
-                aspectRatio: '1 / 1',
-                border: '2px dashed',
-                borderColor: formValues.imagePreviewUrl ? 'rgba(107,76,42,0.22)' : 'divider',
-                borderRadius: 3,
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: formValues.imagePreviewUrl ? '#FAF5EF' : 'background.paper',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  borderColor: '#C9A84C',
-                  bgcolor: 'action.hover',
-                },
-              }}
-            >
-              {formValues.imagePreviewUrl ? (
-                <Box component="img" src={formValues.imagePreviewUrl} alt="Selected staff profile" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <Box sx={{ textAlign: 'center', px: 2 }}>
-                  <Avatar
-                    sx={{
-                      width: 62,
-                      height: 62,
-                      mx: 'auto',
-                      mb: 1.4,
-                      bgcolor: 'rgba(107,76,42,0.14)',
-                      color: '#6B4C2A',
-                    }}
-                  >
-                    <CameraAltRoundedIcon sx={{ fontSize: 26 }} />
-                  </Avatar>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>Upload Photo</Typography>
-                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.35 }}>PNG or JPG up to 5MB</Typography>
-                </Box>
-              )}
-            </Box>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/jpg"
-              hidden
-              onChange={handleFileChange}
+            <ProfileImageUploader
+              imageFile={formValues.imageFile ?? undefined}
+              imageUrl={formValues.imagePreviewUrl}
+              onFileChange={handleFileSelection}
             />
-
-            <Box sx={{ mt: 1.6, display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}>
-              <Button
-                variant="outlined"
-                startIcon={<CloudUploadRoundedIcon sx={{ fontSize: 18 }} />}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {formValues.imagePreviewUrl ? 'Replace' : 'Upload'}
-              </Button>
-
-              {formValues.imagePreviewUrl ? (
-                <Button
-                  variant="outlined"
-                  startIcon={<CloseRoundedIcon sx={{ fontSize: 18 }} />}
-                  onClick={clearImage}
-                  sx={{
-                    color: '#B91C1C',
-                    borderColor: 'rgba(185,28,28,0.35)',
-                    '&:hover': {
-                      borderColor: '#B91C1C',
-                      bgcolor: 'rgba(185,28,28,0.06)',
-                    },
-                  }}
-                >
-                  Remove
-                </Button>
-              ) : null}
-            </Box>
           </Box>
 
           <Box sx={{ width: { xs: '100%', md: '70%' }, pl: { md: 3 }, pt: { xs: 3, md: 0 } }}>

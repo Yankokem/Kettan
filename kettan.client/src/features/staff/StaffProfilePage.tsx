@@ -1,114 +1,175 @@
-import { Box, Typography, Grid, Paper, Avatar, Divider, Chip } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { useParams } from '@tanstack/react-router';
+import { Box, Typography, Grid, Paper, Avatar, Divider, Chip, CircularProgress } from '@mui/material';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
-import BuildRoundedIcon from '@mui/icons-material/BuildRounded';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
-import { Button } from '../../components/UI/Button';
-import { TextField } from '../../components/UI/TextField';
-import { Dropdown } from '../../components/UI/Dropdown';
+import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
+import { BackButton } from '../../components/UI/BackButton';
+import { fetchEmployee, type EmployeeDto } from './staffApi';
 
 export function StaffProfilePage() {
+  const { staffId } = useParams({ from: '/layout/staff/$staffId' });
+  const [employee, setEmployee] = useState<EmployeeDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = Number(staffId);
+    if (Number.isNaN(id)) {
+      setError('Invalid staff ID.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    fetchEmployee(id)
+      .then((data) => setEmployee(data))
+      .catch(() => setError('Could not load staff profile.'))
+      .finally(() => setLoading(false));
+  }, [staffId]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
+        <CircularProgress sx={{ color: '#C9A84C' }} />
+      </Box>
+    );
+  }
+
+  if (error || !employee) {
+    return (
+      <Box sx={{ pb: 5 }}>
+        <BackButton to="/staff" />
+        <Typography sx={{ mt: 3, color: 'text.secondary' }}>{error ?? 'Staff member not found.'}</Typography>
+      </Box>
+    );
+  }
+
+  const fullName = `${employee.firstName} ${employee.lastName}`.trim();
+  const initials = `${employee.firstName.charAt(0)}${employee.lastName.charAt(0)}`.toUpperCase();
+
   return (
     <Box sx={{ pb: 5 }}>
-      {/* Header Profile Title */}
-      <Box sx={{ mb: 4, display: 'flex', gap: 3, alignItems: 'flex-start' }}>
-        <Avatar 
-          variant="rounded" 
-          sx={{ width: 140, height: 140, bgcolor: '#FAF5EF', borderRadius: 4, color: '#6B4C2A', border: '2px solid', borderColor: 'divider' }}
+      {/* Back navigation */}
+      <Box sx={{ mb: 3 }}>
+        <BackButton to="/staff" />
+      </Box>
+
+      {/* Header Profile Section */}
+      <Box sx={{ mb: 4, display: 'flex', gap: 3, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <Avatar
+          src={employee.imageUrl ?? undefined}
+          variant="rounded"
+          sx={{
+            width: 140,
+            height: 140,
+            bgcolor: '#FAF5EF',
+            borderRadius: 4,
+            color: '#6B4C2A',
+            border: '2px solid',
+            borderColor: 'divider',
+            fontSize: 52,
+            fontWeight: 700,
+          }}
         >
-          <PersonRoundedIcon sx={{ fontSize: 70 }} />
+          {!employee.imageUrl ? (
+            initials || <PersonRoundedIcon sx={{ fontSize: 70 }} />
+          ) : null}
         </Avatar>
-        <Box>
+
+        <Box sx={{ flex: 1 }}>
           <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 1 }}>
-            Sarah Jenkins
+            {fullName}
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mb: 2 }}>
-            <Chip 
-              icon={<EmailRoundedIcon fontSize="small" />} 
-              label="sarah.j@acme.com" 
-              size="small" 
-              sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 2, height: 28 }} 
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
+            <Chip
+              icon={<BadgeRoundedIcon fontSize="small" />}
+              label={employee.position}
+              size="small"
+              sx={{ bgcolor: '#E8D3A9', color: '#6B4C2A', fontWeight: 700, borderRadius: 2, height: 28 }}
             />
-            <Chip 
-              label="Manager" 
-              size="small" 
-              sx={{ bgcolor: 'info.light', color: 'info.dark', borderRadius: 2, height: 28, fontWeight: 700 }} 
+            <Chip
+              label={employee.isActive ? 'Active' : 'Inactive'}
+              size="small"
+              sx={{
+                bgcolor: employee.isActive ? '#FEF3C7' : '#F3F4F6',
+                color: employee.isActive ? '#92400E' : '#4B5563',
+                fontWeight: 700,
+                borderRadius: 2,
+                height: 28,
+              }}
             />
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>ID: ST-0428</Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+              ID: ST-{String(employee.employeeId).padStart(4, '0')}
+            </Typography>
           </Box>
-        </Box>
-        <Box sx={{ ml: 'auto', display: 'flex', gap: 2 }}>
-          <Button variant="outlined" startIcon={<BuildRoundedIcon />}>
-            Reset Password
-          </Button>
-          <Button>
-            Save Changes
-          </Button>
         </Box>
       </Box>
 
-      {/* Profile Settings Content Sections */}
-      <Grid container spacing={4}>
-        <Grid size={{ xs: 12 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>
-            Staff Settings
-          </Typography>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: 4 }}>
-            <Grid container spacing={4}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mb: 1, ml: 0.5 }}>
-                  First Name
+      {/* Info Cards */}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 800, color: '#6B4C2A', mb: 2.5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Contact &amp; Assignment
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {employee.contactNumber && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <EmailRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+                  <Typography sx={{ fontSize: 14, color: 'text.primary' }}>{employee.contactNumber}</Typography>
+                </Box>
+              )}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <StorefrontRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+                <Typography sx={{ fontSize: 14, color: 'text.primary' }}>
+                  {employee.branchName ?? 'Unassigned'}
                 </Typography>
-                <TextField defaultValue="Sarah" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mb: 1, ml: 0.5 }}>
-                  Last Name
-                </Typography>
-                <TextField defaultValue="Jenkins" />
-              </Grid>
+              </Box>
+              {employee.dateHired && (
+                <>
+                  <Divider />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <CalendarTodayRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+                    <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>
+                      Hired: {new Date(employee.dateHired).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </Typography>
+                  </Box>
+                </>
+              )}
+            </Box>
+          </Paper>
+        </Grid>
 
-              <Grid size={{ xs: 12 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mb: 1, ml: 0.5 }}>
-                  Email Address
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 800, color: '#6B4C2A', mb: 2.5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Position Details
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>Full Name</Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{fullName}</Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>Position</Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{employee.position}</Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>Status</Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 700, color: employee.isActive ? '#6B4C2A' : '#4B5563' }}>
+                  {employee.isActive ? 'Active' : 'Inactive'}
                 </Typography>
-                <TextField defaultValue="sarah.j@acme.com" />
-              </Grid>
-
-              <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 1 }} />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mb: 1, ml: 0.5 }}>
-                  Role
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>Member Since</Typography>
+                <Typography sx={{ fontSize: 14 }}>
+                  {new Date(employee.createdAt).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </Typography>
-                <Dropdown
-                  value="manager"
-                  fullWidth
-                  options={[
-                    { value: 'staff', label: 'Staff' },
-                    { value: 'manager', label: 'Manager' },
-                    { value: 'admin', label: 'Admin' },
-                  ]}
-                  sx={{ width: '100%', minWidth: 'auto' }}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mb: 1, ml: 0.5 }}>
-                  Assigned Branch
-                </Typography>
-                <Dropdown
-                  value="1"
-                  fullWidth
-                  options={[
-                    { value: '1', label: 'Downtown HQ' },
-                    { value: '2', label: 'Westside Branch' },
-                  ]}
-                  sx={{ width: '100%', minWidth: 'auto' }}
-                />
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Paper>
         </Grid>
       </Grid>

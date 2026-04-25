@@ -10,6 +10,7 @@ export interface BranchDto {
   location?: string | null;
   customThresholds?: string | null;
   isActive: boolean;
+  imageUrl?: string | null;
   createdAt: string;
 }
 
@@ -17,6 +18,7 @@ export interface CreateBranchDto {
   name: string;
   location?: string | null;
   customThresholds?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface UpdateBranchDto {
