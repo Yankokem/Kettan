@@ -2,6 +2,7 @@ import { Box, Typography, Paper, Divider, Grid } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
+import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
@@ -49,7 +50,6 @@ export function AddBranchPage() {
     ownerUserId: '',
     managerUserId: '',
     status: 'setup',
-    picture: undefined,
     notes: '',
   });
   const [imageFile, setImageFile] = useState<File | null>(null);

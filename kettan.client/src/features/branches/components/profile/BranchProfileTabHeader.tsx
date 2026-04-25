@@ -7,9 +7,10 @@ interface BranchProfileTabHeaderProps {
   activeTab: BranchProfileTabKey;
   onTabChange: (nextTab: BranchProfileTabKey) => void;
   badgeMap?: Partial<Record<BranchProfileTabKey, string | number>>;
+  loading?: boolean;
 }
 
-export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap }: BranchProfileTabHeaderProps) {
+export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap, loading = false }: BranchProfileTabHeaderProps) {
   return (
     <Box
       sx={{
@@ -18,9 +19,11 @@ export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap 
         borderColor: 'divider',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         overflowX: 'auto',
       }}
     >
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
       {tabs.map((tab) => {
         const active = activeTab === tab.key;
         const Icon = tab.icon;
@@ -68,6 +71,26 @@ export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap 
           </button>
         );
       })}
+      </Box>
+      {loading ? (
+        <Box sx={{ px: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              width: 14,
+              height: 14,
+              border: '2px solid rgba(201,168,76,0.2)',
+              borderTopColor: '#C9A84C',
+              borderRadius: '50%',
+              animation: 'spin 0.6s linear infinite',
+              '@keyframes spin': {
+                '0%': { transform: 'rotate(0deg)' },
+                '100%': { transform: 'rotate(360deg)' },
+              },
+            }}
+          />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#A8A29E', letterSpacing: '0.02em', textTransform: 'uppercase' }}>Syncing</span>
+        </Box>
+      ) : null}
     </Box>
   );
 }

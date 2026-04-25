@@ -31,6 +31,14 @@ export function BranchDetailsTab({
   ownerOptions,
   managerOptions,
 }: BranchDetailsTabProps) {
+  if (!formData) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography color="text.secondary">Loading location details...</Typography>
+      </Box>
+    );
+  }
+
   const statusLabel = statusOptions.find((option) => option.value === formData.status)?.label ?? formData.status;
   const ownerLabel = ownerOptions.find((option) => option.value === formData.ownerUserId)?.label || 'Unassigned';
   const managerLabel = managerOptions.find((option) => option.value === formData.managerUserId)?.label || 'Not assigned';

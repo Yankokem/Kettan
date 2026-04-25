@@ -1,6 +1,5 @@
 import { Box, Chip, Paper, Typography } from '@mui/material';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import type { BranchInventoryItem } from '../../types';
 import { formatDate } from '../../branchProfileData';
 
@@ -27,121 +26,149 @@ export function BranchInventoryCard({ item }: BranchInventoryCardProps) {
     <Paper
       elevation={0}
       sx={{
+        borderRadius: 4,
+        overflow: 'hidden',
         border: '1px solid',
         borderColor: isOutOfStock
           ? 'rgba(185,28,28,0.28)'
           : isLowStock
             ? 'rgba(180,83,9,0.28)'
             : 'divider',
+        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         bgcolor: isOutOfStock
           ? 'rgba(254,242,242,0.58)'
           : isLowStock
             ? 'rgba(255,251,235,0.58)'
             : 'background.paper',
-        borderRadius: 3,
-        p: 2,
-        height: '100%',
+        '&:hover': {
+          borderColor: '#6B4C2A',
+          boxShadow: '0 12px 28px rgba(107,76,42,0.08)',
+          transform: 'translateY(-6px)',
+        },
         display: 'flex',
         flexDirection: 'column',
-        gap: 1.2,
       }}
     >
-      <Box>
-        <Typography sx={{ fontSize: 14, fontWeight: 800, color: 'text.primary', lineHeight: 1.2 }}>
-          {item.name}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mt: 0.8, flexWrap: 'wrap' }}>
-          <Chip
-            label={item.sku}
-            size="small"
+      {/* Top Visual Container */}
+      <Box sx={{ p: 1.5, pb: 0 }}>
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            paddingTop: '100%',
+            bgcolor: '#FAF5EF',
+            borderRadius: 3,
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Box
             sx={{
-              height: 21,
-              fontFamily: 'monospace',
-              bgcolor: 'rgba(148,163,184,0.16)',
-              fontWeight: 700,
-              fontSize: 10,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: 0.15,
             }}
-          />
-          <Chip
-            label={item.category}
-            size="small"
-            sx={{
-              height: 21,
-              bgcolor: 'rgba(107,76,42,0.1)',
-              color: '#6B4C2A',
-              fontWeight: 700,
-              fontSize: 10,
-            }}
-          />
+          >
+            <Inventory2RoundedIcon sx={{ fontSize: 64, color: '#6B4C2A' }} />
+          </Box>
+
+          <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
+            <Chip
+              label={item.category}
+              size="small"
+              sx={{
+                height: 22,
+                bgcolor: 'rgba(255,255,255,0.9)',
+                color: '#6B4C2A',
+                fontWeight: 800,
+                fontSize: 10,
+                backdropFilter: 'blur(4px)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              }}
+            />
+          </Box>
         </Box>
       </Box>
 
-      <Box sx={{ mt: 0.2 }}>
-        <Typography sx={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>{item.stockCount}</Typography>
-        <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 600 }}>
-          units in stock ({item.unit})
+      {/* Content Section */}
+      <Box sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <Typography sx={{ fontSize: 15, fontWeight: 800, color: 'text.primary', mb: 0.5, lineHeight: 1.2 }}>
+          {item.name}
         </Typography>
-        <Typography sx={{ fontSize: 11, color: 'text.disabled', mt: 0.2 }}>
-          Reorder point: {item.reorderPoint}
+        <Typography sx={{ fontSize: 11, color: 'text.secondary', fontFamily: 'monospace', fontWeight: 700, mb: 1.5 }}>
+          {item.sku}
         </Typography>
-      </Box>
 
-      <Box
-        sx={{
-          width: '100%',
-          height: 6,
-          borderRadius: 999,
-          bgcolor: 'rgba(148,163,184,0.22)',
-          overflow: 'hidden',
-          mt: 'auto',
-        }}
-      >
-        <Box
-          sx={{
-            width: `${coveragePercent}%`,
-            height: '100%',
-            bgcolor: isOutOfStock ? '#DC2626' : isLowStock ? '#D97706' : '#16A34A',
-          }}
-        />
-      </Box>
-
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mt: 0.4 }}>
-        <Typography
-          sx={{
-            fontSize: 11,
-            color: 'text.secondary',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.5,
-            minWidth: 0,
-          }}
-        >
-          <StorefrontRoundedIcon sx={{ fontSize: 13 }} />
-          <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {item.supplier}
+        <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.8 }}>
+            <Typography sx={{ fontSize: 26, fontWeight: 800, color: '#2E1F14' }}>{item.stockCount}</Typography>
+            <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 700 }}>{item.unit}</Typography>
           </Box>
-        </Typography>
+          <Typography sx={{ fontSize: 11, color: 'text.disabled', mt: -0.2 }}>
+            Reorder point: {item.reorderPoint}
+          </Typography>
+        </Box>
 
-        <Chip
-          icon={<CheckCircleRoundedIcon sx={{ fontSize: 14 }} />}
-          label={STATUS_LABEL_MAP[item.status]}
-          size="small"
-          sx={{
-            height: 22,
-            borderRadius: 1.5,
-            bgcolor: isOutOfStock ? '#FEE2E2' : isLowStock ? '#FEF3C7' : '#DCFCE7',
-            color: isOutOfStock ? '#991B1B' : isLowStock ? '#92400E' : '#166534',
-            border: '1px solid',
-            borderColor: isOutOfStock ? '#FECACA' : isLowStock ? '#FCD34D' : '#86EFAC',
-            fontWeight: 800,
-            fontSize: 10,
-          }}
-        />
+        <Box sx={{ mt: 'auto' }}>
+          <Box
+            sx={{
+              width: '100%',
+              height: 5,
+              borderRadius: 999,
+              bgcolor: 'rgba(107, 76, 42, 0.08)',
+              overflow: 'hidden',
+              mb: 2,
+            }}
+          >
+            <Box
+              sx={{
+                width: `${coveragePercent}%`,
+                height: '100%',
+                bgcolor: isOutOfStock ? '#DC2626' : isLowStock ? '#D97706' : '#16A34A',
+                transition: 'width 0.5s ease-out',
+              }}
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              pt: 1.5,
+              borderTop: '1px dashed',
+              borderColor: 'divider',
+            }}
+          >
+            <Chip
+              label={STATUS_LABEL_MAP[item.status]}
+              size="small"
+              sx={{
+                height: 22,
+                borderRadius: 1,
+                bgcolor: isOutOfStock ? '#FEE2E2' : isLowStock ? '#FEF3C7' : '#DCFCE7',
+                color: isOutOfStock ? '#991B1B' : isLowStock ? '#92400E' : '#166534',
+                fontWeight: 800,
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            />
+            <Typography sx={{ fontSize: 10, color: 'text.disabled', fontWeight: 600 }}>
+              {formatDate(item.lastRestocked)}
+            </Typography>
+          </Box>
+        </Box>
       </Box>
-
-      <Typography sx={{ fontSize: 10.5, color: 'text.disabled', mt: -0.2 }}>
-        Restocked {formatDate(item.lastRestocked)}
-      </Typography>
     </Paper>
   );
 }
+

@@ -9,6 +9,9 @@ import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import { SearchInput } from '../../../../components/UI/SearchInput';
 import { FilterDropdown } from '../../../../components/UI/FilterAndSort';
 import { DataTable, type ColumnDef } from '../../../../components/UI/DataTable';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded';
+import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import type { BranchInventoryItem, BranchInventoryStatus } from '../../types';
 import { formatDate } from '../../branchProfileData';
 import { BranchInventoryCard } from './BranchInventoryCard';
@@ -318,25 +321,52 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
         />
       )}
 
-      {filteredItems.length === 0 && viewMode === 'cards' ? (
+      {filteredItems.length === 0 ? (
         <Paper
           elevation={0}
           sx={{
-            mt: 1.5,
-            border: '1px dashed',
+            mt: 2,
+            border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 3,
-            py: 7,
+            borderRadius: 4,
+            py: 10,
             px: 3,
             textAlign: 'center',
+            bgcolor: 'transparent',
           }}
         >
-          <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'text.secondary' }}>No inventory items match your filters.</Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.disabled', mt: 0.6 }}>
-            Try clearing one or more filters to widen the result set.
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              bgcolor: 'rgba(107, 76, 42, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              mb: 3,
+            }}
+          >
+            {searchQuery || statusFilter || categoryFilter || supplierFilter ? (
+              <SearchOffRoundedIcon sx={{ fontSize: 40, color: '#6B4C2A', opacity: 0.8 }} />
+            ) : (
+              <Inventory2RoundedIcon sx={{ fontSize: 40, color: '#6B4C2A', opacity: 0.8 }} />
+            )}
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
+            {searchQuery || statusFilter || categoryFilter || supplierFilter 
+              ? "No items found for these filters" 
+              : "This branch inventory is empty"}
+          </Typography>
+          <Typography sx={{ fontSize: 14, color: 'text.secondary', maxWidth: 400, margin: '0 auto' }}>
+            {searchQuery || statusFilter || categoryFilter || supplierFilter
+              ? "Try adjusting your search terms or filters to find what you're looking for."
+              : "There are currently no items tracked in this branch. Start by adding items to the inventory system."}
           </Typography>
         </Paper>
       ) : null}
+
     </Box>
   );
 }

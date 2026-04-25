@@ -36,7 +36,15 @@ import { BranchTransactionsTab } from './components/profile/BranchTransactionsTa
 import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
 import { BranchEditModal } from './components/profile/BranchEditModal.tsx';
 import { AddStaffModal, type AddStaffFormValues } from '../staff/components/AddStaffModal.tsx';
-import type { BranchEmployee, BranchFormData, BranchProfileTabKey } from './types';
+import type {
+  Branch,
+  BranchActivityLog,
+  BranchEmployee,
+  BranchFormData,
+  BranchInventoryItem,
+  BranchProfileTabKey,
+  BranchTransactionRow,
+} from './types';
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Active (Operational)' },
@@ -70,7 +78,8 @@ export function BranchProfilePage() {
   const [transactions, setTransactions] = useState<BranchTransactionRow[]>([]);
   const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
   
-  const [loading, setLoading] = useState(true);
+  const [branchLoading, setBranchLoading] = useState(true);
+  const [tabLoading, setTabLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<BranchProfileTabKey>('details');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
@@ -79,37 +88,63 @@ export function BranchProfilePage() {
   const [formData, setFormData] = useState<BranchFormData | null>(null);
   const [editDraft, setEditDraft] = useState<BranchFormData | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  // Phase 1: Load Branch Info (Hero & Base Meta)
+  const loadBranchInfo = useCallback(async () => {
+    setBranchLoading(true);
     try {
-      const [branchDto, staffDto, activityDto, transDto, invDto] = await Promise.all([
-        fetchBranch(parsedBranchId),
-        fetchBranchStaff(parsedBranchId),
-        fetchBranchActivity(parsedBranchId),
-        fetchBranchTransactions(parsedBranchId),
-        fetchBranchInventory(parsedBranchId),
-      ]);
-
+      const branchDto = await fetchBranch(parsedBranchId);
       const branch = mapBranch(branchDto);
       setSelectedBranch(branch);
-      setStaffMembers(staffDto.map(mapEmployee));
-      setActivityLogs(activityDto.map(mapActivityLog));
-      setTransactions(transDto.map(mapTransaction));
-      setInventoryItems(invDto.map(mapInventoryItem));
       
       const initialFormData = toBranchFormData(branch);
       setFormData(initialFormData);
       setEditDraft(initialFormData);
     } catch (error) {
-      console.error('Failed to load branch profile:', error);
+      console.error('Failed to load branch info:', error);
     } finally {
-      setLoading(false);
+      setBranchLoading(false);
+    }
+  }, [parsedBranchId]);
+
+  // Phase 2: Lazy Load Tab Content
+  const loadTabContent = useCallback(async (tab: BranchProfileTabKey) => {
+    // Only load if we haven't already or if we want to refresh
+    setTabLoading(true);
+    try {
+      switch (tab) {
+        case 'staff':
+        case 'details': // Details needs staff for KPIs
+          const staffDto = await fetchBranchStaff(parsedBranchId);
+          setStaffMembers(staffDto.map(mapEmployee));
+          break;
+        case 'activity':
+          const activityDto = await fetchBranchActivity(parsedBranchId);
+          setActivityLogs(activityDto.map(mapActivityLog));
+          break;
+        case 'transactions':
+          const transDto = await fetchBranchTransactions(parsedBranchId);
+          setTransactions(transDto.map(mapTransaction));
+          break;
+        case 'inventory':
+          const invDto = await fetchBranchInventory(parsedBranchId);
+          setInventoryItems(invDto.map(mapInventoryItem));
+          break;
+      }
+    } catch (error) {
+      console.error(`Failed to load ${tab} content:`, error);
+    } finally {
+      setTabLoading(false);
     }
   }, [parsedBranchId]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadBranchInfo();
+  }, [loadBranchInfo]);
+
+  useEffect(() => {
+    // Load content for active tab whenever it changes
+    loadTabContent(activeTab);
+  }, [activeTab, loadTabContent]);
 
   useEffect(() => {
     if (!showSavedNotice) {
@@ -167,15 +202,10 @@ export function BranchProfilePage() {
     [activeTab, activityLogs, inventoryItems, selectedBranch, staffMembers, transactions]
   );
 
-  if (loading) {
-    return (
-      <Box sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary">Loading branch profile...</Typography>
-      </Box>
-    );
-  }
+  // if (branchLoading) removed to prevent jarring "Connecting" text
 
-  if (!selectedBranch || !formData) {
+
+  if (!branchLoading && (!selectedBranch || !formData)) {
     return (
       <Box sx={{ pb: 4, display: 'flex', justifyContent: 'center' }}>
         <Paper
@@ -218,7 +248,7 @@ export function BranchProfilePage() {
     }
 
     console.log('Saving branch profile:', {
-      branchId: selectedBranch.id,
+      branchId: selectedBranch?.id,
       ...editDraft,
     });
 
@@ -239,7 +269,7 @@ export function BranchProfilePage() {
   };
 
   const handleCreateStaff = () => {
-    loadData(); // Refresh staff list
+    loadTabContent('staff'); // Refresh staff list
     setIsAddStaffModalOpen(false);
     setActiveTab('staff');
   };
@@ -271,7 +301,7 @@ export function BranchProfilePage() {
 
           <ChevronRightRoundedIcon sx={{ fontSize: 15, color: '#A8A29E' }} />
 
-          <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary' }}>{formData.name}</Typography>
+          <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary' }}>{formData?.name || 'Loading...'}</Typography>
 
           <Chip
             label={branchCode}
@@ -297,6 +327,7 @@ export function BranchProfilePage() {
         showSavedNotice={showSavedNotice}
         onViewInventory={() => setActiveTab('inventory')}
         onEnableEdit={handleOpenEditModal}
+        loading={branchLoading}
       />
 
       <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
@@ -305,9 +336,10 @@ export function BranchProfilePage() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           badgeMap={tabBadges}
+          loading={tabLoading}
         />
 
-        {activeTab === 'details' ? (
+        {activeTab === 'details' && formData ? (
           <BranchDetailsTab
             formData={formData}
             statusOptions={STATUS_OPTIONS}
@@ -334,6 +366,7 @@ export function BranchProfilePage() {
         {activeTab === 'transactions' ? <BranchTransactionsTab transactions={transactions} /> : null}
 
         {activeTab === 'inventory' ? <BranchInventoryTab items={inventoryItems} /> : null}
+
       </Paper>
 
       <BranchEditModal
@@ -351,8 +384,8 @@ export function BranchProfilePage() {
       <AddStaffModal
         open={isAddStaffModalOpen}
         branchOptions={staffBranchOptions}
-        initialBranchId={selectedBranch.id.toString()}
-        initialBranchName={selectedBranch.name}
+        initialBranchId={selectedBranch?.id.toString() || ''}
+        initialBranchName={selectedBranch?.name || ''}
         onClose={() => setIsAddStaffModalOpen(false)}
         onSave={handleCreateStaff}
       />

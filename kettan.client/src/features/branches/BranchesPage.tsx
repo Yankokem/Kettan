@@ -12,6 +12,8 @@ import { SearchInput } from '../../components/UI/SearchInput';
 import { Dropdown } from '../../components/UI/Dropdown';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
+import { BranchCard } from './components/BranchCard';
+import { mapBranch } from './branchProfileData';
 import { fetchBranches, type BranchDto } from './branchesApi';
 
 export function BranchesPage() {
@@ -138,50 +140,16 @@ export function BranchesPage() {
             gap: 3,
           }}
         >
-          {filteredBranches.map((branch) => (
-            <Box
-              key={branch.branchId}
-              onClick={() => navigate({ to: '/branches/$branchId', params: { branchId: branch.branchId.toString() } })}
-              sx={{ cursor: 'pointer' }}
-            >
-              <Box
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 3,
-                  p: 2.5,
-                  bgcolor: 'background.paper',
-                  transition: 'box-shadow 0.2s ease',
-                  '&:hover': { boxShadow: 4 },
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography sx={{ fontWeight: 700, fontSize: 15, color: 'text.primary' }}>
-                    {branch.name}
-                  </Typography>
-                  <Box
-                    sx={{
-                      px: 1.2,
-                      py: 0.3,
-                      borderRadius: 999,
-                      bgcolor: branch.isActive ? 'rgba(113,143,88,0.15)' : 'rgba(230,92,92,0.12)',
-                      color: branch.isActive ? '#4A7C3F' : '#C0392B',
-                      fontSize: 11,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {branch.isActive ? 'Active' : 'Inactive'}
-                  </Box>
-                </Box>
-                <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 0.5 }}>
-                  {branch.location ?? 'No location set'}
-                </Typography>
-                <Typography sx={{ fontSize: 11, color: 'text.disabled' }}>
-                  ID: BR-{String(branch.branchId).padStart(5, '0')}
-                </Typography>
-              </Box>
-            </Box>
-          ))}
+          {filteredBranches.map((branchDto) => {
+            const branch = mapBranch(branchDto);
+            return (
+              <BranchCard
+                key={branch.id}
+                branch={branch}
+                onClick={(id) => navigate({ to: '/branches/$branchId', params: { branchId: id.toString() } })}
+              />
+            );
+          })}
         </Box>
       </DataStateWrapper>
     </Box>

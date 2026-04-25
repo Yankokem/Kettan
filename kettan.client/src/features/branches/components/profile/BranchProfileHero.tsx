@@ -1,4 +1,4 @@
-import { Avatar, Box, Chip, Grid, Paper, Typography } from '@mui/material';
+import { Avatar, Box, Chip, Grid, Paper, Typography, Skeleton } from '@mui/material';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
@@ -11,14 +11,15 @@ import type { BranchProfileKpi } from '../../branchProfileData';
 import { formatSchedule, getInitials } from '../../branchProfileData';
 
 interface BranchProfileHeroProps {
-  branch: Branch;
-  formData: BranchFormData;
+  branch: Branch | null;
+  formData: BranchFormData | null;
   branchCode: string;
   branchOpen: boolean;
   kpis: BranchProfileKpi[];
   showSavedNotice: boolean;
   onViewInventory: () => void;
   onEnableEdit: () => void;
+  loading?: boolean;
 }
 
 export function BranchProfileHero({
@@ -30,6 +31,7 @@ export function BranchProfileHero({
   showSavedNotice,
   onViewInventory,
   onEnableEdit,
+  loading = false,
 }: BranchProfileHeroProps) {
   return (
     <Paper
@@ -59,73 +61,90 @@ export function BranchProfileHero({
           }}
         />
 
-        <Chip
-          label={branchOpen ? 'Open Now' : 'Closed'}
-          size="small"
-          sx={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            height: 30,
-            borderRadius: 999,
-            bgcolor: branchOpen ? 'rgba(236,253,245,0.96)' : 'rgba(255,251,235,0.95)',
-            color: branchOpen ? '#166534' : '#92400E',
-            border: '1px solid',
-            borderColor: branchOpen ? '#86EFAC' : '#FCD34D',
-            fontSize: 11,
-            fontWeight: 800,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.14)',
-          }}
-        />
+        {loading ? (
+          <Skeleton 
+            variant="rectangular" 
+            sx={{ position: 'absolute', top: 16, right: 16, width: 80, height: 30, borderRadius: 999, bgcolor: 'rgba(255,255,255,0.1)' }} 
+          />
+        ) : (
+          <Chip
+            label={branchOpen ? 'Open Now' : 'Closed'}
+            size="small"
+            sx={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              height: 30,
+              borderRadius: 999,
+              bgcolor: branchOpen ? 'rgba(236,253,245,0.96)' : 'rgba(255,251,235,0.95)',
+              color: branchOpen ? '#166534' : '#92400E',
+              border: '1px solid',
+              borderColor: branchOpen ? '#86EFAC' : '#FCD34D',
+              fontSize: 11,
+              fontWeight: 800,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.14)',
+            }}
+          />
+        )}
       </Box>
 
       <Box sx={{ px: { xs: 3, sm: 4 }, pb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mt: -9 }}>
-          <Avatar
-            src={branch.imageUrl}
-            sx={{
-              width: 116,
-              height: 116,
-              borderRadius: 3,
-              bgcolor: '#2E1F14',
-              border: '4px solid #FFFFFF',
-              fontWeight: 800,
-              fontSize: 38,
-            }}
-          >
-            {getInitials(formData.name)}
-          </Avatar>
+          {loading ? (
+            <Skeleton variant="rectangular" sx={{ width: 116, height: 116, borderRadius: 3, border: '4px solid #FFFFFF' }} />
+          ) : (
+            <Avatar
+              src={branch?.imageUrl}
+              sx={{
+                width: 116,
+                height: 116,
+                borderRadius: 3,
+                bgcolor: '#2E1F14',
+                border: '4px solid #FFFFFF',
+                fontWeight: 800,
+                fontSize: 38,
+              }}
+            >
+              {formData ? getInitials(formData.name) : '??'}
+            </Avatar>
+          )}
 
           <Box sx={{ pb: 0.3, pt: 1.1, minWidth: 0, flex: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', pt: 0.2 }}>
-                <Typography sx={{ fontSize: { xs: 24, sm: 40 }, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-                  {formData.name}
-                </Typography>
-                <Chip
-                  label={formData.status === 'active' ? 'Active' : 'Setup Pending'}
-                  size="small"
-                  sx={{
-                    height: 24,
-                    borderRadius: 999,
-                    bgcolor: formData.status === 'active' ? 'success.light' : 'grey.200',
-                    color: formData.status === 'active' ? 'success.dark' : 'text.secondary',
-                    fontWeight: 700,
-                    fontSize: 11,
-                  }}
-                />
-                <Chip
-                  label={branchCode}
-                  size="small"
-                  sx={{
-                    height: 22,
-                    borderRadius: 999,
-                    bgcolor: 'rgba(201,168,76,0.2)',
-                    color: '#5C4518',
-                    fontSize: 10.5,
-                    fontWeight: 800,
-                  }}
-                />
+                {loading ? (
+                  <Skeleton variant="text" width={280} height={48} />
+                ) : (
+                  <>
+                    <Typography sx={{ fontSize: { xs: 24, sm: 40 }, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                      {formData?.name}
+                    </Typography>
+                    <Chip
+                      label={formData?.status === 'active' ? 'Active' : 'Setup Pending'}
+                      size="small"
+                      sx={{
+                        height: 24,
+                        borderRadius: 999,
+                        bgcolor: formData?.status === 'active' ? 'success.light' : 'grey.200',
+                        color: formData?.status === 'active' ? 'success.dark' : 'text.secondary',
+                        fontWeight: 700,
+                        fontSize: 11,
+                      }}
+                    />
+                    <Chip
+                      label={branchCode}
+                      size="small"
+                      sx={{
+                        height: 22,
+                        borderRadius: 999,
+                        bgcolor: 'rgba(201,168,76,0.2)',
+                        color: '#5C4518',
+                        fontSize: 10.5,
+                        fontWeight: 800,
+                      }}
+                    />
+                  </>
+                )}
               </Box>
 
               <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
@@ -151,18 +170,24 @@ export function BranchProfileHero({
                 flexWrap: 'wrap',
               }}
             >
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
-                {formData.city}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                <AccessTimeRoundedIcon sx={{ fontSize: 14 }} />
-                {formatSchedule(formData.openTime)} - {formatSchedule(formData.closeTime)}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                <CallRoundedIcon sx={{ fontSize: 14 }} />
-                {formData.contactNumber}
-              </Typography>
+              {loading ? (
+                <Skeleton variant="text" width="60%" height={24} />
+              ) : (
+                <>
+                  <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                    <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
+                    {formData?.city}
+                  </Typography>
+                  <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                    <AccessTimeRoundedIcon sx={{ fontSize: 14 }} />
+                    {formData ? `${formatSchedule(formData.openTime)} - ${formatSchedule(formData.closeTime)}` : ''}
+                  </Typography>
+                  <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                    <CallRoundedIcon sx={{ fontSize: 14 }} />
+                    {formData?.contactNumber}
+                  </Typography>
+                </>
+              )}
             </Box>
           </Box>
         </Box>
@@ -184,48 +209,56 @@ export function BranchProfileHero({
         ) : null}
 
         <Grid container spacing={2} sx={{ mt: 2.2, pt: 2.5, borderTop: '1px solid', borderColor: 'divider' }}>
-          {kpis.map((kpi) => {
-            const Icon = kpi.icon;
-
-            return (
-              <Grid key={kpi.id} size={{ xs: 12, sm: 6, md: 3 }}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 1.8,
-                    borderRadius: 2.5,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: '#FAFAFA',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.25 }}>
-                    <Box>
-                      <Typography sx={{ fontSize: 32, fontWeight: 800, lineHeight: 1 }}>{kpi.value}</Typography>
-                      <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 600 }}>{kpi.label}</Typography>
-                      {kpi.helperText ? (
-                        <Typography sx={{ fontSize: 10.5, color: 'text.disabled', mt: 0.3 }}>{kpi.helperText}</Typography>
-                      ) : null}
-                    </Box>
-                    <Box
-                      sx={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 2,
-                        bgcolor: kpi.iconBg,
-                        color: kpi.iconColor,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Icon sx={{ fontSize: 17 }} />
-                    </Box>
-                  </Box>
-                </Paper>
+          {loading ? (
+            [1, 2, 3, 4].map((i) => (
+              <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+                <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 2.5 }} />
               </Grid>
-            );
-          })}
+            ))
+          ) : (
+            kpis.map((kpi) => {
+              const Icon = kpi.icon;
+
+              return (
+                <Grid key={kpi.id} size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 1.8,
+                      borderRadius: 2.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: '#FAFAFA',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.25 }}>
+                      <Box>
+                        <Typography sx={{ fontSize: 32, fontWeight: 800, lineHeight: 1 }}>{kpi.value}</Typography>
+                        <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 600 }}>{kpi.label}</Typography>
+                        {kpi.helperText ? (
+                          <Typography sx={{ fontSize: 10.5, color: 'text.disabled', mt: 0.3 }}>{kpi.helperText}</Typography>
+                        ) : null}
+                      </Box>
+                      <Box
+                        sx={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 2,
+                          bgcolor: kpi.iconBg,
+                          color: kpi.iconColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Icon sx={{ fontSize: 17 }} />
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+              );
+            })
+          )}
         </Grid>
       </Box>
     </Paper>
