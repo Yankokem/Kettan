@@ -50,6 +50,7 @@ public class TenantsController : ControllerBase
             SubscriptionStatus = tenant.SubscriptionStatus,
             SubscriptionPeriodEnd = tenant.SubscriptionPeriodEnd,
             IsActive = tenant.IsActive,
+            LogoUrl = tenant.LogoUrl,
             CreatedAt = tenant.CreatedAt
         });
     }
@@ -78,6 +79,7 @@ public class TenantsController : ControllerBase
         tenant.SupportEmail = NormalizeNullable(dto.SupportEmail);
         tenant.Phone = NormalizeNullable(dto.Phone);
         tenant.Address = NormalizeNullable(dto.Address);
+        tenant.LogoUrl = NormalizeNullable(dto.LogoUrl);
 
         await _context.SaveChangesAsync();
 

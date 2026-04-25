@@ -15,6 +15,7 @@ interface TenantDto {
   subscriptionStatus: string;
   subscriptionPeriodEnd?: string | null;
   isActive: boolean;
+  logoUrl?: string | null;
   createdAt: string;
 }
 
@@ -28,6 +29,7 @@ interface UpdateTenantDto {
   supportEmail?: string | null;
   phone?: string | null;
   address?: string | null;
+  logoUrl?: string | null;
 }
 
 interface BranchDto {
@@ -193,6 +195,7 @@ function toCompanyProfile(tenant: TenantDto, activeBranches: number, activeStaff
     activeStaff,
     staffLimit: limits.staffLimit,
     contractRenewalDate: toRenewalDate(tenant),
+    logoUrl: tenant.logoUrl,
   };
 }
 
@@ -246,6 +249,7 @@ export async function updateCompanyProfile(
     supportEmail: toNullable(formData.supportEmail),
     phone: toNullable(formData.phoneContact),
     address: toNullable(formData.headquartersAddress),
+    logoUrl: toNullable(formData.logoUrl || ''),
   };
 
   await api.put('/api/tenants/me', payload);

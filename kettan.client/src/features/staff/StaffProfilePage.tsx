@@ -13,9 +13,9 @@ export function StaffProfilePage() {
       <Box sx={{ mb: 4, display: 'flex', gap: 3, alignItems: 'flex-start' }}>
         <Avatar 
           variant="rounded" 
-          sx={{ width: 88, height: 88, bgcolor: 'primary.main', borderRadius: 4, color: 'primary.contrastText' }}
+          sx={{ width: 140, height: 140, bgcolor: '#FAF5EF', borderRadius: 4, color: '#6B4C2A', border: '2px solid', borderColor: 'divider' }}
         >
-          <PersonRoundedIcon sx={{ fontSize: 44 }} />
+          <PersonRoundedIcon sx={{ fontSize: 70 }} />
         </Avatar>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 1 }}>

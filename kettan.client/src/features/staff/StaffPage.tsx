@@ -41,7 +41,7 @@ function toStaffMember(e: EmployeeDto): StaffMember {
     location: e.branchName ?? 'Unassigned',
     status: e.isActive ? 'active' : 'inactive',
     avatar: `${e.firstName.charAt(0)}${e.lastName.charAt(0)}`.toUpperCase(),
-    imageUrl: null,
+    imageUrl: e.imageUrl ?? null,
   };
 }
 
@@ -73,29 +73,47 @@ export function StaffPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleCreateStaff = (formValues: AddStaffFormValues) => {
+  const handleCreateStaff = async (formValues: AddStaffFormValues) => {
     const roleValue = formValues.role;
 
     if (roleValue === '') {
       return;
     }
 
-    const nextId = staffMembers.reduce((maxId, staff) => Math.max(maxId, staff.id), 0) + 1;
-    const branchLabel = branchOptions.find((option) => option.value === formValues.branchAssignment)?.label ?? 'Unassigned';
+    let uploadedImageUrl = null;
+    if (formValues.imageFile) {
+      try {
+        const formData = new FormData();
+        formData.append('file', formValues.imageFile);
+        const uploadRes = await fetch('/api/uploads/image', { method: 'POST', body: formData });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          uploadedImageUrl = uploadData.url;
+        }
+      } catch (err) {
+        console.error('Failed to upload image:', err);
+      }
+    }
 
-    setStaffMembers((previous) => [
-      {
-        id: nextId,
-        name: `${formValues.firstName} ${formValues.lastName}`,
-        email: formValues.email,
-        role: ROLE_LABEL_MAP[roleValue],
-        location: branchLabel,
-        status: 'active',
-        avatar: getInitials(formValues.firstName, formValues.lastName),
-        imageUrl: formValues.imagePreviewUrl,
-      },
-      ...previous,
-    ]);
+    try {
+      // Map AddStaffFormValues role to backend position string
+      const position = ROLE_LABEL_MAP[roleValue] || roleValue;
+      
+      // Save via API
+      const newEmployee = await createEmployee({
+        firstName: formValues.firstName,
+        lastName: formValues.lastName,
+        position: position,
+        isActive: true,
+        imageUrl: uploadedImageUrl,
+      });
+
+      // Update local state with the saved data
+      setStaffMembers((previous) => [toStaffMember(newEmployee), ...previous]);
+    } catch (err) {
+      console.error('Failed to create staff member:', err);
+      alert('An error occurred while creating the staff member.');
+    }
   };
 
   const handleOpenProfile = (staffId: number) => {
@@ -304,7 +322,6 @@ export function StaffPage() {
 
       <AddStaffModal
         open={isAddStaffModalOpen}
-        branchOptions={branchOptions}
         onClose={() => setIsAddStaffModalOpen(false)}
         onSave={handleCreateStaff}
       />

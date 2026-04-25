@@ -13,7 +13,6 @@ export interface AddStaffFormValues {
   lastName: string;
   email: string;
   role: '' | 'hq' | 'manager' | 'staff';
-  branchAssignment: string;
   imageFile: File | null;
   imagePreviewUrl: string | null;
 }
@@ -25,14 +24,11 @@ interface BranchOption {
 
 interface AddStaffModalProps {
   open: boolean;
-  branchOptions: BranchOption[];
-  initialBranchId?: string;
-  initialBranchName?: string;
   onClose: () => void;
   onSave: (formValues: AddStaffFormValues) => void;
 }
 
-type FormErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'role' | 'branchAssignment', string>>;
+type FormErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'role', string>>;
 
 const ROLE_OPTIONS: Array<{ value: AddStaffFormValues['role']; label: string }> = [
   { value: '', label: 'Select a role...' },
@@ -41,13 +37,12 @@ const ROLE_OPTIONS: Array<{ value: AddStaffFormValues['role']; label: string }> 
   { value: 'staff', label: 'Store Staff' },
 ];
 
-function buildInitialFormValues(initialBranchId?: string): AddStaffFormValues {
+function buildInitialFormValues(): AddStaffFormValues {
   return {
     firstName: '',
     lastName: '',
     email: '',
     role: '',
-    branchAssignment: initialBranchId ?? '',
     imageFile: null,
     imagePreviewUrl: null,
   };
@@ -55,34 +50,23 @@ function buildInitialFormValues(initialBranchId?: string): AddStaffFormValues {
 
 export function AddStaffModal({
   open,
-  branchOptions,
-  initialBranchId,
-  initialBranchName,
   onClose,
   onSave,
 }: AddStaffModalProps) {
-  const [formValues, setFormValues] = useState<AddStaffFormValues>(() => buildInitialFormValues(initialBranchId));
+  const [formValues, setFormValues] = useState<AddStaffFormValues>(() => buildInitialFormValues());
   const [errors, setErrors] = useState<FormErrors>({});
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const previewObjectUrlRef = useRef<string | null>(null);
-
-  const resolvedBranchName =
-    initialBranchName ?? branchOptions.find((option) => option.value === (initialBranchId ?? ''))?.label;
-
-  const branchAssignmentOptions = useMemo(
-    () => [{ value: '', label: 'Select a branch...' }, ...branchOptions],
-    [branchOptions]
-  );
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    setFormValues(buildInitialFormValues(initialBranchId));
+    setFormValues(buildInitialFormValues());
     setErrors({});
-  }, [open, initialBranchId]);
+  }, [open]);
 
   useEffect(
     () => () => {
@@ -153,10 +137,6 @@ export function AddStaffModal({
       nextErrors.role = 'Role is required.';
     }
 
-    if (!formValues.branchAssignment) {
-      nextErrors.branchAssignment = 'Branch assignment is required.';
-    }
-
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -164,7 +144,7 @@ export function AddStaffModal({
   const handleClose = () => {
     clearImage();
     setErrors({});
-    setFormValues(buildInitialFormValues(initialBranchId));
+    setFormValues(buildInitialFormValues());
     onClose();
   };
 
@@ -297,21 +277,6 @@ export function AddStaffModal({
           </Box>
 
           <Box sx={{ width: { xs: '100%', md: '70%' }, pl: { md: 3 }, pt: { xs: 3, md: 0 } }}>
-            {resolvedBranchName ? (
-              <Chip
-                size="small"
-                label={`Branch preselected: ${resolvedBranchName}`}
-                sx={{
-                  mb: 2,
-                  height: 24,
-                  borderRadius: 999,
-                  bgcolor: 'rgba(107,76,42,0.12)',
-                  color: '#6B4C2A',
-                  fontWeight: 700,
-                  fontSize: 11,
-                }}
-              />
-            ) : null}
 
             <Grid container spacing={2.5}>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -348,7 +313,7 @@ export function AddStaffModal({
                 />
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12 }}>
                 <FormDropdown
                   label="Role"
                   value={formValues.role}
@@ -358,19 +323,6 @@ export function AddStaffModal({
                 />
                 {errors.role ? (
                   <Typography sx={{ fontSize: 12, color: 'error.main', mt: 0.75, ml: 1 }}>{errors.role}</Typography>
-                ) : null}
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <FormDropdown
-                  label="Branch Assignment"
-                  value={formValues.branchAssignment}
-                  options={branchAssignmentOptions}
-                  onChange={(event) => updateField('branchAssignment', String(event.target.value))}
-                  error={Boolean(errors.branchAssignment)}
-                />
-                {errors.branchAssignment ? (
-                  <Typography sx={{ fontSize: 12, color: 'error.main', mt: 0.75, ml: 1 }}>{errors.branchAssignment}</Typography>
                 ) : null}
               </Grid>
             </Grid>

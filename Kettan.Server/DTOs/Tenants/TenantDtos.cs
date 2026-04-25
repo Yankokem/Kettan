@@ -15,6 +15,7 @@ public class TenantDto
     public string SubscriptionStatus { get; set; } = "Active";
     public DateTime? SubscriptionPeriodEnd { get; set; }
     public bool IsActive { get; set; }
+    public string? LogoUrl { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -29,6 +30,7 @@ public class UpdateTenantDto
     public string? SupportEmail { get; set; }
     public string? Phone { get; set; }
     public string? Address { get; set; }
+    public string? LogoUrl { get; set; }
 }
 
 public class DevConnectionStatusDto

@@ -14,6 +14,7 @@ export interface EmployeeDto {
   contactNumber?: string | null;
   dateHired?: string | null;
   isActive: boolean;
+  imageUrl?: string | null;
   createdAt: string;
 }
 
@@ -25,6 +26,7 @@ export interface CreateEmployeeDto {
   contactNumber?: string | null;
   dateHired?: string | null;
   isActive: boolean;
+  imageUrl?: string | null;
 }
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {

@@ -12,6 +12,7 @@ public class EmployeeDto
     public string? ContactNumber { get; set; }
     public DateTime? DateHired { get; set; }
     public bool IsActive { get; set; }
+    public string? ImageUrl { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -24,6 +25,7 @@ public class CreateEmployeeDto
     public string? ContactNumber { get; set; }
     public DateTime? DateHired { get; set; }
     public bool IsActive { get; set; } = true;
+    public string? ImageUrl { get; set; }
 }
 
 public class UpdateEmployeeDto
@@ -35,4 +37,5 @@ public class UpdateEmployeeDto
     public string? ContactNumber { get; set; }
     public DateTime? DateHired { get; set; }
     public bool IsActive { get; set; }
+    public string? ImageUrl { get; set; }
 }

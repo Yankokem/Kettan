@@ -1,5 +1,5 @@
 import { Box, Typography, Paper, Divider, Button, Grid } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
@@ -8,22 +8,18 @@ import { BackButton } from '../../components/UI/BackButton';
 import { FormActions } from '../../components/Form/FormActions';
 import { ImageUpload } from '../../components/UI/ImageUpload';
 import { TimePicker } from '../../components/UI/TimePicker';
-import { BRANCH_OWNER_OPTIONS, BRANCH_MANAGER_OPTIONS } from './mockData';
 import type { BranchFormData, BranchStatus } from './types';
+
+interface UserDto {
+  userId: number;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Active (Operational)' },
   { value: 'setup', label: 'Setup Pending' },
-];
-
-const OWNER_OPTIONS = [
-  { value: '', label: 'Unassigned (Optional)' },
-  ...BRANCH_OWNER_OPTIONS,
-];
-
-const MANAGER_OPTIONS = [
-  { value: '', label: 'Select a manager...' },
-  ...BRANCH_MANAGER_OPTIONS,
 ];
 
 const CONTACT_NUMBER_PATTERN = /^[+]?[-()\d\s]{7,20}$/;
@@ -54,6 +50,25 @@ export function AddBranchPage() {
     picture: undefined,
     notes: '',
   });
+
+  const [users, setUsers] = useState<UserDto[]>([]);
+
+  useEffect(() => {
+    fetch('/api/users')
+      .then(res => res.json())
+      .then(data => setUsers(data))
+      .catch(err => console.error('Failed to fetch users:', err));
+  }, []);
+
+  const ownerOptions = [
+    { value: '', label: 'Select an owner...' },
+    ...users.map(u => ({ value: String(u.userId), label: `${u.firstName} ${u.lastName} (${u.role})` }))
+  ];
+
+  const managerOptions = [
+    { value: '', label: 'Select a manager...' },
+    ...users.map(u => ({ value: String(u.userId), label: `${u.firstName} ${u.lastName} (${u.role})` }))
+  ];
 
   const handleImageUpload = (file: File) => {
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
@@ -115,13 +130,18 @@ export function AddBranchPage() {
       return;
     }
 
+    if (!formData.ownerUserId) {
+      alert('Please assign an owner.');
+      return;
+    }
+
     if (!formData.managerUserId) {
       alert('Please assign a manager.');
       return;
     }
 
-    const managerLabel = MANAGER_OPTIONS.find((manager) => manager.value === formData.managerUserId)?.label;
-    const ownerLabel = OWNER_OPTIONS.find((owner) => owner.value === formData.ownerUserId)?.label;
+    const managerLabel = managerOptions.find((manager) => manager.value === formData.managerUserId)?.label;
+    const ownerLabel = ownerOptions.find((owner) => owner.value === formData.ownerUserId)?.label;
 
     console.log('Submitting branch:', {
       ...formData,
@@ -313,9 +333,9 @@ export function AddBranchPage() {
 
             <Box sx={{ mb: 2.5 }}>
               <FormDropdown
-                label="Assigned Owner (Optional)"
+                label="Assigned Owner"
                 value={formData.ownerUserId}
-                options={OWNER_OPTIONS}
+                options={ownerOptions}
                 onChange={(event) =>
                   setFormData((prev) => ({ ...prev, ownerUserId: String(event.target.value) }))
                 }
@@ -327,7 +347,7 @@ export function AddBranchPage() {
               <FormDropdown
                 label="Assigned Manager"
                 value={formData.managerUserId}
-                options={MANAGER_OPTIONS}
+                options={managerOptions}
                 onChange={(event) =>
                   setFormData((prev) => ({ ...prev, managerUserId: String(event.target.value) }))
                 }

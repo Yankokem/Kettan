@@ -230,7 +230,22 @@ export function CompanyProfilePage() {
       setIsSaving(true);
       setSaveError(null);
 
-      await updateCompanyProfile(nextData, subscriptionTier);
+      let finalLogoUrl = nextData.logoUrl;
+      if (nextData.logoFile) {
+        const formData = new FormData();
+        formData.append('file', nextData.logoFile);
+        try {
+          const uploadRes = await fetch('/api/uploads/image', { method: 'POST', body: formData });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            finalLogoUrl = uploadData.url;
+          }
+        } catch (err) {
+          console.error('Failed to upload company logo:', err);
+        }
+      }
+
+      await updateCompanyProfile({ ...nextData, logoUrl: finalLogoUrl }, subscriptionTier);
       const refreshed = await fetchCompanyProfile();
 
       setProfile(refreshed.profile);
@@ -362,19 +377,20 @@ export function CompanyProfilePage() {
             {/* Avatar centered on the seam — half above, half below */}
             <Avatar
               variant="rounded"
+              src={profile.logoUrl || undefined}
               sx={{
                 width: 132,
                 height: 132,
                 borderRadius: 4,
-                bgcolor: '#2E1F14',
+                bgcolor: '#FAF5EF',
                 border: '5px solid',
                 borderColor: 'background.paper',
-                color: '#FAF5EF',
+                color: '#6B4C2A',
                 flexShrink: 0,
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
               }}
             >
-              <BusinessRoundedIcon sx={{ fontSize: 64 }} />
+              {!profile.logoUrl && <BusinessRoundedIcon sx={{ fontSize: 64 }} />}
             </Avatar>
 
             {/* Chips + meta below the avatar */}

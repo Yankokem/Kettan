@@ -15,6 +15,7 @@ export interface CompanyProfile {
   activeStaff: number;
   staffLimit: number;
   contractRenewalDate: string;
+  logoUrl?: string | null;
 }
 
 export interface CompanyProfileFormData {
@@ -27,6 +28,8 @@ export interface CompanyProfileFormData {
   phoneContact: string;
   website: string;
   taxId: string;
+  logoUrl?: string | null;
+  logoFile?: File | null;
 }
 
 export type CompanyProfileFormErrors = Partial<Record<keyof CompanyProfileFormData, string>>;
@@ -42,5 +45,7 @@ export function toCompanyProfileFormData(profile: CompanyProfile): CompanyProfil
     phoneContact: profile.phoneContact,
     website: profile.website,
     taxId: profile.taxId,
+    logoUrl: profile.logoUrl,
+    logoFile: null,
   };
 }

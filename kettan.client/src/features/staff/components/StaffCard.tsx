@@ -88,7 +88,7 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
           width: 92,
           minWidth: 92,
           height: 92,
-          borderRadius: 2,
+          borderRadius: 3,
           border: '1px solid',
           borderColor: 'divider',
           bgcolor: '#FAF5EF',
@@ -101,10 +101,11 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
       >
         <Avatar
           src={staff.imageUrl || undefined}
+          variant="rounded"
           sx={{
             width: '100%',
             height: '100%',
-            borderRadius: 0,
+            borderRadius: 3,
             bgcolor: '#FAF5EF',
             color: '#6B4C2A',
             fontWeight: 700,
