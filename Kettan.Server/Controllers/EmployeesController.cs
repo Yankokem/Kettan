@@ -100,6 +100,7 @@ public class EmployeesController : ControllerBase
                 ContactNumber = dto.ContactNumber,
                 DateHired = dto.DateHired,
                 IsActive = dto.IsActive,
+                Email = dto.Email?.Trim(),
                 ImageUrl = dto.ImageUrl,
                 CreatedAt = DateTime.UtcNow
             };
@@ -156,6 +157,7 @@ public class EmployeesController : ControllerBase
             employee.ContactNumber = dto.ContactNumber;
             employee.DateHired = dto.DateHired;
             employee.IsActive = dto.IsActive;
+            employee.Email = dto.Email?.Trim();
             employee.ImageUrl = dto.ImageUrl;
 
             await _context.SaveChangesAsync();
@@ -251,6 +253,7 @@ public class EmployeesController : ControllerBase
             ContactNumber = employee.ContactNumber,
             DateHired = employee.DateHired,
             IsActive = employee.IsActive,
+            Email = employee.Email,
             ImageUrl = employee.ImageUrl,
             CreatedAt = employee.CreatedAt
         };

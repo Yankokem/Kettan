@@ -133,7 +133,7 @@ export function MenuItemsPage() {
       >
         <Grid container spacing={3} columns={60}>
           {filteredItems.map(item => (
-            <Grid key={item.menuItemId} size={{ xs: 60, sm: 30, md: 20, lg: 12 }}>
+            <Grid key={item.menuItemId} size={{ xs: 60, sm: 20, md: 20, lg: 12 }}>
               <MenuItemCard item={item as unknown as MenuItem} />
             </Grid>
           ))}

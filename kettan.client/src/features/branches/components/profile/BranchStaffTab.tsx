@@ -50,6 +50,7 @@ export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: Br
       const matchesQuery =
         !normalizedQuery ||
         `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(normalizedQuery) ||
+        employee.email.toLowerCase().includes(normalizedQuery) ||
         employee.position.toLowerCase().includes(normalizedQuery) ||
         employee.contactNumber.toLowerCase().includes(normalizedQuery) ||
         String(employee.id).includes(normalizedQuery);
@@ -85,7 +86,7 @@ export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: Br
       {
         key: 'employee',
         label: 'Employee',
-        width: '28%',
+        width: '24%',
         render: (employee) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Avatar
@@ -107,6 +108,16 @@ export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: Br
               <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>ID {employee.id}</Typography>
             </Box>
           </Box>
+        ),
+      },
+      {
+        key: 'email',
+        label: 'Email Address',
+        width: '20%',
+        render: (employee) => (
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
+            {employee.email}
+          </Typography>
         ),
       },
       {

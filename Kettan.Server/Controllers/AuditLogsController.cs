@@ -30,6 +30,7 @@ public class AuditLogsController : ControllerBase
         [FromQuery] string? endDate,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
+        [FromQuery] int? branchId = null,
         CancellationToken ct = default)
     {
         var isSuperAdmin = _currentUserService.Role == "SuperAdmin";
@@ -46,6 +47,12 @@ public class AuditLogsController : ControllerBase
         if (!isSuperAdmin && tenantId.HasValue)
         {
             query = query.Where(a => a.TenantId == tenantId.Value);
+        }
+
+        // Branch filter
+        if (branchId.HasValue)
+        {
+            query = query.Where(a => a.User != null && a.User.BranchId == branchId.Value);
         }
 
         // Search filter

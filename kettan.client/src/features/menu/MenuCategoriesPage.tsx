@@ -364,7 +364,7 @@ export function MenuCategoriesPage() {
                 >
                   <Grid container spacing={1.8}>
                     {visibleCategories.map((category) => (
-                      <Grid key={category.categoryId} size={{ xs: 12, md: 6 }}>
+                      <Grid key={category.categoryId} size={{ xs: 12, md: 4 }}>
                         <MenuCategoryCard
                           category={category}
                           selected={selectedCategoryId === category.categoryId}

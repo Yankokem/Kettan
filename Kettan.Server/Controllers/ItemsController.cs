@@ -32,7 +32,8 @@ public class ItemsController : ControllerBase
     public async Task<ActionResult<List<ItemDto>>> GetItems(
         [FromQuery] int? inventoryCategoryId = null,
         [FromQuery] int? itemCategoryId = null,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        [FromQuery] int? branchId = null)
     {
         if (!_currentUser.TenantId.HasValue)
         {
@@ -66,8 +67,14 @@ public class ItemsController : ControllerBase
             .ToListAsync();
 
         var itemIds = items.Select(i => i.ItemId).ToList();
-        var stockByItem = await _context.Batches
-            .Where(b => itemIds.Contains(b.ItemId))
+        var batchQuery = _context.Batches.Where(b => itemIds.Contains(b.ItemId));
+
+        if (branchId.HasValue)
+        {
+            batchQuery = batchQuery.Where(b => b.BranchId == branchId.Value);
+        }
+
+        var stockByItem = await batchQuery
             .GroupBy(b => b.ItemId)
             .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.CurrentQuantity) })
             .ToDictionaryAsync(x => x.ItemId, x => x.Quantity);

@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { StaticMotionDiv } from "../marketing/noMotion";
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2, Coffee } from "lucide-react";
@@ -11,6 +11,7 @@ interface AuthMeResponse {
     email: string;
     name: string;
     role: string;
+    imageUrl?: string | null;
   };
   tenant?: {
     id: number;
@@ -19,6 +20,7 @@ interface AuthMeResponse {
     subscriptionStatus: string;
     isActive: boolean;
     profileComplete: boolean;
+    logoUrl?: string | null;
   } | null;
 }
 
@@ -67,6 +69,7 @@ export function LoginPage() {
           email: me.user.email,
           name: me.user.name,
           role: me.user.role,
+          imageUrl: me.user.imageUrl,
           tenant: me.tenant
             ? {
                 id: String(me.tenant.id),
@@ -75,6 +78,7 @@ export function LoginPage() {
                 subscriptionStatus: me.tenant.subscriptionStatus,
                 isActive: me.tenant.isActive,
                 profileComplete: me.tenant.profileComplete,
+                logoUrl: me.tenant.logoUrl,
               }
             : null,
         },

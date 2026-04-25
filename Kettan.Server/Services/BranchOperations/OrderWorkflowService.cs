@@ -26,7 +26,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         _inventoryService = inventoryService;
     }
 
-    public async Task<List<BranchOrderDto>> ListBranchOrdersAsync(string? status = null)
+    public async Task<List<BranchOrderDto>> ListBranchOrdersAsync(string? status = null, int? branchId = null)
     {
         var query = _context.Orders
             .Include(o => o.SupplyRequest)
@@ -36,7 +36,11 @@ public class OrderWorkflowService : IOrderWorkflowService
                     .ThenInclude(i => i.Item)
             .AsQueryable();
 
-        if (IsBranchScopedUser())
+        if (branchId.HasValue)
+        {
+            query = query.Where(o => o.SupplyRequest != null && o.SupplyRequest.BranchId == branchId.Value);
+        }
+        else if (IsBranchScopedUser())
         {
             var currentBranchId = _currentUser.BranchId ?? 0;
             query = query.Where(o => o.SupplyRequest != null && o.SupplyRequest.BranchId == currentBranchId);

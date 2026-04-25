@@ -8,6 +8,7 @@ export interface TenantSession {
   subscriptionStatus: string;
   isActive: boolean;
   profileComplete: boolean;
+  logoUrl?: string | null;
 }
 
 export interface User {
@@ -15,6 +16,7 @@ export interface User {
   email: string;
   name: string;
   role: string;
+  imageUrl?: string | null;
   tenant?: TenantSession | null;
 }
 
@@ -24,6 +26,8 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (user: User, token?: string | null) => void;
   logout: () => void;
+  updateTenant: (tenant: TenantSession) => void;
+  updateUser: (user: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -34,6 +38,12 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       login: (user, token) => set({ user, token: token ?? null, isAuthenticated: true }),
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      updateTenant: (tenant) => set((state) => ({
+        user: state.user ? { ...state.user, tenant: { ...state.user.tenant, ...tenant } } : null
+      })),
+      updateUser: (user) => set((state) => ({
+        user: state.user ? { ...state.user, ...user } : null
+      })),
     }),
     {
       name: 'kettan-auth-storage', // Persist auth session in localStorage

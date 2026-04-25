@@ -100,6 +100,7 @@ public class AuthController : ControllerBase
                 role = user.Role,
                 tenantId = user.TenantId,
                 branchId = user.BranchId,
+                imageUrl = user.ImageUrl,
             },
             tenant = tenant == null
                 ? null
@@ -111,7 +112,40 @@ public class AuthController : ControllerBase
                     subscriptionStatus = tenant.SubscriptionStatus,
                     isActive = tenant.IsActive,
                     profileComplete = isProfileComplete,
+                    logoUrl = tenant.LogoUrl,
                 },
         });
+    }
+
+    [Authorize]
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        if (!_currentUserService.UserId.HasValue)
+        {
+            return Unauthorized(new { message = "Not authenticated." });
+        }
+
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.UserId == _currentUserService.UserId.Value && u.IsActive);
+
+        if (user == null)
+        {
+            return NotFound(new { message = "User not found." });
+        }
+
+        // Split name into first and last name if provided
+        if (!string.IsNullOrWhiteSpace(request.Name))
+        {
+            var parts = request.Name.Split(' ', 2);
+            user.FirstName = parts[0];
+            user.LastName = parts.Length > 1 ? parts[1] : string.Empty;
+        }
+
+        user.ImageUrl = request.ImageUrl;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Profile updated successfully" });
     }
 }

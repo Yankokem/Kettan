@@ -260,6 +260,16 @@ export function CompanyProfilePage() {
       setProfile(refreshed.profile);
       setSubscriptionTier(refreshed.subscriptionTier);
       setEditDraft(toCompanyProfileFormData(refreshed.profile));
+      
+      // Update global auth store to reflect new logo
+      if (sessionTenant) {
+        useAuthStore.getState().updateTenant({
+          ...sessionTenant,
+          logoUrl: refreshed.profile.logoUrl,
+          name: refreshed.profile.name
+        });
+      }
+
       setIsEditModalOpen(false);
       setShowSavedNotice(true);
     } catch {

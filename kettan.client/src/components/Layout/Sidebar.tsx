@@ -12,6 +12,7 @@ import {
   Collapse,
 } from '@mui/material';
 import logo from '../../assets/logo.png';
+import icon from '../../assets/icon.png';
 import DashboardRoundedIcon         from '@mui/icons-material/DashboardRounded';
 import Inventory2RoundedIcon        from '@mui/icons-material/Inventory2Rounded';
 import StoreRoundedIcon             from '@mui/icons-material/StoreRounded';
@@ -238,7 +239,7 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
       >
         {collapsed ? (
           <img 
-            src="/icon.svg" 
+            src={icon} 
             alt="Kettan Icon" 
             style={{ height: 36, width: 36, flexShrink: 0, borderRadius: 8 }} 
           />

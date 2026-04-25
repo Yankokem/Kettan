@@ -30,7 +30,9 @@ export interface BranchFormData {
   ownerUserId: string;
   managerUserId: string;
   status: BranchStatus;
-  picture?: string;
+  imageUrl?: string | null;
+  imageFile?: File | null;
+  imagePreviewUrl?: string | null;
   notes?: string;
 }
 
@@ -44,6 +46,7 @@ export interface BranchEmployee {
   branchId: number | null;
   firstName: string;
   lastName: string;
+  email: string;
   position: string;
   contactNumber: string;
   dateHired: string;

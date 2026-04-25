@@ -46,9 +46,34 @@ export function MenuItemCard({ item }: Props) {
         }}
         elevation={0}
       >
-        {/* Top container with padding and grey square */}
+        {/* Top container with padding and image box */}
         <Box sx={{ position: 'relative', p: 1.5, pb: 0 }}>
-          <Box sx={{ position: 'relative', width: '100%', paddingTop: '100%', bgcolor: 'grey.100', borderRadius: 2, overflow: 'hidden' }}>
+          <Box sx={{ position: 'relative', width: '100%', paddingTop: '100%', bgcolor: '#FAF5EF', borderRadius: 2, overflow: 'hidden' }}>
+            {/* Image with fade-in */}
+            <Box
+              component="img"
+              src={item.image || undefined}
+              onLoad={(e) => (e.currentTarget.style.opacity = '1')}
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: item.image ? 0 : 1,
+                transition: 'opacity 0.4s ease-in-out',
+                display: item.image ? 'block' : 'none'
+              }}
+            />
+            
+            {/* Fallback Icon if no image */}
+            {!item.image && (
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Typography sx={{ fontSize: 40, opacity: 0.2 }}>☕</Typography>
+              </Box>
+            )}
+
             {/* Variants stacked in top right corner */}
             <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-end' }}>
               {item.variants?.map((variant, idx) => (

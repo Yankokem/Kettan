@@ -18,9 +18,11 @@ public class BranchOrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<BranchOrderDto>>> GetBranchOrders([FromQuery] string? status = null)
+    public async Task<ActionResult<List<BranchOrderDto>>> GetBranchOrders(
+        [FromQuery] string? status = null,
+        [FromQuery] int? branchId = null)
     {
-        var rows = await _service.ListBranchOrdersAsync(status);
+        var rows = await _service.ListBranchOrdersAsync(status, branchId);
         return Ok(rows);
     }
 

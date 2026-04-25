@@ -116,9 +116,15 @@ export function StaffProfilePage() {
               Contact &amp; Assignment
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {employee.contactNumber && (
+              {employee.email && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <EmailRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+                  <Typography sx={{ fontSize: 14, color: 'text.primary' }}>{employee.email}</Typography>
+                </Box>
+              )}
+              {employee.contactNumber && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <PersonRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
                   <Typography sx={{ fontSize: 14, color: 'text.primary' }}>{employee.contactNumber}</Typography>
                 </Box>
               )}

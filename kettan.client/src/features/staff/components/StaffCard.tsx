@@ -60,6 +60,8 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
     onArchive(staff.id);
   };
 
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   return (
     <Card
       onClick={() => navigate({ to: '/staff/$staffId', params: { staffId: staff.id.toString() } })}
@@ -102,6 +104,7 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
         <Avatar
           src={staff.imageUrl || undefined}
           variant="rounded"
+          onLoad={() => setImgLoaded(true)}
           sx={{
             width: '100%',
             height: '100%',
@@ -110,6 +113,8 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
             color: '#6B4C2A',
             fontWeight: 700,
             fontSize: 30,
+            opacity: staff.imageUrl ? (imgLoaded ? 1 : 0) : 1,
+            transition: 'opacity 0.4s ease-in-out',
           }}
         >
           {!staff.imageUrl ? staff.avatar : null}

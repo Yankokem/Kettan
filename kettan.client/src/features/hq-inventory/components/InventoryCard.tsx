@@ -36,8 +36,36 @@ export function InventoryCard({ item }: InventoryCardProps) {
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: isLowStock ? 'rgba(220, 38, 38, 0.06)' : 'rgba(107,76,42,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isLowStock ? '#991B1B' : '#6B4C2A' }}>
-            <Inventory2RoundedIcon />
+          <Box 
+            sx={{ 
+              width: 52, 
+              height: 52, 
+              borderRadius: 2.5, 
+              bgcolor: isLowStock ? 'rgba(220, 38, 38, 0.06)' : 'rgba(107,76,42,0.06)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: isLowStock ? '#991B1B' : '#6B4C2A',
+              overflow: 'hidden',
+              flexShrink: 0
+            }}
+          >
+            {item.imageUrl ? (
+              <Box
+                component="img"
+                src={item.imageUrl}
+                onLoad={(e) => (e.currentTarget.style.opacity = '1')}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  opacity: 0,
+                  transition: 'opacity 0.4s ease-in-out'
+                }}
+              />
+            ) : (
+              <Inventory2RoundedIcon />
+            )}
           </Box>
           <Box>
             <Typography sx={{ fontWeight: 700, fontSize: 15, color: 'text.primary', lineHeight: 1.2 }}>

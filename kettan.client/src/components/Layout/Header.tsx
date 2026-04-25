@@ -10,6 +10,7 @@ import { useThemeStore } from '../../store/useThemeStore';
 import { useLocation } from '@tanstack/react-router';
 import { NotificationBell } from '../UI/NotificationBell';
 import { fetchDevConnectionStatus } from '../../features/company/companyProfileApi';
+import { useAuthStore } from '../../store/useAuthStore';
 
 interface HeaderProps {
   onDrawerToggle: () => void;
@@ -57,6 +58,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
 };
 
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
+  const user = useAuthStore((state) => state.user);
   const { mode, toggleTheme } = useThemeStore();
   const location = useLocation();
   const showDevConnectionIndicator = import.meta.env.DEV;
@@ -305,11 +307,11 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
           <Box sx={{ width: 1, height: 24, background: 'rgba(201,168,77,0.2)', mx: 0.5 }} />
 
           {/* Avatar */}
-          <Tooltip title="Super Admin">
+          <Tooltip title={user?.name || 'User Profile'}>
             <IconButton sx={{ p: 0.3 }}>
               <Avatar
-                alt="Super Admin"
-                src=""
+                alt={user?.name || 'User'}
+                src={user?.imageUrl || ''}
                 sx={{
                   width: 32,
                   height: 32,
@@ -320,7 +322,7 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
                   border: '2px solid rgba(201,168,77,0.3)',
                 }}
               >
-                SA
+                {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U'}
               </Avatar>
             </IconButton>
           </Tooltip>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Chip, Paper, Typography } from '@mui/material';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
@@ -8,18 +8,25 @@ import {
   BRANCH_MANAGER_OPTIONS,
   BRANCH_OWNER_OPTIONS,
   BRANCHES_MOCK,
-  getBranchActivityById,
-  getBranchById,
-  getBranchEmployeesById,
-  getBranchInventoryById,
-  getBranchTransactionsById,
 } from './mockData';
 import {
   BRANCH_PROFILE_TABS,
   getKpisForTab,
   isOpenNow,
+  mapActivityLog,
+  mapBranch,
+  mapEmployee,
+  mapInventoryItem,
+  mapTransaction,
   toBranchFormData,
 } from './branchProfileData';
+import {
+  fetchBranch,
+  fetchBranchActivity,
+  fetchBranchInventory,
+  fetchBranchStaff,
+  fetchBranchTransactions,
+} from './branchesApi';
 import { BranchProfileHero } from './components/profile/BranchProfileHero';
 import { BranchProfileTabHeader } from './components/profile/BranchProfileTabHeader';
 import { BranchDetailsTab } from './components/profile/BranchDetailsTab';
@@ -57,35 +64,52 @@ export function BranchProfilePage() {
   const { branchId } = useParams({ from: '/layout/branches/$branchId' });
 
   const parsedBranchId = Number(branchId);
-  const selectedBranch = useMemo(() => getBranchById(parsedBranchId), [parsedBranchId]);
-  const branchEmployees = useMemo(() => getBranchEmployeesById(parsedBranchId), [parsedBranchId]);
-  const activityLogs = useMemo(() => getBranchActivityById(parsedBranchId), [parsedBranchId]);
-  const transactions = useMemo(() => getBranchTransactionsById(parsedBranchId), [parsedBranchId]);
-  const inventoryItems = useMemo(() => getBranchInventoryById(parsedBranchId), [parsedBranchId]);
-
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+  const [staffMembers, setStaffMembers] = useState<BranchEmployee[]>([]);
+  const [activityLogs, setActivityLogs] = useState<BranchActivityLog[]>([]);
+  const [transactions, setTransactions] = useState<BranchTransactionRow[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
+  
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<BranchProfileTabKey>('details');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
-  const [formData, setFormData] = useState<BranchFormData | null>(
-    selectedBranch ? toBranchFormData(selectedBranch) : null
-  );
-  const [editDraft, setEditDraft] = useState<BranchFormData | null>(
-    selectedBranch ? toBranchFormData(selectedBranch) : null
-  );
-  const [staffMembers, setStaffMembers] = useState<BranchEmployee[]>(branchEmployees);
+  
+  const [formData, setFormData] = useState<BranchFormData | null>(null);
+  const [editDraft, setEditDraft] = useState<BranchFormData | null>(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [branchDto, staffDto, activityDto, transDto, invDto] = await Promise.all([
+        fetchBranch(parsedBranchId),
+        fetchBranchStaff(parsedBranchId),
+        fetchBranchActivity(parsedBranchId),
+        fetchBranchTransactions(parsedBranchId),
+        fetchBranchInventory(parsedBranchId),
+      ]);
+
+      const branch = mapBranch(branchDto);
+      setSelectedBranch(branch);
+      setStaffMembers(staffDto.map(mapEmployee));
+      setActivityLogs(activityDto.map(mapActivityLog));
+      setTransactions(transDto.map(mapTransaction));
+      setInventoryItems(invDto.map(mapInventoryItem));
+      
+      const initialFormData = toBranchFormData(branch);
+      setFormData(initialFormData);
+      setEditDraft(initialFormData);
+    } catch (error) {
+      console.error('Failed to load branch profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [parsedBranchId]);
 
   useEffect(() => {
-    const nextFormData = selectedBranch ? toBranchFormData(selectedBranch) : null;
-
-    setFormData(nextFormData);
-    setEditDraft(nextFormData);
-    setStaffMembers(branchEmployees);
-    setActiveTab('details');
-    setIsEditModalOpen(false);
-    setIsAddStaffModalOpen(false);
-    setShowSavedNotice(false);
-  }, [branchEmployees, selectedBranch]);
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     if (!showSavedNotice) {
@@ -112,12 +136,13 @@ export function BranchProfilePage() {
   }, [editDraft?.city]);
 
   const staffBranchOptions = useMemo(
-    () =>
-      BRANCHES_MOCK.map((branch) => ({
-        value: branch.id.toString(),
-        label: branch.name,
-      })),
-    []
+    () => [
+      {
+        value: parsedBranchId.toString(),
+        label: selectedBranch?.name || 'Current Branch',
+      },
+    ],
+    [parsedBranchId, selectedBranch?.name]
   );
 
   const tabBadges = useMemo(
@@ -141,6 +166,14 @@ export function BranchProfilePage() {
       }) : [],
     [activeTab, activityLogs, inventoryItems, selectedBranch, staffMembers, transactions]
   );
+
+  if (loading) {
+    return (
+      <Box sx={{ py: 8, textAlign: 'center' }}>
+        <Typography variant="h6" color="text.secondary">Loading branch profile...</Typography>
+      </Box>
+    );
+  }
 
   if (!selectedBranch || !formData) {
     return (
@@ -205,29 +238,8 @@ export function BranchProfilePage() {
     setActiveTab('details');
   };
 
-  const handleCreateStaff = (formValues: AddStaffFormValues) => {
-    if (!formValues.role) {
-      return;
-    }
-
-    const assignedBranchId = Number(formValues.branchAssignment);
-    const nextId = staffMembers.reduce((maxId, employee) => Math.max(maxId, employee.id), 0) + 1;
-
-    const newEmployee: BranchEmployee = {
-      id: nextId,
-      branchId: Number.isFinite(assignedBranchId) ? assignedBranchId : null,
-      firstName: formValues.firstName,
-      lastName: formValues.lastName,
-      position: STAFF_ROLE_TO_POSITION[formValues.role],
-      contactNumber: 'N/A',
-      dateHired: new Date().toISOString(),
-      isActive: true,
-    };
-
-    if (newEmployee.branchId === selectedBranch.id) {
-      setStaffMembers((previous) => [newEmployee, ...previous]);
-    }
-
+  const handleCreateStaff = () => {
+    loadData(); // Refresh staff list
     setIsAddStaffModalOpen(false);
     setActiveTab('staff');
   };

@@ -188,7 +188,7 @@ public class ConsumptionService : IConsumptionService
         }
     }
 
-    public async Task<List<ConsumptionLogDto>> ListAsync(DateTime? from = null, DateTime? to = null, string? method = null)
+    public async Task<List<ConsumptionLogDto>> ListAsync(DateTime? from = null, DateTime? to = null, string? method = null, int? branchId = null)
     {
         if (!_currentUser.TenantId.HasValue)
         {
@@ -197,7 +197,11 @@ public class ConsumptionService : IConsumptionService
 
         var query = _context.ConsumptionLogs.AsQueryable();
 
-        if (_currentUser.BranchId.HasValue)
+        if (branchId.HasValue)
+        {
+            query = query.Where(c => c.BranchId == branchId.Value);
+        }
+        else if (_currentUser.BranchId.HasValue)
         {
             query = query.Where(c => c.BranchId == _currentUser.BranchId.Value);
         }

@@ -5,11 +5,15 @@ import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
+import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
+import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import { AccessMatrix } from '../../components/UI/AccessMatrix';
 import { Button } from '../../components/UI/Button';
 import { Switch } from '../../components/UI/Switch';
+import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
+import { useAuthStore } from '../../store/useAuthStore';
 
-type SettingsTabKey = 'access' | 'thresholds' | 'approvals' | 'notifications';
+type SettingsTabKey = 'profile' | 'access' | 'thresholds' | 'approvals' | 'notifications';
 
 interface ThresholdConfig {
   id: string;
@@ -25,6 +29,13 @@ const SETTINGS_TABS: {
   hint: string;
   detail: string;
 }[] = [
+  {
+    key: 'profile',
+    label: 'My Profile',
+    icon: PersonRoundedIcon,
+    hint: 'Manage your personal account details',
+    detail: 'Update your display name, email, and profile picture used across the platform.',
+  },
   {
     key: 'access',
     label: 'Role Access',
@@ -56,7 +67,18 @@ const SETTINGS_TABS: {
 ];
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTabKey>('access');
+  const user = useAuthStore((state) => state.user);
+  const login = useAuthStore((state) => state.login);
+  const [activeTab, setActiveTab] = useState<SettingsTabKey>('profile');
+
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    imageUrl: user?.imageUrl || null,
+    imageFile: null as File | null,
+  });
+
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const [thresholds, setThresholds] = useState<ThresholdConfig[]>([
     { id: 'beans', label: 'Arabica Beans', unit: 'kg', value: 5 },
@@ -90,6 +112,52 @@ export function SettingsPage() {
     setThresholds((previous) =>
       previous.map((entry) => (entry.id === id ? { ...entry, value: parsed } : entry))
     );
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setIsSavingProfile(true);
+
+    try {
+      let uploadedImageUrl = profileForm.imageUrl;
+
+      if (profileForm.imageFile) {
+        const formData = new FormData();
+        formData.append('file', profileForm.imageFile);
+        const uploadRes = await fetch('/api/uploads/image', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
+        }
+      }
+
+      // Update user profile via API
+      const response = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: profileForm.name,
+          imageUrl: uploadedImageUrl,
+        }),
+      });
+
+      if (response.ok) {
+        useAuthStore.getState().updateUser({ name: profileForm.name, imageUrl: uploadedImageUrl });
+        alert('Profile updated successfully!');
+      } else {
+        alert('Failed to update profile.');
+      }
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+      alert('An error occurred while saving your profile.');
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   return (
@@ -209,6 +277,47 @@ export function SettingsPage() {
                 {activeTabMeta.detail}
               </Typography>
             </Box>
+
+            {activeTab === 'profile' ? (
+              <Box sx={{ maxWidth: 600 }}>
+                <Box sx={{ mb: 4 }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary', mb: 1.5, textTransform: 'uppercase' }}>
+                    Profile Picture
+                  </Typography>
+                  <ProfileImageUploader
+                    imageUrl={profileForm.imageUrl}
+                    imageFile={profileForm.imageFile || undefined}
+                    onFileChange={(file) => setProfileForm(prev => ({ ...prev, imageFile: file }))}
+                  />
+                </Box>
+
+                <Box sx={{ display: 'grid', gap: 2.5 }}>
+                  <TextField
+                    label="Display Name"
+                    fullWidth
+                    value={profileForm.name}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                  <TextField
+                    label="Email Address"
+                    fullWidth
+                    disabled
+                    value={profileForm.email}
+                    helperText="Email cannot be changed directly. Contact HQ to update your login email."
+                  />
+                </Box>
+
+                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    startIcon={<SaveRoundedIcon />}
+                    onClick={handleSaveProfile}
+                    disabled={isSavingProfile}
+                  >
+                    {isSavingProfile ? 'Saving...' : 'Save Profile Changes'}
+                  </Button>
+                </Box>
+              </Box>
+            ) : null}
 
             {activeTab === 'access' ? <AccessMatrix hideHeader /> : null}
 

@@ -10,6 +10,7 @@ import { Button } from '../../components/UI/Button';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
+import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { BatchList } from './components/BatchList';
 import { TransactionsTable } from './components/TransactionsTable';
 import { AdjustmentModal } from './components/AdjustmentModal';
@@ -36,6 +37,8 @@ interface ItemFormState {
   unitId: string;
   defaultThreshold: string;
   unitCost: string;
+  imageUrl?: string | null;
+  imageFile?: File | null;
 }
 
 function toItemFormState(item: InventoryItem): ItemFormState {
@@ -46,6 +49,7 @@ function toItemFormState(item: InventoryItem): ItemFormState {
     unitId: item.unitId,
     defaultThreshold: String(item.defaultThreshold),
     unitCost: String(item.unitCost),
+    imageUrl: item.imageUrl,
   };
 }
 
@@ -196,6 +200,24 @@ export function InventoryItemProfilePage() {
       setIsSaving(true);
       setSaveError(null);
 
+      let uploadedImageUrl = form.imageUrl;
+
+      if (form.imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', form.imageFile);
+        const uploadRes = await fetch('/api/uploads/image', {
+          method: 'POST',
+          credentials: 'include',
+          body: uploadFormData,
+        });
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
+          console.log('[Upload] Inventory item image updated URL:', uploadedImageUrl);
+        }
+      }
+
       await updateInventoryItem(item.id, {
         sku: form.sku,
         name: form.name,
@@ -203,6 +225,7 @@ export function InventoryItemProfilePage() {
         itemCategoryId: form.categoryId || undefined,
         defaultThreshold: threshold,
         unitCost,
+        imageUrl: uploadedImageUrl,
       });
 
       const refreshedDetail = await fetchInventoryItemDetail(item.id);
@@ -367,6 +390,15 @@ export function InventoryItemProfilePage() {
                   Batches
                 </Typography>
               </Box>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <ProfileImageUploader
+                imageFile={form?.imageFile ?? undefined}
+                imageUrl={form?.imageUrl ?? item.imageUrl}
+                onFileChange={(file) => setForm(prev => prev ? { ...prev, imageFile: file } : null)}
+                readOnly={!isEditing}
+              />
             </Box>
 
             <Divider sx={{ my: 2 }} />

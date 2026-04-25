@@ -4,7 +4,7 @@ namespace Kettan.Server.Services.BranchOperations;
 
 public interface IOrderWorkflowService
 {
-    Task<List<BranchOrderDto>> ListBranchOrdersAsync(string? status = null);
+    Task<List<BranchOrderDto>> ListBranchOrdersAsync(string? status = null, int? branchId = null);
     Task<OrderDetailDto> CreateHqOrderAsync(CreateOrderDto dto);
     Task<OrderDetailDto?> GetOrderDetailAsync(int orderId);
     Task<List<OrderStatusHistoryDto>> GetOrderHistoryAsync(int orderId);

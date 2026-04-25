@@ -12,6 +12,7 @@ import { FormDropdown } from '../../components/Form/FormDropdown';
 import { VariantsBuilder } from './components/VariantsBuilder';
 import { PriceSuggestion } from './components/PriceSuggestion';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
+import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { fetchMenuItem, updateMenuItem, type MenuItemDto, type CreateMenuItemDto } from './menuItemsApi';
 import { listMenuCategories, type MenuCategory } from './menuCategoryApi';
 import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
@@ -105,21 +106,8 @@ export function MenuItemProfilePage() {
     setFormData(prev => ({ ...prev, variants }));
   };
 
-  const handleImageClick = () => {
-    if (isEditing) {
-      fileInputRef.current?.click();
-    }
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleImageChange = (file: File | null) => {
+    setFormData(prev => ({ ...prev, imageFile: file }));
   };
 
   const handleSubmit = async () => {
@@ -138,11 +126,29 @@ export function MenuItemProfilePage() {
 
     setIsSubmitting(true);
     try {
+      let uploadedImageUrl = formData.image;
+
+      if (formData.imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', formData.imageFile);
+        const uploadRes = await fetch('/api/uploads/image', {
+          method: 'POST',
+          credentials: 'include',
+          body: uploadFormData,
+        });
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
+          console.log('[Upload] Menu item image updated URL:', uploadedImageUrl);
+        }
+      }
+
       const payload: CreateMenuItemDto = {
         name: formData.name,
         categoryId: parseInt(formData.category),
         description: formData.description,
-        imageUrl: formData.image,
+        imageUrl: uploadedImageUrl,
         basePrice: formData.sellingPrice,
         status: formData.status,
         ingredients: [],
@@ -271,13 +277,12 @@ export function MenuItemProfilePage() {
               Basic Information
             </Typography>
 
-            {/* Image Upload */}
             <Box sx={{ mb: 3 }}>
               <Typography 
                 variant="caption" 
                 sx={{ 
                   fontWeight: 700, 
-                  color: 'text.secondary', 
+                  color: '#6B4C2A', 
                   textTransform: 'uppercase', 
                   fontSize: 11, 
                   letterSpacing: '0.5px',
@@ -289,84 +294,14 @@ export function MenuItemProfilePage() {
                 Menu Item Image
               </Typography>
               
-              {formData.image ? (
-                <Box sx={{ position: 'relative', maxWidth: 250 }}>
-                  <Box
-                    component="img"
-                    src={formData.image}
-                    alt="Menu item"
-                    sx={{
-                      width: '100%',
-                      aspectRatio: '1/1',
-                      objectFit: 'cover',
-                      borderRadius: 3,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  />
-                  {isEditing && (
-                    <IconButton
-                      onClick={handleImageClick}
-                      sx={{
-                        position: 'absolute',
-                        bottom: 12,
-                        right: 12,
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                        width: 44,
-                        height: 44,
-                        '&:hover': { bgcolor: 'primary.dark' },
-                        boxShadow: 2,
-                      }}
-                    >
-                      <CameraAltRoundedIcon sx={{ fontSize: 20 }} />
-                    </IconButton>
-                  )}
-                </Box>
-              ) : (
-                <Box
-                  onClick={handleImageClick}
-                  sx={{
-                    maxWidth: 250,
-                    aspectRatio: '1/1',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px dashed',
-                    borderColor: 'divider',
-                    borderRadius: 3,
-                    bgcolor: 'background.paper',
-                    cursor: isEditing ? 'pointer' : 'default',
-                    transition: 'all 0.2s',
-                    '&:hover': isEditing ? {
-                      borderColor: 'primary.main',
-                      bgcolor: 'action.hover',
-                    } : {},
-                  }}
-                >
-                  <Avatar
-                    sx={{ width: 64, height: 64, bgcolor: 'primary.main', mb: 2 }}
-                  >
-                    <LocalCafeRoundedIcon sx={{ fontSize: 32 }} />
-                  </Avatar>
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {isEditing ? 'Upload Image' : 'No Image'}
-                  </Typography>
-                  {isEditing && (
-                    <Typography variant="caption" color="text.secondary">
-                      Click to browse files
-                    </Typography>
-                  )}
-                </Box>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                style={{ display: 'none' }}
-              />
+              <Box sx={{ maxWidth: 280 }}>
+                <ProfileImageUploader
+                  imageFile={formData.imageFile ?? undefined}
+                  imageUrl={isEditing ? formData.imagePreviewUrl || formData.image : formData.image}
+                  onFileChange={handleImageChange}
+                  readOnly={!isEditing}
+                />
+              </Box>
             </Box>
 
             {/* Name */}

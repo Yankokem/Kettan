@@ -63,8 +63,75 @@ export const toBranchFormData = (branch: Branch): BranchFormData => ({
   ownerUserId: branch.ownerUserId ?? '',
   managerUserId: branch.managerUserId,
   status: branch.status,
-  picture: branch.imageUrl,
+  imageUrl: branch.imageUrl,
   notes: branch.notes ?? '',
+});
+
+export const mapBranch = (dto: any): Branch => ({
+  id: dto.branchId,
+  name: dto.name,
+  address: dto.location || 'N/A',
+  city: dto.city || 'N/A',
+  contactNumber: dto.contactNumber || 'N/A',
+  openTime: dto.openTime || '08:00',
+  closeTime: dto.closeTime || '22:00',
+  ownerUserId: dto.ownerUserId?.toString(),
+  owner: dto.ownerName,
+  managerUserId: dto.managerUserId?.toString() || '',
+  manager: dto.managerName || 'Unassigned',
+  staff: dto.staffCount || 0,
+  status: dto.isActive ? 'active' : 'setup',
+  lowStockItems: dto.lowStockItems || 0,
+  totalItems: dto.totalItems || 0,
+  notes: dto.notes,
+  imageUrl: dto.imageUrl,
+});
+
+export const mapActivityLog = (dto: any): BranchActivityLog => ({
+  id: String(dto.id),
+  branchId: dto.branchId || 0,
+  event: `${dto.action} ${dto.entityName}${dto.entityId ? ` #${dto.entityId}` : ''}`,
+  actor: dto.actorName || 'System',
+  happenedAt: dto.occurredAt,
+  category: (dto.eventCategory?.toLowerCase() as any) || 'operations',
+  outcome: dto.action === 'Deleted' ? 'flagged' : 'successful',
+});
+
+export const mapEmployee = (dto: any): BranchEmployee => ({
+  id: dto.employeeId,
+  branchId: dto.branchId,
+  firstName: dto.firstName,
+  lastName: dto.lastName,
+  email: dto.email || 'N/A',
+  position: dto.position || 'Staff',
+  contactNumber: dto.contactNumber || 'N/A',
+  dateHired: dto.dateHired || new Date().toISOString(),
+  isActive: dto.isActive,
+});
+
+export const mapInventoryItem = (dto: any): BranchInventoryItem => ({
+  id: String(dto.itemId),
+  branchId: 0, // Not provided by this endpoint but contextually known
+  sku: dto.sku,
+  name: dto.name,
+  category: dto.itemCategoryName || 'Uncategorized',
+  supplier: 'General Supplier', // Not provided by item list
+  unit: dto.unitSymbol || dto.unitName || 'pcs',
+  stockCount: dto.totalStock || 0,
+  reorderPoint: dto.defaultThreshold || 0,
+  status: dto.totalStock <= 0 ? 'out-of-stock' : dto.totalStock <= dto.defaultThreshold ? 'low-stock' : 'in-stock',
+  lastRestocked: dto.updatedAt,
+});
+
+export const mapTransaction = (dto: any): BranchTransactionRow => ({
+  id: String(dto.consumptionLogId || dto.orderId || Math.random()),
+  branchId: dto.branchId,
+  reference: dto.method === 'Sales' ? `Order #${dto.consumptionLogId}` : dto.reference || `Log #${dto.consumptionLogId}`,
+  type: dto.method === 'Direct' ? 'Stock-Out' : dto.method === 'Sales' ? 'Adjustment' : 'Transfer',
+  lineItems: dto.items?.length || 0,
+  netChange: 0, // Summation would require detailed items
+  postedBy: 'Branch Manager',
+  timestamp: dto.logDate || dto.createdAt,
 });
 
 export const formatDateTime = (timestamp: string) => {

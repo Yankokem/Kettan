@@ -14,6 +14,7 @@ export interface EmployeeDto {
   contactNumber?: string | null;
   dateHired?: string | null;
   isActive: boolean;
+  email?: string | null;
   imageUrl?: string | null;
   createdAt: string;
 }
@@ -24,6 +25,7 @@ export interface CreateEmployeeDto {
   lastName: string;
   position: string;
   contactNumber?: string | null;
+  email?: string | null;
   dateHired?: string | null;
   isActive: boolean;
   imageUrl?: string | null;

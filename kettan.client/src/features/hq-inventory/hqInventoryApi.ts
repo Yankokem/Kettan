@@ -24,6 +24,7 @@ interface ItemDto {
   previousUnitCost: number | null;
   totalStock: number;
   isLowStock: boolean;
+  imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -92,6 +93,7 @@ interface CreateItemInput {
   defaultThreshold: number;
   unitCost: number;
   sellingPrice?: number;
+  imageUrl?: string | null;
 }
 
 interface UpdateItemInput extends CreateItemInput {
@@ -198,6 +200,7 @@ function toItem(row: ItemDto): InventoryItem {
     previousUnitCost: row.previousUnitCost != null ? Number(row.previousUnitCost) : undefined,
     totalStock,
     status: toItemStatus(totalStock, defaultThreshold),
+    imageUrl: row.imageUrl,
     isDeleted: false,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -293,7 +296,7 @@ function toItemPayload(input: CreateItemInput | UpdateItemInput): CreateOrUpdate
         ? Number(input.sellingPrice)
         : null,
     isBundle: false,
-    imageUrl: null,
+    imageUrl: input.imageUrl ?? null,
   };
 }
 

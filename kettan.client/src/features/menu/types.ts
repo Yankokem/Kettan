@@ -34,6 +34,8 @@ export interface MenuItemFormData {
   sellingPrice: number;
   status: MenuItemStatus;
   image?: string;
+  imageFile?: File | null;
+  imagePreviewUrl?: string | null;
   variants: MenuVariant[];
 }
 

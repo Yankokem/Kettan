@@ -21,9 +21,10 @@ public class ConsumptionController : ControllerBase
     public async Task<ActionResult<List<ConsumptionLogDto>>> GetLogs(
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null,
-        [FromQuery] string? method = null)
+        [FromQuery] string? method = null,
+        [FromQuery] int? branchId = null)
     {
-        var rows = await _service.ListAsync(from, to, method);
+        var rows = await _service.ListAsync(from, to, method, branchId);
         return Ok(rows);
     }
 

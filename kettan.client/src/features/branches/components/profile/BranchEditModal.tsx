@@ -4,6 +4,7 @@ import { Button } from '../../../../components/UI/Button';
 import { Dropdown } from '../../../../components/UI/Dropdown';
 import { TextField } from '../../../../components/UI/TextField';
 import { TimePicker } from '../../../../components/UI/TimePicker';
+import { ProfileImageUploader } from '../../../../components/UI/ProfileImageUploader';
 import type { BranchFormData, BranchStatus } from '../../types';
 
 interface OptionItem {
@@ -61,6 +62,15 @@ export function BranchEditModal({
         </Box>
 
         <Grid container spacing={2.5}>
+          <Grid size={{ xs: 12 }}>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary', mb: 0.8 }}>Branch Image</Typography>
+            <ProfileImageUploader
+              imageUrl={formData.imagePreviewUrl || formData.imageUrl}
+              imageFile={formData.imageFile ?? undefined}
+              onFileChange={(file) => onUpdate('imageFile', file)}
+            />
+          </Grid>
+
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary', mb: 0.8 }}>Branch Name</Typography>
             <TextField value={formData.name} onChange={(event) => onUpdate('name', event.target.value)} />

@@ -36,7 +36,7 @@ function toStaffMember(e: EmployeeDto): StaffMember {
   return {
     id: e.employeeId,
     name: `${e.firstName} ${e.lastName}`.trim(),
-    email: '',
+    email: e.email ?? '',
     role: e.position,
     location: e.branchName ?? 'Unassigned',
     status: e.isActive ? 'active' : 'inactive',
@@ -114,6 +114,7 @@ export function StaffPage() {
         lastName: formValues.lastName,
         position: position,
         isActive: true,
+        email: formValues.email,
         imageUrl: uploadedImageUrl,
       });
 
@@ -304,7 +305,7 @@ export function StaffPage() {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' },
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
               gap: 2,
             }}
           >

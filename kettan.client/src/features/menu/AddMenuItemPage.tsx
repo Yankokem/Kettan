@@ -12,7 +12,7 @@ import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormActions } from '../../components/Form/FormActions';
-import { ImageUpload } from '../../components/UI/ImageUpload';
+import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { VariantsBuilder } from './components/VariantsBuilder';
 import { PriceSuggestion } from './components/PriceSuggestion';
 
@@ -68,12 +68,8 @@ export function AddMenuItemPage() {
     setFormData(prev => ({ ...prev, variants }));
   };
 
-  const handleImageUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData(prev => ({ ...prev, image: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
+  const handleImageChange = (file: File | null) => {
+    setFormData(prev => ({ ...prev, imageFile: file }));
   };
 
   const handleSubmit = async () => {
@@ -96,11 +92,31 @@ export function AddMenuItemPage() {
 
     setIsSubmitting(true);
     try {
+      let uploadedImageUrl = formData.image;
+
+      if (formData.imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', formData.imageFile);
+        const uploadRes = await fetch('/api/uploads/image', {
+          method: 'POST',
+          credentials: 'include',
+          body: uploadFormData,
+        });
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
+          console.log('[Upload] Menu item image URL:', uploadedImageUrl);
+        } else {
+          console.error('[Upload] Menu item image upload failed:', uploadRes.status);
+        }
+      }
+
       const payload: CreateMenuItemDto = {
         name: formData.name,
         categoryId: parseInt(formData.category),
         description: formData.description,
-        imageUrl: formData.image,
+        imageUrl: uploadedImageUrl,
         basePrice: formData.sellingPrice,
         status: formData.status,
         ingredients: [], // Primary recipe can be added here if needed
@@ -158,13 +174,12 @@ export function AddMenuItemPage() {
               Basic Information
             </Typography>
 
-              {/* Image Upload */}
               <Box sx={{ mb: 3 }}>
                 <Typography 
                   variant="caption" 
                   sx={{ 
                     fontWeight: 700, 
-                    color: 'text.secondary', 
+                    color: '#6B4C2A', 
                     textTransform: 'uppercase', 
                     fontSize: 11, 
                     letterSpacing: '0.5px',
@@ -176,39 +191,13 @@ export function AddMenuItemPage() {
                   Menu Item Image
                 </Typography>
                 
-                {formData.image ? (
-                  <Box sx={{ position: 'relative', maxWidth: 250 }}>
-                    <Box
-                      component="img"
-                      src={formData.image}
-                      alt="Menu item preview"
-                      sx={{
-                        width: '100%',
-                        aspectRatio: '1/1',
-                        objectFit: 'cover',
-                        borderRadius: 3,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                      }}
-                    />
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setFormData(prev => ({ ...prev, image: undefined }))}
-                      sx={{ mt: 1, width: '100%' }}
-                    >
-                      Remove Image
-                    </Button>
-                  </Box>
-                ) : (
-                  <Box sx={{ maxWidth: 250 }}>
-                    <ImageUpload
-                      onUpload={handleImageUpload}
-                      label="Upload Menu Item Image"
-                      helperText="PNG or JPG up to 5MB"
-                    />
-                  </Box>
-                )}
+                <Box sx={{ maxWidth: 280 }}>
+                  <ProfileImageUploader
+                    imageFile={formData.imageFile ?? undefined}
+                    imageUrl={formData.imagePreviewUrl}
+                    onFileChange={handleImageChange}
+                  />
+                </Box>
               </Box>
 
               {/* Name */}
