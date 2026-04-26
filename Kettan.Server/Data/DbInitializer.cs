@@ -18,15 +18,7 @@ public static class DbInitializer
     {
         logger?.LogInformation("DbSeeder: starting migration and seed process.");
 
-        try
-        {
-            await context.Database.MigrateAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger?.LogError(ex, "DbSeeder: failed to apply migrations.");
-            throw;
-        }
+            // Skip auto-migration as requested: await context.Database.MigrateAsync(cancellationToken);
 
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
@@ -60,8 +52,7 @@ public static class DbInitializer
             logger?.LogInformation("DbSeeder: ensured menu data.");
 
             await EmployeeSeeder.EnsureEmployeesAsync(context, tenant, branches, cancellationToken);
-            var courier = await LogisticsSeeder.EnsureCourierAsync(context, tenant, cancellationToken);
-            await LogisticsSeeder.EnsureVehicleAsync(context, tenant, courier, cancellationToken);
+            await LogisticsSeeder.EnsureVehicleAsync(context, tenant, cancellationToken);
             logger?.LogInformation("DbSeeder: ensured workforce and logistics data.");
 
             await transaction.CommitAsync(cancellationToken);

@@ -106,7 +106,7 @@ export interface OrderDetail extends BranchOrder {
   requestedByName: string;
   notes: string | null;
   trackingNumber: string | null;
-  courierId: number | null;
+
   vehicleId: number | null;
   dispatchDate: string | null;
   estimatedArrival: string | null;
@@ -337,7 +337,7 @@ export async function packOrder(orderId: number, remarks?: string): Promise<void
 }
 
 export async function dispatchOrder(orderId: number, payload: {
-  courierId?: number;
+
   vehicleId?: number;
   trackingNumber?: string;
   estimatedArrival?: string;

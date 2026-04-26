@@ -11,9 +11,9 @@
 |---|---|---|
 | **Entities** | 37 files (Full alignment with schema.sql) | None |
 | **DbContext** | All DbSets registered, global isolation & soft-delete filters, restrict delete behavior | None |
-| **Controllers** | Auth, Branches, BranchOrders, Orders (HQ workflow), Consumption, Notifications, Returns, SupplyRequests, Tenants (self-profile + dev diagnostics), Users, Items, MenuItems, Employees, Couriers, Settings, Subscription | Missing: ReportsController |
+| **Controllers** | Auth, Branches, BranchOrders, Orders (HQ workflow), Consumption, Notifications, Returns, SupplyRequests, Tenants (self-profile + dev diagnostics), Users, Items, MenuItems, Employees, Vehicles, Settings, Subscription | Missing: ReportsController |
 | **Services** | Auth, CurrentUser, SupplyRequest, Consumption, OrderWorkflow, Return, Notification, Inventory, Email, Subscription | Missing: AnalyticsService |
-| **DTOs** | Auth, Branches, Consumption, Notifications, Orders, Returns, SupplyRequests, Tenants (+ dev diagnostics DTO), Users, Items, MenuItems, Employees, Couriers/Vehicles, Settings, Subscription | Missing DTOs for: Reports |
+| **DTOs** | Auth, Branches, Consumption, Notifications, Orders, Returns, SupplyRequests, Tenants (+ dev diagnostics DTO), Users, Items, MenuItems, Employees, Vehicles, Settings, Subscription | Missing DTOs for: Reports |
 | **Seeder** | Phase 1 seed coverage complete (lookups, items, FIFO batches, menu, employees, subscription, courier/vehicle) | None |
 | **Middleware** | None | SubscriptionCheckMiddleware, AuditLogMiddleware |
 | **Migrations** | `FullSchemaAlignment` + `Phase1ClosurePatch` | Future operational migrations |
@@ -46,8 +46,8 @@
 - [x] `Entities/ItemCategory.cs` — Item-level categories — tenant-scoped
 - [x] `Entities/BundleItem.cs` — Bundle composition (parent → child items)
 - [x] `Entities/Employee.cs` — Staff directory (tenant + optional branch)
-- [x] `Entities/Courier.cs` — Registered delivery couriers — tenant-scoped
-- [x] `Entities/Vehicle.cs` — Vehicles assigned to couriers — tenant-scoped
+- [DELETE] `Entities/Courier.cs` — Registered delivery couriers — tenant-scoped
+- [x] `Entities/Vehicle.cs` — Vehicles (standalone) — tenant-scoped
 - [x] `Entities/MenuCategory.cs` — Menu groupings (Coffee, Food, Pastries)
 - [x] `Entities/MenuTag.cs` — Labels/badges (Bestseller, Vegan)
 - [x] `Entities/MenuItemTag.cs` — Junction table for MenuItems ↔ Tags
@@ -64,7 +64,7 @@
 - [x] **Item.cs** — Add: `UnitId` (FK→Unit, replace string `UnitOfMeasure`), `InventoryCategoryId`, `ItemCategoryId`, `SellingPrice`, `IsBundle`, `ImageUrl`, `PreviousUnitCost`, `IsDeleted`, `DeletedAt`, `UpdatedAt`
 - [x] **Branch.cs** — Add: `Address`, `City`, `ContactNumber`, `OpenTime` (TimeOnly), `CloseTime` (TimeOnly), `OwnerUserId` (FK→User), `ManagerUserId` (FK→User), `IsDeleted`, `DeletedAt`
 - [x] **Tenant.cs** — Add: `Email`, `Phone`, `Address`, `LogoUrl`, `CurrentSubscriptionId` (FK→TenantSubscription), `SubscriptionStatus`, `SubscriptionPeriodStart`, `SubscriptionPeriodEnd`, `IsDeleted`, `DeletedAt`
-- [x] **Shipment.cs** — Add: `CourierId` (FK→Courier), `VehicleId` (FK→Vehicle), `IsDeleted`, `DeletedAt`
+- [x] **Shipment.cs** — Add: `VehicleId` (FK→Vehicle), `IsDeleted`, `DeletedAt` (CourierId REMOVED)
 - [x] **MenuItem.cs** — Align to schema: `CategoryId` (FK→MenuCategory), `Description`, `ImageUrl`, `BasePrice`, `Status`, `UpdatedAt`, `IsDeleted`, `DeletedAt` — currently has `Category` as string and `SellingPrice`
 - [x] **SupplyRequest.cs** — Add: `IsDeleted`, `DeletedAt` (if not present)
 - [x] **Order.cs** — Add: `IsDeleted`, `DeletedAt`
@@ -94,7 +94,7 @@
   - [x] Seed sample MenuItems + Variants + Ingredients
   - [x] Seed sample Employees (3-4 across HQ and branch)
   - [x] Seed SubscriptionPlans (Starter, Growth, Enterprise)
-  - [x] Seed sample Courier + Vehicle
+  - [x] Seed sample Vehicle (Courier REMOVED)
 - [x] Verify seeder runs cleanly from `dotnet run`
 
 ### 1E. Phase 1 Verification Snapshot (2026-04-19)
@@ -112,7 +112,7 @@
   - [x] `Items = 10`
   - [x] `Batches = 20` (2+ per item)
   - [x] `Employees = 4`
-  - [x] `Couriers = 1`
+  - [x] `Couriers = 0 (REMOVED)`
   - [x] `Vehicles = 1`
 
 ---
@@ -218,7 +218,7 @@
     - [x] `POST /api/units` valid payload → `200`
     - [x] `POST /api/units` oversized symbol → `400` (validation guard)
     - [x] `POST /api/employees` → `201`
-    - [x] `POST /api/couriers` → `200`
+    - [DELETE] `POST /api/couriers`
     - [x] `POST /api/vehicles` → `200`
     - [x] `POST /api/menu-items` → `201`
 
@@ -234,7 +234,7 @@
   - [x] `StartPicking(orderId)` — Status → Picking
   - [x] `ConfirmPacked(orderId, allocations[])` — FIFO batch allocation + HQ stock deduction implemented via EF transaction
   - [x] `ConfirmPacked(orderId)` status transition and timeline logging
-  - [x] `DispatchOrder(orderId, courierId, vehicleId, eta)` — Create/update Shipment, Status → Dispatched
+  - [x] `DispatchOrder(orderId, vehicleId, eta)` — Create/update Shipment, Status → Dispatched (Courier REMOVED)
   - [x] `LogStatusChange(orderId, status, userId, remarks)` — Timeline entries now written on pick/pack/dispatch/deliver transitions
 - [x] Expand `SupplyRequestService`:
   - [x] `UpdateDraft(requestId, payload)` — Edit draft (matches frontend edit page)
@@ -479,7 +479,7 @@
 | 🔴 P0 | Phase 2A (FIFO InventoryService) | Core business logic — orders, consumption, everything calls this |
 | 🟠 P1 | Phase 2B-C (Items + Menu CRUD) | Frontend already built, just needs API swap |
 | 🟠 P1 | Phase 3A (Order pipeline) | The main module — supply request → delivery |
-| 🟡 P2 | Phase 2D-F (Settings, Employees, Couriers) | Simple CRUD, low risk |
+| 🟡 P2 | Phase 2D-F (Settings, Employees, Vehicles) | Simple CRUD, low risk |
 | 🟡 P2 | Phase 3B-D (Returns, Consumption, Notifications) | Services exist, just need enhancement |
 | 🟢 P3 | Phase 4 (Analytics, Email, Subscription) | Can be stubbed |
 | 🟢 P3 | Phase 5 (Super Admin, Audit, Export) | Nice-to-have |

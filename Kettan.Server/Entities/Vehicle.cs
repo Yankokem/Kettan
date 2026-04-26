@@ -13,11 +13,6 @@ public class Vehicle : ITenantEntity
     [ForeignKey(nameof(TenantId))]
     public Tenant? Tenant { get; set; }
 
-    public int CourierId { get; set; }
-
-    [ForeignKey(nameof(CourierId))]
-    public Courier? Courier { get; set; }
-
     [Required]
     [MaxLength(50)]
     public required string PlateNumber { get; set; }

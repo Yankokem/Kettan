@@ -1,20 +1,10 @@
 /**
- * Vehicles & Couriers API — live backend adapter.
- * Replaces the previous localStorage mock with calls to /api/vehicles and /api/couriers.
+ * Vehicles API — live backend adapter.
+ * Replaces the previous localStorage mock with calls to /api/vehicles.
  */
-
-export interface Courier {
-  courierId: number;
-  name: string;
-  contactNumber?: string | null;
-  isActive: boolean;
-  createdAt: string;
-}
 
 export interface Vehicle {
   vehicleId: number;
-  courierId: number;
-  courierName: string;
   plateNumber: string;
   vehicleType: string;
   description?: string | null;
@@ -23,7 +13,6 @@ export interface Vehicle {
 }
 
 export interface VehicleFormData {
-  courierId: number;
   plateNumber: string;
   vehicleType: string;
   description: string;
@@ -40,14 +29,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function listCouriers(includeInactive = false): Promise<Courier[]> {
-  const params = includeInactive ? '?includeInactive=true' : '';
-  return request<Courier[]>(`/api/couriers${params}`);
-}
-
-export async function listVehicles(courierId?: number, includeInactive = false): Promise<Vehicle[]> {
+export async function listVehicles(includeInactive = false): Promise<Vehicle[]> {
   const params = new URLSearchParams();
-  if (courierId) params.set('courierId', courierId.toString());
   if (includeInactive) params.set('includeInactive', 'true');
   const qs = params.toString();
   return request<Vehicle[]>(`/api/vehicles${qs ? `?${qs}` : ''}`);
@@ -72,3 +55,4 @@ export async function updateVehicle(vehicleId: number, input: VehicleFormData): 
 export async function deleteVehicle(vehicleId: number): Promise<void> {
   return request<void>(`/api/vehicles/${vehicleId}`, { method: 'DELETE' });
 }
+

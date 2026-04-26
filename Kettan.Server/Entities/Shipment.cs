@@ -21,8 +21,6 @@ public class Shipment : ITenantEntity
     [MaxLength(100)]
     public string? TrackingNumber { get; set; }
 
-    [MaxLength(100)]
-    public string? CourierAssignment { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal? DistanceMap { get; set; }
@@ -30,11 +28,6 @@ public class Shipment : ITenantEntity
     public DateTime? DispatchDate { get; set; }
 
     public DateTime? EstimatedArrival { get; set; }
-
-    public int? CourierId { get; set; }
-
-    [ForeignKey(nameof(CourierId))]
-    public Courier? Courier { get; set; }
 
     public int? VehicleId { get; set; }
 

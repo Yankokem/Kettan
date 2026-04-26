@@ -35,9 +35,7 @@ export function VehicleCard({ vehicle, selected, onSelect, onDelete }: VehicleCa
           <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
             {vehicle.plateNumber}
           </Typography>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.5 }}>
-            {vehicle.courierName || 'Unknown Courier'}
-          </Typography>
+
         </Box>
 
         <IconButton

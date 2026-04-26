@@ -10,7 +10,6 @@ import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
 import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
 
 import { useAuthStore } from '../../store/useAuthStore';
-import { Dropdown } from '../../components/UI/Dropdown';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -106,16 +105,9 @@ export function OrderDetailPage() {
   const { user } = useAuthStore();
   
   const [orderStatus, setOrderStatus] = useState<string>('PendingApproval');
-  const [selectedCourier, setSelectedCourier] = useState('van_1');
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  const VEHICLES = [
-    { value: 'van_1', label: 'Juan Delivery Services - Van 1' },
-    { value: 'van_2', label: 'Juan Delivery Services - Van 2' },
-    { value: 'truck_1', label: 'Metro Fleet - Truck 1' },
-  ];
 
   useEffect(() => {
     const loadOrder = async () => {
@@ -167,7 +159,6 @@ export function OrderDetailPage() {
         await packOrder(Number(orderId), 'Packing confirmed from frontend.');
       } else if (action === 'dispatch') {
         await dispatchOrder(Number(orderId), {
-          courierId: undefined,
           vehicleId: undefined,
           trackingNumber: undefined,
           estimatedArrival: undefined,
@@ -247,15 +238,6 @@ export function OrderDetailPage() {
 
           {orderStatus === 'Packed' && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box sx={{ width: 200 }}>
-                <Dropdown
-                  options={VEHICLES}
-                  value={selectedCourier}
-                  onChange={(e) => setSelectedCourier(e.target.value as string)}
-                  size="small"
-                  fullWidth
-                />
-              </Box>
               <Button startIcon={<LocalShippingRoundedIcon />} onClick={() => void handleWorkflowAction('dispatch')} disabled={isSaving}>
                 Dispatch Order
               </Button>
@@ -301,4 +283,5 @@ export function OrderDetailPage() {
     </Box>
   );
 }
+
 

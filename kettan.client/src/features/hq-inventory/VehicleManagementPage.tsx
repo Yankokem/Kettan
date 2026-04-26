@@ -20,14 +20,13 @@ import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { VehicleCard } from './components/VehicleCard';
-import { createVehicle, listCouriers, listVehicles, deleteVehicle, updateVehicle, type Vehicle, type Courier, type VehicleFormData } from './vehicleApi';
+import { createVehicle, listVehicles, deleteVehicle, updateVehicle, type Vehicle, type VehicleFormData } from './vehicleApi';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
 type SortFilter = 'plate-asc' | 'plate-desc' | 'type-asc' | 'type-desc';
 type VehicleViewMode = 'cards' | 'table';
 
 const INITIAL_FORM: VehicleFormData = {
-  courierId: 0,
   plateNumber: '',
   vehicleType: '',
   description: '',
@@ -43,7 +42,6 @@ export function VehicleManagementPage() {
   const [form, setForm] = useState<VehicleFormData>(INITIAL_FORM);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [couriers, setCouriers] = useState<Courier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [search, setSearch] = useState('');
@@ -55,9 +53,8 @@ export function VehicleManagementPage() {
 
   const fetchData = async () => {
     try {
-      const [vData, cData] = await Promise.all([listVehicles(), listCouriers(true)]);
+      const vData = await listVehicles();
       setVehicles(vData);
-      setCouriers(cData);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load data'));
@@ -83,8 +80,7 @@ export function VehicleManagementPage() {
         !query ||
         v.plateNumber.toLowerCase().includes(query) ||
         v.vehicleType.toLowerCase().includes(query) ||
-        (v.description || '').toLowerCase().includes(query) ||
-        (v.courierName || '').toLowerCase().includes(query);
+        (v.description || '').toLowerCase().includes(query);
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -120,7 +116,6 @@ export function VehicleManagementPage() {
   const handleSelectVehicle = (v: Vehicle) => {
     setSelectedVehicleId(v.vehicleId);
     setForm({
-      courierId: v.courierId,
       plateNumber: v.plateNumber,
       vehicleType: v.vehicleType,
       description: v.description || '',
@@ -131,11 +126,6 @@ export function VehicleManagementPage() {
 
   const handleSave = async () => {
     const normalizedPlate = form.plateNumber.trim().toUpperCase();
-
-    if (!form.courierId) {
-      setErrorMessage('Courier is required.');
-      return;
-    }
 
     if (!normalizedPlate) {
       setErrorMessage('Plate number is required.');
@@ -186,12 +176,6 @@ export function VehicleManagementPage() {
           {v.plateNumber}
         </Typography>
       ),
-    },
-    {
-      key: 'courierName',
-      label: 'Courier',
-      sortable: true,
-      render: (v) => <Typography sx={{ fontSize: 13 }}>{v.courierName || '--'}</Typography>,
     },
     {
       key: 'vehicleType',
@@ -258,7 +242,7 @@ export function VehicleManagementPage() {
             Vehicle Management
           </Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.3 }}>
-            Maintain delivery vehicles by assigning couriers and updating status.
+            Maintain delivery vehicles and updating status.
           </Typography>
         </Box>
       </Box>
@@ -289,16 +273,6 @@ export function VehicleManagementPage() {
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2 }}>
-              <FormDropdown
-                label="Courier"
-                value={form.courierId.toString()}
-                onChange={(event) => setForm((prev) => ({ ...prev, courierId: Number(event.target.value) }))}
-                options={[
-                  { value: '0', label: 'Select courier' },
-                  ...couriers.map((c) => ({ value: c.courierId.toString(), label: `${c.name}${c.isActive ? '' : ' (Inactive)'}` })),
-                ]}
-              />
-
               <FormTextField
                 label="Plate Number"
                 placeholder="e.g. NGA-4512"
@@ -353,7 +327,7 @@ export function VehicleManagementPage() {
               <SearchInput
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search plate, courier, type..."
+                placeholder="Search plate, type..."
                 sx={{ minWidth: 250, maxWidth: 340 }}
               />
 
@@ -444,3 +418,4 @@ export function VehicleManagementPage() {
     </Box>
   );
 }
+

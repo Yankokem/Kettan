@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Kettan.Server.Data;
@@ -9,6 +10,7 @@ namespace Kettan.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -42,6 +44,8 @@ public class UsersController : ControllerBase
                 Role = u.Role,
                 FirstName = u.FirstName,
                 LastName = u.LastName,
+                Birthday = u.Birthday,
+                ContactNo = u.ContactNo,
                 IsActive = u.IsActive,
                 CreatedAt = u.CreatedAt
             })
@@ -69,6 +73,8 @@ public class UsersController : ControllerBase
             Role = user.Role,
             FirstName = user.FirstName,
             LastName = user.LastName,
+            Birthday = user.Birthday,
+            ContactNo = user.ContactNo,
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt
         });
@@ -90,6 +96,8 @@ public class UsersController : ControllerBase
             Role = dto.Role,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
+            Birthday = dto.Birthday,
+            ContactNo = dto.ContactNo,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -111,6 +119,8 @@ public class UsersController : ControllerBase
             Role = user.Role,
             FirstName = user.FirstName,
             LastName = user.LastName,
+            Birthday = user.Birthday,
+            ContactNo = user.ContactNo,
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt
         });
@@ -127,6 +137,8 @@ public class UsersController : ControllerBase
 
         user.FirstName = dto.FirstName;
         user.LastName = dto.LastName;
+        user.Birthday = dto.Birthday;
+        user.ContactNo = dto.ContactNo;
         user.Role = dto.Role;
         user.BranchId = dto.BranchId;
         user.IsActive = dto.IsActive;

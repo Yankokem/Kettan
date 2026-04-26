@@ -40,7 +40,7 @@ public class OrderDetailDto : BranchOrderDto
     public string RequestedByName { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public string? TrackingNumber { get; set; }
-    public int? CourierId { get; set; }
+
     public int? VehicleId { get; set; }
     public DateTime? DispatchDate { get; set; }
     public DateTime? EstimatedArrival { get; set; }
@@ -72,7 +72,7 @@ public class UpdateOrderStatusDto
 
 public class DispatchOrderDto
 {
-    public int? CourierId { get; set; }
+
     public int? VehicleId { get; set; }
     public string? TrackingNumber { get; set; }
     public DateTime? EstimatedArrival { get; set; }

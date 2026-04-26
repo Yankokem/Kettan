@@ -41,6 +41,11 @@ public class User
     [MaxLength(50)]
     public required string Role { get; set; }
 
+    public DateOnly? Birthday { get; set; }
+
+    [MaxLength(50)]
+    public string? ContactNo { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public bool IsDeleted { get; set; } = false;

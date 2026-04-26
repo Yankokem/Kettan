@@ -4,16 +4,19 @@ using Kettan.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Kettan.Server.Migrations
+namespace Kettan.Server.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260426101415_AddUserBirthdayAndContact")]
+    partial class AddUserBirthdayAndContact
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -323,6 +326,45 @@ namespace Kettan.Server.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("ConsumptionLogItems");
+                });
+
+            modelBuilder.Entity("Kettan.Server.Entities.Courier", b =>
+                {
+                    b.Property<int>("CourierId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourierId"));
+
+                    b.Property<string>("ContactNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CourierId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("Couriers");
                 });
 
             modelBuilder.Entity("Kettan.Server.Entities.Employee", b =>
@@ -1184,6 +1226,13 @@ namespace Kettan.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShipmentId"));
 
+                    b.Property<string>("CourierAssignment")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("CourierId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
@@ -1213,6 +1262,8 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("ShipmentId");
+
+                    b.HasIndex("CourierId");
 
                     b.HasIndex("OrderId")
                         .IsUnique();
@@ -1764,6 +1815,9 @@ namespace Kettan.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VehicleId"));
 
+                    b.Property<int>("CourierId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1794,6 +1848,8 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("VehicleId");
+
+                    b.HasIndex("CourierId");
 
                     b.HasIndex("TenantId");
 
@@ -1951,6 +2007,17 @@ namespace Kettan.Server.Migrations
                     b.Navigation("Item");
 
                     b.Navigation("MenuItem");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Kettan.Server.Entities.Courier", b =>
+                {
+                    b.HasOne("Kettan.Server.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Tenant");
                 });
@@ -2307,6 +2374,11 @@ namespace Kettan.Server.Migrations
 
             modelBuilder.Entity("Kettan.Server.Entities.Shipment", b =>
                 {
+                    b.HasOne("Kettan.Server.Entities.Courier", "Courier")
+                        .WithMany()
+                        .HasForeignKey("CourierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Kettan.Server.Entities.Order", "Order")
                         .WithMany()
                         .HasForeignKey("OrderId")
@@ -2323,6 +2395,8 @@ namespace Kettan.Server.Migrations
                         .WithMany()
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Courier");
 
                     b.Navigation("Order");
 
@@ -2485,11 +2559,19 @@ namespace Kettan.Server.Migrations
 
             modelBuilder.Entity("Kettan.Server.Entities.Vehicle", b =>
                 {
+                    b.HasOne("Kettan.Server.Entities.Courier", "Courier")
+                        .WithMany("Vehicles")
+                        .HasForeignKey("CourierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Kettan.Server.Entities.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Courier");
 
                     b.Navigation("Tenant");
                 });
@@ -2497,6 +2579,11 @@ namespace Kettan.Server.Migrations
             modelBuilder.Entity("Kettan.Server.Entities.ConsumptionLog", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Kettan.Server.Entities.Courier", b =>
+                {
+                    b.Navigation("Vehicles");
                 });
 
             modelBuilder.Entity("Kettan.Server.Entities.MenuItem", b =>

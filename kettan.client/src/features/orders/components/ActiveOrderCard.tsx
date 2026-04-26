@@ -7,7 +7,7 @@ export interface ActiveOrder {
   items: number;
   status: 'In Transit' | 'Out for Delivery';
   eta: string;
-  courier: string;
+
   lastUpdated: string;
   coordinates: [number, number];
 }
@@ -55,9 +55,7 @@ export function ActiveOrderCard({ order, isSelected, onSelect }: ActiveOrderCard
       <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
         {order.branch}
       </Typography>
-      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-        Courier: {order.courier}
-      </Typography>
+
     </CardActionArea>
   );
 }

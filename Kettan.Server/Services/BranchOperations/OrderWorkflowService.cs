@@ -339,10 +339,8 @@ public class OrderWorkflowService : IOrderWorkflowService
             _context.Shipments.Add(shipment);
         }
 
-        shipment.CourierId = dto.CourierId;
-        shipment.VehicleId = dto.VehicleId;
+
         shipment.TrackingNumber = NormalizeOptional(dto.TrackingNumber);
-        shipment.CourierAssignment = BuildCourierAssignment(dto);
         shipment.DispatchDate = now;
         shipment.EstimatedArrival = dto.EstimatedArrival;
 
@@ -554,7 +552,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             RequestedByName = requestedByName,
             Notes = order.SupplyRequest?.Notes,
             TrackingNumber = shipment?.TrackingNumber,
-            CourierId = shipment?.CourierId,
+
             VehicleId = shipment?.VehicleId,
             DispatchDate = shipment?.DispatchDate,
             EstimatedArrival = shipment?.EstimatedArrival,
@@ -592,22 +590,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         return value.Trim();
     }
 
-    private static string? BuildCourierAssignment(DispatchOrderDto dto)
-    {
-        var parts = new List<string>();
 
-        if (dto.CourierId.HasValue)
-        {
-            parts.Add($"Courier:{dto.CourierId.Value}");
-        }
-
-        if (dto.VehicleId.HasValue)
-        {
-            parts.Add($"Vehicle:{dto.VehicleId.Value}");
-        }
-
-        return parts.Count == 0 ? null : string.Join(" | ", parts);
-    }
 
     private async Task ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items)
     {

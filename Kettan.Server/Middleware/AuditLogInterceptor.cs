@@ -31,7 +31,7 @@ public class AuditLogInterceptor : SaveChangesInterceptor
         nameof(TenantSubscription),
         nameof(SubscriptionPayment),
         nameof(Employee),
-        nameof(Courier),
+
         nameof(Vehicle)
     };
 
