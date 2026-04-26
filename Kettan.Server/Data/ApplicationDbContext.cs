@@ -37,7 +37,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Notification> Notifications { get; set; } = null!;
     
     // New Entities
-    public DbSet<Unit> Units { get; set; } = null!;
+
     public DbSet<InventoryCategory> InventoryCategories { get; set; } = null!;
     public DbSet<ItemCategory> ItemCategories { get; set; } = null!;
     public DbSet<BundleItem> BundleItems { get; set; } = null!;
@@ -125,7 +125,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Shipment>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
         modelBuilder.Entity<Return>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
         modelBuilder.Entity<MenuItem>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<Unit>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
+
         modelBuilder.Entity<InventoryCategory>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
         modelBuilder.Entity<ItemCategory>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
         modelBuilder.Entity<BundleItem>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));

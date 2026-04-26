@@ -36,19 +36,6 @@ public class CreateInventoryCategoryDto
     public bool IsActive { get; set; } = true;
 }
 
-public class UnitDto
-{
-    public int UnitId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Symbol { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-}
-
-public class CreateUnitDto
-{
-    public string Name { get; set; } = string.Empty;
-    public string Symbol { get; set; } = string.Empty;
-}
 
 public class MenuCategoryDto
 {

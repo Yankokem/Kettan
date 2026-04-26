@@ -129,10 +129,10 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const formatQuantity = (qty: number, unitSymbol?: string) => {
+  const formatQuantity = (qty: number, unit?: string) => {
     const absQty = Math.abs(qty);
     const formatted = absQty < 1 ? absQty.toFixed(3) : absQty.toFixed(absQty % 1 === 0 ? 0 : 2);
-    return `${qty > 0 ? '+' : '-'}${formatted} ${unitSymbol || ''}`;
+    return `${qty > 0 ? '+' : '-'}${formatted} ${unit || ''}`;
   };
 
   // Get unique categories from items
@@ -199,7 +199,7 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
       key: 'unit',
       label: 'Unit',
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.unit?.symbol || ''}</Typography>
+        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.unit || ''}</Typography>
       ),
     },
   ];
@@ -255,7 +255,7 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
               <Typography sx={{ fontSize: 13, fontWeight: 700, color: isLow ? 'error.main' : 'text.primary' }}>
                 {row.totalStock}{' '}
-                <Typography component="span" sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 400 }}>{row.unit?.symbol}</Typography>
+                <Typography component="span" sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 400 }}>{row.unit}</Typography>
               </Typography>
               <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 500 }}>
                 Reorder at {row.defaultThreshold}
@@ -343,7 +343,7 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
               color: isPositive ? 'success.main' : 'error.main',
             }}
           >
-            {formatQuantity(row.quantityChange, row.item?.unit?.symbol)}
+            {formatQuantity(row.quantityChange, row.item?.unit)}
           </Typography>
         );
       },

@@ -21,10 +21,9 @@ public class Item : ITenantEntity
     [MaxLength(255)]
     public required string Name { get; set; }
 
-    public int UnitId { get; set; }
-
-    [ForeignKey(nameof(UnitId))]
-    public Unit? Unit { get; set; }
+    [Required]
+    [MaxLength(20)]
+    public required string Unit { get; set; }
 
     public int? InventoryCategoryId { get; set; }
 

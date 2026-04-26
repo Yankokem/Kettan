@@ -112,7 +112,7 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
               <Typography sx={{ fontSize: 24, fontWeight: 700 }}>
                 {batch.currentQuantity}
                 <Typography component="span" sx={{ fontSize: 14, fontWeight: 500, color: 'text.secondary', ml: 0.5 }}>
-                  {item.unit?.symbol}
+                  {item.unit}
                 </Typography>
               </Typography>
             </Box>
@@ -124,7 +124,7 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
               <Typography sx={{ fontSize: 24, fontWeight: 700, color: isNoChange ? 'text.primary' : (difference > 0 ? 'success.main' : 'error.main') }}>
                 {formData.newQuantity}
                 <Typography component="span" sx={{ fontSize: 14, fontWeight: 500, color: 'text.secondary', ml: 0.5 }}>
-                  {item.unit?.symbol}
+                  {item.unit}
                 </Typography>
               </Typography>
             </Box>
@@ -134,7 +134,7 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
           {!isNoChange && (
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Chip
-                label={`${differenceText} ${item.unit?.symbol}`}
+                label={`${differenceText} ${item.unit}`}
                 sx={{
                   fontWeight: 700,
                   fontSize: 13,
@@ -146,7 +146,7 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
           )}
 
           <FormTextField
-            label={`New Quantity (${item.unit?.symbol})`}
+            label={`New Quantity (${item.unit})`}
             type="number"
             value={formData.newQuantity}
             onChange={(e) => setFormData(prev => ({ ...prev, newQuantity: parseFloat(e.target.value) || 0 }))}

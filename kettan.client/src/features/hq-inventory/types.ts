@@ -1,9 +1,5 @@
 // Units of measure
-export interface Unit {
-  id: string;
-  name: string;      // "Gram", "Kilogram", "Liter", "Milliliter", "Piece"
-  symbol: string;    // "g", "kg", "L", "ml", "pc"
-}
+export type UnitSymbol = 'pc' | 'pack' | 'box' | 'case' | 'can' | 'bottle' | 'roll';
 
 // Inventory categories for organizing raw materials
 export interface InventoryCategory {
@@ -68,8 +64,7 @@ export interface InventoryItem {
   id: string;
   sku: string;
   name: string;
-  unitId: string;
-  unit?: Unit;
+  unit: string;
   categoryId: string;
   category?: InventoryCategory;
   defaultThreshold: number;
@@ -131,7 +126,7 @@ export interface StockInItem extends StockInFormData {
   itemName?: string;
   itemSku?: string;
   unitSymbol?: string;
-  unit?: Unit;
+  unit?: string;
   previousUnitCost?: number;
 }
 

@@ -41,7 +41,6 @@ public class ItemsController : ControllerBase
         }
 
         var query = _context.Items
-            .Include(i => i.Unit)
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
             .AsQueryable();
@@ -117,7 +116,7 @@ public class ItemsController : ControllerBase
         try
         {
             ValidateItemPayload(dto.SKU, dto.Name, dto.DefaultThreshold, dto.UnitCost, dto.SellingPrice);
-            await ValidateLookupReferencesAsync(dto.UnitId, dto.InventoryCategoryId, dto.ItemCategoryId);
+            await ValidateLookupReferencesAsync(dto.InventoryCategoryId, dto.ItemCategoryId);
             await EnsureSkuIsUniqueAsync(dto.SKU);
 
             var now = DateTime.UtcNow;
@@ -127,7 +126,7 @@ public class ItemsController : ControllerBase
                 TenantId = _currentUser.TenantId.Value,
                 SKU = dto.SKU.Trim(),
                 Name = dto.Name.Trim(),
-                UnitId = dto.UnitId,
+                Unit = dto.Unit,
                 InventoryCategoryId = dto.InventoryCategoryId,
                 ItemCategoryId = dto.ItemCategoryId,
                 DefaultThreshold = dto.DefaultThreshold,
@@ -169,7 +168,7 @@ public class ItemsController : ControllerBase
         try
         {
             ValidateItemPayload(dto.SKU, dto.Name, dto.DefaultThreshold, dto.UnitCost, dto.SellingPrice);
-            await ValidateLookupReferencesAsync(dto.UnitId, dto.InventoryCategoryId, dto.ItemCategoryId);
+            await ValidateLookupReferencesAsync(dto.InventoryCategoryId, dto.ItemCategoryId);
             await EnsureSkuIsUniqueAsync(dto.SKU, id);
 
             if (item.UnitCost != dto.UnitCost)
@@ -179,7 +178,7 @@ public class ItemsController : ControllerBase
 
             item.SKU = dto.SKU.Trim();
             item.Name = dto.Name.Trim();
-            item.UnitId = dto.UnitId;
+            item.Unit = dto.Unit;
             item.InventoryCategoryId = dto.InventoryCategoryId;
             item.ItemCategoryId = dto.ItemCategoryId;
             item.DefaultThreshold = dto.DefaultThreshold;
@@ -353,7 +352,6 @@ public class ItemsController : ControllerBase
     private async Task<ItemDetailDto?> BuildItemDetailAsync(int id)
     {
         var item = await _context.Items
-            .Include(i => i.Unit)
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
             .FirstOrDefaultAsync(i => i.ItemId == id);
@@ -381,9 +379,7 @@ public class ItemsController : ControllerBase
             TenantId = dto.TenantId,
             SKU = dto.SKU,
             Name = dto.Name,
-            UnitId = dto.UnitId,
-            UnitName = dto.UnitName,
-            UnitSymbol = dto.UnitSymbol,
+            Unit = dto.Unit,
             InventoryCategoryId = dto.InventoryCategoryId,
             InventoryCategoryName = dto.InventoryCategoryName,
             ItemCategoryId = dto.ItemCategoryId,
@@ -402,13 +398,8 @@ public class ItemsController : ControllerBase
         };
     }
 
-    private async Task ValidateLookupReferencesAsync(int unitId, int? inventoryCategoryId, int? itemCategoryId)
+    private async Task ValidateLookupReferencesAsync(int? inventoryCategoryId, int? itemCategoryId)
     {
-        var unitExists = await _context.Units.AnyAsync(u => u.UnitId == unitId);
-        if (!unitExists)
-        {
-            throw new InvalidOperationException("Unit was not found.");
-        }
 
         if (inventoryCategoryId.HasValue)
         {
@@ -480,9 +471,7 @@ public class ItemsController : ControllerBase
             TenantId = item.TenantId,
             SKU = item.SKU,
             Name = item.Name,
-            UnitId = item.UnitId,
-            UnitName = item.Unit?.Name ?? string.Empty,
-            UnitSymbol = item.Unit?.Symbol ?? string.Empty,
+            Unit = item.Unit,
             InventoryCategoryId = item.InventoryCategoryId,
             InventoryCategoryName = item.InventoryCategory?.Name,
             ItemCategoryId = item.ItemCategoryId,

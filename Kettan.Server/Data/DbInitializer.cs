@@ -41,10 +41,10 @@ public static class DbInitializer
             await UserAccountSeeder.EnsureBranchLeadershipAsync(context, branches, users, cancellationToken);
             logger?.LogInformation("DbSeeder: ensured users and branch leadership assignments.");
 
-            var units = await InventorySeeder.EnsureUnitsAsync(context, tenant, cancellationToken);
+
             var inventoryCategories = await InventorySeeder.EnsureInventoryCategoriesAsync(context, tenant, cancellationToken);
             var itemCategories = await InventorySeeder.EnsureItemCategoriesAsync(context, tenant, cancellationToken);
-            var items = await InventorySeeder.EnsureItemsAsync(context, tenant, units, inventoryCategories, itemCategories, cancellationToken);
+            var items = await InventorySeeder.EnsureItemsAsync(context, tenant, inventoryCategories, itemCategories, cancellationToken);
             await InventorySeeder.EnsureBatchesAsync(context, tenant, items, cancellationToken);
             logger?.LogInformation("DbSeeder: ensured inventory data.");
 

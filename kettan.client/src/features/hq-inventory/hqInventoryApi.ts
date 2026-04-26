@@ -5,16 +5,13 @@ import type {
   InventoryItem,
   InventoryTransaction,
   TransactionType,
-  Unit,
 } from './types';
 
 interface ItemDto {
   itemId: number;
   sku: string;
   name: string;
-  unitId: number;
-  unitName: string;
-  unitSymbol: string;
+  unit: string;
   inventoryCategoryId: number | null;
   inventoryCategoryName: string | null;
   itemCategoryId: number | null;
@@ -56,12 +53,6 @@ interface TransactionDto {
   timestamp: string;
 }
 
-interface UnitDto {
-  unitId: number;
-  name: string;
-  symbol: string;
-  createdAt: string;
-}
 
 interface InventoryCategoryDto {
   categoryId: number;
@@ -75,7 +66,7 @@ interface InventoryCategoryDto {
 interface CreateOrUpdateItemPayload {
   sku: string;
   name: string;
-  unitId: number;
+  unit: string;
   inventoryCategoryId: number | null;
   itemCategoryId: number | null;
   defaultThreshold: number;
@@ -88,7 +79,7 @@ interface CreateOrUpdateItemPayload {
 interface CreateItemInput {
   sku: string;
   name: string;
-  unitId: string;
+  unit: string;
   inventoryCategoryId?: string;
   itemCategoryId?: string;
   defaultThreshold: number;
@@ -175,12 +166,7 @@ function toItem(row: ItemDto): InventoryItem {
     id: String(row.itemId),
     sku: row.sku,
     name: row.name,
-    unitId: String(row.unitId),
-    unit: {
-      id: String(row.unitId),
-      name: row.unitName,
-      symbol: row.unitSymbol,
-    },
+    unit: row.unit,
     categoryId: row.inventoryCategoryId != null ? String(row.inventoryCategoryId) : '',
     category:
       row.inventoryCategoryId != null
@@ -284,7 +270,7 @@ function toItemPayload(input: CreateItemInput | UpdateItemInput): CreateOrUpdate
   return {
     sku: input.sku.trim(),
     name: input.name.trim(),
-    unitId: Number(input.unitId),
+    unit: input.unit,
     inventoryCategoryId: rawInventoryCategoryId ? Number(rawInventoryCategoryId) : null,
     itemCategoryId: rawCategoryId ? Number(rawCategoryId) : null,
     defaultThreshold: Number(input.defaultThreshold || 0),
@@ -304,14 +290,6 @@ export async function fetchItemCategories(): Promise<InventoryCategory[]> {
   return response.data.map(toCategory);
 }
 
-export async function fetchUnits(): Promise<Unit[]> {
-  const response = await api.get<UnitDto[]>('/api/units');
-  return response.data.map((row) => ({
-    id: String(row.unitId),
-    name: row.name,
-    symbol: row.symbol,
-  }));
-}
 
 export async function fetchInventoryItems(search?: string): Promise<InventoryItem[]> {
   const response = await api.get<ItemDto[]>('/api/items', {

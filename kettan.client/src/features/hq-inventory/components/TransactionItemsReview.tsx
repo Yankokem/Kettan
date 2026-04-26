@@ -126,7 +126,7 @@ export function TransactionItemsReview({ items, transactionType, onEdit, onRemov
                     {item.itemSku}
                   </Typography>
                   <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.35 }}>
-                    Current Stock: {item.currentStock} {item.unitSymbol || 'unit'}
+                    Current Stock: {item.currentStock} {item.unit || 'unit'}
                     {item.reason ? ` • ${item.reason}` : ''}
                   </Typography>
                 </Box>
@@ -140,7 +140,7 @@ export function TransactionItemsReview({ items, transactionType, onEdit, onRemov
                     }}
                   >
                     {signedQuantity > 0 ? '+' : ''}
-                    {signedQuantity} {item.unitSymbol || 'unit'}
+                    {signedQuantity} {item.unit || 'unit'}
                   </Typography>
                   {item.unitCost !== undefined && (
                     <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>

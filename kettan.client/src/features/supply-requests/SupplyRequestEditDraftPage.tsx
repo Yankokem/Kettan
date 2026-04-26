@@ -93,7 +93,7 @@ export function SupplyRequestEditDraftPage() {
           id: item.id,
           name: item.name,
           sku: item.sku,
-          unit: item.unit?.symbol ?? item.unit?.name ?? 'unit',
+          unit: item.unit || 'unit',
           category: item.category?.name ?? 'Uncategorized',
           hqStock: item.totalStock,
           unitCost: item.unitCost,

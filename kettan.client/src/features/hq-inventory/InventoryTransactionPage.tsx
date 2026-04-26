@@ -10,12 +10,11 @@ import {
   createInventoryItem,
   fetchInventoryItems,
   fetchItemCategories,
-  fetchUnits,
   generateBatchNumber,
   stockInInventoryItem,
   stockOutInventoryItem,
 } from './hqInventoryApi';
-import type { InventoryCategory, InventoryItem, Unit } from './types';
+import type { InventoryCategory, InventoryItem } from './types';
 import { TransactionItemComposer } from './components/TransactionItemComposer';
 import { TransactionItemsReview } from './components/TransactionItemsReview';
 import {
@@ -27,6 +26,16 @@ import {
 } from './components/transactionModels';
 
 const LINE_ID_PREFIX = 'txn-line';
+
+const INVENTORY_UNITS = [
+  { value: 'pc', label: 'Piece (pc)' },
+  { value: 'pack', label: 'Pack (pack)' },
+  { value: 'box', label: 'Box (box)' },
+  { value: 'case', label: 'Case (case)' },
+  { value: 'can', label: 'Can (can)' },
+  { value: 'bottle', label: 'Bottle (bottle)' },
+  { value: 'roll', label: 'Roll (roll)' },
+];
 
 function makeLineId() {
   return `${LINE_ID_PREFIX}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
@@ -46,7 +55,6 @@ export default function InventoryTransactionPage() {
 
   const [catalogItems, setCatalogItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -69,10 +77,9 @@ export default function InventoryTransactionPage() {
         setIsLoadingCatalog(true);
         setLoadError(null);
 
-        const [liveItems, liveCategories, liveUnits] = await Promise.all([
+        const [liveItems, liveCategories] = await Promise.all([
           fetchInventoryItems(),
           fetchItemCategories(),
-          fetchUnits(),
         ]);
 
         if (!isMounted) {
@@ -81,7 +88,6 @@ export default function InventoryTransactionPage() {
 
         setCatalogItems(liveItems);
         setCategories(liveCategories);
-        setUnits(liveUnits);
       } catch {
         if (!isMounted) {
           return;
@@ -89,7 +95,6 @@ export default function InventoryTransactionPage() {
 
         setCatalogItems([]);
         setCategories([]);
-        setUnits([]);
         setLoadError('Unable to load inventory catalog from the API.');
       } finally {
         if (isMounted) {
@@ -132,7 +137,7 @@ export default function InventoryTransactionPage() {
         itemId: item.id,
         itemName: item.name,
         itemSku: item.sku,
-        unitSymbol: item.unit?.symbol || '',
+        unit: item.unit || '',
         categoryName: item.category?.name,
         currentStock: item.totalStock,
         quantity: 1,
@@ -160,10 +165,7 @@ export default function InventoryTransactionPage() {
     [categories]
   );
 
-  const unitOptions = useMemo(
-    () => units.map((unit) => ({ value: unit.id, label: `${unit.name} (${unit.symbol})` })),
-    [units]
-  );
+  const unitOptions = INVENTORY_UNITS;
 
   const availableItems = useMemo(() => {
     const lockedItemIds = new Set(
@@ -263,7 +265,7 @@ export default function InventoryTransactionPage() {
         itemId: selectedItem.id,
         itemName: selectedItem.name,
         itemSku: selectedItem.sku,
-        unitSymbol: selectedItem.unit?.symbol || '',
+        unit: selectedItem.unit || '',
         categoryName: selectedItem.category?.name,
         currentStock: selectedItem.totalStock,
         quantity,
@@ -295,12 +297,7 @@ export default function InventoryTransactionPage() {
       return;
     }
 
-    if (!draft.newCategoryId || !draft.newUnitId) {
-      setComposerError('Choose both a category and a unit for the new item.');
-      return;
-    }
-
-    const unit = units.find((entry) => entry.id === draft.newUnitId);
+    const unit = INVENTORY_UNITS.find((entry) => entry.value === draft.newUnit);
     if (!unit) {
       setComposerError('Select a valid unit for the new item.');
       return;
@@ -319,7 +316,7 @@ export default function InventoryTransactionPage() {
       itemId: `new-${Date.now()}`,
       itemName: draft.newItemName.trim(),
       itemSku: sku,
-      unitSymbol: unit.symbol,
+      unit: unit.value,
       categoryName: categories.find((entry) => entry.id === draft.newCategoryId)?.name,
       currentStock: 0,
       quantity,
@@ -328,8 +325,7 @@ export default function InventoryTransactionPage() {
       expiryDate: draft.expiryDate || undefined,
       reason: undefined,
       isNewItem: true,
-      newCategoryId: draft.newCategoryId,
-      newUnitId: draft.newUnitId,
+      newUnit: draft.newUnit,
     };
 
     if (editingIndex !== null) {
@@ -354,7 +350,7 @@ export default function InventoryTransactionPage() {
       newItemName: line.isNewItem ? line.itemName : '',
       newSku: line.isNewItem ? line.itemSku : '',
       newCategoryId: line.newCategoryId || '',
-      newUnitId: line.newUnitId || '',
+      newUnit: line.newUnit || '',
       quantity: String(line.quantity),
       unitCost: line.unitCost?.toString() || '',
       expiryDate: line.expiryDate || '',
@@ -415,14 +411,14 @@ export default function InventoryTransactionPage() {
         let resolvedItemId = line.itemId;
 
         if (line.isNewItem) {
-          if (!line.newUnitId) {
+          if (!line.newUnit) {
             throw new Error('New item is missing unit information.');
           }
 
           const createdItem = await createInventoryItem({
             sku: line.itemSku,
             name: line.itemName,
-            unitId: line.newUnitId,
+            unit: line.newUnit,
             itemCategoryId: line.newCategoryId || undefined,
             defaultThreshold: 0,
             unitCost: line.unitCost ?? 0,

@@ -5,63 +5,6 @@ namespace Kettan.Server.Data.Seeders;
 
 public static class InventorySeeder
 {
-    public static async Task<Dictionary<string, Unit>> EnsureUnitsAsync(
-        ApplicationDbContext context,
-        Tenant tenant,
-        CancellationToken cancellationToken)
-    {
-        var seeds = new[]
-        {
-            new UnitSeed("Grams", "g"),
-            new UnitSeed("Milliliters", "ml"),
-            new UnitSeed("Piece", "pc"),
-            new UnitSeed("Kilograms", "kg"),
-            new UnitSeed("Liters", "L"),
-            new UnitSeed("Box", "box"),
-            new UnitSeed("Bag", "bag"),
-            new UnitSeed("Bottle", "bottle")
-        };
-
-        var symbols = seeds.Select(s => s.Symbol).ToList();
-
-        var existingUnits = await context.Set<Unit>()
-            .IgnoreQueryFilters()
-            .Where(u => u.TenantId == tenant.TenantId && symbols.Contains(u.Symbol))
-            .ToListAsync(cancellationToken);
-
-        var unitsBySymbol = new Dictionary<string, Unit>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var seed in seeds)
-        {
-            var unit = existingUnits.FirstOrDefault(u => u.Symbol == seed.Symbol);
-
-            if (unit is null)
-            {
-                unit = new Unit
-                {
-                    TenantId = tenant.TenantId,
-                    Name = seed.Name,
-                    Symbol = seed.Symbol
-                };
-
-                context.Set<Unit>().Add(unit);
-            }
-            else
-            {
-                unit.TenantId = tenant.TenantId;
-                unit.Name = seed.Name;
-                unit.Symbol = seed.Symbol;
-                unit.IsDeleted = false;
-                unit.DeletedAt = null;
-            }
-
-            unitsBySymbol[seed.Symbol] = unit;
-        }
-
-        await context.SaveChangesAsync(cancellationToken);
-
-        return unitsBySymbol;
-    }
 
     public static async Task<Dictionary<string, InventoryCategory>> EnsureInventoryCategoriesAsync(
         ApplicationDbContext context,
@@ -177,7 +120,6 @@ public static class InventorySeeder
     public static async Task<Dictionary<string, Item>> EnsureItemsAsync(
         ApplicationDbContext context,
         Tenant tenant,
-        Dictionary<string, Unit> unitsBySymbol,
         Dictionary<string, InventoryCategory> inventoryCategoriesByName,
         Dictionary<string, ItemCategory> itemCategoriesByName,
         CancellationToken cancellationToken)
@@ -207,7 +149,7 @@ public static class InventorySeeder
 
         foreach (var seed in seeds)
         {
-            var unit = unitsBySymbol[seed.UnitSymbol];
+
             var inventoryCategory = inventoryCategoriesByName[seed.InventoryCategoryName];
 
             ItemCategory? itemCategory = null;
@@ -225,7 +167,7 @@ public static class InventorySeeder
                     TenantId = tenant.TenantId,
                     SKU = seed.Sku,
                     Name = seed.Name,
-                    UnitId = unit.UnitId,
+                    Unit = seed.UnitSymbol,
                     InventoryCategoryId = inventoryCategory.CategoryId,
                     ItemCategoryId = itemCategory?.ItemCategoryId,
                     DefaultThreshold = seed.DefaultThreshold,
@@ -239,7 +181,7 @@ public static class InventorySeeder
                 item.TenantId = tenant.TenantId;
                 item.SKU = seed.Sku;
                 item.Name = seed.Name;
-                item.UnitId = unit.UnitId;
+                item.Unit = seed.UnitSymbol;
                 item.InventoryCategoryId = inventoryCategory.CategoryId;
                 item.ItemCategoryId = itemCategory?.ItemCategoryId;
                 item.DefaultThreshold = seed.DefaultThreshold;
@@ -330,9 +272,6 @@ public static class InventorySeeder
         }
     }
 
-    private sealed record UnitSeed(
-        string Name,
-        string Symbol);
 
     private sealed record InventoryCategorySeed(
         string Name,

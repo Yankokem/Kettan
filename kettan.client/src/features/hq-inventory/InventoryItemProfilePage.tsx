@@ -18,7 +18,6 @@ import {
   fetchInventoryItemDetail,
   fetchInventoryItemTransactions,
   fetchItemCategories,
-  fetchUnits,
   updateInventoryItem,
 } from './hqInventoryApi';
 import type {
@@ -27,14 +26,13 @@ import type {
   InventoryCategory,
   InventoryItem,
   InventoryTransaction,
-  Unit,
 } from './types';
 
 interface ItemFormState {
   name: string;
   sku: string;
   categoryId: string;
-  unitId: string;
+  unit: string;
   defaultThreshold: string;
   unitCost: string;
   imageUrl?: string | null;
@@ -46,7 +44,7 @@ function toItemFormState(item: InventoryItem): ItemFormState {
     name: item.name,
     sku: item.sku,
     categoryId: item.categoryId,
-    unitId: item.unitId,
+    unit: item.unit,
     defaultThreshold: String(item.defaultThreshold),
     unitCost: String(item.unitCost),
     imageUrl: item.imageUrl,
@@ -61,7 +59,6 @@ export function InventoryItemProfilePage() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
   const [form, setForm] = useState<ItemFormState | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -82,10 +79,9 @@ export function InventoryItemProfilePage() {
         setErrorMessage(null);
         setSaveError(null);
 
-        const [detail, liveCategories, liveUnits] = await Promise.all([
+        const [detail, liveCategories] = await Promise.all([
           fetchInventoryItemDetail(itemId),
           fetchItemCategories(),
-          fetchUnits(),
         ]);
 
         const liveTransactions = await fetchInventoryItemTransactions(itemId, {
@@ -101,7 +97,6 @@ export function InventoryItemProfilePage() {
         setBatches(detail.batches);
         setTransactions(liveTransactions);
         setCategories(liveCategories);
-        setUnits(liveUnits);
         setForm(toItemFormState(detail.item));
       } catch {
         if (!isMounted) {
@@ -112,7 +107,6 @@ export function InventoryItemProfilePage() {
         setBatches([]);
         setTransactions([]);
         setCategories([]);
-        setUnits([]);
         setForm(null);
         setErrorMessage('Unable to load item details from the API.');
       } finally {
@@ -147,17 +141,7 @@ export function InventoryItemProfilePage() {
     return Number.isFinite(parsed) ? parsed : item?.unitCost ?? 0;
   }, [form, item]);
 
-  const selectedUnit = useMemo(() => {
-    if (!item) {
-      return undefined;
-    }
-
-    if (!form?.unitId) {
-      return item.unit;
-    }
-
-    return units.find((unit) => unit.id === form.unitId) ?? item.unit;
-  }, [form?.unitId, item, units]);
+  const selectedUnit = form?.unit ?? item?.unit ?? '';
 
   const handleCancelEdit = () => {
     if (item) {
@@ -181,7 +165,7 @@ export function InventoryItemProfilePage() {
       return;
     }
 
-    if (!form.unitId) {
+    if (!form.unit) {
       setSaveError('Unit of measure is required.');
       return;
     }
@@ -221,7 +205,7 @@ export function InventoryItemProfilePage() {
       await updateInventoryItem(item.id, {
         sku: form.sku,
         name: form.name,
-        unitId: form.unitId,
+        unit: form.unit,
         itemCategoryId: form.categoryId || undefined,
         defaultThreshold: threshold,
         unitCost,
@@ -265,7 +249,15 @@ export function InventoryItemProfilePage() {
     ...categories.map((category) => ({ value: category.id, label: category.name })),
   ];
 
-  const unitOptions = units.map((unit) => ({ value: unit.id, label: `${unit.name} (${unit.symbol})` }));
+  const unitOptions = [
+    { value: 'pc', label: 'Piece (pc)' },
+    { value: 'pack', label: 'Pack (pack)' },
+    { value: 'box', label: 'Box (box)' },
+    { value: 'case', label: 'Case (case)' },
+    { value: 'can', label: 'Can (can)' },
+    { value: 'bottle', label: 'Bottle (bottle)' },
+    { value: 'roll', label: 'Roll (roll)' },
+  ];
 
   const handleAdjustBatch = (batchId: string) => {
     const batch = batches.find((entry) => entry.id === batchId);
@@ -355,7 +347,7 @@ export function InventoryItemProfilePage() {
                   {item?.totalStock ?? 0}
                 </Typography>
                 <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
-                  {selectedUnit?.symbol} Stock
+                  {selectedUnit} Stock
                 </Typography>
               </Box>
               <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2, textAlign: 'center' }}>
@@ -372,7 +364,7 @@ export function InventoryItemProfilePage() {
                   )}
                 </Box>
                 <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
-                  Per {selectedUnit?.symbol}
+                  Per {selectedUnit}
                 </Typography>
               </Box>
               <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2, textAlign: 'center' }}>
@@ -419,8 +411,8 @@ export function InventoryItemProfilePage() {
               />
               <FormDropdown
                 label="Unit of Measure"
-                value={form?.unitId ?? item?.unitId ?? ''}
-                onChange={(event) => setForm((prev) => (prev ? { ...prev, unitId: String(event.target.value) } : prev))}
+                value={form?.unit ?? item?.unit ?? ''}
+                onChange={(event) => setForm((prev) => (prev ? { ...prev, unit: String(event.target.value) } : prev))}
                 options={unitOptions}
                 disabled={!isEditing}
               />

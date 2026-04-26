@@ -177,7 +177,7 @@ export function TransactionItemComposer({
                 </Typography>
               </Box>
               <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
-                Stock: {selectedItem.totalStock} {selectedItem.unit?.symbol}
+                Stock: {selectedItem.totalStock} {selectedItem.unit}
               </Typography>
             </Box>
           )}
@@ -205,9 +205,9 @@ export function TransactionItemComposer({
           />
           <FormDropdown
             label="Unit"
-            value={draft.newUnitId}
+            value={draft.newUnit}
             options={[{ value: '', label: 'Select unit' }, ...unitOptions]}
-            onChange={(event) => onDraftChange({ newUnitId: String(event.target.value) })}
+            onChange={(event) => onDraftChange({ newUnit: String(event.target.value) })}
             fullWidth
           />
         </Box>

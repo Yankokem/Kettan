@@ -5,7 +5,6 @@ using Kettan.Server.Services.Analytics;
 using Kettan.Server.Services.Export;
 using Kettan.Server.Data;
 using Microsoft.EntityFrameworkCore;
-using Unit = Kettan.Server.Entities.Unit;
 
 namespace Kettan.Server.Controllers;
 
@@ -97,7 +96,6 @@ public class ReportsController : ControllerBase
     public async Task<IActionResult> ExportInventory([FromQuery] string format = "csv")
     {
         var items = await _context.Items
-            .Include(i => i.Unit)
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
             .Select(i => new
@@ -105,7 +103,7 @@ public class ReportsController : ControllerBase
                 i.ItemId,
                 i.SKU,
                 i.Name,
-                Unit = i.Unit != null ? i.Unit.Name : "",
+                i.Unit,
                 InventoryCategory = i.InventoryCategory != null ? i.InventoryCategory.Name : "",
                 ItemCategory = i.ItemCategory != null ? i.ItemCategory.Name : "",
                 i.DefaultThreshold,

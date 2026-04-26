@@ -8,7 +8,7 @@ export interface TransactionLineItem {
   itemId: string;
   itemName: string;
   itemSku: string;
-  unitSymbol: string;
+  unit: string;
   categoryName?: string;
   currentStock: number;
   quantity: number;
@@ -18,7 +18,7 @@ export interface TransactionLineItem {
   reason?: StockOutReason;
   isNewItem: boolean;
   newCategoryId?: string;
-  newUnitId?: string;
+  newUnit?: string;
 }
 
 export interface TransactionItemDraft {
@@ -28,7 +28,7 @@ export interface TransactionItemDraft {
   newItemName: string;
   newSku: string;
   newCategoryId: string;
-  newUnitId: string;
+  newUnit: string;
   quantity: string;
   unitCost: string;
   expiryDate: string;
@@ -58,7 +58,7 @@ export function createEmptyTransactionItemDraft(mode: TransactionEntryMode = 'ex
     newItemName: '',
     newSku: '',
     newCategoryId: '',
-    newUnitId: '',
+    newUnit: '',
     quantity: '',
     unitCost: '',
     expiryDate: '',

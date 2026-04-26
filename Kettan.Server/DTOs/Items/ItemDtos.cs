@@ -6,9 +6,7 @@ public class ItemDto
     public int TenantId { get; set; }
     public string SKU { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public int UnitId { get; set; }
-    public string UnitName { get; set; } = string.Empty;
-    public string UnitSymbol { get; set; } = string.Empty;
+    public string Unit { get; set; } = string.Empty;
     public int? InventoryCategoryId { get; set; }
     public string? InventoryCategoryName { get; set; }
     public int? ItemCategoryId { get; set; }
@@ -34,7 +32,7 @@ public class CreateItemDto
 {
     public string SKU { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public int UnitId { get; set; }
+    public string Unit { get; set; } = string.Empty;
     public int? InventoryCategoryId { get; set; }
     public int? ItemCategoryId { get; set; }
     public decimal DefaultThreshold { get; set; }
@@ -48,7 +46,7 @@ public class UpdateItemDto
 {
     public string SKU { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public int UnitId { get; set; }
+    public string Unit { get; set; } = string.Empty;
     public int? InventoryCategoryId { get; set; }
     public int? ItemCategoryId { get; set; }
     public decimal DefaultThreshold { get; set; }

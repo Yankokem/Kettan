@@ -2,11 +2,11 @@ import { Box, Typography, Chip, IconButton, Tooltip } from '@mui/material';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
-import type { Batch, Unit } from '../types';
+import type { Batch } from '../types';
 
 interface BatchListProps {
   batches: Batch[];
-  unit: Unit;
+  unit: string;
   onAdjust?: (batchId: string) => void;
   compact?: boolean;
 }
@@ -79,7 +79,7 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
       width: compact ? 80 : 100,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
-          {row.currentQuantity} {unit.symbol}
+          {row.currentQuantity} {unit}
         </Typography>
       ),
     },
