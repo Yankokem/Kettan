@@ -10,56 +10,52 @@ export interface AddStaffFormValues {
   firstName: string;
   lastName: string;
   email: string;
-  role: '' | 'hq' | 'manager' | 'staff';
+  password?: string;
+  birthday?: string;
+  contactNo?: string;
+  role: '' | 'TenantAdmin' | 'HqManager' | 'HqStaff' | 'BranchOwner' | 'BranchManager' | 'StoreStaff';
   imageFile: File | null;
   imagePreviewUrl: string | null;
-  branchId: string;
-}
-
-interface BranchOption {
-  value: string;
-  label: string;
 }
 
 interface AddStaffModalProps {
   open: boolean;
-  branchOptions?: BranchOption[];
-  initialBranchId?: string;
-  initialBranchName?: string;
   onClose: () => void;
   onSave: (formValues: AddStaffFormValues) => void;
 }
 
-type FormErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'role' | 'branchId', string>>;
+type FormErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'password' | 'contactNo' | 'role', string>>;
 
 const ROLE_OPTIONS: Array<{ value: AddStaffFormValues['role']; label: string }> = [
   { value: '', label: 'Select a role...' },
-  { value: 'hq', label: 'HQ Executive' },
-  { value: 'manager', label: 'Branch Manager' },
-  { value: 'staff', label: 'Store Staff' },
+  { value: 'TenantAdmin', label: 'Tenant Admin' },
+  { value: 'HqManager', label: 'HQ Manager' },
+  { value: 'HqStaff', label: 'HQ Staff' },
+  { value: 'BranchOwner', label: 'Branch Owner' },
+  { value: 'BranchManager', label: 'Branch Manager' },
+  { value: 'StoreStaff', label: 'Store Staff' },
 ];
 
-function buildInitialFormValues(initialBranchId: string = ''): AddStaffFormValues {
+function buildInitialFormValues(): AddStaffFormValues {
   return {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
+    birthday: '',
+    contactNo: '',
     role: '',
     imageFile: null,
     imagePreviewUrl: null,
-    branchId: initialBranchId,
   };
 }
 
 export function AddStaffModal({
   open,
-  branchOptions = [],
-  initialBranchId = '',
-  initialBranchName = '',
   onClose,
   onSave,
 }: AddStaffModalProps) {
-  const [formValues, setFormValues] = useState<AddStaffFormValues>(() => buildInitialFormValues(initialBranchId));
+  const [formValues, setFormValues] = useState<AddStaffFormValues>(() => buildInitialFormValues());
 
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -68,9 +64,9 @@ export function AddStaffModal({
       return;
     }
 
-    setFormValues(buildInitialFormValues(initialBranchId));
+    setFormValues(buildInitialFormValues());
     setErrors({});
-  }, [open, initialBranchId]);
+  }, [open]);
 
   const updateField = <K extends keyof AddStaffFormValues>(field: K, value: AddStaffFormValues[K]) => {
     setFormValues((previous) => ({ ...previous, [field]: value }));
@@ -111,8 +107,26 @@ export function AddStaffModal({
       nextErrors.role = 'Role is required.';
     }
 
-    if (!formValues.branchId) {
-      nextErrors.branchId = 'Branch assignment is required.';
+    if (!formValues.password) {
+      nextErrors.password = 'Password is required.';
+    } else {
+      let score = 0;
+      const pwd = formValues.password;
+      if (pwd.length >= 8) score += 1;
+      if (/[A-Z]/.test(pwd)) score += 1;
+      if (/[0-9]/.test(pwd)) score += 1;
+      if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
+      if (score < 4) {
+        nextErrors.password = 'Password must be at least 8 characters and include uppercase, number, and special character.';
+      }
+    }
+
+    if (formValues.contactNo) {
+      if (!/^\+?[0-9\s\-()]+$/.test(formValues.contactNo)) {
+        nextErrors.contactNo = 'Invalid phone number format.';
+      } else if (formValues.contactNo.replace(/\D/g, '').length < 7) {
+        nextErrors.contactNo = 'Phone number must contain at least 7 digits.';
+      }
     }
 
     setErrors(nextErrors);
@@ -217,6 +231,39 @@ export function AddStaffModal({
               </Grid>
 
               <Grid size={{ xs: 12 }}>
+                <FormTextField
+                  label="Password"
+                  placeholder="Minimum 8 characters"
+                  type="password"
+                  value={formValues.password || ''}
+                  onChange={(event) => updateField('password', event.target.value)}
+                  error={Boolean(errors.password)}
+                  helperText={errors.password}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormTextField
+                  label="Birthday"
+                  type="date"
+                  value={formValues.birthday || ''}
+                  onChange={(event) => updateField('birthday', event.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormTextField
+                  label="Contact No"
+                  placeholder="e.g. +63 912 345 6789"
+                  value={formValues.contactNo || ''}
+                  onChange={(event) => updateField('contactNo', event.target.value)}
+                  error={Boolean(errors.contactNo)}
+                  helperText={errors.contactNo}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
                 <FormDropdown
                   label="Role"
                   value={formValues.role}
@@ -229,15 +276,6 @@ export function AddStaffModal({
                 ) : null}
               </Grid>
 
-              <Grid size={{ xs: 12 }}>
-                <FormDropdown
-                  label="Branch Assignment"
-                  value={formValues.branchId}
-                  options={branchOptions.length > 0 ? branchOptions : [{ value: initialBranchId, label: initialBranchName || 'Current Branch' }]}
-                  onChange={(event) => updateField('branchId', String(event.target.value))}
-                  disabled={branchOptions.length <= 1}
-                />
-              </Grid>
             </Grid>
           </Box>
         </Box>

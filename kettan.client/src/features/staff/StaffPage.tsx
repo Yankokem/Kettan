@@ -24,9 +24,12 @@ import { fetchEmployees, createEmployee, type EmployeeDto } from './staffApi';
 import { fetchBranches, type BranchDto } from '../branches/branchesApi';
 
 const ROLE_LABEL_MAP: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
-  hq: 'HQ Executive',
-  manager: 'Branch Manager',
-  staff: 'Store Staff',
+  TenantAdmin: 'Tenant Admin',
+  HqManager: 'HQ Manager',
+  HqStaff: 'HQ Staff',
+  BranchOwner: 'Branch Owner',
+  BranchManager: 'Branch Manager',
+  StoreStaff: 'Store Staff',
 };
 
 const getInitials = (firstName: string, lastName: string) =>

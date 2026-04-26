@@ -85,8 +85,9 @@ export function LoginPage() {
         token || null
       );
 
+      const isTenantAdmin = me.user.role === 'TenantAdmin';
       const isProfileComplete = me.tenant?.profileComplete ?? true;
-      navigate({ to: isProfileComplete ? "/" : "/company-profile" });
+      navigate({ to: isTenantAdmin && !isProfileComplete ? '/company-profile' : '/' });
     } catch (error) {
       const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message
         ?? "Unable to sign in. Please verify your credentials and try again.";

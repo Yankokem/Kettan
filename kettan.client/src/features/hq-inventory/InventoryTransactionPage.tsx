@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Box, Divider, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormDropdown } from '../../components/Form/FormDropdown';
@@ -496,114 +496,129 @@ export default function InventoryTransactionPage() {
         </Typography>
       )}
 
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+        {/* Left card — Transaction Details */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', md: '38%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            p: 3.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0,
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
+            Transaction Details
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <FormDropdown
+              label="Transaction Type"
+              value={transactionType}
+              onChange={(event) => handleTypeChange(String(event.target.value) as InventoryTransactionKind)}
+              options={TRANSACTION_TYPE_OPTIONS}
+              fullWidth
+            />
+
+            {transactionType === 'Stock-In' && (
+              <FormTextField
+                label="Reference / Invoice Number"
+                value={referenceNumber}
+                placeholder="INV-2026-001"
+                onChange={(event) => setReferenceNumber(event.target.value)}
+              />
+            )}
+
+            <FormTextField
+              label={transactionType === 'Stock-In' ? 'Remarks (Optional)' : 'Remarks / Reason'}
+              value={remarks}
+              onChange={(event) => setRemarks(event.target.value)}
+              multiline
+              rows={4}
+              placeholder="Add context for this transaction"
+            />
+          </Box>
+
           <Box
             sx={{
-              width: { xs: '100%', md: '40%' },
-              p: 4,
-              borderRight: { xs: 'none', md: '1px solid' },
-              borderBottom: { xs: '1px solid', md: 'none' },
+              mt: 3,
+              p: 2.5,
+              borderRadius: 3,
+              bgcolor: 'background.default',
+              border: '1px solid',
               borderColor: 'divider',
             }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
-              Transaction Details
+            <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.primary', mb: 1.75 }}>
+              Transaction Snapshot
             </Typography>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-              <FormDropdown
-                label="Transaction Type"
-                value={transactionType}
-                onChange={(event) => handleTypeChange(String(event.target.value) as InventoryTransactionKind)}
-                options={TRANSACTION_TYPE_OPTIONS}
-                fullWidth
-              />
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 1.25, columnGap: 1.5 }}>
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Lines Added</Typography>
+              <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: 'right' }}>{items.length}</Typography>
 
-              {transactionType === 'Stock-In' && (
-                <FormTextField
-                  label="Reference / Invoice Number"
-                  value={referenceNumber}
-                  placeholder="INV-2026-001"
-                  onChange={(event) => setReferenceNumber(event.target.value)}
-                />
-              )}
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Total Quantity</Typography>
+              <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: 'right' }}>{totalQuantity}</Typography>
 
-              <FormTextField
-                label={transactionType === 'Stock-In' ? 'Remarks (Optional)' : 'Remarks / Reason'}
-                value={remarks}
-                onChange={(event) => setRemarks(event.target.value)}
-                multiline
-                rows={4}
-                placeholder="Add context for this transaction"
-              />
-            </Box>
-
-            <Divider sx={{ my: 3 }} />
-
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.5,
-                borderRadius: 2.5,
-                border: '1px solid',
-                borderColor: 'divider',
-                bgcolor: 'background.paper',
-              }}
-            >
-              <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.primary', mb: 1.75 }}>
-                Transaction Snapshot
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Estimated Value</Typography>
+              <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: 'right' }}>
+                ₱{estimatedValue.toFixed(2)}
               </Typography>
-
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 1.25, columnGap: 1.5 }}>
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Lines Added</Typography>
-                <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: 'right' }}>{items.length}</Typography>
-
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Total Quantity</Typography>
-                <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: 'right' }}>{totalQuantity}</Typography>
-
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Estimated Value</Typography>
-                <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: 'right' }}>
-                  ₱{estimatedValue.toFixed(2)}
-                </Typography>
-              </Box>
-            </Paper>
+            </Box>
           </Box>
+        </Paper>
 
-          <Box sx={{ width: { xs: '100%', md: '60%' }, p: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <TransactionItemComposer
-              transactionType={transactionType}
-              draft={draft}
-              availableItems={availableItems}
-              categoryOptions={categoryOptions}
-              unitOptions={unitOptions}
-              editingIndex={editingIndex}
-              errorMessage={composerError}
-              onModeChange={handleModeChange}
-              onDraftChange={patchDraft}
-              onSubmit={handleComposerSubmit}
-              onCancelEdit={handleCancelEdit}
-            />
-
-            <TransactionItemsReview
-              items={items}
-              transactionType={transactionType}
-              onEdit={handleEditLine}
-              onRemove={handleRemoveLine}
-            />
-          </Box>
-        </Box>
-
-        <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
-          <FormActions
-            cancelTo="/hq-inventory"
-            saveText={isSaving ? 'Saving...' : 'Save Transaction'}
-            saveIcon={<ReceiptLongRoundedIcon />}
-            onSave={handleSaveTransaction}
-            saveDisabled={items.length === 0 || isSaving}
+        {/* Right card — Item Entry + Review + Actions */}
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            p: 3.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+          }}
+        >
+          <TransactionItemComposer
+            transactionType={transactionType}
+            draft={draft}
+            availableItems={availableItems}
+            categoryOptions={categoryOptions}
+            unitOptions={unitOptions}
+            editingIndex={editingIndex}
+            errorMessage={composerError}
+            onModeChange={handleModeChange}
+            onDraftChange={patchDraft}
+            onSubmit={handleComposerSubmit}
+            onCancelEdit={handleCancelEdit}
           />
-        </Box>
-      </Paper>
+
+          <TransactionItemsReview
+            items={items}
+            transactionType={transactionType}
+            onEdit={handleEditLine}
+            onRemove={handleRemoveLine}
+          />
+
+          <Box sx={{ pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+            <FormActions
+              cancelTo="/hq-inventory"
+              saveText={isSaving ? 'Saving...' : 'Save Transaction'}
+              saveIcon={<ReceiptLongRoundedIcon />}
+              onSave={handleSaveTransaction}
+              saveDisabled={items.length === 0 || isSaving}
+            />
+          </Box>
+        </Paper>
+      </Box>
     </Box>
   );
 }

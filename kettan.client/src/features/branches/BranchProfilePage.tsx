@@ -62,9 +62,12 @@ const MANAGER_OPTIONS = [
 ];
 
 const STAFF_ROLE_TO_POSITION: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
-  hq: 'HQ Executive',
-  manager: 'Branch Manager',
-  staff: 'Store Staff',
+  TenantAdmin: 'Tenant Admin',
+  HqManager: 'HQ Manager',
+  HqStaff: 'HQ Staff',
+  BranchOwner: 'Branch Owner',
+  BranchManager: 'Branch Manager',
+  StoreStaff: 'Store Staff',
 };
 
 export function BranchProfilePage() {
@@ -383,9 +386,6 @@ export function BranchProfilePage() {
 
       <AddStaffModal
         open={isAddStaffModalOpen}
-        branchOptions={staffBranchOptions}
-        initialBranchId={selectedBranch?.id.toString() || ''}
-        initialBranchName={selectedBranch?.name || ''}
         onClose={() => setIsAddStaffModalOpen(false)}
         onSave={handleCreateStaff}
       />

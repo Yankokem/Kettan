@@ -55,10 +55,18 @@ export function ProfileImageUploader({
   const hasImage = Boolean(previewSrc);
   const borderRadius = shape === 'circle' ? '50%' : 3;
 
+  const [sizeError, setSizeError] = useState<string | null>(null);
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      onFileChange(file);
+      if (file.size > 5 * 1024 * 1024) {
+        setSizeError('Image must be 5MB or less.');
+        onFileChange(null);
+      } else {
+        setSizeError(null);
+        onFileChange(file);
+      }
     }
     // Reset input so same file can be re-selected
     if (fileInputRef.current) {
@@ -67,6 +75,7 @@ export function ProfileImageUploader({
   };
 
   const handleRemove = () => {
+    setSizeError(null);
     onFileChange(null);
   };
 
@@ -163,6 +172,12 @@ export function ProfileImageUploader({
           </Button>
         )}
       </Box>
+
+      {sizeError && (
+        <Typography sx={{ fontSize: 12, color: 'error.main', textAlign: 'center', mt: 0.5 }}>
+          {sizeError}
+        </Typography>
+      )}
     </Box>
   );
 }
