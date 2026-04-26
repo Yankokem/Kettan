@@ -18,6 +18,8 @@ interface ProfileImageUploaderProps {
   shape?: 'square' | 'circle';
   /** Called when user selects a new file */
   onFileChange: (file: File | null) => void;
+  /** Whether the uploader is in read-only mode */
+  readOnly?: boolean;
 }
 
 /**
@@ -32,6 +34,7 @@ export function ProfileImageUploader({
   subLabel = 'PNG or JPG up to 5MB',
   shape = 'square',
   onFileChange,
+  readOnly = false,
 }: ProfileImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
@@ -83,7 +86,7 @@ export function ProfileImageUploader({
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
       {/* Preview / Drop Zone */}
       <Box
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => !readOnly && fileInputRef.current?.click()}
         sx={{
           width: '100%',
           maxWidth: 240,
@@ -97,12 +100,12 @@ export function ProfileImageUploader({
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: hasImage ? '#FAF5EF' : 'background.paper',
-          cursor: 'pointer',
+          cursor: readOnly ? 'default' : 'pointer',
           transition: 'all 0.2s ease',
-          '&:hover': {
+          '&:hover': !readOnly ? {
             borderColor: '#C9A84C',
             bgcolor: 'action.hover',
-          },
+          } : {},
         }}
       >
         {hasImage ? (
@@ -145,33 +148,35 @@ export function ProfileImageUploader({
       />
 
       {/* Action buttons */}
-      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
-        <Button
-          variant="outlined"
-          startIcon={<CloudUploadRoundedIcon sx={{ fontSize: 18 }} />}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          {hasImage ? 'Replace' : 'Upload'}
-        </Button>
-
-        {hasImage && (
+      {!readOnly && (
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
           <Button
             variant="outlined"
-            startIcon={<CloseRoundedIcon sx={{ fontSize: 18 }} />}
-            onClick={handleRemove}
-            sx={{
-              color: '#B91C1C',
-              borderColor: 'rgba(185,28,28,0.35)',
-              '&:hover': {
-                borderColor: '#B91C1C',
-                bgcolor: 'rgba(185,28,28,0.06)',
-              },
-            }}
+            startIcon={<CloudUploadRoundedIcon sx={{ fontSize: 18 }} />}
+            onClick={() => fileInputRef.current?.click()}
           >
-            Remove
+            {hasImage ? 'Replace' : 'Upload'}
           </Button>
-        )}
-      </Box>
+
+          {hasImage && (
+            <Button
+              variant="outlined"
+              startIcon={<CloseRoundedIcon sx={{ fontSize: 18 }} />}
+              onClick={handleRemove}
+              sx={{
+                color: '#B91C1C',
+                borderColor: 'rgba(185,28,28,0.35)',
+                '&:hover': {
+                  borderColor: '#B91C1C',
+                  bgcolor: 'rgba(185,28,28,0.06)',
+                },
+              }}
+            >
+              Remove
+            </Button>
+          )}
+        </Box>
+      )}
 
       {sizeError && (
         <Typography sx={{ fontSize: 12, color: 'error.main', textAlign: 'center', mt: 0.5 }}>

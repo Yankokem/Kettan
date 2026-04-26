@@ -1,4 +1,6 @@
-namespace Kettan.Server.DTOs.Couriers;
+using System;
+
+namespace Kettan.Server.DTOs.Vehicles;
 
 public class VehicleDto
 {
@@ -24,6 +26,5 @@ public class UpdateVehicleDto
     public string PlateNumber { get; set; } = string.Empty;
     public string VehicleType { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; }
 }
-

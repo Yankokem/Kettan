@@ -458,23 +458,6 @@ export default function InventoryTransactionPage() {
     }
   };
 
-  if (isLoadingCatalog) {
-    return (
-      <Box sx={{ pb: 3 }}>
-        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <BackButton to="/hq-inventory" />
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-              New Inventory Transaction
-            </Typography>
-            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-              Loading inventory catalog...
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-    );
-  }
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -485,7 +468,9 @@ export default function InventoryTransactionPage() {
             New Inventory Transaction
           </Typography>
           <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-            Record stock movement with a single, unified flow for existing and quick-created items.
+            {isLoadingCatalog
+              ? 'Fetching latest catalog data in background...'
+              : 'Record stock movement with a single, unified flow for existing and quick-created items.'}
           </Typography>
         </Box>
       </Box>

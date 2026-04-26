@@ -63,8 +63,8 @@ interface UnitDto {
   createdAt: string;
 }
 
-interface ItemCategoryDto {
-  itemCategoryId: number;
+interface InventoryCategoryDto {
+  categoryId: number;
   name: string;
   description: string | null;
   displayOrder: number;
@@ -89,6 +89,7 @@ interface CreateItemInput {
   sku: string;
   name: string;
   unitId: string;
+  inventoryCategoryId?: string;
   itemCategoryId?: string;
   defaultThreshold: number;
   unitCost: number;
@@ -96,9 +97,7 @@ interface CreateItemInput {
   imageUrl?: string | null;
 }
 
-interface UpdateItemInput extends CreateItemInput {
-  inventoryCategoryId?: string;
-}
+interface UpdateItemInput extends CreateItemInput { }
 
 interface StockInInput {
   quantity: number;
@@ -116,9 +115,9 @@ interface StockOutInput {
 
 const SAFE_FUTURE_EXPIRY_DAYS = 30;
 
-function toCategory(row: ItemCategoryDto): InventoryCategory {
+function toCategory(row: InventoryCategoryDto): InventoryCategory {
   return {
-    id: String(row.itemCategoryId),
+    id: String(row.categoryId),
     name: row.name,
     description: row.description ?? undefined,
     displayOrder: row.displayOrder,
@@ -182,18 +181,18 @@ function toItem(row: ItemDto): InventoryItem {
       name: row.unitName,
       symbol: row.unitSymbol,
     },
-    categoryId: row.itemCategoryId != null ? String(row.itemCategoryId) : '',
+    categoryId: row.inventoryCategoryId != null ? String(row.inventoryCategoryId) : '',
     category:
-      row.itemCategoryId != null
+      row.inventoryCategoryId != null
         ? {
-            id: String(row.itemCategoryId),
-            name: row.itemCategoryName ?? 'Uncategorized',
-            displayOrder: 0,
-            isActive: true,
-            isDeleted: false,
-            deletedAt: null,
-            createdAt: row.createdAt,
-          }
+          id: String(row.inventoryCategoryId),
+          name: row.inventoryCategoryName ?? 'Uncategorized',
+          displayOrder: 0,
+          isActive: true,
+          isDeleted: false,
+          deletedAt: null,
+          createdAt: row.createdAt,
+        }
         : undefined,
     defaultThreshold,
     unitCost: Number(row.unitCost || 0),
@@ -247,13 +246,13 @@ function toTransaction(
       batch ??
       (row.batchNumber
         ? {
-            id: batchId,
-            itemId: item?.id ?? '',
-            batchNumber: row.batchNumber,
-            expiryDate: '',
-            currentQuantity: 0,
-            createdAt: row.timestamp,
-          }
+          id: batchId,
+          itemId: item?.id ?? '',
+          batchNumber: row.batchNumber,
+          expiryDate: '',
+          currentQuantity: 0,
+          createdAt: row.timestamp,
+        }
         : undefined),
     itemId: item?.id ?? '',
     item,
@@ -280,8 +279,7 @@ function toDateOrFallback(expiryDate?: string): string {
 
 function toItemPayload(input: CreateItemInput | UpdateItemInput): CreateOrUpdateItemPayload {
   const rawCategoryId = input.itemCategoryId?.trim();
-  const rawInventoryCategoryId =
-    'inventoryCategoryId' in input ? input.inventoryCategoryId?.trim() : undefined;
+  const rawInventoryCategoryId = input.inventoryCategoryId?.trim();
 
   return {
     sku: input.sku.trim(),
@@ -300,6 +298,12 @@ function toItemPayload(input: CreateItemInput | UpdateItemInput): CreateOrUpdate
   };
 }
 
+
+export async function fetchItemCategories(): Promise<InventoryCategory[]> {
+  const response = await api.get<InventoryCategoryDto[]>('/api/inventory-categories');
+  return response.data.map(toCategory);
+}
+
 export async function fetchUnits(): Promise<Unit[]> {
   const response = await api.get<UnitDto[]>('/api/units');
   return response.data.map((row) => ({
@@ -307,11 +311,6 @@ export async function fetchUnits(): Promise<Unit[]> {
     name: row.name,
     symbol: row.symbol,
   }));
-}
-
-export async function fetchItemCategories(): Promise<InventoryCategory[]> {
-  const response = await api.get<ItemCategoryDto[]>('/api/item-categories');
-  return response.data.map(toCategory);
 }
 
 export async function fetchInventoryItems(search?: string): Promise<InventoryItem[]> {

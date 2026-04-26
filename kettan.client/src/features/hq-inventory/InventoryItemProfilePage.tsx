@@ -246,15 +246,8 @@ export function InventoryItemProfilePage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <Typography variant="h6" color="text.secondary">Loading item details...</Typography>
-      </Box>
-    );
-  }
 
-  if (!item) {
+  if (!item && !isLoading) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography variant="h6" color="text.secondary">{errorMessage || 'Item not found'}</Typography>
@@ -262,8 +255,8 @@ export function InventoryItemProfilePage() {
     );
   }
 
-  const isLowStock = item.totalStock <= defaultThreshold;
-  const costChange = item.previousUnitCost
+  const isLowStock = item ? item.totalStock <= defaultThreshold : false;
+  const costChange = item?.previousUnitCost
     ? ((currentUnitCost - item.previousUnitCost) / item.previousUnitCost) * 100
     : 0;
 
@@ -296,7 +289,7 @@ export function InventoryItemProfilePage() {
           <BackButton to="/hq-inventory" />
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>{item.name}</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>{item?.name || '...'}</Typography>
               {isLowStock && (
                 <Chip
                   icon={<WarningRoundedIcon sx={{ fontSize: 16 }} />}
@@ -313,7 +306,7 @@ export function InventoryItemProfilePage() {
               )}
             </Box>
             <Typography sx={{ fontSize: 13, color: 'text.secondary', fontFamily: 'monospace', mt: 0.5 }}>
-              SKU: {item.sku}
+              SKU: {item?.sku || '...'}
             </Typography>
           </Box>
         </Box>
@@ -321,7 +314,7 @@ export function InventoryItemProfilePage() {
           <Button
             variant="outlined"
             startIcon={<CallReceivedRoundedIcon />}
-            onClick={() => navigate({ to: '/hq-inventory/transaction', search: { itemId: item.id } })}
+            onClick={() => navigate({ to: '/hq-inventory/transaction', search: { itemId: item?.id || '' } })}
           >
             New Transaction
           </Button>
@@ -359,7 +352,7 @@ export function InventoryItemProfilePage() {
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, mb: 3 }}>
               <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2, textAlign: 'center' }}>
                 <Typography sx={{ fontSize: 24, fontWeight: 700, color: isLowStock ? 'error.main' : 'text.primary' }}>
-                  {item.totalStock}
+                  {item?.totalStock ?? 0}
                 </Typography>
                 <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
                   {selectedUnit?.symbol} Stock
@@ -395,7 +388,7 @@ export function InventoryItemProfilePage() {
             <Box sx={{ mb: 3 }}>
               <ProfileImageUploader
                 imageFile={form?.imageFile ?? undefined}
-                imageUrl={form?.imageUrl ?? item.imageUrl}
+                imageUrl={form?.imageUrl ?? item?.imageUrl}
                 onFileChange={(file) => setForm(prev => prev ? { ...prev, imageFile: file } : null)}
                 readOnly={!isEditing}
               />
@@ -407,26 +400,26 @@ export function InventoryItemProfilePage() {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
               <FormTextField
                 label="Item Name"
-                value={form?.name ?? item.name}
+                value={form?.name ?? item?.name ?? ''}
                 onChange={(event) => setForm((prev) => (prev ? { ...prev, name: event.target.value } : prev))}
                 disabled={!isEditing}
               />
               <FormTextField
                 label="SKU"
-                value={form?.sku ?? item.sku}
+                value={form?.sku ?? item?.sku ?? ''}
                 onChange={(event) => setForm((prev) => (prev ? { ...prev, sku: event.target.value } : prev))}
                 disabled={!isEditing}
               />
               <FormDropdown
                 label="Category"
-                value={form?.categoryId ?? item.categoryId}
+                value={form?.categoryId ?? item?.categoryId ?? ''}
                 onChange={(event) => setForm((prev) => (prev ? { ...prev, categoryId: String(event.target.value) } : prev))}
                 options={categoryOptions}
                 disabled={!isEditing}
               />
               <FormDropdown
                 label="Unit of Measure"
-                value={form?.unitId ?? item.unitId}
+                value={form?.unitId ?? item?.unitId ?? ''}
                 onChange={(event) => setForm((prev) => (prev ? { ...prev, unitId: String(event.target.value) } : prev))}
                 options={unitOptions}
                 disabled={!isEditing}
@@ -436,7 +429,7 @@ export function InventoryItemProfilePage() {
                   <FormTextField
                     label="Reorder Threshold"
                     type="number"
-                    value={form?.defaultThreshold ?? String(item.defaultThreshold)}
+                    value={form?.defaultThreshold ?? (item ? String(item.defaultThreshold) : '0')}
                     onChange={(event) =>
                       setForm((prev) => (prev ? { ...prev, defaultThreshold: event.target.value } : prev))
                     }
@@ -447,7 +440,7 @@ export function InventoryItemProfilePage() {
                   <FormTextField
                     label={`Unit Cost (₱)`}
                     type="number"
-                    value={form?.unitCost ?? String(item.unitCost)}
+                    value={form?.unitCost ?? (item ? String(item.unitCost) : '0')}
                     onChange={(event) =>
                       setForm((prev) => (prev ? { ...prev, unitCost: event.target.value } : prev))
                     }
@@ -458,7 +451,7 @@ export function InventoryItemProfilePage() {
               {costChange !== 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                    Previous cost: ₱{item.previousUnitCost}
+                    Previous cost: ₱{item?.previousUnitCost || 0}
                   </Typography>
                   <Chip
                     label={`${costChange > 0 ? '+' : ''}${costChange.toFixed(1)}%`}

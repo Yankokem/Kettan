@@ -158,6 +158,12 @@ const inventoryRoute = createRoute({
 const inventoryTransactionRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/hq-inventory/transaction',
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      itemId: (search.itemId as string) || undefined,
+      itemIds: (search.itemIds as string) || undefined,
+    } as { itemId?: string; itemIds?: string };
+  },
   component: InventoryTransactionPage,
 });
 

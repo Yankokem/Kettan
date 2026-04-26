@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Kettan.Server.Data;
-using Kettan.Server.DTOs.Couriers;
+using Kettan.Server.DTOs.Vehicles;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
 
