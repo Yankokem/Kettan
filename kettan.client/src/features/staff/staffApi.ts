@@ -58,6 +58,14 @@ export async function createEmployee(dto: CreateEmployeeDto): Promise<EmployeeDt
   });
 }
 
+export async function createUser(dto: any): Promise<any> {
+  return request<any>('/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+  });
+}
+
 export async function updateEmployee(employeeId: number, dto: CreateEmployeeDto): Promise<void> {
   return request<void>(`/api/employees/${employeeId}`, {
     method: 'PUT',

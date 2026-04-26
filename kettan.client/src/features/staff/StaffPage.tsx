@@ -20,7 +20,7 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
-import { fetchEmployees, createEmployee, type EmployeeDto } from './staffApi';
+import { fetchEmployees, createEmployee, createUser, type EmployeeDto } from './staffApi';
 import { fetchBranches, type BranchDto } from '../branches/branchesApi';
 
 const ROLE_LABEL_MAP: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
@@ -110,8 +110,19 @@ export function StaffPage() {
     try {
       // Map AddStaffFormValues role to backend position string
       const position = ROLE_LABEL_MAP[roleValue] || roleValue;
+
+      // 1. Create User account so they can log in
+      await createUser({
+        email: formValues.email,
+        password: formValues.password,
+        role: roleValue,
+        firstName: formValues.firstName,
+        lastName: formValues.lastName,
+        birthday: formValues.birthday,
+        contactNo: formValues.contactNo,
+      });
       
-      // Save via API
+      // 2. Save Employee record for directory/payroll
       const newEmployee = await createEmployee({
         firstName: formValues.firstName,
         lastName: formValues.lastName,
