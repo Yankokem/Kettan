@@ -133,7 +133,7 @@ public class ItemsController : ControllerBase
                 UnitCost = dto.UnitCost,
                 SellingPrice = dto.SellingPrice,
                 IsBundle = dto.IsBundle,
-                ImageUrl = dto.ImageUrl,
+
                 CreatedAt = now,
                 UpdatedAt = now
             };
@@ -185,7 +185,7 @@ public class ItemsController : ControllerBase
             item.UnitCost = dto.UnitCost;
             item.SellingPrice = dto.SellingPrice;
             item.IsBundle = dto.IsBundle;
-            item.ImageUrl = dto.ImageUrl;
+
             item.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -389,7 +389,7 @@ public class ItemsController : ControllerBase
             PreviousUnitCost = dto.PreviousUnitCost,
             SellingPrice = dto.SellingPrice,
             IsBundle = dto.IsBundle,
-            ImageUrl = dto.ImageUrl,
+
             TotalStock = dto.TotalStock,
             IsLowStock = dto.IsLowStock,
             CreatedAt = dto.CreatedAt,
@@ -481,7 +481,7 @@ public class ItemsController : ControllerBase
             PreviousUnitCost = item.PreviousUnitCost,
             SellingPrice = item.SellingPrice,
             IsBundle = item.IsBundle,
-            ImageUrl = item.ImageUrl,
+
             TotalStock = stockLevel,
             IsLowStock = stockLevel <= item.DefaultThreshold,
             CreatedAt = item.CreatedAt,

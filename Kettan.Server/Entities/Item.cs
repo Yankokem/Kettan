@@ -58,9 +58,6 @@ public class Item : ITenantEntity
 
     public bool IsBundle { get; set; } = false;
 
-    [MaxLength(500)]
-    public string? ImageUrl { get; set; }
-
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 

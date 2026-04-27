@@ -72,7 +72,6 @@ export interface InventoryItem {
   previousUnitCost?: number;
   totalStock: number;
   status: 'In Stock' | 'Low Stock' | 'Out of Stock';
-  imageUrl?: string | null;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;

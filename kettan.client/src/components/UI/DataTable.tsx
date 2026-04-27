@@ -258,11 +258,15 @@ export function DataTable<T>({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            background: (theme) =>
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.96) 0%, rgba(58, 39, 24, 0.92) 100%)'
+                : 'linear-gradient(170deg, rgba(250, 245, 239, 0.98) 0%, rgba(240, 230, 211, 0.98) 100%)',
             borderBottom: 1,
             borderColor: 'divider',
           }}
         >
-          <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>
+          <Typography sx={{ fontSize: 15, fontWeight: 700, color: (theme) => (theme.palette.mode === 'dark' ? '#E8D3A9' : '#2E1F0C'), letterSpacing: '-0.01em' }}>
             {title}
           </Typography>
         </Box>
@@ -332,9 +336,13 @@ export function DataTable<T>({
         sx={{
           display: 'grid',
           gridTemplateColumns,
+          columnGap: 2,
           px: 3,
           py: 1.3,
-          bgcolor: 'background.default',
+          background: (theme) =>
+            theme.palette.mode === 'dark'
+              ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.9) 0%, rgba(58, 39, 24, 0.86) 100%)'
+              : 'linear-gradient(170deg, rgba(250, 245, 239, 0.94) 0%, rgba(240, 230, 211, 0.94) 100%)',
           borderBottom: 1,
           borderColor: 'divider',
         }}
@@ -348,7 +356,13 @@ export function DataTable<T>({
               fontWeight: 700,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              color: sortKey === col.key ? 'primary.main' : 'text.secondary',
+              px: 0.5,
+              color: (theme) =>
+                sortKey === col.key
+                  ? theme.palette.primary.main
+                  : theme.palette.mode === 'dark'
+                    ? 'rgba(232,211,169,0.74)'
+                    : '#6B4C2A',
               textAlign: col.align || 'left',
               userSelect: 'none',
               cursor: col.sortable ? 'pointer' : 'default',
@@ -375,6 +389,7 @@ export function DataTable<T>({
             sx={{
               display: 'grid',
               gridTemplateColumns,
+              columnGap: 2,
               px: 3,
               py: 1.75,
               alignItems: 'center',
@@ -386,7 +401,7 @@ export function DataTable<T>({
             }}
           >
             {columns.map((col) => (
-              <Box key={col.key} sx={{ display: 'flex', justifyContent: getAlign(col.align) }}>
+              <Box key={col.key} sx={{ display: 'flex', justifyContent: getAlign(col.align), px: 0.5 }}>
                 {col.render(row)}
               </Box>
             ))}

@@ -41,7 +41,7 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
     {
       key: 'index',
       label: '#',
-      width: 50,
+      gridWidth: compact ? '0.8fr' : '0.7fr',
       render: (row) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
@@ -52,11 +52,14 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
               label="FIFO"
               size="small"
               sx={{
-                height: 18,
-                fontSize: 9,
-                fontWeight: 700,
+                height: 20,
+                fontSize: 10,
+                fontWeight: 800,
                 bgcolor: 'primary.main',
                 color: 'white',
+                border: '1px solid',
+                borderColor: 'primary.dark',
+                letterSpacing: '0.05em',
               }}
             />
           )}
@@ -66,6 +69,7 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
     {
       key: 'batchNumber',
       label: 'Batch Number',
+      gridWidth: compact ? '1.6fr' : '2.2fr',
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace' }}>
           {row.batchNumber}
@@ -76,9 +80,9 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
       key: 'currentQuantity',
       label: 'Quantity',
       align: 'right',
-      width: compact ? 80 : 100,
+      gridWidth: compact ? '1fr' : '1.2fr',
       render: (row) => (
-        <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
           {row.currentQuantity} {unit}
         </Typography>
       ),
@@ -86,7 +90,7 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
     {
       key: 'expiryDate',
       label: 'Expiry',
-      width: compact ? 120 : 150,
+      gridWidth: compact ? '1.2fr' : '1.7fr',
       render: (row) => {
         const status = getExpiryStatus(row.expiryDate);
         return (
@@ -114,7 +118,7 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
     columns.push({
       key: 'actions',
       label: '',
-      width: 60,
+      gridWidth: '0.55fr',
       align: 'right',
       render: (row) => (
         <Tooltip title="Adjust quantity">
@@ -147,4 +151,3 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
     />
   );
 }
-

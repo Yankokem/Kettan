@@ -19,31 +19,31 @@ const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: strin
     icon: <CallReceivedRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Stock-In',
     color: 'success.dark',
-    bgcolor: 'success.light',
+    bgcolor: 'rgba(46, 125, 50, 0.15)',
   },
   Consumption: {
     icon: <CallMadeRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Stock-Out',
     color: 'error.dark',
-    bgcolor: 'error.light',
+    bgcolor: 'rgba(211, 47, 47, 0.15)',
   },
   Sales_Auto: {
     icon: <ShoppingCartRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Sale (Auto)',
     color: 'info.dark',
-    bgcolor: 'info.light',
+    bgcolor: 'rgba(2, 136, 209, 0.15)',
   },
   Adjustment: {
     icon: <TuneRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Adjustment',
     color: 'warning.dark',
-    bgcolor: 'warning.light',
+    bgcolor: 'rgba(237, 108, 2, 0.15)',
   },
   Transfer: {
     icon: <SyncAltRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Transfer',
     color: 'secondary.dark',
-    bgcolor: 'rgba(84,107,63,0.15)',
+    bgcolor: 'rgba(156, 39, 176, 0.15)',
   },
 };
 
@@ -75,9 +75,9 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
       {
         key: 'timestamp',
         label: 'Date',
-        width: compact ? 120 : 150,
+        gridWidth: compact ? '1.4fr' : '1.2fr',
         render: (row) => (
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', whiteSpace: 'nowrap' }}>
             {formatDate(row.timestamp)}
           </Typography>
         ),
@@ -85,7 +85,7 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
       {
         key: 'transactionType',
         label: 'Type',
-        width: compact ? 100 : 120,
+        gridWidth: compact ? '1.1fr' : '1fr',
         render: (row) => {
           const config = TYPE_CONFIG[row.transactionType];
           return (
@@ -94,11 +94,14 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
               label={config.label}
               size="small"
               sx={{
-                height: 24,
+                height: 26,
                 fontSize: 11,
-                fontWeight: 600,
+                fontWeight: 700,
+                px: 0.5,
                 bgcolor: config.bgcolor,
                 color: config.color,
+                border: '1px solid',
+                borderColor: config.color,
                 '& .MuiChip-icon': { color: config.color },
               }}
             />
@@ -128,7 +131,7 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
       key: 'quantityChange',
       label: 'Qty',
       align: 'right',
-      width: compact ? 80 : 100,
+      gridWidth: compact ? '1fr' : '0.9fr',
       render: (row) => {
         const isPositive = row.quantityChange > 0;
         return (
@@ -137,9 +140,10 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
               fontSize: 13,
               fontWeight: 700,
               color: isPositive ? 'success.main' : 'error.main',
+              whiteSpace: 'nowrap',
             }}
           >
-            {formatQuantity(row.quantityChange, row.item?.unit?.symbol)}
+            {formatQuantity(row.quantityChange, row.item?.unit)}
           </Typography>
         );
       },
@@ -148,19 +152,23 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
     baseColumns.push({
       key: 'userName',
       label: 'By',
-      width: compact ? 80 : 100,
-      render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: row.userName === 'Auto' ? 'info.main' : 'text.primary' }}>
-          {row.userName || 'Unknown'}
-        </Typography>
-      ),
+      gridWidth: compact ? '1.2fr' : '1fr',
+      render: (row) => {
+        const name = row.userName?.trim();
+        const displayName = name ? (name.length > 20 ? name.substring(0, 17) + '...' : name) : 'System';
+        return (
+          <Typography sx={{ fontSize: 12.5, color: (!name || name === 'Auto') ? 'text.secondary' : 'text.primary', fontStyle: (!name || name === 'Auto') ? 'italic' : 'normal', whiteSpace: 'nowrap' }}>
+            {displayName}
+          </Typography>
+        );
+      },
     });
 
     if (!compact) {
       baseColumns.push({
         key: 'referenceId',
         label: 'Reference',
-        width: 100,
+        gridWidth: '0.9fr',
         render: (row) => (
           <Typography sx={{ fontSize: 12, color: 'text.secondary', fontFamily: 'monospace' }}>
             {row.referenceId || '-'}
@@ -184,4 +192,3 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
     />
   );
 }
-

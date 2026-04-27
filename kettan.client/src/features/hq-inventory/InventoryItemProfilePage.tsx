@@ -10,7 +10,6 @@ import { Button } from '../../components/UI/Button';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
-import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { BatchList } from './components/BatchList';
 import { TransactionsTable } from './components/TransactionsTable';
 import { AdjustmentModal } from './components/AdjustmentModal';
@@ -35,8 +34,6 @@ interface ItemFormState {
   unit: string;
   defaultThreshold: string;
   unitCost: string;
-  imageUrl?: string | null;
-  imageFile?: File | null;
 }
 
 function toItemFormState(item: InventoryItem): ItemFormState {
@@ -47,7 +44,6 @@ function toItemFormState(item: InventoryItem): ItemFormState {
     unit: item.unit,
     defaultThreshold: String(item.defaultThreshold),
     unitCost: String(item.unitCost),
-    imageUrl: item.imageUrl,
   };
 }
 
@@ -184,24 +180,6 @@ export function InventoryItemProfilePage() {
       setIsSaving(true);
       setSaveError(null);
 
-      let uploadedImageUrl = form.imageUrl;
-
-      if (form.imageFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', form.imageFile);
-        const uploadRes = await fetch('/api/uploads/image', {
-          method: 'POST',
-          credentials: 'include',
-          body: uploadFormData,
-        });
-
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
-          console.log('[Upload] Inventory item image updated URL:', uploadedImageUrl);
-        }
-      }
-
       await updateInventoryItem(item.id, {
         sku: form.sku,
         name: form.name,
@@ -209,7 +187,6 @@ export function InventoryItemProfilePage() {
         itemCategoryId: form.categoryId || undefined,
         defaultThreshold: threshold,
         unitCost,
-        imageUrl: uploadedImageUrl,
       });
 
       const refreshedDetail = await fetchInventoryItemDetail(item.id);
@@ -281,7 +258,7 @@ export function InventoryItemProfilePage() {
           <BackButton to="/hq-inventory" />
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>{item?.name || '...'}</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>Item Profile</Typography>
               {isLowStock && (
                 <Chip
                   icon={<WarningRoundedIcon sx={{ fontSize: 16 }} />}
@@ -290,15 +267,15 @@ export function InventoryItemProfilePage() {
                   sx={{
                     bgcolor: 'error.main',
                     color: 'white',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     height: 24,
                     '& .MuiChip-icon': { color: 'white' },
                   }}
                 />
               )}
             </Box>
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontFamily: 'monospace', mt: 0.5 }}>
-              SKU: {item?.sku || '...'}
+            <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.5 }}>
+              Manage item details and history
             </Typography>
           </Box>
         </Box>
@@ -337,11 +314,61 @@ export function InventoryItemProfilePage() {
       <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
         {/* Left Column - Item Details */}
         <Box sx={{ width: { xs: '100%', md: '40%' } }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 3 }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 3 }}>Item Details</Typography>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden', bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+            {/* Hero Header — name & SKU on warm gradient */}
+            <Box
+              sx={{
+                background: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.96) 0%, rgba(58, 39, 24, 0.92) 100%)'
+                    : 'linear-gradient(170deg, rgba(250, 245, 239, 0.98) 0%, rgba(240, 230, 211, 0.98) 100%)',
+                px: 3,
+                pt: 3,
+                pb: 2.5,
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  inset: 0,
+                  background: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'radial-gradient(ellipse at 80% 20%, rgba(201,168,77,0.08) 0%, transparent 62%)'
+                      : 'radial-gradient(ellipse at 80% 20%, rgba(201,168,77,0.12) 0%, transparent 62%)',
+                  pointerEvents: 'none',
+                },
+              }}
+            >
+              {isLowStock && (
+                <Chip
+                  icon={<WarningRoundedIcon sx={{ fontSize: 14 }} />}
+                  label="Low Stock"
+                  size="small"
+                  sx={{
+                    mb: 1.5,
+                    bgcolor: 'rgba(220,38,38,0.85)',
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: 11,
+                    height: 22,
+                    backdropFilter: 'blur(4px)',
+                    '& .MuiChip-icon': { color: 'white' },
+                  }}
+                />
+              )}
+              <Typography sx={{ fontSize: 26, fontWeight: 800, color: (theme) => (theme.palette.mode === 'dark' ? '#E8D3A9' : '#2E1F0C'), lineHeight: 1.15, letterSpacing: '-0.01em' }}>
+                {item?.name || '...'}
+              </Typography>
+              <Typography sx={{ fontSize: 12.5, color: (theme) => (theme.palette.mode === 'dark' ? 'rgba(232,211,169,0.72)' : 'rgba(140,107,67,0.9)'), fontFamily: 'monospace', mt: 0.75, letterSpacing: '0.04em' }}>
+                SKU: {item?.sku || '...'}
+              </Typography>
+            </Box>
+
+            {/* Body */}
+            <Box sx={{ px: 3, pb: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
 
             {/* Quick Stats */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, mb: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1.5 }}>
               <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2, textAlign: 'center' }}>
                 <Typography sx={{ fontSize: 24, fontWeight: 700, color: isLowStock ? 'error.main' : 'text.primary' }}>
                   {item?.totalStock ?? 0}
@@ -377,16 +404,7 @@ export function InventoryItemProfilePage() {
               </Box>
             </Box>
 
-            <Box sx={{ mb: 3 }}>
-              <ProfileImageUploader
-                imageFile={form?.imageFile ?? undefined}
-                imageUrl={form?.imageUrl ?? item?.imageUrl}
-                onFileChange={(file) => setForm(prev => prev ? { ...prev, imageFile: file } : null)}
-                readOnly={!isEditing}
-              />
-            </Box>
-
-            <Divider sx={{ my: 2 }} />
+            <Divider />
 
             {/* Form Fields */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -459,6 +477,7 @@ export function InventoryItemProfilePage() {
                 </Box>
               )}
             </Box>
+            </Box>{/* end Body */}
           </Paper>
         </Box>
 

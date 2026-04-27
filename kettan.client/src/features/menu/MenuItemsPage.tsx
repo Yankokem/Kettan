@@ -17,6 +17,35 @@ import { MenuItemCard } from './components/MenuItemCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { fetchMenuItems, type MenuItemDto } from './menuItemsApi';
 
+function toMenuCardItem(dto: MenuItemDto): MenuItem {
+  const safePrice = Number(dto.basePrice);
+  const status = dto.status === 'Active' || dto.status === 'Inactive' || dto.status === 'Out of Stock'
+    ? dto.status
+    : 'Inactive';
+
+  return {
+    id: String(dto.menuItemId),
+    name: dto.name,
+    category: dto.categoryName || 'Uncategorized',
+    description: dto.description ?? undefined,
+    sellingPrice: Number.isFinite(safePrice) ? safePrice : 0,
+    status,
+    image: dto.imageUrl ?? undefined,
+    createdAt: dto.createdAt,
+    variants: (dto.variants ?? []).map((variant) => ({
+      id: String(variant.variantId),
+      name: variant.name,
+      ingredients: (variant.ingredients ?? []).map((ingredient) => ({
+        id: String(ingredient.variantIngredientId),
+        itemId: String(ingredient.itemId),
+        itemName: ingredient.itemName,
+        qtyPerUnit: Number(ingredient.quantity) || 0,
+        uom: '',
+      })),
+    })),
+  };
+}
+
 export function MenuItemsPage() {
   const [menuItems, setMenuItems] = useState<MenuItemDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,7 +163,7 @@ export function MenuItemsPage() {
         <Grid container spacing={3} columns={60}>
           {filteredItems.map(item => (
             <Grid key={item.menuItemId} size={{ xs: 60, sm: 20, md: 20, lg: 12 }}>
-              <MenuItemCard item={item as unknown as MenuItem} />
+              <MenuItemCard item={toMenuCardItem(item)} />
             </Grid>
           ))}
         </Grid>

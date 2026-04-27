@@ -7,6 +7,8 @@ interface Props {
 }
 
 export function MenuItemCard({ item }: Props) {
+  const safeSellingPrice = Number.isFinite(Number(item.sellingPrice)) ? Number(item.sellingPrice) : 0;
+
   const getStatusText = (status: string) => {
     switch (status) {
       case 'Active': return 'Available';
@@ -140,7 +142,7 @@ export function MenuItemCard({ item }: Props) {
               }}
             />
             <Typography sx={{ fontWeight: 800, color: 'text.primary' }}>
-              ₱{item.sellingPrice.toFixed(2)}
+              ₱{safeSellingPrice.toFixed(2)}
             </Typography>
           </Box>
         </Box>

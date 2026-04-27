@@ -16,7 +16,7 @@ public class ItemDto
     public decimal? PreviousUnitCost { get; set; }
     public decimal? SellingPrice { get; set; }
     public bool IsBundle { get; set; }
-    public string? ImageUrl { get; set; }
+
     public decimal TotalStock { get; set; }
     public bool IsLowStock { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -39,7 +39,7 @@ public class CreateItemDto
     public decimal UnitCost { get; set; }
     public decimal? SellingPrice { get; set; }
     public bool IsBundle { get; set; }
-    public string? ImageUrl { get; set; }
+
 }
 
 public class UpdateItemDto
@@ -53,7 +53,7 @@ public class UpdateItemDto
     public decimal UnitCost { get; set; }
     public decimal? SellingPrice { get; set; }
     public bool IsBundle { get; set; }
-    public string? ImageUrl { get; set; }
+
 }
 
 public class StockInDto
