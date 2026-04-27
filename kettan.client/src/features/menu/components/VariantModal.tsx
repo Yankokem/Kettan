@@ -39,6 +39,7 @@ export function VariantModal({
   inventoryOptions = [],
 }: VariantModalProps) {
   const [variantName, setVariantName] = useState(variant?.name || '');
+  const [variantPrice, setVariantPrice] = useState(variant?.price || 0);
   const [ingredients, setIngredients] = useState<RecipeIngredient[]>(variant?.ingredients || []);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
 
@@ -46,6 +47,7 @@ export function VariantModal({
   useEffect(() => {
     if (open) {
       setVariantName(variant?.name || '');
+      setVariantPrice(variant?.price || 0);
       setIngredients(variant?.ingredients || []);
     }
   }, [open, variant]);
@@ -75,19 +77,26 @@ export function VariantModal({
       alert('Please add at least one ingredient');
       return;
     }
+    if (!Number.isFinite(variantPrice) || variantPrice <= 0) {
+      alert('Please enter a valid variant price');
+      return;
+    }
 
     onSave({
       id: variant?.id || `variant-${Date.now()}`,
       name: variantName,
+      price: variantPrice,
       ingredients,
     });
 
     setVariantName('');
+    setVariantPrice(0);
     setIngredients([]);
   };
 
   const handleClose = () => {
     setVariantName('');
+    setVariantPrice(0);
     setIngredients([]);
     setShowInventoryModal(false);
     onClose();
@@ -103,14 +112,27 @@ export function VariantModal({
           {variant ? 'Edit Variant' : 'Add New Variant'}
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
-          <Box sx={{ mb: 3 }}>
-            <FormTextField
-              label="Variant Name"
-              placeholder="e.g., Small, Medium, Large"
-              value={variantName}
-              onChange={(e) => setVariantName(e.target.value)}
-              fullWidth
-            />
+          <Box sx={{ mb: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1.5fr 1fr' }, gap: 2 }}>
+            <Box>
+              <FormTextField
+                label="Variant Name"
+                placeholder="e.g., Small, Medium, Large"
+                value={variantName}
+                onChange={(e) => setVariantName(e.target.value)}
+                fullWidth
+              />
+            </Box>
+            <Box>
+              <FormTextField
+                label="Variant Price"
+                type="number"
+                placeholder="e.g. 70.00"
+                inputProps={{ step: '0.01', min: '0' }}
+                value={variantPrice || ''}
+                onChange={(e) => setVariantPrice(parseFloat(e.target.value) || 0)}
+                fullWidth
+              />
+            </Box>
           </Box>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

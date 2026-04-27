@@ -2,21 +2,12 @@ import { useState } from 'react';
 import {
   Box,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
   Typography,
-  Chip,
 } from '@mui/material';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import { Button } from '../../../components/UI/Button';
 import { VariantModal } from './VariantModal';
+import { MenuVariantCard } from './MenuVariantCard';
 import type { MenuVariant, InventoryItemOption } from '../types';
 
 interface VariantsBuilderProps {
@@ -67,80 +58,50 @@ export function VariantsBuilder({
   };
 
   return (
-    <Box sx={{ mt: 3 }}>
+    <Box>
       <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: 'text.primary' }}>
         Menu Variants
       </Typography>
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ bgcolor: 'background.paper' }}>
-                <TableCell sx={{ fontWeight: 700, color: 'text.primary', width: '30%' }}>Variant Name</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: 'text.primary', width: '60%' }}>Ingredients</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: 'text.primary', width: '10%', textAlign: 'center' }}>
-                  Action
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {variants.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                    No variants added yet. Click "Add Variant" to start.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                variants.map((variant) => (
-                  <TableRow key={variant.id} sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>
-                      {variant.name}
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                        {variant.ingredients.map((ing) => (
-                          <Chip
-                            key={ing.id}
-                            label={`${ing.itemName} (${ing.qtyPerUnit} ${ing.uom})`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: 11 }}
-                          />
-                        ))}
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ textAlign: 'center' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditVariant(variant)}
-                          sx={{ color: 'primary.main' }}
-                        >
-                          <EditRoundedIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleRemoveVariant(variant.id)}
-                          sx={{ color: 'error.main' }}
-                        >
-                          <DeleteRoundedIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 2 }}>
+        {variants.length === 0 ? (
+          <Box
+            sx={{
+              py: 5,
+              px: 2,
+              textAlign: 'center',
+              border: '1px dashed',
+              borderColor: 'divider',
+              borderRadius: 2,
+              bgcolor: 'background.default',
+            }}
+          >
+            <Typography sx={{ fontSize: 13.5, color: 'text.secondary', fontWeight: 600 }}>
+              No variants added yet.
+            </Typography>
+            {!readOnly && (
+              <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>
+                Add at least one variant and set its ingredient quantities.
+              </Typography>
+            )}
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {variants.map((variant) => (
+              <MenuVariantCard
+                key={variant.id}
+                variant={variant}
+                inventoryOptions={inventoryOptions}
+                readOnly={readOnly}
+                onEdit={() => handleEditVariant(variant)}
+                onDelete={() => handleRemoveVariant(variant.id)}
+              />
+            ))}
+          </Box>
+        )}
+
         {!readOnly && (
-          <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-            <Button
-              variant="outlined"
-              startIcon={<AddRoundedIcon />}
-              onClick={handleAddVariant}
-              sx={{ width: '100%' }}
-            >
+          <Box sx={{ mt: 2 }}>
+            <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={handleAddVariant} sx={{ width: '100%' }}>
               Add Variant
             </Button>
           </Box>

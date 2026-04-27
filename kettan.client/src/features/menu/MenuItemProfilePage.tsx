@@ -1,8 +1,7 @@
-import { Box, Typography, Paper, Divider, Avatar, IconButton, Chip } from '@mui/material';
-import { useEffect, useState, useRef } from 'react';
+import { Box, CircularProgress, Paper, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
 import { useParams } from '@tanstack/react-router';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
-import CameraAltRoundedIcon from '@mui/icons-material/CameraAltRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import { BackButton } from '../../components/UI/BackButton';
@@ -10,8 +9,6 @@ import { Button } from '../../components/UI/Button';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { VariantsBuilder } from './components/VariantsBuilder';
-import { PriceSuggestion } from './components/PriceSuggestion';
-import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { fetchMenuItem, updateMenuItem, type MenuItemDto, type CreateMenuItemDto } from './menuItemsApi';
 import { listMenuCategories, type MenuCategory } from './menuCategoryApi';
@@ -23,15 +20,78 @@ const STATUS_OPTIONS = [
   { value: 'Inactive', label: 'Inactive' },
 ];
 
+interface ViewFieldProps {
+  label: string;
+  value: string;
+  muted?: boolean;
+  withDivider?: boolean;
+}
+
+function ViewField({ label, value, muted = false, withDivider = true }: ViewFieldProps) {
+  return (
+    <Box sx={{ pb: 1.35, borderBottom: withDivider ? '1px solid' : 'none', borderColor: 'divider' }}>
+      <Typography sx={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'text.secondary', mb: 0.6 }}>
+        {label}
+      </Typography>
+      <Typography sx={{ fontSize: 14, fontWeight: 600, color: muted ? 'text.secondary' : 'text.primary', whiteSpace: 'pre-wrap' }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
+function getLowestVariantPrice(variants: MenuVariant[]): number {
+  if (variants.length === 0) {
+    return 0;
+  }
+
+  return Math.min(...variants.map((variant) => Number(variant.price) || 0));
+}
+
+function toProfileFormData(item: MenuItemDto, options: InventoryItemOption[] = []): MenuItemFormData {
+  const normalizedStatus: 'Active' | 'Inactive' = item.status === 'Active' ? 'Active' : 'Inactive';
+  const mappedVariants: MenuVariant[] = item.variants.map((variant) => {
+    const pricedIngredients = variant.ingredients.map((ingredient) => {
+      const inventoryOption = options.find((option) => option.id === String(ingredient.itemId));
+
+      return {
+        id: String(ingredient.variantIngredientId),
+        itemId: String(ingredient.itemId),
+        itemName: ingredient.itemName,
+        qtyPerUnit: ingredient.quantity,
+        uom: inventoryOption?.uom || '',
+        unitCost: inventoryOption?.unitCost || 0,
+      };
+    });
+
+    return {
+      id: String(variant.variantId),
+      name: variant.name,
+      price: Number(variant.price) || 0,
+      ingredients: pricedIngredients,
+    };
+  });
+
+  return {
+    name: item.name,
+    category: String(item.categoryId || ''),
+    description: item.description || '',
+    sellingPrice: getLowestVariantPrice(mappedVariants) || Number(item.basePrice) || 0,
+    status: normalizedStatus,
+    image: item.imageUrl || undefined,
+    variants: mappedVariants,
+  };
+}
+
 export function MenuItemProfilePage() {
   const { menuItemId } = useParams({ strict: false });
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [menuItem, setMenuItem] = useState<MenuItemDto | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItemOption[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDataReady, setIsDataReady] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,68 +106,60 @@ export function MenuItemProfilePage() {
   });
 
   const fetchData = async () => {
-    if (!menuItemId) return;
-    setLoading(true);
+    if (!menuItemId) {
+      setError(new Error('Menu item ID is missing.'));
+      setIsDataReady(false);
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      setIsLoading(true);
+      setIsDataReady(false);
+      setError(null);
+
+      const parsedId = parseInt(menuItemId as string);
       const [item, cats, invItems] = await Promise.all([
-        fetchMenuItem(parseInt(menuItemId as string)),
+        fetchMenuItem(parsedId),
         listMenuCategories(),
-        fetchInventoryItems()
+        fetchInventoryItems(),
       ]);
 
-      setMenuItem(item);
-      setCategories(cats);
-      
-      const options: InventoryItemOption[] = invItems.map(inv => ({
+      const options: InventoryItemOption[] = invItems.map((inv) => ({
         id: inv.id,
         name: inv.name,
         sku: inv.sku,
-        uom: inv.unit?.symbol || '',
+        uom: inv.unit || '',
         category: inv.category?.name || 'Uncategorized',
         unitCost: inv.unitCost,
-        stockCount: inv.totalStock
+        stockCount: inv.totalStock,
+        defaultThreshold: inv.defaultThreshold,
       }));
-      setInventoryItems(options);
 
-      // Map API DTO to Form State
-      setFormData({
-        name: item.name,
-        category: String(item.categoryId || ''),
-        description: item.description || '',
-        sellingPrice: item.basePrice,
-        status: item.status as 'Active' | 'Inactive',
-        image: item.imageUrl || undefined,
-        variants: item.variants.map(v => ({
-          id: String(v.variantId),
-          name: v.name,
-          ingredients: v.ingredients.map(ing => ({
-            id: String(ing.variantIngredientId),
-            itemId: String(ing.itemId),
-            itemName: ing.itemName,
-            qtyPerUnit: ing.quantity,
-            uom: '', // We could resolve this if needed
-            unitCost: options.find(o => o.id === String(ing.itemId))?.unitCost || 0
-          }))
-        }))
-      });
+      setMenuItem(item);
+      setCategories(cats);
+      setInventoryItems(options);
+      setFormData(toProfileFormData(item, options));
+      setIsDataReady(true);
     } catch (err) {
       console.error('Failed to fetch menu item detail:', err);
       setError(err instanceof Error ? err : new Error('An error occurred while fetching data'));
+      setIsDataReady(false);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [menuItemId]);
 
   const handleVariantsChange = (variants: MenuVariant[]) => {
-    setFormData(prev => ({ ...prev, variants }));
+    setFormData((prev) => ({ ...prev, variants }));
   };
 
   const handleImageChange = (file: File | null) => {
-    setFormData(prev => ({ ...prev, imageFile: file }));
+    setFormData((prev) => ({ ...prev, imageFile: file }));
   };
 
   const handleSubmit = async () => {
@@ -121,6 +173,10 @@ export function MenuItemProfilePage() {
     }
     if (formData.variants.length === 0) {
       alert('Please add at least one variant');
+      return;
+    }
+    if (formData.variants.some((variant) => !Number.isFinite(variant.price) || variant.price <= 0)) {
+      alert('Each variant must have a valid price');
       return;
     }
 
@@ -144,32 +200,33 @@ export function MenuItemProfilePage() {
         }
       }
 
+      const basePrice = getLowestVariantPrice(formData.variants);
       const payload: CreateMenuItemDto = {
         name: formData.name,
         categoryId: parseInt(formData.category),
         description: formData.description,
         imageUrl: uploadedImageUrl,
-        basePrice: formData.sellingPrice,
+        basePrice,
         status: formData.status,
         ingredients: [],
-        variants: formData.variants.map((v, idx) => ({
-          name: v.name,
+        variants: formData.variants.map((variant, idx) => ({
+          name: variant.name,
           pricingMode: 'absolute',
-          price: formData.sellingPrice,
+          price: variant.price,
           displayOrder: idx,
           isActive: true,
-          ingredients: v.ingredients.map(ing => ({
-            itemId: parseInt(ing.itemId),
-            quantity: ing.qtyPerUnit
-          }))
+          ingredients: variant.ingredients.map((ingredient) => ({
+            itemId: parseInt(ingredient.itemId),
+            quantity: ingredient.qtyPerUnit,
+          })),
         })),
-        tagIds: []
+        tagIds: [],
       };
 
       await updateMenuItem(parseInt(menuItemId as string), payload);
       alert('Menu item updated successfully!');
       setIsEditing(false);
-      fetchData();
+      void fetchData();
     } catch (err) {
       console.error('Failed to update menu item:', err);
       alert(err instanceof Error ? err.message : 'Failed to update menu item');
@@ -180,253 +237,223 @@ export function MenuItemProfilePage() {
 
   const handleCancel = () => {
     if (menuItem) {
-      // Re-map from original item
-      setFormData({
-        name: menuItem.name,
-        category: String(menuItem.categoryId || ''),
-        description: menuItem.description || '',
-        sellingPrice: menuItem.basePrice,
-        status: menuItem.status as 'Active' | 'Inactive',
-        image: menuItem.imageUrl || undefined,
-        variants: menuItem.variants.map(v => ({
-          id: String(v.variantId),
-          name: v.name,
-          ingredients: v.ingredients.map(ing => ({
-            id: String(ing.variantIngredientId),
-            itemId: String(ing.itemId),
-            itemName: ing.itemName,
-            qtyPerUnit: ing.quantity,
-            uom: '',
-            unitCost: inventoryItems.find(o => o.id === String(ing.itemId))?.unitCost || 0
-          }))
-        }))
-      });
+      setFormData(toProfileFormData(menuItem, inventoryItems));
     }
     setIsEditing(false);
   };
 
+  const displayCategoryName = categories.find((category) => String(category.categoryId) === formData.category)?.name
+    ?? menuItem?.categoryName
+    ?? 'Uncategorized';
+  const displayStatus = formData.status || 'Inactive';
+  const displayBasePrice = getLowestVariantPrice(formData.variants) || Number(menuItem?.basePrice || 0);
+  const displayTitle = formData.name || menuItem?.name || 'Unnamed menu item';
+
+  const header = (
+    <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <BackButton to="/menu" />
+      <Box sx={{ flex: 1 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+          Menu Item Profile
+        </Typography>
+        <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
+          Review menu item details, variant pricing, and ingredient stock levels.
+        </Typography>
+      </Box>
+      {!isEditing && !isLoading && isDataReady && menuItem && (
+        <Button variant="outlined" startIcon={<EditRoundedIcon />} onClick={() => setIsEditing(true)}>
+          Edit Menu Item
+        </Button>
+      )}
+    </Box>
+  );
+
+  if (isLoading) {
+    return (
+      <Box sx={{ pb: 3 }}>
+        {header}
+        <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, minHeight: 300, display: 'grid', placeItems: 'center' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+            <CircularProgress size={32} thickness={4} sx={{ color: '#6B4C2A' }} />
+            <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>
+              Loading menu item profile...
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+    );
+  }
+
+  if (error || !isDataReady || !menuItem) {
+    return (
+      <Box sx={{ pb: 3 }}>
+        {header}
+        <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+            <Typography sx={{ color: 'error.main', fontSize: 13 }}>
+              {error?.message || 'Menu item data is unavailable.'}
+            </Typography>
+            <Button variant="outlined" onClick={() => { void fetchData(); }}>
+              Retry
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ pb: 3 }}>
-      <DataStateWrapper
-        loading={loading}
-        error={error}
-        isEmpty={!menuItem}
-        emptyMessage="Menu item not found"
-        onRetry={fetchData}
-      >
-        {menuItem && (
-          <>
-            {/* Header */}
-            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <BackButton to="/menu" />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-                  {menuItem.name}
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5 }}>
-                  <Chip
-                    label={menuItem.categoryName}
-                    size="small"
-                    sx={{ 
-                      bgcolor: 'background.default', 
-                      border: '1px solid', 
-                      borderColor: 'divider', 
-                      fontSize: 11, 
-                      height: 22,
-                      fontWeight: 600
-                    }}
-                  />
-                  <Chip
-                    label={menuItem.status}
-                    size="small"
-                    sx={{
-                      bgcolor: menuItem.status === 'Active' ? 'rgba(84,107,63,0.12)' : 'rgba(148, 163, 184, 0.16)',
-                      color: menuItem.status === 'Active' ? '#546B3F' : '#475569',
-                      fontSize: 11,
-                      height: 22,
-                      fontWeight: 700,
-                    }}
-                  />
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: 12 }}>
-                    • ₱{menuItem.basePrice.toFixed(2)}
-                  </Typography>
-                </Box>
-              </Box>
-              {!isEditing && (
-                <Button
-                  variant="outlined"
-                  startIcon={<EditRoundedIcon />}
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Menu Item
-                </Button>
-              )}
-            </Box>
+      {header}
 
       <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4 }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
-          {/* LEFT SECTION: Image & Basic Info */}
-          <Box sx={{ 
-            width: { xs: '100%', md: '40%' }, 
-            p: 4,
-            borderRight: { xs: 'none', md: '1px solid' },
-            borderBottom: { xs: '1px solid', md: 'none' },
-            borderColor: 'divider'
-          }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
-              Basic Information
+          <Box
+            sx={{
+              width: { xs: '100%', md: '42%' },
+              p: 4,
+              borderRight: { xs: 'none', md: '1px solid' },
+              borderBottom: { xs: '1px solid', md: 'none' },
+              borderColor: 'divider',
+            }}
+          >
+            <Box sx={{ mb: 3.2 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 700,
+                color: '#6B4C2A',
+                textTransform: 'uppercase',
+                fontSize: 11,
+                letterSpacing: '0.5px',
+                display: 'block',
+                mb: 1.5,
+              }}
+            >
+              <ImageRoundedIcon sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
+              Menu Item Image
             </Typography>
 
-            <Box sx={{ mb: 3 }}>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  fontWeight: 700, 
-                  color: '#6B4C2A', 
-                  textTransform: 'uppercase', 
-                  fontSize: 11, 
-                  letterSpacing: '0.5px',
-                  display: 'block',
-                  mb: 1.5
-                }}
-              >
-                <ImageRoundedIcon sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
-                Menu Item Image
-              </Typography>
-              
-              <Box sx={{ maxWidth: 280 }}>
+            <Box sx={{ width: '100%', maxWidth: 280 }}>
+              {isEditing ? (
                 <ProfileImageUploader
                   imageFile={formData.imageFile ?? undefined}
-                  imageUrl={isEditing ? formData.imagePreviewUrl || formData.image : formData.image}
+                  imageUrl={formData.imagePreviewUrl || formData.image}
                   onFileChange={handleImageChange}
-                  readOnly={!isEditing}
+                  shape="square"
                 />
-              </Box>
+              ) : (
+                <Box
+                  sx={{
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    overflow: 'hidden',
+                    bgcolor: 'background.default',
+                    aspectRatio: '1 / 1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? 'linear-gradient(165deg, rgba(46,31,20,0.22) 0%, rgba(58,39,24,0.15) 100%)'
+                        : 'linear-gradient(165deg, rgba(250,245,239,1) 0%, rgba(240,230,211,0.95) 100%)',
+                  }}
+                >
+                  {formData.image ? (
+                    <Box
+                      component="img"
+                      src={formData.image}
+                      alt={formData.name || 'Menu item image'}
+                      sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
+                      <ImageRoundedIcon sx={{ fontSize: 32, mb: 0.6, opacity: 0.8 }} />
+                      <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>No image uploaded</Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </Box>
             </Box>
 
-            {/* Name */}
-            <Box sx={{ mb: 2.5 }}>
-              <FormTextField 
-                label="Menu Item Name" 
-                placeholder="e.g. Iced Americano"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                disabled={!isEditing}
-                fullWidth
-              />
-            </Box>
-
-            {/* Category */}
-            <Box sx={{ mb: 2.5 }}>
-              <FormDropdown
-                label="Category"
-                value={formData.category}
-                options={categories.map(c => ({ value: String(c.categoryId), label: c.name }))}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as string }))}
-                disabled={!isEditing}
-                fullWidth
-              />
-            </Box>
-
-            {/* Description */}
-            <Box sx={{ mb: 2.5 }}>
-              <FormTextField 
-                label="Description (Optional)" 
-                placeholder="Describe your menu item..."
-                value={formData.description || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                disabled={!isEditing}
-                multiline
-                rows={3}
-                fullWidth
-              />
-            </Box>
-
-            {/* Status */}
-            <Box>
-              <FormDropdown
-                label="Status"
-                value={formData.status}
-                options={STATUS_OPTIONS}
-                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'Active' | 'Inactive' }))}
-                disabled={!isEditing}
-                fullWidth
-              />
-            </Box>
-          </Box>
-
-          {/* RIGHT SECTION: Variants & Pricing */}
-          <Box sx={{ width: { xs: '100%', md: '60%' }, p: 4 }}>
-            {/* Variants Section */}
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
-                Variants & Ingredients
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontSize: 13, mb: 3 }}>
-                Manage different sizes and variations with their specific ingredients.
-              </Typography>
-              
-              <VariantsBuilder
-                variants={formData.variants}
-                onVariantsChange={handleVariantsChange}
-                inventoryOptions={inventoryItems}
-                readOnly={!isEditing}
-              />
-            </Box>
-
-            <Divider sx={{ my: 4 }} />
-
-            {/* Pricing Section */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
-                Pricing
-              </Typography>
-
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 3 }}>
-                <Box sx={{ flex: 1 }}>
-                  <FormTextField 
-                    label="Selling Price (₱)" 
-                    type="number"
-                    placeholder="e.g. 120.00"
-                    inputProps={{ step: '0.01', min: '0' }}
-                    value={formData.sellingPrice || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, sellingPrice: parseFloat(e.target.value) || 0 }))}
-                    disabled={!isEditing}
+            {isEditing ? (
+              <>
+                <Box sx={{ mb: 2.5 }}>
+                  <FormTextField
+                    label="Menu Item Name"
+                    placeholder="e.g. Iced Americano"
+                    value={formData.name}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                     fullWidth
                   />
                 </Box>
 
-                <Box sx={{ flex: 1 }}>
-                  <PriceSuggestion
-                    variants={formData.variants}
+                <Box sx={{ mb: 2.5 }}>
+                  <FormDropdown
+                    label="Category"
+                    value={formData.category}
+                    options={categories.map((category) => ({ value: String(category.categoryId), label: category.name }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value as string }))}
+                    fullWidth
                   />
                 </Box>
+
+                <Box sx={{ mb: 2.5 }}>
+                  <FormTextField
+                    label="Description (Optional)"
+                    placeholder="Describe your menu item..."
+                    value={formData.description || ''}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                    multiline
+                    rows={3}
+                    fullWidth
+                  />
+                </Box>
+
+                <Box sx={{ mb: 0.5 }}>
+                  <FormDropdown
+                    label="Status"
+                    value={formData.status}
+                    options={STATUS_OPTIONS}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as 'Active' | 'Inactive' }))}
+                    fullWidth
+                  />
+                </Box>
+              </>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <ViewField label="Menu Item Name" value={displayTitle} />
+                <ViewField label="Category" value={displayCategoryName} />
+                <ViewField label="Description" value={formData.description?.trim() || 'No description provided.'} muted={!formData.description?.trim()} />
+                <ViewField label="Status" value={displayStatus} />
+                <ViewField label="Starts At" value={`P${displayBasePrice.toFixed(2)}`} withDivider={false} />
               </Box>
-            </Box>
+            )}
+          </Box>
+
+          <Box sx={{ width: { xs: '100%', md: '58%' }, p: 4 }}>
+            <VariantsBuilder
+              variants={formData.variants}
+              onVariantsChange={handleVariantsChange}
+              inventoryOptions={inventoryItems}
+              readOnly={!isEditing}
+            />
+
+            {isEditing && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
+                <Button variant="outlined" onClick={handleCancel} disabled={isSubmitting}>
+                  Cancel
+                </Button>
+                <Button startIcon={<LocalCafeRoundedIcon />} onClick={handleSubmit} disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </Box>
+            )}
           </Box>
         </Box>
-
-        {/* Form Actions - Only show when editing */}
-        {isEditing && (
-          <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-              <Button variant="outlined" onClick={handleCancel} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button 
-                startIcon={<LocalCafeRoundedIcon />} 
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </Box>
-          </Box>
-        )}
       </Paper>
-          </>
-        )}
-      </DataStateWrapper>
     </Box>
   );
 }

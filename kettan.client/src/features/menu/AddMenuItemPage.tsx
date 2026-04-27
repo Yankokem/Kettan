@@ -3,7 +3,7 @@ import { listMenuCategories, type MenuCategory } from './menuCategoryApi';
 import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 import type { InventoryItemOption, MenuItemFormData, MenuVariant } from './types';
 
-import { Box, Typography, Paper, Divider, Button } from '@mui/material';
+import { Box, Typography, Paper } from '@mui/material';
 import { useEffect, useState } from 'react';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
@@ -14,12 +14,19 @@ import { BackButton } from '../../components/UI/BackButton';
 import { FormActions } from '../../components/Form/FormActions';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { VariantsBuilder } from './components/VariantsBuilder';
-import { PriceSuggestion } from './components/PriceSuggestion';
 
 const STATUS_OPTIONS = [
   { value: 'Active', label: 'Active' },
   { value: 'Inactive', label: 'Inactive' },
 ];
+
+function getLowestVariantPrice(variants: MenuVariant[]): number {
+  if (variants.length === 0) {
+    return 0;
+  }
+
+  return Math.min(...variants.map((variant) => Number(variant.price) || 0));
+}
 
 export function AddMenuItemPage() {
   const navigate = useNavigate();
@@ -51,10 +58,11 @@ export function AddMenuItemPage() {
           id: item.id,
           name: item.name,
           sku: item.sku,
-          uom: item.unit?.symbol || '',
+          uom: item.unit || '',
           category: item.category?.name || 'Uncategorized',
           unitCost: item.unitCost,
-          stockCount: item.totalStock
+          stockCount: item.totalStock,
+          defaultThreshold: item.defaultThreshold,
         }));
         setInventoryItems(options);
       } catch (err) {
@@ -85,8 +93,8 @@ export function AddMenuItemPage() {
       alert('Please add at least one variant');
       return;
     }
-    if (formData.sellingPrice <= 0) {
-      alert('Please enter a valid selling price');
+    if (formData.variants.some((variant) => !Number.isFinite(variant.price) || variant.price <= 0)) {
+      alert('Each variant must have a valid price');
       return;
     }
 
@@ -112,18 +120,20 @@ export function AddMenuItemPage() {
         }
       }
 
+      const basePrice = getLowestVariantPrice(formData.variants);
+
       const payload: CreateMenuItemDto = {
         name: formData.name,
         categoryId: parseInt(formData.category),
         description: formData.description,
         imageUrl: uploadedImageUrl,
-        basePrice: formData.sellingPrice,
+        basePrice,
         status: formData.status,
         ingredients: [], // Primary recipe can be added here if needed
         variants: formData.variants.map((v, idx) => ({
           name: v.name,
           pricingMode: 'absolute',
-          price: formData.sellingPrice, // Simple implementation: all variants share base price for now
+          price: v.price,
           displayOrder: idx,
           isActive: true,
           ingredients: v.ingredients.map(ing => ({
@@ -155,7 +165,7 @@ export function AddMenuItemPage() {
             Add Menu Item
           </Typography>
           <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-            Create a new menu item with variants, ingredients, and pricing.
+            Create a new menu item with variant-specific pricing and ingredient usage.
           </Typography>
         </Box>
       </Box>
@@ -259,7 +269,7 @@ export function AddMenuItemPage() {
                   Variants & Ingredients
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: 13, mb: 3 }}>
-                  Add size or type variants (e.g., Small, Medium, Large) with specific ingredient quantities.
+                  Add size or type variants with their own ingredient quantities and prices.
                 </Typography>
                 
                 <VariantsBuilder
@@ -267,35 +277,6 @@ export function AddMenuItemPage() {
                   onVariantsChange={handleVariantChange}
                   inventoryOptions={inventoryItems}
                 />
-              </Box>
-
-              <Divider sx={{ my: 4 }} />
-
-              {/* Pricing Section */}
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
-                  Pricing
-                </Typography>
-
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 3 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <FormTextField 
-                      label="Selling Price (₱)" 
-                      type="number"
-                      placeholder="e.g. 120.00"
-                      inputProps={{ step: '0.01', min: '0' }}
-                      value={formData.sellingPrice || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, sellingPrice: parseFloat(e.target.value) || 0 }))}
-                      fullWidth
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: 1 }}>
-                    <PriceSuggestion
-                      variants={formData.variants}
-                    />
-                  </Box>
-                </Box>
               </Box>
           </Box>
         </Box>

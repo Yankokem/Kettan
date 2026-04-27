@@ -35,6 +35,7 @@ function toMenuCardItem(dto: MenuItemDto): MenuItem {
     variants: (dto.variants ?? []).map((variant) => ({
       id: String(variant.variantId),
       name: variant.name,
+      price: Number(variant.price) || 0,
       ingredients: (variant.ingredients ?? []).map((ingredient) => ({
         id: String(ingredient.variantIngredientId),
         itemId: String(ingredient.itemId),

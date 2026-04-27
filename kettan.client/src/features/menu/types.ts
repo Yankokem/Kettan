@@ -12,6 +12,7 @@ export interface RecipeIngredient {
 export interface MenuVariant {
   id: string;
   name: string;
+  price: number;
   ingredients: RecipeIngredient[];
 }
 
@@ -47,6 +48,7 @@ export interface InventoryItemOption {
   category: string;
   unitCost?: number; // Cost per unit for price calculation
   stockCount?: number; // Available stock
+  defaultThreshold?: number;
 }
 
 export interface MenuCategory {
