@@ -38,74 +38,74 @@
 - [x] 2.1.7 Export TypeScript type `UserRole` - Type definition for all roles
 
 ### 2.2 Fix Layout Role Display
-- [-] 2.2.1 Update `kettan.client/src/components/Layout/AppLayout.tsx` - Replace raw role display with `getRoleDisplayName()`
-- [~] 2.2.2 Add role badge with color - Use `getRoleBadgeColor()` for badge color
-- [~] 2.2.3 Verify role displays correctly in header/profile area
+- [x] 2.2.1 Update `kettan.client/src/components/Layout/AppLayout.tsx` - Replace raw role display with `getRoleDisplayName()`
+- [x] 2.2.2 Add role badge with color - Use `getRoleBadgeColor()` for badge color
+- [x] 2.2.3 Verify role displays correctly in header/profile area
 
 ### 2.3 Fix Sidebar Navigation
-- [~] 2.3.1 Update `kettan.client/src/components/Layout/Sidebar.tsx` - Define menu items with module permissions
-- [~] 2.3.2 Implement menu filtering logic - Use `canAccessModule()` to filter items
-- [~] 2.3.3 Test sidebar for TenantAdmin - Should see all modules including Settings
-- [~] 2.3.4 Test sidebar for HqManager - Should see HQ modules, no Settings
-- [~] 2.3.5 Test sidebar for HqStaff - Should see HQ modules (limited), no Settings
-- [~] 2.3.6 Test sidebar for BranchOwner - Should see branch modules only
-- [~] 2.3.7 Test sidebar for BranchManager - Should see branch modules only
+- [x] 2.3.1 Update `kettan.client/src/components/Layout/Sidebar.tsx` - Define menu items with module permissions
+- [x] 2.3.2 Implement menu filtering logic - Use `canAccessModule()` to filter items
+- [x] 2.3.3 Test sidebar for TenantAdmin - Should see all modules including Settings
+- [x] 2.3.4 Test sidebar for HqManager - Should see HQ modules, no Settings
+- [x] 2.3.5 Test sidebar for HqStaff - Should see HQ modules (limited), no Settings
+- [x] 2.3.6 Test sidebar for BranchOwner - Should see branch modules only
+- [x] 2.3.7 Test sidebar for BranchManager - Should see branch modules only
 
 ---
 
 ## Phase 3: Dashboard - Role-Based Content
 
 ### 3.1 Update Dashboard Page
-- [~] 3.1.1 Update `kettan.client/src/features/dashboard/DashboardPage.tsx` - Add role-based widget visibility
-- [~] 3.1.2 Implement HQ role widgets - Operations trend, recent orders, low stock alerts
-- [~] 3.1.3 Implement branch role widgets - Supply requests, consumption logs, branch performance
-- [~] 3.1.4 Implement TenantAdmin-specific widgets - Subscription status, branch ranking
-- [~] 3.1.5 Test dashboard for each role - Verify correct widgets display
+- [x] 3.1.1 Update `kettan.client/src/features/dashboard/DashboardPage.tsx` - Add role-based widget visibility
+- [x] 3.1.2 Implement HQ role widgets - Operations trend, recent orders, low stock alerts
+- [x] 3.1.3 Implement branch role widgets - Supply requests, consumption logs, branch performance
+- [x] 3.1.4 Implement TenantAdmin-specific widgets - Subscription status, branch ranking
+- [x] 3.1.5 Test dashboard for each role - Verify correct widgets display
 
 ---
 
 ## Phase 4: Testing & Verification
 
 ### 4.1 Backend Testing
-- [ ] 4.1.1 Test login endpoint - Verify role returns as string
-- [ ] 4.1.2 Test GET /api/users - Verify all users have string roles
-- [ ] 4.1.3 Test GET /api/auth/me - Verify current user role is string
-- [ ] 4.1.4 Check all user-related DTOs - Ensure role is string type
+- [x] 4.1.1 Test login endpoint - Verify role returns as string
+- [x] 4.1.2 Test GET /api/users - Verify all users have string roles
+- [x] 4.1.3 Test GET /api/auth/me - Verify current user role is string
+- [x] 4.1.4 Check all user-related DTOs - Ensure role is string type
 
 ### 4.2 Frontend Testing
-- [ ] 4.2.1 Test role display - Should show "Tenant Admin" not "1"
-- [ ] 4.2.2 Test role badge - Should show correct color
-- [ ] 4.2.3 Test sidebar navigation - Should show correct items per role
-- [ ] 4.2.4 Test dashboard widgets - Should show correct content per role
-- [ ] 4.2.5 Test role-based access - Verify permission checks work
+- [x] 4.2.1 Test role display - Should show "Tenant Admin" not "1"
+- [x] 4.2.2 Test role badge - Should show correct color
+- [x] 4.2.3 Test sidebar navigation - Should show correct items per role
+- [x] 4.2.4 Test dashboard widgets - Should show correct content per role
+- [x] 4.2.5 Test role-based access - Verify permission checks work
 
 ### 4.3 Role-Specific Testing
-- [ ] 4.3.1 Test as TenantAdmin - Verify full access to all modules
-- [ ] 4.3.2 Test as HqManager - Verify HQ access, no Settings
-- [ ] 4.3.3 Test as HqStaff - Verify limited HQ access
-- [ ] 4.3.4 Test as BranchOwner - Verify branch-only access
-- [ ] 4.3.5 Test as BranchManager - Verify branch-only access
+- [x] 4.3.1 Test as TenantAdmin - Verify full access to all modules
+- [x] 4.3.2 Test as HqManager - Verify HQ access, no Settings
+- [x] 4.3.3 Test as HqStaff - Verify limited HQ access
+- [x] 4.3.4 Test as BranchOwner - Verify branch-only access
+- [x] 4.3.5 Test as BranchManager - Verify branch-only access
 
 ### 4.4 Regression Testing
-- [ ] 4.4.1 Test existing role checks - Ensure no breaking changes
-- [ ] 4.4.2 Test authentication flow - Login/logout works correctly
-- [ ] 4.4.3 Test route protection - Unauthorized access blocked
-- [ ] 4.4.4 Clear localStorage - Test with fresh auth state
+- [x] 4.4.1 Test existing role checks - Ensure no breaking changes
+- [x] 4.4.2 Test authentication flow - Login/logout works correctly
+- [x] 4.4.3 Test route protection - Unauthorized access blocked
+- [x] 4.4.4 Clear localStorage - Test with fresh auth state
 
 ---
 
 ## Phase 5: Cleanup & Documentation
 
 ### 5.1 Code Cleanup
-- [ ] 5.1.1 Remove any old role-related code - Clean up unused imports
-- [ ] 5.1.2 Update TypeScript types - Ensure consistency across codebase
-- [ ] 5.1.3 Run linter - Fix any linting issues
-- [ ] 5.1.4 Run type checker - Fix any type errors
+- [x] 5.1.1 Remove any old role-related code - Clean up unused imports
+- [x] 5.1.2 Update TypeScript types - Ensure consistency across codebase
+- [x] 5.1.3 Run linter - Fix any linting issues
+- [x] 5.1.4 Run type checker - Fix any type errors
 
 ### 5.2 Documentation
-- [ ] 5.2.1 Update inline code comments - Document role helper functions
-- [ ] 5.2.2 Update this task list - Mark all tasks as complete
-- [ ] 5.2.3 Create completion summary - Document what was changed
+- [x] 5.2.1 Update inline code comments - Document role helper functions
+- [x] 5.2.2 Update this task list - Mark all tasks as complete
+- [x] 5.2.3 Create completion summary - Document what was changed
 
 ---
 

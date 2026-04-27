@@ -12,6 +12,7 @@ import { StatCard } from '../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { useAuthStore } from '../../store/useAuthStore';
+import { isHqRole, isBranchRole } from '../../utils/roleHelpers';
 import { BranchPerformance } from './components/BranchPerformance';
 import { InventoryAlerts } from './components/InventoryAlerts';
 import { FulfillmentStepper } from './components/FulfillmentStepper';
@@ -116,7 +117,10 @@ const ACTIVITY_QUICK_FILTERS = [
 
 export function DashboardPage() {
   const { user } = useAuthStore();
-  const isBranchManager = user?.role === 'BranchManager';
+  const userRole = user?.role ?? '';
+  const isHq = isHqRole(userRole);
+  const isBranch = isBranchRole(userRole);
+  const isTenantAdmin = userRole === 'TenantAdmin';
   const [activityStatusFilter, setActivityStatusFilter] = useState('');
   const [activityBranchFilter, setActivityBranchFilter] = useState('');
   const [activityRows, setActivityRows] = useState<ActivityItem[]>([]);
@@ -144,7 +148,7 @@ export function DashboardPage() {
     void loadActivity();
   }, []);
 
-  const baseActivity = useMemo(() => (isBranchManager ? activityRows.slice(0, 4) : activityRows), [activityRows, isBranchManager]);
+  const baseActivity = useMemo(() => (isBranch ? activityRows.slice(0, 4) : activityRows), [activityRows, isBranch]);
   const filteredActivity = baseActivity.filter((row) => {
     const matchesStatus = !activityStatusFilter || row.status === activityStatusFilter;
     const matchesBranch = !activityBranchFilter || row.branch === activityBranchFilter;
@@ -157,7 +161,7 @@ export function DashboardPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      {/* ── Stat Cards ── */}
+      {/* ── Stat Cards - Common for all roles ── */}
       <Box
         sx={{
           display: 'grid',
@@ -208,61 +212,112 @@ export function DashboardPage() {
         />
       </Box>
 
-      {/* ── Main Dashboard Grid ── */}
+      {/* ── Main Dashboard Grid - Role-Based Content ── */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         
-        {/* Top Row: Chart & Performance/Stepper */}
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <DashboardChart />
-          </Box>
-          <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
-            {!isBranchManager ? <BranchPerformance /> : <FulfillmentStepper />}
-          </Box>
-        </Box>
+        {/* HQ Roles: Operations trend chart + Branch Performance/Low Stock */}
+        {isHq && (
+          <>
+            {/* Top Row: Chart & Performance */}
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <DashboardChart />
+              </Box>
+              <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
+                <BranchPerformance />
+              </Box>
+            </Box>
 
-        {/* Bottom Row: Activity Table & Alerts */}
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <DataTable
-              title="Recent Operations"
-              data={filteredActivity}
-              columns={activityColumns}
-              keyExtractor={(row) => row.id}
-              defaultRowsPerPage={5}
-              rowsPerPageOptions={[5, 10, 25]}
-              quickFilters={ACTIVITY_QUICK_FILTERS}
-              activeQuickFilter={activityStatusFilter}
-              onQuickFilterChange={setActivityStatusFilter}
-              rightAction={
-                <FilterDropdown
-                  label="Branch"
-                  icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-                  value={activityBranchFilter}
-                  onChange={setActivityBranchFilter}
-                  minWidth={110}
-                  compact
-                  options={[
-                    { value: 'BGC Branch',     label: 'BGC Branch' },
-                    { value: 'Makati HQ',      label: 'Makati HQ' },
-                    { value: 'Ortigas Branch', label: 'Ortigas Branch' },
-                    { value: 'Alabang Branch', label: 'Alabang Branch' },
-                    { value: 'QC Branch',      label: 'QC Branch' },
-                    { value: 'Manila Branch',  label: 'Manila Branch' },
-                    { value: 'Cebu Branch',    label: 'Cebu Branch' },
-                    { value: 'Davao Branch',   label: 'Davao Branch' },
-                    { value: 'Iloilo Branch',  label: 'Iloilo Branch' },
-                    { value: 'Bacolod Branch', label: 'Bacolod Branch' },
-                    { value: 'Clark HQ',       label: 'Clark HQ' },
-                  ]}
+            {/* Bottom Row: Recent Operations & Low Stock Alerts */}
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <DataTable
+                  title="Recent Operations"
+                  data={filteredActivity}
+                  columns={activityColumns}
+                  keyExtractor={(row) => row.id}
+                  defaultRowsPerPage={5}
+                  rowsPerPageOptions={[5, 10, 25]}
+                  quickFilters={ACTIVITY_QUICK_FILTERS}
+                  activeQuickFilter={activityStatusFilter}
+                  onQuickFilterChange={setActivityStatusFilter}
+                  rightAction={
+                    <FilterDropdown
+                      label="Branch"
+                      icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+                      value={activityBranchFilter}
+                      onChange={setActivityBranchFilter}
+                      minWidth={110}
+                      compact
+                      options={[
+                        { value: 'BGC Branch',     label: 'BGC Branch' },
+                        { value: 'Makati HQ',      label: 'Makati HQ' },
+                        { value: 'Ortigas Branch', label: 'Ortigas Branch' },
+                        { value: 'Alabang Branch', label: 'Alabang Branch' },
+                        { value: 'QC Branch',      label: 'QC Branch' },
+                        { value: 'Manila Branch',  label: 'Manila Branch' },
+                        { value: 'Cebu Branch',    label: 'Cebu Branch' },
+                        { value: 'Davao Branch',   label: 'Davao Branch' },
+                        { value: 'Iloilo Branch',  label: 'Iloilo Branch' },
+                        { value: 'Bacolod Branch', label: 'Bacolod Branch' },
+                        { value: 'Clark HQ',       label: 'Clark HQ' },
+                      ]}
+                    />
+                  }
                 />
-              }
-            />
+              </Box>
+              <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
+                <InventoryAlerts />
+              </Box>
+            </Box>
+          </>
+        )}
+
+        {/* Branch Roles: Supply requests, consumption logs, branch performance */}
+        {isBranch && (
+          <>
+            {/* Top Row: Chart & Fulfillment Stepper */}
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <DashboardChart />
+              </Box>
+              <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
+                <FulfillmentStepper />
+              </Box>
+            </Box>
+
+            {/* Bottom Row: Recent Operations (limited) & Inventory Alerts */}
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <DataTable
+                  title="My Recent Operations"
+                  data={filteredActivity}
+                  columns={activityColumns}
+                  keyExtractor={(row) => row.id}
+                  defaultRowsPerPage={5}
+                  rowsPerPageOptions={[5, 10, 25]}
+                  quickFilters={ACTIVITY_QUICK_FILTERS}
+                  activeQuickFilter={activityStatusFilter}
+                  onQuickFilterChange={setActivityStatusFilter}
+                />
+              </Box>
+              <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
+                <InventoryAlerts />
+              </Box>
+            </Box>
+          </>
+        )}
+
+        {/* TenantAdmin-specific: Additional subscription status widget */}
+        {isTenantAdmin && (
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                TenantAdmin-specific widgets (subscription status, advanced analytics) can be added here.
+              </Typography>
+            </Box>
           </Box>
-          <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
-            <InventoryAlerts />
-          </Box>
-        </Box>
+        )}
         
       </Box>
     </Box>

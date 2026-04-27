@@ -33,6 +33,7 @@ import FeedRoundedIcon              from '@mui/icons-material/FeedRounded';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../../store/useAuthStore';
 import { IconButton } from '@mui/material';
+import { canAccessModule } from '../../utils/roleHelpers';
 
 const DRAWER_WIDTH = 268;
 
@@ -48,22 +49,22 @@ interface NavItem {
   icon: React.ReactNode;
   path?: string;
   children?: NavItem[];
-  allowedRoles?: string[];
+  module?: string;
 }
 
 const MAIN_NAV: NavItem[] = [
-  { text: 'Dashboard',          icon: <DashboardRoundedIcon />,          path: '/', allowedRoles: ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchManager', 'BranchOwner'] },
-  { text: 'Supply Requests',    icon: <ShoppingCartRoundedIcon />,       path: '/supply-requests', allowedRoles: ['BranchManager', 'BranchOwner'] },
-  { text: 'Order Processing',   icon: <CategoryRoundedIcon />,            path: '/orders', allowedRoles: ['HqManager', 'HqStaff', 'TenantAdmin'] },
-  { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', allowedRoles: ['TenantAdmin', 'BranchManager', 'BranchOwner', 'HqStaff', 'HqManager'] },
-  { text: 'Branch and Inventory', icon: <StoreRoundedIcon />,            path: '/branches', allowedRoles: ['TenantAdmin', 'BranchManager', 'BranchOwner'] },
-  { text: 'Company Profile',    icon: <StoreRoundedIcon />,            path: '/company-profile', allowedRoles: ['TenantAdmin'] },
-  { text: 'HQ Inventory',       icon: <Inventory2RoundedIcon />,       path: '/hq-inventory', allowedRoles: ['HqManager', 'HqStaff', 'TenantAdmin'] },
-  { text: 'Menu & Recipes',     icon: <LocalCafeRoundedIcon />,        path: '/menu', allowedRoles: ['HqManager', 'TenantAdmin', 'HqStaff'] },
-  { text: 'Consumption',        icon: <ScaleRoundedIcon />,            path: '/consumption', allowedRoles: ['BranchManager', 'BranchOwner'] },
-  { text: 'Staff Directory',    icon: <BadgeRoundedIcon />,            path: '/staff', allowedRoles: ['TenantAdmin', 'HqManager', 'BranchManager'] },
-  { text: 'Settings',           icon: <ManageAccountsRoundedIcon />,   path: '/settings', allowedRoles: ['TenantAdmin'] },
-  { text: 'Finance & Reports',  icon: <BarChartRoundedIcon />,         path: '/reports', allowedRoles: ['TenantAdmin', 'BranchOwner', 'HqManager'] },
+  { text: 'Dashboard',          icon: <DashboardRoundedIcon />,          path: '/', module: 'dashboard' },
+  { text: 'Supply Requests',    icon: <ShoppingCartRoundedIcon />,       path: '/supply-requests', module: 'supply-requests' },
+  { text: 'Order Processing',   icon: <CategoryRoundedIcon />,            path: '/orders', module: 'order-processing' },
+  { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', module: 'returns' },
+  { text: 'Branch and Inventory', icon: <StoreRoundedIcon />,            path: '/branches', module: 'branches' },
+  { text: 'Company Profile',    icon: <StoreRoundedIcon />,            path: '/company-profile', module: 'company-profile' },
+  { text: 'HQ Inventory',       icon: <Inventory2RoundedIcon />,       path: '/hq-inventory', module: 'hq-inventory' },
+  { text: 'Menu & Recipes',     icon: <LocalCafeRoundedIcon />,        path: '/menu', module: 'menu' },
+  { text: 'Consumption',        icon: <ScaleRoundedIcon />,            path: '/consumption', module: 'consumption' },
+  { text: 'Staff Directory',    icon: <BadgeRoundedIcon />,            path: '/staff', module: 'staff' },
+  { text: 'Settings',           icon: <ManageAccountsRoundedIcon />,   path: '/settings', module: 'settings' },
+  { text: 'Finance & Reports',  icon: <BarChartRoundedIcon />,         path: '/reports', module: 'reports' },
 ];
 
 const SUPER_ADMIN_NAV: NavItem[] = [
@@ -196,7 +197,13 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
     navigate({ to: '/login' });
   };
 
-  const navFilter = (item: NavItem) => !item.allowedRoles || (user?.role && item.allowedRoles.includes(user.role));
+  // Filter menu items using canAccessModule() from roleHelpers
+  const navFilter = (item: NavItem) => {
+    // SuperAdmin items don't have module property, allow all
+    if (!item.module) return true;
+    // Use canAccessModule() for permission checking
+    return user?.role ? canAccessModule(user.role, item.module) : false;
+  };
 
   const isSuperAdmin = user?.role === 'SuperAdmin';
   const navItems = isSuperAdmin
