@@ -13,10 +13,10 @@ public class SubscriptionPlan
     public required string PlanCode { get; set; }
 
     [Required]
-    [MaxLength(100)]
+    [MaxLength(50)]
     public required string Name { get; set; }
 
-    [MaxLength(500)]
+    [MaxLength(100)]
     public string? Description { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]

@@ -4,6 +4,7 @@ using Kettan.Server.DTOs.SupplyRequests;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Services.Inventory;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Services.BranchOperations;
 
@@ -48,14 +49,9 @@ public class SupplyRequestService : ISupplyRequestService
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            var normalizedStatus = NormalizeStatus(status);
-            if (normalizedStatus == SupplyRequestStatuses.AutoDrafted)
+            if (Enum.TryParse<SupplyRequestStatus>(status, true, out var parsedStatus))
             {
-                query = query.Where(r => r.Status == SupplyRequestStatuses.AutoDrafted || r.Status == "Auto_Drafted");
-            }
-            else
-            {
-                query = query.Where(r => r.Status == normalizedStatus);
+                query = query.Where(r => r.Status == parsedStatus);
             }
         }
 
@@ -101,10 +97,10 @@ public class SupplyRequestService : ISupplyRequestService
             TenantId = _currentUser.TenantId.Value,
             BranchId = branchId,
             RequestedBy_UserId = _currentUser.UserId.Value,
-            Status = SupplyRequestStatuses.Draft,
-            RequestType = NormalizeOption(dto.RequestType, "manual"),
-            Priority = NormalizeOption(dto.Priority, "normal"),
-            DispatchWindow = NormalizeOption(dto.DispatchWindow, "today"),
+            Status = SupplyRequestStatus.Draft,
+            RequestType = Enum.TryParse<RequestType>(dto.RequestType, true, out var reqType) ? reqType : RequestType.Manual,
+            Priority = Enum.TryParse<Priority>(dto.Priority, true, out var priority) ? priority : Priority.Normal,
+            DispatchWindow = Enum.TryParse<DispatchWindow>(dto.DispatchWindow, true, out var dispatchWindow) ? dispatchWindow : DispatchWindow.Today,
             DispatchDate = dto.DispatchDate,
             Notes = NormalizeOptional(dto.Notes),
             CreatedAt = now,
@@ -159,9 +155,9 @@ public class SupplyRequestService : ISupplyRequestService
             throw new InvalidOperationException("Only draft requests can be updated.");
         }
 
-        request.RequestType = NormalizeOption(dto.RequestType, request.RequestType);
-        request.Priority = NormalizeOption(dto.Priority, request.Priority);
-        request.DispatchWindow = NormalizeOption(dto.DispatchWindow, request.DispatchWindow);
+        request.RequestType = Enum.TryParse<RequestType>(dto.RequestType, true, out var reqType) ? reqType : request.RequestType;
+        request.Priority = Enum.TryParse<Priority>(dto.Priority, true, out var priority) ? priority : request.Priority;
+        request.DispatchWindow = Enum.TryParse<DispatchWindow>(dto.DispatchWindow, true, out var dispatchWindow) ? dispatchWindow : request.DispatchWindow;
         request.DispatchDate = dto.DispatchDate;
         request.Notes = NormalizeOptional(dto.Notes);
         request.UpdatedAt = DateTime.UtcNow;
@@ -218,7 +214,7 @@ public class SupplyRequestService : ISupplyRequestService
             throw new InvalidOperationException("Only draft requests can be submitted.");
         }
 
-        request.Status = SupplyRequestStatuses.PendingApproval;
+        request.Status = SupplyRequestStatus.PendingApproval;
         request.UpdatedAt = DateTime.UtcNow;
 
         var normalizedNotes = NormalizeOptional(notes);
@@ -264,7 +260,7 @@ public class SupplyRequestService : ISupplyRequestService
             return null;
         }
 
-        if (request.Status != SupplyRequestStatuses.PendingApproval)
+        if (request.Status != SupplyRequestStatus.PendingApproval)
         {
             throw new InvalidOperationException("Only pending approval requests can be approved.");
         }
@@ -320,8 +316,8 @@ public class SupplyRequestService : ISupplyRequestService
 
         var hasAnyPartialApproval = request.Items.Any(i => (i.QuantityApproved ?? 0) < i.QuantityRequested);
         request.Status = hasAnyPartialApproval
-            ? SupplyRequestStatuses.PartiallyApproved
-            : SupplyRequestStatuses.Approved;
+            ? SupplyRequestStatus.PartiallyApproved
+            : SupplyRequestStatus.Approved;
         request.UpdatedAt = now;
 
         var normalizedNotes = NormalizeOptional(dto.Notes);
@@ -334,7 +330,7 @@ public class SupplyRequestService : ISupplyRequestService
         {
             TenantId = request.TenantId,
             RequestId = request.RequestId,
-            Status = OrderStatuses.Processing,
+            Status = OrderStatus.Processing,
             PushedToFulfillmentAt = now
         };
 
@@ -343,7 +339,7 @@ public class SupplyRequestService : ISupplyRequestService
         {
             TenantId = request.TenantId,
             Order = order,
-            Status = OrderStatuses.Processing,
+            Status = OrderStatus.Processing,
             ChangedBy_UserId = _currentUser.UserId.Value,
             Remarks = "Supply request approved and moved to processing.",
             Timestamp = now
@@ -393,12 +389,12 @@ public class SupplyRequestService : ISupplyRequestService
             return null;
         }
 
-        if (request.Status != SupplyRequestStatuses.PendingApproval)
+        if (request.Status != SupplyRequestStatus.PendingApproval)
         {
             throw new InvalidOperationException("Only pending approval requests can be rejected.");
         }
 
-        request.Status = SupplyRequestStatuses.Rejected;
+        request.Status = SupplyRequestStatus.Rejected;
         request.UpdatedAt = DateTime.UtcNow;
 
         foreach (var requestItem in request.Items)
@@ -450,7 +446,7 @@ public class SupplyRequestService : ISupplyRequestService
         var existingDraft = await _context.SupplyRequests
             .Include(r => r.Items)
             .FirstOrDefaultAsync(r => r.BranchId == branchId && 
-                                     (r.Status == SupplyRequestStatuses.Draft || r.Status == SupplyRequestStatuses.AutoDrafted || r.Status == "Auto_Drafted"));
+                                     (r.Status == SupplyRequestStatus.Draft || r.Status == SupplyRequestStatus.AutoDrafted));
 
         var now = DateTime.UtcNow;
 
@@ -501,10 +497,10 @@ public class SupplyRequestService : ISupplyRequestService
             TenantId = _currentUser.TenantId.Value,
             BranchId = branchId,
             RequestedBy_UserId = _currentUser.UserId.Value,
-            Status = SupplyRequestStatuses.AutoDrafted,
-            RequestType = "auto",
-            Priority = "normal",
-            DispatchWindow = "today",
+            Status = SupplyRequestStatus.AutoDrafted,
+            RequestType = RequestType.Auto,
+            Priority = Priority.Normal,
+            DispatchWindow = DispatchWindow.Today,
             CreatedAt = now,
             UpdatedAt = now,
             Items = validAlerts.Select(a => new SupplyRequestItem
@@ -650,10 +646,10 @@ public class SupplyRequestService : ISupplyRequestService
             RequestedByName = request.RequestedBy_User == null
                 ? string.Empty
                 : $"{request.RequestedBy_User.FirstName} {request.RequestedBy_User.LastName}".Trim(),
-            Status = NormalizeStatus(request.Status),
-            RequestType = request.RequestType,
-            Priority = request.Priority,
-            DispatchWindow = request.DispatchWindow,
+            Status = request.Status.ToString(),
+            RequestType = request.RequestType.ToString(),
+            Priority = request.Priority.ToString(),
+            DispatchWindow = request.DispatchWindow.ToString(),
             DispatchDate = request.DispatchDate,
             Notes = request.Notes,
             CreatedAt = request.CreatedAt,
@@ -670,10 +666,9 @@ public class SupplyRequestService : ISupplyRequestService
         };
     }
 
-    private static bool IsDraftLike(string? status)
+    private static bool IsDraftLike(SupplyRequestStatus status)
     {
-        var normalized = NormalizeStatus(status);
-        return normalized is SupplyRequestStatuses.Draft or SupplyRequestStatuses.AutoDrafted;
+        return status is SupplyRequestStatus.Draft or SupplyRequestStatus.AutoDrafted;
     }
 
     private static string NormalizeStatus(string? status)

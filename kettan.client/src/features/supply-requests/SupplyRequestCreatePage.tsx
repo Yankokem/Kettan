@@ -44,9 +44,9 @@ export function SupplyRequestCreatePage() {
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [requestLines, setRequestLines] = useState<RequestLineItem[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [referenceNumber, setReferenceNumber] = useState('');
   const [requestType, setRequestType] = useState('manual');
   const [priority, setPriority] = useState('normal');
-  const [dispatchWindow, setDispatchWindow] = useState('today');
   const [dispatchDate, setDispatchDate] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -77,11 +77,11 @@ export function SupplyRequestCreatePage() {
 
   const resetForm = () => {
     setRequestLines([]);
+    setReferenceNumber('');
     setDispatchDate('');
     setNotes('');
     setRequestType('manual');
     setPriority('normal');
-    setDispatchWindow('today');
     setError(null);
   };
 
@@ -105,9 +105,11 @@ export function SupplyRequestCreatePage() {
       setError(null);
 
       const created = await createSupplyRequest({
+        branchId: user?.branchId ?? undefined,
+        referenceNumber: referenceNumber.trim() || undefined,
         requestType,
         priority,
-        dispatchWindow,
+        dispatchWindow: 'scheduled',
         dispatchDate: dispatchDate || undefined,
         notes: notes || undefined,
         items: requestLines.map((line) => ({
@@ -246,84 +248,100 @@ export function SupplyRequestCreatePage() {
         </Box>
       </Box>
 
-      <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+        {/* Left card — Request Details */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', md: '38%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            p: 3.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0,
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
+            Request Details
+          </Typography>
+
           <Box
             sx={{
-              width: { xs: '100%', lg: '44%' },
-              pr: { xs: 0, lg: 2.5 },
-              pb: { xs: 2.5, lg: 0 },
-              borderRight: { xs: 'none', lg: '1px solid' },
-              borderColor: 'divider',
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: 1.25,
+              mb: 1.25,
             }}
           >
-            <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 0.6 }}>Request Details</Typography>
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 2 }}>Add request metadata for this supply request.</Typography>
-
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                gap: 1.25,
-                mb: 1.25,
-              }}
-            >
-              <Dropdown
-                value={requestType}
-                onChange={(event) => setRequestType(String(event.target.value))}
-                options={[
-                  { value: 'manual', label: 'Manual Request' },
-                  { value: 'auto', label: 'Auto Triggered' },
-                ]}
-              />
-              <Dropdown
-                value={priority}
-                onChange={(event) => setPriority(String(event.target.value))}
-                options={[
-                  { value: 'low', label: 'Low Priority' },
-                  { value: 'normal', label: 'Normal Priority' },
-                  { value: 'high', label: 'High Priority' },
-                ]}
-              />
-              <Dropdown
-                value={dispatchWindow}
-                onChange={(event) => setDispatchWindow(String(event.target.value))}
-                options={[
-                  { value: 'today', label: 'Dispatch Today' },
-                  { value: 'tomorrow', label: 'Dispatch Tomorrow' },
-                  { value: 'scheduled', label: 'Scheduled' },
-                ]}
-              />
-              <TextField
-                label="Dispatch Date"
-                type="date"
-                value={dispatchDate}
-                onChange={(event) => setDispatchDate(event.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </Box>
-
             <TextField
-              label="Notes"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              multiline
-              rows={3}
-              sx={{ mt: 1.2 }}
+              label="Reference Number"
+              value={referenceNumber}
+              placeholder="e.g., SR-2026-001"
+              onChange={(event) => setReferenceNumber(event.target.value)}
             />
-
-            {error ? (
-              <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 1.2 }}>{error}</Typography>
-            ) : null}
+            <Dropdown
+              value={requestType}
+              onChange={(event) => setRequestType(String(event.target.value))}
+              options={[
+                { value: 'manual', label: 'Manual Request' },
+                { value: 'auto', label: 'Auto Triggered' },
+              ]}
+            />
+            <Dropdown
+              value={priority}
+              onChange={(event) => setPriority(String(event.target.value))}
+              options={[
+                { value: 'low', label: 'Low Priority' },
+                { value: 'normal', label: 'Normal Priority' },
+                { value: 'high', label: 'High Priority' },
+              ]}
+            />
+            <TextField
+              label="Dispatch Date"
+              type="date"
+              value={dispatchDate}
+              onChange={(event) => setDispatchDate(event.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
           </Box>
 
-          <Box sx={{ width: { xs: '100%', lg: '56%' }, pl: { xs: 0, lg: 2.5 }, pt: { xs: 2.5, lg: 0 } }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 0.6 }}>Item Composer</Typography>
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 1.4 }}>
-              Select inventory items from the modal and set quantity there. Added lines will appear below.
+          <TextField
+            label="Notes"
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            multiline
+            rows={3}
+            sx={{ mt: 1.2 }}
+          />
+
+          {error ? (
+            <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 1.2 }}>{error}</Typography>
+          ) : null}
+        </Paper>
+
+        {/* Right card — Item Composer */}
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            p: 3.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+          }}
+        >
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 2 }}>
+              Item Composer
             </Typography>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1.2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => setIsItemModalOpen(true)}
@@ -331,8 +349,6 @@ export function SupplyRequestCreatePage() {
                 Select Item
               </Button>
             </Box>
-
-            <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 0.6 }}>Items Added</Typography>
 
             <DataTable
               data={requestLines}
@@ -343,25 +359,8 @@ export function SupplyRequestCreatePage() {
               pageSizes={[5, 10, 25]}
             />
           </Box>
-        </Box>
 
-        <Box
-          sx={{
-            mt: 2,
-            pt: 2,
-            borderTop: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 1.2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-            Total lines: <strong>{requestLines.length}</strong>
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, pt: 2 }}>
             <Button variant="outlined" onClick={() => navigate({ to: '/supply-requests' })}>
               Cancel
             </Button>
@@ -369,8 +368,8 @@ export function SupplyRequestCreatePage() {
               {isSaving ? 'Submitting...' : 'Create and Submit'}
             </Button>
           </Box>
-        </Box>
-      </Paper>
+        </Paper>
+      </Box>
 
       <InventorySelectionModal
         open={isItemModalOpen}

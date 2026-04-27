@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -19,8 +20,7 @@ public class Order : ITenantEntity
     public SupplyRequest? SupplyRequest { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public string Status { get; set; } = "Processing"; // Processing, Picking, Packed, Dispatched, Delivered, Returned
+    public OrderStatus Status { get; set; } = OrderStatus.Pending;
 
     public DateTime PushedToFulfillmentAt { get; set; } = DateTime.UtcNow;
 

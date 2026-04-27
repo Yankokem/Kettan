@@ -1,5 +1,6 @@
 using Kettan.Server.Entities;
 using Microsoft.EntityFrameworkCore;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Data.Seeders;
 
@@ -82,8 +83,8 @@ public static class SubscriptionTenantSeeder
                 Phone = "+639171234567",
                 Address = "123 Coffee Ave, Manila",
                 LogoUrl = "https://example.com/dummycorp-logo.png",
-                SubscriptionTier = "Growth",
-                SubscriptionStatus = "Active",
+                SubscriptionTier = SubscriptionTier.Growth,
+                SubscriptionStatus = SubscriptionStatus.Active,
                 IsActive = true
             };
 
@@ -96,8 +97,8 @@ public static class SubscriptionTenantSeeder
             tenant.Phone = "+639171234567";
             tenant.Address = "123 Coffee Ave, Manila";
             tenant.LogoUrl = "https://example.com/dummycorp-logo.png";
-            tenant.SubscriptionTier = "Growth";
-            tenant.SubscriptionStatus = "Active";
+            tenant.SubscriptionTier = SubscriptionTier.Growth;
+            tenant.SubscriptionStatus = SubscriptionStatus.Active;
             tenant.IsActive = true;
             tenant.IsDeleted = false;
             tenant.DeletedAt = null;
@@ -118,7 +119,7 @@ public static class SubscriptionTenantSeeder
 
         var subscription = await context.Set<TenantSubscription>()
             .IgnoreQueryFilters()
-            .Where(s => s.TenantId == tenant.TenantId && s.PlanId == growthPlan.PlanId && s.BillingCycle == "Monthly")
+            .Where(s => s.TenantId == tenant.TenantId && s.PlanId == growthPlan.PlanId && s.BillingCycle == BillingCycle.Monthly)
             .OrderByDescending(s => s.PeriodEnd)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -128,8 +129,8 @@ public static class SubscriptionTenantSeeder
             {
                 TenantId = tenant.TenantId,
                 PlanId = growthPlan.PlanId,
-                Status = "Active",
-                BillingCycle = "Monthly",
+                Status = SubscriptionStatus.Active,
+                BillingCycle = BillingCycle.Monthly,
                 StartDate = now,
                 PeriodStart = now,
                 PeriodEnd = now.AddMonths(1),
@@ -140,8 +141,8 @@ public static class SubscriptionTenantSeeder
         }
         else
         {
-            subscription.Status = "Active";
-            subscription.BillingCycle = "Monthly";
+            subscription.Status = SubscriptionStatus.Active;
+            subscription.BillingCycle = BillingCycle.Monthly;
             subscription.AutoRenew = true;
             subscription.IsDeleted = false;
             subscription.DeletedAt = null;
@@ -161,7 +162,7 @@ public static class SubscriptionTenantSeeder
         await context.SaveChangesAsync(cancellationToken);
 
         tenant.CurrentSubscriptionId = subscription.TenantSubscriptionId;
-        tenant.SubscriptionTier = growthPlan.Name;
+        tenant.SubscriptionTier = SubscriptionTier.Growth;
         tenant.SubscriptionStatus = subscription.Status;
         tenant.SubscriptionPeriodStart = subscription.PeriodStart;
         tenant.SubscriptionPeriodEnd = subscription.PeriodEnd;

@@ -35,7 +35,7 @@ import { BranchActivityTab } from './components/profile/BranchActivityTab';
 import { BranchTransactionsTab } from './components/profile/BranchTransactionsTab';
 import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
 import { BranchEditModal } from './components/profile/BranchEditModal.tsx';
-import { AddStaffModal, type AddStaffFormValues } from '../staff/components/AddStaffModal.tsx';
+import { AddStaffModal } from '../staff/components/AddStaffModal.tsx';
 import type {
   Branch,
   BranchActivityLog,
@@ -60,15 +60,6 @@ const MANAGER_OPTIONS = [
   { value: '', label: 'Select a manager...' },
   ...BRANCH_MANAGER_OPTIONS,
 ];
-
-const STAFF_ROLE_TO_POSITION: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
-  TenantAdmin: 'Tenant Admin',
-  HqManager: 'HQ Manager',
-  HqStaff: 'HQ Staff',
-  BranchOwner: 'Branch Owner',
-  BranchManager: 'Branch Manager',
-  StoreStaff: 'Store Staff',
-};
 
 export function BranchProfilePage() {
   const navigate = useNavigate();
@@ -172,16 +163,6 @@ export function BranchProfilePage() {
 
     return knownCities.map((city) => ({ value: city, label: city }));
   }, [editDraft?.city]);
-
-  const staffBranchOptions = useMemo(
-    () => [
-      {
-        value: parsedBranchId.toString(),
-        label: selectedBranch?.name || 'Current Branch',
-      },
-    ],
-    [parsedBranchId, selectedBranch?.name]
-  );
 
   const tabBadges = useMemo(
     () => ({

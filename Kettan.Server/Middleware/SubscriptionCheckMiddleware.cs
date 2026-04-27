@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Kettan.Server.Data;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Middleware;
 
@@ -67,7 +68,7 @@ public class SubscriptionCheckMiddleware
             return;
         }
 
-        if (tenant.SubscriptionStatus != "Active" && tenant.SubscriptionStatus != "PendingPayment")
+        if (tenant.SubscriptionStatus != SubscriptionStatus.Active && tenant.SubscriptionStatus != SubscriptionStatus.PendingPayment)
         {
             context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
             await context.Response.WriteAsJsonAsync(new { message = "Your subscription is not active. Please renew your plan." });

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -24,11 +25,9 @@ public class ConsumptionLog : ITenantEntity
     public User? LoggedBy_User { get; set; }
 
     [Required]
-    [MaxLength(30)]
-    public required string Method { get; set; } // Sales, Direct, PhysicalCount
+    public required ConsumptionMethod Method { get; set; }
 
-    [MaxLength(30)]
-    public string? Shift { get; set; }
+    public Shift? Shift { get; set; }
 
     public DateTime LogDate { get; set; } = DateTime.UtcNow;
 

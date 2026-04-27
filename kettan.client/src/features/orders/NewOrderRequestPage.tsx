@@ -101,7 +101,7 @@ export function NewOrderRequestPage() {
           sku: item.sku,
           category: item.category?.name ?? 'Uncategorized',
           hqStock: item.totalStock,
-          unit: item.unit?.symbol ?? item.unit?.name ?? 'unit',
+          unit: item.unit ?? 'unit',
           unitCost: item.unitCost,
         }));
 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Kettan.Server.Data;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Controllers;
 
@@ -33,11 +34,11 @@ public class AuditLogsController : ControllerBase
         [FromQuery] int? branchId = null,
         CancellationToken ct = default)
     {
-        var isSuperAdmin = _currentUserService.Role == "SuperAdmin";
+        var isSuperAdmin = _currentUserService.Role == UserRole.SuperAdmin.ToString();
         var tenantId = _currentUserService.TenantId;
 
         // SuperAdmin sees everything, TenantAdmin sees only their tenant
-        if (!isSuperAdmin && _currentUserService.Role != "TenantAdmin")
+        if (!isSuperAdmin && _currentUserService.Role != UserRole.TenantAdmin.ToString())
         {
             return Forbid();
         }
@@ -99,7 +100,7 @@ public class AuditLogsController : ControllerBase
                 ActorName = a.User != null
                     ? a.User.FirstName + " " + a.User.LastName
                     : "System",
-                ActorRole = a.User != null ? a.User.Role : "System",
+                ActorRole = a.User != null ? a.User.Role.ToString() : "System",
                 a.TenantId,
                 TenantName = a.Tenant != null ? a.Tenant.Name : null,
                 a.OccurredAt,

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -19,12 +20,10 @@ public class TenantSubscription
     public SubscriptionPlan? Plan { get; set; }
 
     [Required]
-    [MaxLength(30)]
-    public string Status { get; set; } = "Active";
+    public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
 
     [Required]
-    [MaxLength(20)]
-    public string BillingCycle { get; set; } = "Monthly";
+    public BillingCycle BillingCycle { get; set; } = BillingCycle.Monthly;
 
     public DateTime StartDate { get; set; } = DateTime.UtcNow;
     public DateTime PeriodStart { get; set; }

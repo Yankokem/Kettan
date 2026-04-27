@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -7,6 +8,9 @@ public class SupplyRequest : ITenantEntity
 {
     [Key]
     public int RequestId { get; set; }
+
+    [MaxLength(100)]
+    public string? ReferenceNumber { get; set; }
 
     public int TenantId { get; set; }
 
@@ -24,20 +28,16 @@ public class SupplyRequest : ITenantEntity
     public User? RequestedBy_User { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public string Status { get; set; } = "Draft"; // Draft, Auto_Drafted, PendingApproval, Approved, Rejected
+    public SupplyRequestStatus Status { get; set; } = SupplyRequestStatus.Pending;
 
     [Required]
-    [MaxLength(30)]
-    public string RequestType { get; set; } = "manual";
+    public RequestType RequestType { get; set; } = RequestType.Regular;
 
     [Required]
-    [MaxLength(30)]
-    public string Priority { get; set; } = "normal";
+    public Priority Priority { get; set; } = Priority.Normal;
 
     [Required]
-    [MaxLength(30)]
-    public string DispatchWindow { get; set; } = "today";
+    public DispatchWindow DispatchWindow { get; set; } = DispatchWindow.Anytime;
 
     public DateTime? DispatchDate { get; set; }
 

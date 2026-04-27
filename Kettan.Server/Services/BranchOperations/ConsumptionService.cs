@@ -4,6 +4,7 @@ using Kettan.Server.DTOs.Consumption;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Services.Inventory;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Services.BranchOperations;
 
@@ -44,8 +45,8 @@ public class ConsumptionService : IConsumptionService
             TenantId = _currentUser.TenantId!.Value,
             BranchId = _currentUser.BranchId!.Value,
             LoggedBy_UserId = _currentUser.UserId!.Value,
-            Method = "Sales",
-            Shift = dto.Shift,
+            Method = ConsumptionMethod.Sales,
+            Shift = Enum.TryParse<Shift>(dto.Shift, true, out var shift) ? shift : (Shift?)null,
             LogDate = dto.LogDate,
             Remarks = dto.Remarks,
             CreatedAt = DateTime.UtcNow,
@@ -78,9 +79,9 @@ public class ConsumptionService : IConsumptionService
                         itemId: ingredient.ItemId,
                         branchId: _currentUser.BranchId.Value,
                         quantity: requiredQty,
-                        transactionType: "Sales_Auto",
+                        transactionType: TransactionType.SalesAuto,
                         remarks: $"Auto deduction from menu item {ingredient.MenuItem?.Name ?? ingredient.MenuItemId.ToString()}",
-                        referenceType: nameof(ConsumptionLog),
+                        referenceType: ReferenceType.ConsumptionLog,
                         referenceId: log.ConsumptionLogId);
 
                     log.Items.Add(new ConsumptionLogItem
@@ -102,8 +103,8 @@ public class ConsumptionService : IConsumptionService
             {
                 ConsumptionLogId = log.ConsumptionLogId,
                 BranchId = log.BranchId,
-                Method = log.Method,
-                Shift = log.Shift,
+                Method = log.Method.ToString(),
+                Shift = log.Shift?.ToString(),
                 LogDate = log.LogDate,
                 Remarks = log.Remarks,
                 CreatedAt = log.CreatedAt
@@ -130,8 +131,8 @@ public class ConsumptionService : IConsumptionService
             TenantId = _currentUser.TenantId!.Value,
             BranchId = _currentUser.BranchId!.Value,
             LoggedBy_UserId = _currentUser.UserId!.Value,
-            Method = "Direct",
-            Shift = dto.Shift,
+            Method = ConsumptionMethod.Direct,
+            Shift = Enum.TryParse<Shift>(dto.Shift, true, out var shift) ? shift : (Shift?)null,
             LogDate = dto.LogDate,
             Remarks = dto.Remarks,
             CreatedAt = DateTime.UtcNow,
@@ -152,9 +153,9 @@ public class ConsumptionService : IConsumptionService
                     itemId: line.ItemId,
                     branchId: _currentUser.BranchId.Value,
                     quantity: line.Quantity,
-                    transactionType: "Consumption",
+                    transactionType: TransactionType.Consumption,
                     remarks: line.Reason,
-                    referenceType: nameof(ConsumptionLog),
+                    referenceType: ReferenceType.ConsumptionLog,
                     referenceId: log.ConsumptionLogId);
 
                 log.Items.Add(new ConsumptionLogItem
@@ -174,8 +175,8 @@ public class ConsumptionService : IConsumptionService
             {
                 ConsumptionLogId = log.ConsumptionLogId,
                 BranchId = log.BranchId,
-                Method = log.Method,
-                Shift = log.Shift,
+                Method = log.Method.ToString(),
+                Shift = log.Shift?.ToString(),
                 LogDate = log.LogDate,
                 Remarks = log.Remarks,
                 CreatedAt = log.CreatedAt
@@ -208,7 +209,13 @@ public class ConsumptionService : IConsumptionService
 
         if (from.HasValue) query = query.Where(c => c.LogDate >= from.Value);
         if (to.HasValue) query = query.Where(c => c.LogDate <= to.Value);
-        if (!string.IsNullOrWhiteSpace(method)) query = query.Where(c => c.Method == method);
+        if (!string.IsNullOrWhiteSpace(method))
+        {
+            if (Enum.TryParse<ConsumptionMethod>(method, true, out var parsedMethod))
+            {
+                query = query.Where(c => c.Method == parsedMethod);
+            }
+        }
 
         return await query
             .OrderByDescending(c => c.LogDate)
@@ -216,8 +223,8 @@ public class ConsumptionService : IConsumptionService
             {
                 ConsumptionLogId = c.ConsumptionLogId,
                 BranchId = c.BranchId,
-                Method = c.Method,
-                Shift = c.Shift,
+                Method = c.Method.ToString(),
+                Shift = c.Shift.HasValue ? c.Shift.Value.ToString() : null,
                 LogDate = c.LogDate,
                 Remarks = c.Remarks,
                 CreatedAt = c.CreatedAt

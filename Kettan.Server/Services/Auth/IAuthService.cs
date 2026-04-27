@@ -5,5 +5,5 @@ namespace Kettan.Server.Services.Auth;
 
 public interface IAuthService
 {
-    Task<string?> LoginAsync(LoginRequest request);
+    Task<LoginResponse?> LoginAsync(LoginRequest request);
 }

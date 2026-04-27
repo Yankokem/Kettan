@@ -1,5 +1,6 @@
 using Kettan.Server.Entities;
 using Microsoft.EntityFrameworkCore;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Data.Seeders;
 
@@ -105,8 +106,8 @@ public static class MenuSeeder
 
         var menuItemSeeds = new[]
         {
-            new MenuItemSeed("Cafe Latte", "Coffee", 140m, "Active"),
-            new MenuItemSeed("Iced Matcha Latte", "Non-Coffee", 160m, "Active")
+            new MenuItemSeed("Cafe Latte", "Coffee", 140m, MenuItemStatus.Active),
+            new MenuItemSeed("Iced Matcha Latte", "Non-Coffee", 160m, MenuItemStatus.Active)
         };
 
         var menuItemNames = menuItemSeeds.Select(s => s.Name).ToList();
@@ -197,10 +198,10 @@ public static class MenuSeeder
 
         var variantSeeds = new[]
         {
-            new MenuVariantSeed("Cafe Latte", "12oz (Hot)", "absolute", 140m, 1),
-            new MenuVariantSeed("Cafe Latte", "16oz (Hot)", "absolute", 165m, 2),
-            new MenuVariantSeed("Iced Matcha Latte", "12oz (Iced)", "absolute", 160m, 1),
-            new MenuVariantSeed("Iced Matcha Latte", "16oz (Iced)", "absolute", 185m, 2)
+            new MenuVariantSeed("Cafe Latte", "12oz (Hot)", PricingMode.Absolute, 140m, 1),
+            new MenuVariantSeed("Cafe Latte", "16oz (Hot)", PricingMode.Absolute, 165m, 2),
+            new MenuVariantSeed("Iced Matcha Latte", "12oz (Iced)", PricingMode.Absolute, 160m, 1),
+            new MenuVariantSeed("Iced Matcha Latte", "16oz (Iced)", PricingMode.Absolute, 185m, 2)
         };
 
         var existingVariants = await context.Set<MenuVariant>()
@@ -320,12 +321,12 @@ public static class MenuSeeder
         string Name,
         string CategoryName,
         decimal BasePrice,
-        string Status);
+        MenuItemStatus Status);
 
     private sealed record MenuVariantSeed(
         string MenuItemName,
         string Name,
-        string PricingMode,
+        PricingMode PricingMode,
         decimal Price,
         int DisplayOrder);
 

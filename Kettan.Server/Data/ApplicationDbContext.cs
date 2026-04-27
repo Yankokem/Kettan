@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Kettan.Server.Entities;
+using Kettan.Server.Enums;
 using Kettan.Server.Services.Common;
 
 namespace Kettan.Server.Data;
@@ -153,6 +154,126 @@ public class ApplicationDbContext : DbContext
         // Note: Models without TenantId and IsDeleted (like OrderAllocation, SupplyRequestItem, MenuItemIngredient, ConsumptionLogItem, 
         // OrderStatusHistory, ReturnItem, VariantIngredient, SubscriptionInvoice, SubscriptionPayment, AuditLog) 
         // aren't filtered here directly, they're typically filtered implicitly by their parent entity when Queried.
+
+        // ============================================================
+        // Enum to tinyint conversions
+        // ============================================================
+        
+        modelBuilder.Entity<User>()
+            .Property(e => e.Role)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<MenuItem>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<MenuVariant>()
+            .Property(e => e.PricingMode)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<Vehicle>()
+            .Property(e => e.VehicleType)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<ConsumptionLog>()
+            .Property(e => e.Method)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<ConsumptionLog>()
+            .Property(e => e.Shift)
+            .HasConversion<byte?>();
+
+        modelBuilder.Entity<Order>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<OrderStatusHistory>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<SupplyRequest>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<SupplyRequest>()
+            .Property(e => e.RequestType)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<SupplyRequest>()
+            .Property(e => e.Priority)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<SupplyRequest>()
+            .Property(e => e.DispatchWindow)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<Return>()
+            .Property(e => e.Resolution)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<InventoryTransaction>()
+            .Property(e => e.TransactionType)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<InventoryTransaction>()
+            .Property(e => e.ReferenceType)
+            .HasConversion<byte?>();
+
+        modelBuilder.Entity<Notification>()
+            .Property(e => e.Type)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<Notification>()
+            .Property(e => e.ReferenceType)
+            .HasConversion<byte?>();
+
+        modelBuilder.Entity<TenantSubscription>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<TenantSubscription>()
+            .Property(e => e.BillingCycle)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<Tenant>()
+            .Property(e => e.SubscriptionStatus)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<Tenant>()
+            .Property(e => e.SubscriptionTier)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<SubscriptionInvoice>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<SubscriptionPayment>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<SubscriptionPayment>()
+            .Property(e => e.PaymentMethod)
+            .HasConversion<byte?>();
+
+        modelBuilder.Entity<SubscriptionPayment>()
+            .Property(e => e.Provider)
+            .HasConversion<byte?>();
+
+        // ============================================================
+        // DateTime2(3) precision for all DateTime columns
+        // ============================================================
+        
+        // Configure datetime2(3) precision for all DateTime properties across all entities
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    property.SetColumnType("datetime2(3)");
+                }
+            }
+        }
 
         // Prevent Cascading Deletes
         foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))

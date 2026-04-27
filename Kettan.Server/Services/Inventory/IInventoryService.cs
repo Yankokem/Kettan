@@ -1,3 +1,5 @@
+using Kettan.Server.Enums;
+
 namespace Kettan.Server.Services.Inventory;
 
 public class StockInResult
@@ -48,9 +50,9 @@ public interface IInventoryService
         int itemId,
         int? branchId,
         decimal quantity,
-        string transactionType,
+        TransactionType transactionType,
         string? remarks = null,
-        string? referenceType = null,
+        ReferenceType? referenceType = null,
         int? referenceId = null);
     Task<decimal> GetStockLevelAsync(int itemId, int? branchId = null);
     Task<List<ThresholdAlertResult>> CheckThresholdsAsync(int? branchId = null);

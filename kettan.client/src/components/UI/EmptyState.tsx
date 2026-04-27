@@ -1,6 +1,5 @@
 import { Box, Typography } from '@mui/material';
 import InboxRoundedIcon from '@mui/icons-material/InboxRounded';
-import { Button } from './Button';
 
 interface EmptyStateProps {
   title?: string;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Avatar, Box, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Typography } from '@mui/material';
+import { Box, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Typography } from '@mui/material';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import { Button } from '../../../components/UI/Button';
 import { FormTextField } from '../../../components/Form/FormTextField';

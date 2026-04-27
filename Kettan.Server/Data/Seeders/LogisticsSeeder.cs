@@ -1,5 +1,6 @@
 using Kettan.Server.Entities;
 using Microsoft.EntityFrameworkCore;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Data.Seeders;
 
@@ -20,7 +21,7 @@ public static class LogisticsSeeder
             {
                 TenantId = tenant.TenantId,
                 PlateNumber = "NCR-1234",
-                VehicleType = "Motorcycle",
+                VehicleType = VehicleType.Motorcycle,
                 Description = "Primary branch delivery unit",
                 IsActive = true
             };
@@ -31,7 +32,7 @@ public static class LogisticsSeeder
         {
             vehicle.TenantId = tenant.TenantId;
             vehicle.PlateNumber = "NCR-1234";
-            vehicle.VehicleType = "Motorcycle";
+            vehicle.VehicleType = VehicleType.Motorcycle;
             vehicle.Description = "Primary branch delivery unit";
             vehicle.IsActive = true;
             vehicle.IsDeleted = false;

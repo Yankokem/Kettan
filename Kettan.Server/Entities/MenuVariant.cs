@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -14,12 +15,11 @@ public class MenuVariant
     public MenuItem? MenuItem { get; set; }
 
     [Required]
-    [MaxLength(100)]
+    [MaxLength(50)]
     public required string Name { get; set; }
 
     [Required]
-    [MaxLength(10)]
-    public string PricingMode { get; set; } = "absolute"; // absolute or relative
+    public PricingMode PricingMode { get; set; } = PricingMode.Fixed;
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal Price { get; set; }

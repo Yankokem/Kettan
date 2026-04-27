@@ -122,10 +122,12 @@ export function CompanyProfilePage() {
       return EMPTY_COMPANY_PROFILE;
     }
 
-    const normalizedTier = sessionTenant.subscriptionTier?.trim().toLowerCase();
-    const planName = normalizedTier === 'enterprise'
+    const normalizedTier = typeof sessionTenant.subscriptionTier === 'string' 
+      ? sessionTenant.subscriptionTier.trim().toLowerCase()
+      : String(sessionTenant.subscriptionTier || '').toLowerCase();
+    const planName = normalizedTier === 'enterprise' || normalizedTier === '3'
       ? 'Enterprise Plan'
-      : normalizedTier === 'growth'
+      : normalizedTier === 'growth' || normalizedTier === '2'
         ? 'Growth Plan'
         : 'Starter Plan';
 

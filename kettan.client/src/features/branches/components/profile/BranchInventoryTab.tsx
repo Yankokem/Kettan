@@ -11,7 +11,6 @@ import { FilterDropdown } from '../../../../components/UI/FilterAndSort';
 import { DataTable, type ColumnDef } from '../../../../components/UI/DataTable';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded';
-import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import type { BranchInventoryItem, BranchInventoryStatus } from '../../types';
 import { formatDate } from '../../branchProfileData';
 import { BranchInventoryCard } from './BranchInventoryCard';

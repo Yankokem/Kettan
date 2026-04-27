@@ -26,6 +26,6 @@ public class MenuItemIngredient : ITenantEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal QuantityPerUnit { get; set; }
 
-    [MaxLength(50)]
+    [MaxLength(20)]
     public string? UnitOfMeasure { get; set; }
 }

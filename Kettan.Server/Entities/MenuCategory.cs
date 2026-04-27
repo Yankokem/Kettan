@@ -14,7 +14,7 @@ public class MenuCategory : ITenantEntity
     public Tenant? Tenant { get; set; }
 
     [Required]
-    [MaxLength(100)]
+    [MaxLength(50)]
     public required string Name { get; set; }
 
     public int DisplayOrder { get; set; } = 0;

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Box,
-  Paper,
   Typography,
 } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -62,51 +61,49 @@ export function VariantsBuilder({
       <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: 'text.primary' }}>
         Menu Variants
       </Typography>
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 2 }}>
-        {variants.length === 0 ? (
-          <Box
-            sx={{
-              py: 5,
-              px: 2,
-              textAlign: 'center',
-              border: '1px dashed',
-              borderColor: 'divider',
-              borderRadius: 2,
-              bgcolor: 'background.default',
-            }}
-          >
-            <Typography sx={{ fontSize: 13.5, color: 'text.secondary', fontWeight: 600 }}>
-              No variants added yet.
+      {variants.length === 0 ? (
+        <Box
+          sx={{
+            py: 5,
+            px: 2,
+            textAlign: 'center',
+            border: '1px dashed',
+            borderColor: 'divider',
+            borderRadius: 2,
+            bgcolor: 'background.default',
+          }}
+        >
+          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', fontWeight: 600 }}>
+            No variants added yet.
+          </Typography>
+          {!readOnly && (
+            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>
+              Add at least one variant and set its ingredient quantities.
             </Typography>
-            {!readOnly && (
-              <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>
-                Add at least one variant and set its ingredient quantities.
-              </Typography>
-            )}
-          </Box>
-        ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {variants.map((variant) => (
-              <MenuVariantCard
-                key={variant.id}
-                variant={variant}
-                inventoryOptions={inventoryOptions}
-                readOnly={readOnly}
-                onEdit={() => handleEditVariant(variant)}
-                onDelete={() => handleRemoveVariant(variant.id)}
-              />
-            ))}
-          </Box>
-        )}
+          )}
+        </Box>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {variants.map((variant) => (
+            <MenuVariantCard
+              key={variant.id}
+              variant={variant}
+              inventoryOptions={inventoryOptions}
+              readOnly={readOnly}
+              onEdit={() => handleEditVariant(variant)}
+              onDelete={() => handleRemoveVariant(variant.id)}
+            />
+          ))}
+        </Box>
+      )}
 
-        {!readOnly && (
-          <Box sx={{ mt: 2 }}>
-            <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={handleAddVariant} sx={{ width: '100%' }}>
-              Add Variant
-            </Button>
-          </Box>
-        )}
-      </Paper>
+      {!readOnly && (
+        <Box sx={{ mt: 2 }}>
+          <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={handleAddVariant} sx={{ width: '100%' }}>
+            Add Variant
+          </Button>
+        </Box>
+      )}
 
       <VariantModal
         open={modalOpen}

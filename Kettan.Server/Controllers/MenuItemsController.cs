@@ -5,6 +5,7 @@ using Kettan.Server.Data;
 using Kettan.Server.DTOs.MenuItems;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Controllers;
 
@@ -43,7 +44,7 @@ public class MenuItemsController : ControllerBase
                 Description = m.Description,
                 ImageUrl = m.ImageUrl,
                 BasePrice = m.BasePrice,
-                Status = m.Status,
+                Status = m.Status.ToString(),
                 CreatedAt = m.CreatedAt,
                 UpdatedAt = m.UpdatedAt
             })
@@ -80,7 +81,8 @@ public class MenuItemsController : ControllerBase
 
         try
         {
-            ValidateMenuItemPayload(dto.Name, dto.BasePrice, dto.Status, dto.Ingredients, dto.Variants);
+            var parsedStatus = Enum.TryParse<MenuItemStatus>(dto.Status, true, out var status) ? status : MenuItemStatus.Active;
+            ValidateMenuItemPayload(dto.Name, dto.BasePrice, parsedStatus, dto.Ingredients, dto.Variants);
             await ValidateMenuReferencesAsync(dto.CategoryId, dto.Ingredients, dto.Variants, dto.TagIds);
 
             var now = DateTime.UtcNow;
@@ -92,7 +94,7 @@ public class MenuItemsController : ControllerBase
                 Description = dto.Description,
                 ImageUrl = dto.ImageUrl,
                 BasePrice = dto.BasePrice,
-                Status = dto.Status,
+                Status = parsedStatus,
                 CreatedAt = now,
                 UpdatedAt = now
             };
@@ -138,7 +140,8 @@ public class MenuItemsController : ControllerBase
 
         try
         {
-            ValidateMenuItemPayload(dto.Name, dto.BasePrice, dto.Status, dto.Ingredients, dto.Variants);
+            var parsedStatus = Enum.TryParse<MenuItemStatus>(dto.Status, true, out var status) ? status : MenuItemStatus.Active;
+            ValidateMenuItemPayload(dto.Name, dto.BasePrice, parsedStatus, dto.Ingredients, dto.Variants);
             await ValidateMenuReferencesAsync(dto.CategoryId, dto.Ingredients, dto.Variants, dto.TagIds);
 
             menuItem.Name = dto.Name.Trim();
@@ -146,7 +149,7 @@ public class MenuItemsController : ControllerBase
             menuItem.Description = dto.Description;
             menuItem.ImageUrl = dto.ImageUrl;
             menuItem.BasePrice = dto.BasePrice;
-            menuItem.Status = dto.Status;
+            menuItem.Status = parsedStatus;
             menuItem.UpdatedAt = DateTime.UtcNow;
 
             await ReplaceRecipeGraphAsync(
@@ -227,7 +230,7 @@ public class MenuItemsController : ControllerBase
             Description = menuItem.Description,
             ImageUrl = menuItem.ImageUrl,
             BasePrice = menuItem.BasePrice,
-            Status = menuItem.Status,
+            Status = menuItem.Status.ToString(),
             CreatedAt = menuItem.CreatedAt,
             UpdatedAt = menuItem.UpdatedAt,
             Ingredients = menuItem.Ingredients
@@ -246,7 +249,7 @@ public class MenuItemsController : ControllerBase
             {
                 VariantId = v.VariantId,
                 Name = v.Name,
-                PricingMode = v.PricingMode,
+                PricingMode = v.PricingMode.ToString(),
                 Price = v.Price,
                 DisplayOrder = v.DisplayOrder,
                 IsActive = v.IsActive,
@@ -347,7 +350,7 @@ public class MenuItemsController : ControllerBase
         {
             MenuItemId = menuItemId,
             Name = v.Name.Trim(),
-            PricingMode = v.PricingMode.Trim().ToLowerInvariant(),
+            PricingMode = Enum.TryParse<PricingMode>(v.PricingMode.Trim(), true, out var mode) ? mode : PricingMode.Fixed,
             Price = v.Price,
             DisplayOrder = v.DisplayOrder,
             IsActive = v.IsActive
@@ -446,7 +449,7 @@ public class MenuItemsController : ControllerBase
     private static void ValidateMenuItemPayload(
         string name,
         decimal basePrice,
-        string status,
+        MenuItemStatus status,
         List<CreateMenuItemIngredientDto> ingredients,
         List<CreateVariantDto> variants)
     {
@@ -458,11 +461,6 @@ public class MenuItemsController : ControllerBase
         if (basePrice < 0)
         {
             throw new InvalidOperationException("Base price cannot be negative.");
-        }
-
-        if (string.IsNullOrWhiteSpace(status))
-        {
-            throw new InvalidOperationException("Menu status is required.");
         }
 
         foreach (var ingredient in ingredients)
@@ -486,9 +484,9 @@ public class MenuItemsController : ControllerBase
             }
 
             var pricingMode = variant.PricingMode.Trim().ToLowerInvariant();
-            if (pricingMode is not ("absolute" or "relative"))
+            if (pricingMode is not ("fixed" or "addon"))
             {
-                throw new InvalidOperationException("Variant pricing mode must be absolute or relative.");
+                throw new InvalidOperationException("Variant pricing mode must be fixed or addon.");
             }
 
             foreach (var ingredient in variant.Ingredients)

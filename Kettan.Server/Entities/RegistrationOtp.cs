@@ -9,11 +9,11 @@ public class RegistrationOtp
 
     [Required]
     [EmailAddress]
-    [MaxLength(255)]
+    [MaxLength(50)]
     public required string Email { get; set; }
 
     [Required]
-    [MaxLength(255)]
+    [MaxLength(100)]
     public required string OtpHash { get; set; }
 
     public DateTime ExpiresAtUtc { get; set; }

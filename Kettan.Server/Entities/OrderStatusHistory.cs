@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -19,8 +20,7 @@ public class OrderStatusHistory : ITenantEntity
     public Order? Order { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public required string Status { get; set; }
+    public required OrderStatus Status { get; set; }
 
     public int? ChangedBy_UserId { get; set; }
 

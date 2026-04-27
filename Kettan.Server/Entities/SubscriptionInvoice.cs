@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -21,18 +22,17 @@ public class SubscriptionInvoice
     public decimal AmountDue { get; set; }
 
     [Required]
-    [MaxLength(10)]
+    [MaxLength(5)]
     public string Currency { get; set; } = "PHP";
 
     [Required]
-    [MaxLength(30)]
-    public string Status { get; set; } = "Open";
+    public InvoiceStatus Status { get; set; } = InvoiceStatus.Pending;
 
     public DateTime IssuedAt { get; set; } = DateTime.UtcNow;
     public DateTime? DueAt { get; set; }
     public DateTime? PaidAt { get; set; }
 
-    [MaxLength(120)]
+    [MaxLength(50)]
     public string? ProviderReference { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

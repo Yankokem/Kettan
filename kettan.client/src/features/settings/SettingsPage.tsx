@@ -68,7 +68,6 @@ const SETTINGS_TABS: {
 
 export function SettingsPage() {
   const user = useAuthStore((state) => state.user);
-  const login = useAuthStore((state) => state.login);
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('profile');
 
   const [profileForm, setProfileForm] = useState({

@@ -1,0 +1,117 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - Enum-String Implicit Conversion Errors
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bug exists
+  - **Scoped PBT Approach**: For deterministic compilation errors, scope the property to the concrete failing cases to ensure reproducibility
+  - Test that attempting to build the Kettan.Server project on UNFIXED code produces exactly 28 compilation errors
+  - Verify errors match the bug condition: CS0019 (operator cannot be applied to enum and string) or CS0029 (cannot implicitly convert string to enum)
+  - Verify errors occur in the 10 affected files: UsersController.cs, TenantsController.cs, MenuItemsController.cs, ReturnsController.cs, OrdersController.cs, InventoryTransactionsController.cs, NotificationService.cs, OrderService.cs, SubscriptionTenantSeeder.cs, UserSeeder.cs
+  - Verify errors involve the 10 enum types: UserRole, SubscriptionTier, SubscriptionStatus, InvoiceStatus, MenuItemStatus, PricingMode, ReturnResolution, OrderStatus, TransactionType, ReferenceType
+  - Document specific error messages, line numbers, and code patterns for each of the 28 errors
+  - Run test on UNFIXED code using: `dotnet build Kettan.Server/Kettan.Server.csproj`
+  - **EXPECTED OUTCOME**: Test FAILS with 28 compilation errors (this is correct - it proves the bug exists)
+  - Mark task complete when test is written, run, and all 28 failures are documented
+  - _Requirements: 1.1, 1.2, 1.3, 1.4_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Application Logic Equivalence
+  - **IMPORTANT**: Follow observation-first methodology
+  - Since the code does not currently compile, we cannot observe runtime behavior directly
+  - Instead, document the INTENDED behavior based on code analysis and business logic
+  - Write property-based tests that will verify the following behaviors are preserved after the fix:
+    - **User Authorization**: Users with UserRole.TenantAdmin have admin permissions
+    - **Subscription Features**: Tenants with SubscriptionTier.Growth have growth-tier features enabled
+    - **Order Workflows**: Order status transitions follow valid workflow rules
+    - **Database Queries**: Filtering by enum values returns correct entity sets
+    - **API Serialization**: Enum values are serialized as strings in JSON responses
+  - These tests will be run AFTER the fix is applied to verify no regressions
+  - Property-based testing generates many test cases for stronger guarantees
+  - Document test cases that will verify preservation requirements 3.1-3.5
+  - **EXPECTED OUTCOME**: Tests are written and ready to run after fix is applied
+  - Mark task complete when preservation tests are documented and ready for execution
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 3. Fix enum-string conversion errors
+
+  - [x] 3.1 Phase 1: Direct Enum Constant Replacements (Lowest Risk)
+    - Replace string literals with enum constants where the string represents a known enum value
+    - **Files to modify**:
+      - `Kettan.Server/Controllers/UsersController.cs`: Replace `"TenantAdmin"` with `UserRole.TenantAdmin`, etc.
+      - `Kettan.Server/Controllers/TenantsController.cs`: Replace subscription tier strings with enum constants
+      - `Kettan.Server/Data/Seeders/SubscriptionTenantSeeder.cs`: Replace `"Growth"`, `"Enterprise"` with `SubscriptionTier.Growth`, `SubscriptionTier.Enterprise`
+      - `Kettan.Server/Data/Seeders/UserSeeder.cs`: Replace role strings with `UserRole` enum constants
+    - **Pattern**: `enumProperty == "StringLiteral"` → `enumProperty == EnumType.EnumValue`
+    - **Pattern**: `enumProperty = "StringLiteral"` → `enumProperty = EnumType.EnumValue`
+    - Verify changes compile incrementally after each file
+    - _Bug_Condition: isBugCondition(codeStatement) where enum values are compared with or assigned from string literals_
+    - _Expected_Behavior: All string literals representing enum values are replaced with enum constants_
+    - _Preservation: Logical comparisons produce the same boolean results; assignments set the same enum values_
+    - _Requirements: 1.1, 1.2, 2.1, 2.2, 3.3_
+
+  - [x] 3.2 Phase 2: Enum-to-String Conversions (Medium Risk)
+    - Add `.ToString()` calls where enums are used in string contexts
+    - **Files to modify**:
+      - `Kettan.Server/Controllers/UsersController.cs`: Convert `u.Role` to `u.Role.ToString()` in string collections
+      - `Kettan.Server/Controllers/OrdersController.cs`: Convert enum values in LINQ queries to strings
+      - `Kettan.Server/Controllers/InventoryTransactionsController.cs`: Convert TransactionType to string in queries
+      - `Kettan.Server/Services/BranchOperations/NotificationService.cs`: Convert enum values to strings for notifications
+      - `Kettan.Server/Services/BranchOperations/OrderService.cs`: Convert OrderStatus to string in logging/notifications
+    - **Pattern**: `stringCollection.Contains(enumValue)` → `stringCollection.Contains(enumValue.ToString())`
+    - **Pattern**: `stringVariable = enumValue` → `stringVariable = enumValue.ToString()`
+    - Handle nullable enums with null-conditional operator: `enumValue?.ToString()`
+    - Verify changes compile incrementally after each file
+    - _Bug_Condition: isBugCondition(codeStatement) where enum values are used in string contexts without explicit conversion_
+    - _Expected_Behavior: All enum-to-string conversions use .ToString() method_
+    - _Preservation: String representations of enums remain identical; database queries return same results_
+    - _Requirements: 1.3, 2.3, 3.1, 3.4, 3.5_
+
+  - [x] 3.3 Phase 3: String-to-Enum Parsing (Higher Risk - Requires Validation)
+    - Use `Enum.TryParse<T>()` for user input or external data that needs validation
+    - Use direct enum constants for seeder/initialization code (covered in Phase 1)
+    - **Files to modify** (if any string-to-enum parsing is needed beyond Phase 1):
+      - `Kettan.Server/Controllers/MenuItemsController.cs`: Parse MenuItemStatus and PricingMode if from request parameters
+      - `Kettan.Server/Controllers/ReturnsController.cs`: Parse ReturnResolution if from request parameters
+    - **Pattern**: `Enum.TryParse<EnumType>(stringValue, out var enumValue)` with validation
+    - Add error handling for invalid enum values from user input
+    - Verify changes compile incrementally after each file
+    - _Bug_Condition: isBugCondition(codeStatement) where string values need to be converted to enums with validation_
+    - _Expected_Behavior: All string-to-enum conversions use Enum.TryParse with proper error handling_
+    - _Preservation: Invalid inputs are rejected gracefully; valid inputs produce same enum values_
+    - _Requirements: 1.2, 2.2, 3.2_
+
+  - [x] 3.4 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Successful Compilation with Explicit Conversions
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run build command: `dotnet build Kettan.Server/Kettan.Server.csproj`
+    - **EXPECTED OUTCOME**: Build succeeds with 0 errors (confirms bug is fixed)
+    - Verify all 28 previous compilation errors are resolved
+    - Verify no new compilation errors or warnings are introduced
+    - Inspect fixed code to confirm all enum-string interactions use explicit conversions (.ToString(), Enum.Parse, or enum constants)
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+
+  - [x] 3.5 Verify preservation tests still pass
+    - **Property 2: Preservation** - Application Logic Equivalence
+    - **IMPORTANT**: Run the preservation tests documented in task 2 - do NOT write new tests
+    - Run preservation property tests to verify no regressions:
+      - **User Authorization Test**: Create user with UserRole.TenantAdmin, verify admin endpoint access
+      - **Subscription Features Test**: Create tenant with SubscriptionTier.Growth, verify feature availability
+      - **Order Workflow Test**: Create order, transition through statuses, verify workflow rules
+      - **Database Query Test**: Query users by Role == UserRole.TenantAdmin, verify correct results
+      - **API Serialization Test**: Call GET /api/users, verify Role field serialized as string "TenantAdmin"
+    - **EXPECTED OUTCOME**: All preservation tests PASS (confirms no regressions)
+    - If any test fails, investigate and fix the regression before proceeding
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Run full test suite: `dotnet test Kettan.Server.Tests` (if test project exists)
+  - Verify build succeeds: `dotnet build Kettan.Server/Kettan.Server.csproj`
+  - Verify no compilation errors or warnings
+  - Verify all preservation tests pass
+  - Verify bug condition exploration test passes (build succeeds)
+  - Ask the user if questions arise or if additional validation is needed

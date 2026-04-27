@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip, Typography, InputBase } from '@mui/material';
+import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip, Typography, InputBase, Chip } from '@mui/material';
 import MenuIcon          from '@mui/icons-material/Menu';
 import DarkModeRoundedIcon   from '@mui/icons-material/DarkModeRounded';
 import LightModeRoundedIcon  from '@mui/icons-material/LightModeRounded';
@@ -11,6 +11,7 @@ import { useLocation } from '@tanstack/react-router';
 import { NotificationBell } from '../UI/NotificationBell';
 import { fetchDevConnectionStatus } from '../../features/company/companyProfileApi';
 import { useAuthStore } from '../../store/useAuthStore';
+import { getRoleDisplayName, getRoleBadgeColor } from '../../utils/roleHelpers';
 
 interface HeaderProps {
   onDrawerToggle: () => void;
@@ -306,9 +307,57 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
           {/* Divider */}
           <Box sx={{ width: 1, height: 24, background: 'rgba(201,168,77,0.2)', mx: 0.5 }} />
 
-          {/* Avatar */}
+          {/* User info with role badge */}
+          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontSize: 13, 
+                  fontWeight: 600, 
+                  color: '#2E1F0C',
+                  lineHeight: 1.2,
+                  '.dark &': { color: '#E8D3A9' },
+                }}
+              >
+                {user?.name}
+              </Typography>
+              <Chip 
+                label={getRoleDisplayName(user?.role ?? '')} 
+                color={getRoleBadgeColor(user?.role ?? '')}
+                size="small"
+                sx={{ 
+                  height: 18, 
+                  fontSize: 10,
+                  fontWeight: 600,
+                  '& .MuiChip-label': { px: 1, py: 0 }
+                }}
+              />
+            </Box>
+            <Tooltip title={user?.name || 'User Profile'}>
+              <IconButton sx={{ p: 0.3 }}>
+                <Avatar
+                  alt={user?.name || 'User'}
+                  src={user?.imageUrl || ''}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, #6B4C2A 0%, #C9A84C 100%)',
+                    color: '#FAF5EF',
+                    border: '2px solid rgba(201,168,77,0.3)',
+                  }}
+                >
+                  {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U'}
+                </Avatar>
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          {/* Mobile: Avatar only */}
           <Tooltip title={user?.name || 'User Profile'}>
-            <IconButton sx={{ p: 0.3 }}>
+            <IconButton sx={{ p: 0.3, display: { xs: 'flex', sm: 'none' } }}>
               <Avatar
                 alt={user?.name || 'User'}
                 src={user?.imageUrl || ''}

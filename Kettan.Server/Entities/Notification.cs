@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -19,7 +20,7 @@ public class Notification : ITenantEntity
     public User? User { get; set; }
 
     [Required]
-    [MaxLength(120)]
+    [MaxLength(50)]
     public required string Title { get; set; }
 
     [Required]
@@ -27,11 +28,9 @@ public class Notification : ITenantEntity
     public required string Message { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public required string Type { get; set; }
+    public required NotificationType Type { get; set; }
 
-    [MaxLength(50)]
-    public string? ReferenceType { get; set; }
+    public NotificationReferenceType? ReferenceType { get; set; }
 
     public int? ReferenceId { get; set; }
 

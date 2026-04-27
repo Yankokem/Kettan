@@ -3,6 +3,7 @@ using Kettan.Server.Data;
 using Kettan.Server.DTOs.Returns;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Services.BranchOperations;
 
@@ -37,7 +38,10 @@ public class ReturnService : IReturnService
 
         if (!string.IsNullOrWhiteSpace(resolution))
         {
-            query = query.Where(r => r.Resolution == resolution);
+            if (Enum.TryParse<ReturnResolution>(resolution, true, out var parsedResolution))
+            {
+                query = query.Where(r => r.Resolution == parsedResolution);
+            }
         }
 
         var rows = await query
@@ -101,7 +105,7 @@ public class ReturnService : IReturnService
             BranchId = _currentUser.BranchId.Value,
             Reason = dto.Reason,
             PhotoUrls = dto.PhotoUrls,
-            Resolution = "Pending",
+            Resolution = ReturnResolution.Pending,
             LoggedAt = DateTime.UtcNow,
             Items = dto.Items.Select(i => new ReturnItem
             {
@@ -149,13 +153,13 @@ public class ReturnService : IReturnService
             return false;
         }
 
-        returnEntry.Resolution = dto.Resolution;
+        returnEntry.Resolution = Enum.TryParse<ReturnResolution>(dto.Resolution, true, out var resolution) ? resolution : ReturnResolution.Pending;
         returnEntry.ReviewedBy_UserId = _currentUser.UserId.Value;
         returnEntry.ResolvedAt = DateTime.UtcNow;
 
         await using var transaction = await _context.Database.BeginTransactionAsync();
 
-        if (dto.Resolution == "Credited")
+        if (returnEntry.Resolution == ReturnResolution.Credited)
         {
             decimal totalCredit = 0;
             foreach (var item in returnEntry.Items)
@@ -164,7 +168,7 @@ public class ReturnService : IReturnService
             }
             returnEntry.CreditAmount = totalCredit;
         }
-        else if (dto.Resolution == "Replaced")
+        else if (returnEntry.Resolution == ReturnResolution.Replaced)
         {
             returnEntry.CreditAmount = null;
 
@@ -173,10 +177,10 @@ public class ReturnService : IReturnService
                 TenantId = _currentUser.TenantId.Value,
                 BranchId = returnEntry.BranchId,
                 RequestedBy_UserId = _currentUser.UserId.Value,
-                Status = "Approved",
-                RequestType = "replacement",
-                Priority = "high",
-                DispatchWindow = "today",
+                Status = SupplyRequestStatus.Approved,
+                RequestType = RequestType.Replacement,
+                Priority = Priority.High,
+                DispatchWindow = DispatchWindow.Today,
                 CreatedAt = returnEntry.ResolvedAt.Value,
                 UpdatedAt = returnEntry.ResolvedAt.Value,
                 Items = returnEntry.Items.Select(i => new SupplyRequestItem
@@ -195,7 +199,7 @@ public class ReturnService : IReturnService
             {
                 TenantId = _currentUser.TenantId.Value,
                 RequestId = newRequest.RequestId,
-                Status = "Processing",
+                Status = OrderStatus.Processing,
                 PushedToFulfillmentAt = returnEntry.ResolvedAt.Value
             };
 
@@ -205,7 +209,7 @@ public class ReturnService : IReturnService
             {
                 TenantId = _currentUser.TenantId.Value,
                 Order = newOrder,
-                Status = "Processing",
+                Status = OrderStatus.Processing,
                 ChangedBy_UserId = _currentUser.UserId.Value,
                 Remarks = $"Auto-generated replacement processing for Return #{returnEntry.ReturnId}.",
                 Timestamp = returnEntry.ResolvedAt.Value
@@ -240,7 +244,7 @@ public class ReturnService : IReturnService
             BranchId = row.BranchId,
             BranchName = row.Branch?.Name ?? string.Empty,
             Reason = row.Reason,
-            Resolution = row.Resolution,
+            Resolution = row.Resolution.ToString(),
             PhotoUrls = row.PhotoUrls,
             CreditAmount = row.CreditAmount,
             LoggedAt = row.LoggedAt,

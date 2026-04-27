@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -23,14 +24,13 @@ public class Return : ITenantEntity
     [ForeignKey(nameof(BranchId))]
     public Branch? Branch { get; set; }
 
-    [Required]
-    public required string Reason { get; set; }
+    [MaxLength(100)]
+    public string? Reason { get; set; }
 
     public string? PhotoUrls { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public string Resolution { get; set; } = "Pending"; // Pending, Replaced, Credited
+    public ReturnResolution Resolution { get; set; } = ReturnResolution.Pending;
 
     public int? ReviewedBy_UserId { get; set; }
 

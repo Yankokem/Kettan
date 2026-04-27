@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -21,25 +22,24 @@ public class User
     public Branch? Branch { get; set; }
 
     [Required]
-    [MaxLength(100)]
+    [MaxLength(50)]
     public required string FirstName { get; set; }
 
     [Required]
-    [MaxLength(100)]
+    [MaxLength(50)]
     public required string LastName { get; set; }
 
     [Required]
     [EmailAddress]
-    [MaxLength(255)]
+    [MaxLength(50)]
     public required string Email { get; set; }
 
     [Required]
-    [MaxLength(255)]
+    [MaxLength(60)]
     public required string PasswordHash { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public required string Role { get; set; }
+    public required UserRole Role { get; set; }
 
     public DateOnly? Birthday { get; set; }
 
@@ -51,6 +51,7 @@ public class User
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 
+    [MaxLength(300)]
     public string? ImageUrl { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

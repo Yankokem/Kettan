@@ -5,6 +5,7 @@ using Kettan.Server.DTOs.Subscription;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Email;
 using System.Net.Http.Json;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Services.Subscription;
 
@@ -278,8 +279,8 @@ public class SubscriptionService : ISubscriptionService
             Phone = request.PhoneContact.Trim(),
             Address = request.HeadquartersAddress.Trim(),
             IsActive = true,
-            SubscriptionTier = plan.Name,
-            SubscriptionStatus = "PendingPayment",
+            SubscriptionTier = Enum.TryParse<SubscriptionTier>(plan.Name, true, out var tier) ? tier : SubscriptionTier.Starter,
+            SubscriptionStatus = SubscriptionStatus.PendingPayment,
             SubscriptionPeriodStart = null,
             SubscriptionPeriodEnd = null,
         };
@@ -292,7 +293,7 @@ public class SubscriptionService : ISubscriptionService
             LastName = lastName,
             Email = normalizedEmail,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = "TenantAdmin",
+            Role = UserRole.TenantAdmin,
             IsActive = true,
         };
 
@@ -307,8 +308,8 @@ public class SubscriptionService : ISubscriptionService
         {
             TenantId = tenant.TenantId,
             PlanId = plan.PlanId,
-            Status = "PendingPayment",
-            BillingCycle = "Monthly",
+            Status = SubscriptionStatus.PendingPayment,
+            BillingCycle = BillingCycle.Monthly,
             StartDate = nowUtc,
             PeriodStart = nowUtc,
             PeriodEnd = periodEnd,
@@ -325,7 +326,7 @@ public class SubscriptionService : ISubscriptionService
             InvoiceNumber = $"INV-{nowUtc:yyyyMMdd}-{Guid.NewGuid():N}"[..24],
             AmountDue = plan.PriceMonthly,
             Currency = "PHP",
-            Status = "Pending",
+            Status = InvoiceStatus.Pending,
             IssuedAt = nowUtc,
             DueAt = nowUtc.AddDays(1),
             ProviderReference = providerReference,
@@ -393,9 +394,9 @@ public class SubscriptionService : ISubscriptionService
         return new SubscriptionStatusResponse
         {
             CheckoutSessionReference = sessionReference,
-            Status = invoice.Status,
+            Status = invoice.Status.ToString(),
             IsTenantActive = tenant?.IsActive ?? false,
-            TenantSubscriptionStatus = invoice.TenantSubscription?.Status,
+            TenantSubscriptionStatus = invoice.TenantSubscription?.Status.ToString(),
         };
     }
 
@@ -450,20 +451,20 @@ public class SubscriptionService : ISubscriptionService
                 InvoiceId = invoice.InvoiceId,
                 Amount = invoice.AmountDue,
                 Currency = invoice.Currency,
-                PaymentMethod = "Checkout",
-                Provider = "PayMongo",
+                PaymentMethod = PaymentMethod.Checkout,
+                Provider = PaymentProvider.PayMongo,
                 ProviderPaymentId = providerPaymentId,
-                Status = "Paid",
+                Status = PaymentStatus.Paid,
                 PaidAt = paidAt,
             });
 
-            invoice.Status = "Paid";
+            invoice.Status = InvoiceStatus.Paid;
             invoice.PaidAt = paidAt;
 
             var tenantSubscription = invoice.TenantSubscription;
             if (tenantSubscription != null)
             {
-                tenantSubscription.Status = "Active";
+                tenantSubscription.Status = SubscriptionStatus.Active;
                 tenantSubscription.PeriodStart = paidAt;
                 tenantSubscription.PeriodEnd = paidAt.AddMonths(1);
                 tenantSubscription.UpdatedAt = DateTime.UtcNow;
@@ -472,8 +473,8 @@ public class SubscriptionService : ISubscriptionService
                 if (tenant != null)
                 {
                     tenant.IsActive = true;
-                    tenant.SubscriptionStatus = "Active";
-                    tenant.SubscriptionTier = tenantSubscription.Plan?.Name ?? tenant.SubscriptionTier;
+                    tenant.SubscriptionStatus = SubscriptionStatus.Active;
+                    tenant.SubscriptionTier = Enum.TryParse<SubscriptionTier>(tenantSubscription.Plan?.Name, true, out var tier) ? tier : tenant.SubscriptionTier;
                     tenant.SubscriptionPeriodStart = tenantSubscription.PeriodStart;
                     tenant.SubscriptionPeriodEnd = tenantSubscription.PeriodEnd;
                     tenant.CurrentSubscriptionId = tenantSubscription.TenantSubscriptionId;
@@ -503,11 +504,11 @@ public class SubscriptionService : ISubscriptionService
         }
         else if (normalizedStatus == "failed")
         {
-            invoice.Status = "Failed";
+            invoice.Status = InvoiceStatus.Failed;
         }
         else
         {
-            invoice.Status = "Pending";
+            invoice.Status = InvoiceStatus.Pending;
         }
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -534,11 +535,27 @@ public class SubscriptionService : ISubscriptionService
         string email,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Starting PayMongo checkout session creation for plan {PlanName}, amount {Amount}, email {Email}", 
+            plan.Name, plan.PriceMonthly, email);
+
         var secretKey = _configuration["PayMongo:SecretKey"];
-        if (string.IsNullOrWhiteSpace(secretKey) || secretKey == "YOUR_PAYMONGO_SECRET_KEY")
+        
+        // Validate API key
+        if (string.IsNullOrWhiteSpace(secretKey) || secretKey == "YOUR_PAYMONGO_SECRET_KEY" || secretKey == "sk_test_placeholder")
         {
+            _logger.LogError("PayMongo API key is missing or using placeholder value");
             throw new InvalidOperationException("PayMongo configuration is missing or using placeholder keys. Please update your settings with valid API keys.");
         }
+
+        // Validate API key format
+        if (!secretKey.StartsWith("sk_test_") && !secretKey.StartsWith("sk_live_"))
+        {
+            _logger.LogError("Invalid PayMongo API key format: {KeyPrefix}", secretKey.Substring(0, Math.Min(7, secretKey.Length)));
+            throw new InvalidOperationException("Invalid PayMongo API key format. Key must start with 'sk_test_' or 'sk_live_'.");
+        }
+
+        _logger.LogInformation("PayMongo API key validated successfully (type: {KeyType})", 
+            secretKey.StartsWith("sk_test_") ? "test" : "live");
 
         var frontendBaseUrl = _configuration["Onboarding:FrontendBaseUrl"]?.TrimEnd('/')
             ?? "https://localhost:61643";
@@ -573,24 +590,66 @@ public class SubscriptionService : ISubscriptionService
             }
         };
 
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
-            "Basic",
-            Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(secretKey + ":")));
+        _logger.LogDebug("PayMongo request payload: Amount={Amount}, Currency=PHP, ReferenceNumber={RefNum}, SuccessUrl={SuccessUrl}", 
+            (int)(plan.PriceMonthly * 100), referenceNumber, $"{frontendBaseUrl}/market/register/success");
 
-        var response = await client.PostAsJsonAsync("https://api.paymongo.com/v1/checkout_sessions", payload, cancellationToken);
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
         
+        var authHeader = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(secretKey + ":"));
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", authHeader);
+        
+        _logger.LogDebug("Sending POST request to PayMongo API: https://api.paymongo.com/v1/checkout_sessions");
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.PostAsJsonAsync("https://api.paymongo.com/v1/checkout_sessions", payload, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request to PayMongo failed: {Message}", ex.Message);
+            throw new InvalidOperationException($"Failed to connect to PayMongo API. Please check your internet connection and try again. Technical details: {ex.Message}", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex, "PayMongo API request timed out after 30 seconds");
+            throw new InvalidOperationException("Payment gateway request timed out. Please try again.", ex);
+        }
+
+        _logger.LogInformation("PayMongo API response received: StatusCode={StatusCode}", response.StatusCode);
+
         if (!response.IsSuccessStatusCode)
         {
             var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"Failed to create checkout session: {errorBody}");
+            _logger.LogError("PayMongo API error: StatusCode={StatusCode}, ResponseBody={ResponseBody}", 
+                response.StatusCode, errorBody);
+
+            // Parse error for user-friendly message
+            var userMessage = response.StatusCode switch
+            {
+                System.Net.HttpStatusCode.Unauthorized => "Payment gateway authentication failed. Please contact support.",
+                System.Net.HttpStatusCode.NotFound => "Payment gateway endpoint not found. The API may have changed. Please contact support.",
+                System.Net.HttpStatusCode.BadRequest => $"Invalid payment request. Please contact support with this error: {errorBody}",
+                System.Net.HttpStatusCode.TooManyRequests => "Too many payment requests. Please wait a moment and try again.",
+                _ => $"Payment gateway error ({response.StatusCode}). Please try again or contact support."
+            };
+
+            throw new InvalidOperationException($"{userMessage} Technical details: {errorBody}");
         }
 
-        using var jsonDoc = await System.Text.Json.JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken), default, cancellationToken);
+        _logger.LogInformation("PayMongo checkout session created successfully");
+
+        using var jsonDoc = await System.Text.Json.JsonDocument.ParseAsync(
+            await response.Content.ReadAsStreamAsync(cancellationToken), 
+            default, 
+            cancellationToken);
+        
         var data = jsonDoc.RootElement.GetProperty("data");
         var attributes = data.GetProperty("attributes");
         var checkoutUrl = attributes.GetProperty("checkout_url").GetString()!;
         var sessionId = data.GetProperty("id").GetString()!;
+
+        _logger.LogInformation("PayMongo checkout URL generated: SessionId={SessionId}", sessionId);
 
         return new CheckoutSessionResponse
         {
@@ -610,10 +669,10 @@ public class SubscriptionService : ISubscriptionService
             throw new InvalidOperationException("Tenant not found.");
         }
 
-        tenant.SubscriptionStatus = "Canceled";
+        tenant.SubscriptionStatus = SubscriptionStatus.Canceled;
         if (tenant.CurrentSubscription != null)
         {
-            tenant.CurrentSubscription.Status = "Canceled";
+            tenant.CurrentSubscription.Status = SubscriptionStatus.Canceled;
             tenant.CurrentSubscription.AutoRenew = false;
             tenant.CurrentSubscription.UpdatedAt = DateTime.UtcNow;
         }

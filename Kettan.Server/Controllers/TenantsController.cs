@@ -5,6 +5,7 @@ using Kettan.Server.Data;
 using Kettan.Server.DTOs.Tenants;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Controllers;
 
@@ -42,12 +43,12 @@ public class TenantsController : ControllerBase
             LegalName = tenant.LegalName,
             TaxId = tenant.TaxId,
             Website = tenant.Website,
-            SubscriptionTier = tenant.SubscriptionTier,
+            SubscriptionTier = tenant.SubscriptionTier.ToString(),
             Email = tenant.Email,
             Phone = tenant.Phone,
             Address = tenant.Address,
             SupportEmail = tenant.SupportEmail,
-            SubscriptionStatus = tenant.SubscriptionStatus,
+            SubscriptionStatus = tenant.SubscriptionStatus.ToString(),
             SubscriptionPeriodEnd = tenant.SubscriptionPeriodEnd,
             IsActive = tenant.IsActive,
             LogoUrl = tenant.LogoUrl,
@@ -74,7 +75,7 @@ public class TenantsController : ControllerBase
         tenant.Website = NormalizeNullable(dto.Website);
         tenant.SubscriptionTier = string.IsNullOrWhiteSpace(dto.SubscriptionTier)
             ? tenant.SubscriptionTier
-            : dto.SubscriptionTier.Trim();
+            : Enum.TryParse<SubscriptionTier>(dto.SubscriptionTier.Trim(), true, out var tier) ? tier : tenant.SubscriptionTier;
         tenant.Email = NormalizeNullable(dto.Email);
         tenant.SupportEmail = NormalizeNullable(dto.SupportEmail);
         tenant.Phone = NormalizeNullable(dto.Phone);

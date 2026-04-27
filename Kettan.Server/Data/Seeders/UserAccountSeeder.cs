@@ -1,5 +1,6 @@
 using Kettan.Server.Entities;
 using Microsoft.EntityFrameworkCore;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Data.Seeders;
 
@@ -14,12 +15,12 @@ public static class UserAccountSeeder
     {
         var seeds = new[]
         {
-            new UserSeed(SeedConstants.SuperAdminEmail, "Super", "Admin", "SuperAdmin", null),
-            new UserSeed(SeedConstants.TenantAdminEmail, "Tenant", "Admin", "TenantAdmin", null),
-            new UserSeed(SeedConstants.HqManagerEmail, "HQ", "Manager", "HqManager", SeedConstants.HqBranchName),
-            new UserSeed(SeedConstants.HqStaffEmail, "HQ", "Staff", "HqStaff", SeedConstants.HqBranchName),
-            new UserSeed(SeedConstants.BranchOwnerEmail, "Branch", "Owner", "BranchOwner", SeedConstants.MainBranchName),
-            new UserSeed(SeedConstants.BranchManagerEmail, "Branch", "Manager", "BranchManager", SeedConstants.MainBranchName)
+            new UserSeed(SeedConstants.SuperAdminEmail, "Super", "Admin", UserRole.SuperAdmin, null),
+            new UserSeed(SeedConstants.TenantAdminEmail, "Tenant", "Admin", UserRole.TenantAdmin, null),
+            new UserSeed(SeedConstants.HqManagerEmail, "HQ", "Manager", UserRole.HqManager, SeedConstants.HqBranchName),
+            new UserSeed(SeedConstants.HqStaffEmail, "HQ", "Staff", UserRole.HqStaff, SeedConstants.HqBranchName),
+            new UserSeed(SeedConstants.BranchOwnerEmail, "Branch", "Owner", UserRole.BranchOwner, SeedConstants.MainBranchName),
+            new UserSeed(SeedConstants.BranchManagerEmail, "Branch", "Manager", UserRole.BranchManager, SeedConstants.MainBranchName)
         };
 
         var emails = seeds.Select(s => s.Email).ToList();
@@ -34,7 +35,7 @@ public static class UserAccountSeeder
         foreach (var seed in seeds)
         {
             var user = existingUsers.FirstOrDefault(u => u.Email == seed.Email);
-            var isSuperAdmin = seed.Role == "SuperAdmin";
+            var isSuperAdmin = seed.Role == UserRole.SuperAdmin;
 
             int? tenantId = isSuperAdmin ? null : tenant.TenantId;
             int? branchId = null;
@@ -119,6 +120,6 @@ public static class UserAccountSeeder
         string Email,
         string FirstName,
         string LastName,
-        string Role,
+        UserRole Role,
         string? BranchName);
 }

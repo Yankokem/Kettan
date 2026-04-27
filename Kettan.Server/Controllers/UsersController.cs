@@ -5,6 +5,7 @@ using Kettan.Server.Data;
 using Kettan.Server.DTOs.Users;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Controllers;
 
@@ -41,7 +42,7 @@ public class UsersController : ControllerBase
                 TenantId = u.TenantId,
                 BranchId = u.BranchId,
                 Email = u.Email,
-                Role = u.Role,
+                Role = u.Role.ToString(),
                 FirstName = u.FirstName,
                 LastName = u.LastName,
                 Birthday = u.Birthday,
@@ -70,7 +71,7 @@ public class UsersController : ControllerBase
             TenantId = user.TenantId,
             BranchId = user.BranchId,
             Email = user.Email,
-            Role = user.Role,
+            Role = user.Role.ToString(),
             FirstName = user.FirstName,
             LastName = user.LastName,
             Birthday = user.Birthday,
@@ -93,7 +94,7 @@ public class UsersController : ControllerBase
             BranchId = dto.BranchId,
             Email = dto.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password), // Needs BCrypt.Net package, or basic string for now
-            Role = dto.Role,
+            Role = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.HqStaff,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Birthday = dto.Birthday,
@@ -116,7 +117,7 @@ public class UsersController : ControllerBase
             TenantId = user.TenantId,
             BranchId = user.BranchId,
             Email = user.Email,
-            Role = user.Role,
+            Role = user.Role.ToString(),
             FirstName = user.FirstName,
             LastName = user.LastName,
             Birthday = user.Birthday,
@@ -139,7 +140,7 @@ public class UsersController : ControllerBase
         user.LastName = dto.LastName;
         user.Birthday = dto.Birthday;
         user.ContactNo = dto.ContactNo;
-        user.Role = dto.Role;
+        user.Role = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : user.Role;
         user.BranchId = dto.BranchId;
         user.IsActive = dto.IsActive;
 

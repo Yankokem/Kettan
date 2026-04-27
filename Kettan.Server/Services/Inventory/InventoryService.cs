@@ -3,6 +3,7 @@ using Kettan.Server.Data;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Services.BranchOperations;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Services.Inventory;
 
@@ -65,8 +66,8 @@ public class InventoryService : IInventoryService
             BatchId = batch.BatchId,
             UserId = userId,
             QuantityChange = quantity,
-            TransactionType = "Restock",
-            ReferenceType = "StockIn",
+            TransactionType = TransactionType.Restock,
+            ReferenceType = ReferenceType.StockIn,
             ReferenceId = itemId,
             Remarks = remarks,
             Timestamp = now
@@ -97,9 +98,9 @@ public class InventoryService : IInventoryService
             itemId,
             branchId: null,
             quantity,
-            transactionType: "Physical_Count",
+            transactionType: TransactionType.PhysicalCount,
             remarks: note,
-            referenceType: "StockOut",
+            referenceType: ReferenceType.StockOut,
             referenceId: itemId);
     }
 
@@ -107,9 +108,9 @@ public class InventoryService : IInventoryService
         int itemId,
         int? branchId,
         decimal quantity,
-        string transactionType,
+        TransactionType transactionType,
         string? remarks = null,
-        string? referenceType = null,
+        ReferenceType? referenceType = null,
         int? referenceId = null)
     {
         var tenantId = EnsureTenantContext();
@@ -118,11 +119,6 @@ public class InventoryService : IInventoryService
         if (quantity <= 0)
         {
             throw new InvalidOperationException("Deduction quantity must be greater than zero.");
-        }
-
-        if (string.IsNullOrWhiteSpace(transactionType))
-        {
-            throw new InvalidOperationException("Transaction type is required.");
         }
 
         var itemExists = await _context.Items.AnyAsync(i => i.ItemId == itemId);
@@ -345,8 +341,8 @@ public class InventoryService : IInventoryService
             BatchId = sourceBatch.BatchId,
             UserId = userId,
             QuantityChange = -quantity,
-            TransactionType = "Transfer",
-            ReferenceType = "Branch",
+            TransactionType = TransactionType.Transfer,
+            ReferenceType = ReferenceType.Branch,
             ReferenceId = branchId,
             Remarks = remarks,
             Timestamp = now
@@ -358,8 +354,8 @@ public class InventoryService : IInventoryService
             BatchId = targetBatch.BatchId,
             UserId = userId,
             QuantityChange = quantity,
-            TransactionType = "Transfer",
-            ReferenceType = "Batch",
+            TransactionType = TransactionType.Transfer,
+            ReferenceType = ReferenceType.Batch,
             ReferenceId = sourceBatch.BatchId,
             Remarks = remarks,
             Timestamp = now

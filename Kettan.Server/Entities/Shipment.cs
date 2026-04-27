@@ -18,7 +18,7 @@ public class Shipment : ITenantEntity
     [ForeignKey(nameof(OrderId))]
     public Order? Order { get; set; }
 
-    [MaxLength(100)]
+    [MaxLength(30)]
     public string? TrackingNumber { get; set; }
 
 

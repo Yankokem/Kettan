@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -18,10 +19,9 @@ public class Vehicle : ITenantEntity
     public required string PlateNumber { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public required string VehicleType { get; set; }
+    public required VehicleType VehicleType { get; set; }
 
-    [MaxLength(255)]
+    [MaxLength(100)]
     public string? Description { get; set; }
 
     public bool IsActive { get; set; } = true;

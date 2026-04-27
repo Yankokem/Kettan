@@ -21,7 +21,6 @@ import { ViewToggle } from '../../components/UI/ViewToggle';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { fetchEmployees, createEmployee, createUser, type EmployeeDto } from './staffApi';
-import { fetchBranches, type BranchDto } from '../branches/branchesApi';
 
 const ROLE_LABEL_MAP: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
   TenantAdmin: 'Tenant Admin',
@@ -31,9 +30,6 @@ const ROLE_LABEL_MAP: Record<Exclude<AddStaffFormValues['role'], ''>, string> = 
   BranchManager: 'Branch Manager',
   StoreStaff: 'Store Staff',
 };
-
-const getInitials = (firstName: string, lastName: string) =>
-  `${firstName.trim().charAt(0)}${lastName.trim().charAt(0)}`.toUpperCase();
 
 function toStaffMember(e: EmployeeDto): StaffMember {
   return {
@@ -55,7 +51,6 @@ type SortOption = 'name-asc' | 'name-desc' | 'recent';
 export function StaffPage() {
   const navigate = useNavigate();
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
-  const [branchOptions, setBranchOptions] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
@@ -67,10 +62,9 @@ export function StaffPage() {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchEmployees(), fetchBranches()])
-      .then(([employees, branches]: [EmployeeDto[], BranchDto[]]) => {
+    fetchEmployees()
+      .then((employees: EmployeeDto[]) => {
         setStaffMembers(employees.map(toStaffMember));
-        setBranchOptions(branches.map((b) => ({ value: b.branchId.toString(), label: b.name })));
       })
       .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
       .finally(() => setLoading(false));

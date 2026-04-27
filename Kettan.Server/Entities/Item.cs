@@ -18,7 +18,7 @@ public class Item : ITenantEntity
     public required string SKU { get; set; }
 
     [Required]
-    [MaxLength(255)]
+    [MaxLength(50)]
     public required string Name { get; set; }
 
     [Required]

@@ -14,7 +14,7 @@ public class Branch : ITenantEntity
     public Tenant? Tenant { get; set; }
 
     [Required]
-    [MaxLength(255)]
+    [MaxLength(50)]
     public required string Name { get; set; }
 
     [MaxLength(500)]
@@ -49,6 +49,7 @@ public class Branch : ITenantEntity
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 
+    [MaxLength(300)]
     public string? ImageUrl { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

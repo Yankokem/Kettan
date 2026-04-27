@@ -82,7 +82,7 @@ export function InventoryCard({ item }: InventoryCardProps) {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5, alignItems: 'flex-end' }}>
           <Box>
             <Typography sx={{ fontSize: 24, fontWeight: 800, color: isLowStock ? '#991B1B' : 'text.primary', lineHeight: 1 }}>
-              {item.totalStock} <Typography component="span" sx={{ fontSize: 13, fontWeight: 600, color: 'text.secondary' }}>{item.unit?.symbol || ''}</Typography>
+              {item.totalStock} <Typography component="span" sx={{ fontSize: 13, fontWeight: 600, color: 'text.secondary' }}>{item.unit || ''}</Typography>
             </Typography>
           </Box>
           {isLowStock ? (
@@ -106,7 +106,7 @@ export function InventoryCard({ item }: InventoryCardProps) {
           }} 
         />
         <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500, mt: 1 }}>
-          Reorder threshold: {item.defaultThreshold} {item.unit?.symbol || ''}
+          Reorder threshold: {item.defaultThreshold} {item.unit || ''}
         </Typography>
       </Box>
     </Card>

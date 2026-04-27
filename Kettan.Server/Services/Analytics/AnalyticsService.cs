@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Kettan.Server.Data;
 using Kettan.Server.DTOs.Analytics;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Services.Analytics;
 
@@ -72,7 +73,7 @@ public class AnalyticsService : IAnalyticsService
         var scorecards = new List<BranchScorecardDto>();
 
         var consumptions = await _context.ConsumptionLogs
-            .Where(c => c.TenantId == tenantId && c.Method == "Sales" && c.LogDate >= startDate && c.LogDate <= endDate)
+            .Where(c => c.TenantId == tenantId && c.Method == ConsumptionMethod.Sales && c.LogDate >= startDate && c.LogDate <= endDate)
             .GroupBy(c => c.BranchId)
             .Select(g => new { BranchId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.BranchId, x => x.Count);
@@ -146,10 +147,10 @@ public class AnalyticsService : IAnalyticsService
             .Where(o => o.TenantId == _currentUser.TenantId.Value && o.PushedToFulfillmentAt >= startDate && o.PushedToFulfillmentAt <= endDate)
             .ToListAsync();
 
-        var delivered = orders.Count(o => o.Status == "Delivered");
+        var delivered = orders.Count(o => o.Status == OrderStatus.Delivered);
         decimal rate = orders.Count > 0 ? ((decimal)delivered / orders.Count) * 100 : 0;
 
-        decimal totalCost = orders.Where(o => o.Status == "Delivered")
+        decimal totalCost = orders.Where(o => o.Status == OrderStatus.Delivered)
             .SelectMany(o => o.Allocations)
             .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0));
 

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -9,13 +10,12 @@ public class Tenant
     public int TenantId { get; set; }
 
     [Required]
-    [MaxLength(255)]
+    [MaxLength(50)]
     public required string Name { get; set; }
 
-    [MaxLength(50)]
-    public string SubscriptionTier { get; set; } = "Starter";
+    public SubscriptionTier SubscriptionTier { get; set; } = SubscriptionTier.Starter;
 
-    [MaxLength(255)]
+    [MaxLength(50)]
     public string? Email { get; set; }
 
     [MaxLength(50)]
@@ -24,19 +24,19 @@ public class Tenant
     [MaxLength(500)]
     public string? Address { get; set; }
 
-    [MaxLength(255)]
+    [MaxLength(50)]
     public string? LegalName { get; set; }
 
-    [MaxLength(100)]
+    [MaxLength(30)]
     public string? TaxId { get; set; }
 
-    [MaxLength(255)]
+    [MaxLength(100)]
     public string? Website { get; set; }
 
-    [MaxLength(255)]
+    [MaxLength(50)]
     public string? SupportEmail { get; set; }
 
-    [MaxLength(500)]
+    [MaxLength(300)]
     public string? LogoUrl { get; set; }
 
     public bool IsActive { get; set; } = true;
@@ -47,8 +47,7 @@ public class Tenant
     public TenantSubscription? CurrentSubscription { get; set; }
 
     [Required]
-    [MaxLength(30)]
-    public string SubscriptionStatus { get; set; } = "Active";
+    public SubscriptionStatus SubscriptionStatus { get; set; } = SubscriptionStatus.Active;
 
     public DateTime? SubscriptionPeriodStart { get; set; }
     public DateTime? SubscriptionPeriodEnd { get; set; }

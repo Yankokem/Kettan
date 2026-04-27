@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { Box, Toolbar, Alert, Button, Typography } from '@mui/material';
-import { Outlet, Link } from '@tanstack/react-router';
+import { Box, Toolbar } from '@mui/material';
+import { Outlet } from '@tanstack/react-router';
 import { Sidebar, DRAWER_WIDTH } from './Sidebar';
 import { Header } from './Header';
 import { PageTransitionWrapper } from './PageTransitionWrapper';
-import { useAuthStore } from '../../store/useAuthStore';
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const { user } = useAuthStore();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);

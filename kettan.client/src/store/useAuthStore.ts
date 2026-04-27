@@ -16,6 +16,7 @@ export interface User {
   email: string;
   name: string;
   role: string;
+  branchId?: number | null;
   imageUrl?: string | null;
   tenant?: TenantSession | null;
 }

@@ -11,6 +11,7 @@ export interface SupplyRequestItem {
 
 export interface SupplyRequest {
   requestId: number;
+  referenceNumber?: string | null;
   branchId: number;
   branchName: string;
   requestedByUserId: number;
@@ -28,6 +29,7 @@ export interface SupplyRequest {
 
 export interface CreateSupplyRequestPayload {
   branchId?: number;
+  referenceNumber?: string;
   requestType: string;
   priority: string;
   dispatchWindow: string;

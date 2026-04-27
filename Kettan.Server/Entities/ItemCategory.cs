@@ -14,10 +14,10 @@ public class ItemCategory : ITenantEntity
     public Tenant? Tenant { get; set; }
 
     [Required]
-    [MaxLength(100)]
+    [MaxLength(50)]
     public required string Name { get; set; }
 
-    [MaxLength(500)]
+    [MaxLength(100)]
     public string? Description { get; set; }
 
     public int DisplayOrder { get; set; } = 0;

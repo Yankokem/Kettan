@@ -1,9 +1,7 @@
 import { Box, Typography, Chip, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
-import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
@@ -16,7 +14,6 @@ import { Button } from '../../components/UI/Button';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { TextField } from '../../components/UI/TextField';
 import { OrderFulfillmentStepper } from './components/OrderFulfillmentStepper';
-import { StatusAlertIcon } from './components/StatusAlertIcon';
 import { OrderDetailsPanel } from './components/OrderDetailsPanel';
 import {
   fetchOrderById,
@@ -139,10 +136,6 @@ export function OrderDetailPage() {
       status: (item.quantityApproved ?? item.quantityRequested) >= item.quantityRequested ? 'Available' : 'Low Stock',
     }));
   }, [order]);
-
-  const handleAction = (nextStatus: string) => {
-    setOrderStatus(nextStatus);
-  };
 
   const handleWorkflowAction = async (action: 'pick' | 'pack' | 'dispatch') => {
     if (!orderId) {

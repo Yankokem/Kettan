@@ -6,6 +6,7 @@ using Kettan.Server.DTOs.Items;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Services.Inventory;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Controllers;
 
@@ -339,8 +340,8 @@ public class ItemsController : ControllerBase
                 ? string.Empty
                 : $"{t.User.FirstName} {t.User.LastName}".Trim(),
             QuantityChange = t.QuantityChange,
-            TransactionType = t.TransactionType,
-            ReferenceType = t.ReferenceType,
+            TransactionType = t.TransactionType.ToString(),
+            ReferenceType = t.ReferenceType?.ToString(),
             ReferenceId = t.ReferenceId,
             Remarks = t.Remarks,
             Timestamp = t.Timestamp

@@ -1,6 +1,12 @@
 // Units of measure
 export type UnitSymbol = 'pc' | 'pack' | 'box' | 'case' | 'can' | 'bottle' | 'roll';
 
+export interface Unit {
+  id: string;
+  name: string;
+  symbol: string;
+}
+
 // Inventory categories for organizing raw materials
 export interface InventoryCategory {
   id: string;
@@ -64,6 +70,7 @@ export interface InventoryItem {
   id: string;
   sku: string;
   name: string;
+  imageUrl?: string | null;
   unit: string;
   categoryId: string;
   category?: InventoryCategory;

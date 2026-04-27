@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -27,12 +28,9 @@ public class InventoryTransaction : ITenantEntity
     public decimal QuantityChange { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    // Consumption, Sales_Auto, Physical_Count, Transfer, Restock
-    public required string TransactionType { get; set; } 
+    public required TransactionType TransactionType { get; set; }
 
-    [MaxLength(50)]
-    public string? ReferenceType { get; set; }
+    public ReferenceType? ReferenceType { get; set; }
 
     public int? ReferenceId { get; set; }
 

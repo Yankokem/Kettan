@@ -31,15 +31,15 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("LoginRateLimit")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var token = await _authService.LoginAsync(request);
+        var response = await _authService.LoginAsync(request);
 
-        if (token == null)
+        if (response == null)
         {
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
         // Return JWT in HttpOnly Cookie for security against XSS
-        Response.Cookies.Append("jwt", token, new CookieOptions
+        Response.Cookies.Append("jwt", response.Token, new CookieOptions
         {
             HttpOnly = true,
             Secure = true, // Set to true to enforce HTTPS
@@ -47,8 +47,8 @@ public class AuthController : ControllerBase
             Expires = DateTime.UtcNow.AddMinutes(1440)
         });
 
-        // Also return token in body as fallback for environments where cookies might drop
-        return Ok(new { message = "Login successful", token = token });
+        // Return full login response with user information
+        return Ok(response);
     }
 
     [HttpPost("logout")]
@@ -97,7 +97,7 @@ public class AuthController : ControllerBase
                 id = user.UserId,
                 email = user.Email,
                 name = fullName,
-                role = user.Role,
+                role = user.Role.ToString(),
                 tenantId = user.TenantId,
                 branchId = user.BranchId,
                 imageUrl = user.ImageUrl,
@@ -108,8 +108,8 @@ public class AuthController : ControllerBase
                 {
                     id = tenant.TenantId,
                     name = tenant.Name,
-                    subscriptionTier = tenant.SubscriptionTier,
-                    subscriptionStatus = tenant.SubscriptionStatus,
+                    subscriptionTier = tenant.SubscriptionTier.ToString(),
+                    subscriptionStatus = tenant.SubscriptionStatus.ToString(),
                     isActive = tenant.IsActive,
                     profileComplete = isProfileComplete,
                     logoUrl = tenant.LogoUrl,

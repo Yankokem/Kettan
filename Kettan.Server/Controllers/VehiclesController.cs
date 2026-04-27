@@ -5,6 +5,7 @@ using Kettan.Server.Data;
 using Kettan.Server.DTOs.Vehicles;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Controllers;
 
@@ -84,6 +85,11 @@ public class VehiclesController : ControllerBase
                 throw new InvalidOperationException("Vehicle type is required.");
             }
 
+            if (!Enum.TryParse<VehicleType>(dto.VehicleType.Trim(), true, out var vehicleType))
+            {
+                throw new InvalidOperationException("Invalid vehicle type.");
+            }
+
             var normalizedPlate = dto.PlateNumber.Trim().ToUpperInvariant();
             var duplicatePlate = await _context.Vehicles.AnyAsync(v => v.PlateNumber == normalizedPlate);
             if (duplicatePlate)
@@ -95,7 +101,7 @@ public class VehiclesController : ControllerBase
             {
                 TenantId = _currentUser.TenantId.Value,
                 PlateNumber = normalizedPlate,
-                VehicleType = dto.VehicleType.Trim(),
+                VehicleType = vehicleType,
                 Description = dto.Description,
                 IsActive = dto.IsActive,
                 CreatedAt = DateTime.UtcNow
@@ -140,6 +146,11 @@ public class VehiclesController : ControllerBase
                 throw new InvalidOperationException("Vehicle type is required.");
             }
 
+            if (!Enum.TryParse<VehicleType>(dto.VehicleType.Trim(), true, out var vehicleType))
+            {
+                throw new InvalidOperationException("Invalid vehicle type.");
+            }
+
             var normalizedPlate = dto.PlateNumber.Trim().ToUpperInvariant();
             var duplicatePlate = await _context.Vehicles.AnyAsync(v => v.PlateNumber == normalizedPlate && v.VehicleId != id);
             if (duplicatePlate)
@@ -148,7 +159,7 @@ public class VehiclesController : ControllerBase
             }
 
             vehicle.PlateNumber = normalizedPlate;
-            vehicle.VehicleType = dto.VehicleType.Trim();
+            vehicle.VehicleType = vehicleType;
             vehicle.Description = dto.Description;
             vehicle.IsActive = dto.IsActive;
 
@@ -192,7 +203,7 @@ public class VehiclesController : ControllerBase
             VehicleId = vehicle.VehicleId,
             TenantId = vehicle.TenantId,
             PlateNumber = vehicle.PlateNumber,
-            VehicleType = vehicle.VehicleType,
+            VehicleType = vehicle.VehicleType.ToString(),
             Description = vehicle.Description,
             IsActive = vehicle.IsActive,
             CreatedAt = vehicle.CreatedAt

@@ -19,11 +19,11 @@ public class Employee : ITenantEntity
     public Branch? Branch { get; set; }
 
     [Required]
-    [MaxLength(100)]
+    [MaxLength(50)]
     public required string FirstName { get; set; }
 
     [Required]
-    [MaxLength(100)]
+    [MaxLength(50)]
     public required string LastName { get; set; }
 
     [Required]
@@ -40,9 +40,10 @@ public class Employee : ITenantEntity
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 
-    [MaxLength(150)]
+    [MaxLength(50)]
     public string? Email { get; set; }
 
+    [MaxLength(300)]
     public string? ImageUrl { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

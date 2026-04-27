@@ -4,6 +4,7 @@ using Kettan.Server.DTOs.Orders;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Services.Inventory;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Services.BranchOperations;
 
@@ -48,7 +49,10 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            query = query.Where(o => o.Status == status);
+            if (Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
+            {
+                query = query.Where(o => o.Status == parsedStatus);
+            }
         }
 
         var orders = await query
@@ -84,10 +88,10 @@ public class OrderWorkflowService : IOrderWorkflowService
             TenantId = tenantId,
             BranchId = dto.BranchId,
             RequestedBy_UserId = userId,
-            Status = SupplyRequestStatuses.Approved,
-            RequestType = NormalizeOptional(dto.RequestType) ?? "hq_initiated",
-            Priority = NormalizeOptional(dto.Priority) ?? "normal",
-            DispatchWindow = NormalizeOptional(dto.DispatchWindow) ?? "today",
+            Status = SupplyRequestStatus.Approved,
+            RequestType = Enum.TryParse<RequestType>(dto.RequestType, true, out var reqType) ? reqType : RequestType.HqInitiated,
+            Priority = Enum.TryParse<Priority>(dto.Priority, true, out var priority) ? priority : Priority.Normal,
+            DispatchWindow = Enum.TryParse<DispatchWindow>(dto.DispatchWindow, true, out var dispatchWindow) ? dispatchWindow : DispatchWindow.Today,
             DispatchDate = dto.DispatchDate,
             Notes = NormalizeOptional(dto.Notes),
             CreatedAt = now,
@@ -108,7 +112,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         {
             TenantId = tenantId,
             RequestId = request.RequestId,
-            Status = OrderStatuses.Processing,
+            Status = OrderStatus.Processing,
             PushedToFulfillmentAt = now,
         };
 
@@ -117,7 +121,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         {
             TenantId = tenantId,
             Order = order,
-            Status = OrderStatuses.Processing,
+            Status = OrderStatus.Processing,
             ChangedBy_UserId = userId,
             Remarks = "HQ initiated order created and moved to processing.",
             Timestamp = now,
@@ -182,7 +186,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Select(h => new OrderStatusHistoryDto
             {
                 HistoryId = h.HistoryId,
-                Status = h.Status,
+                Status = h.Status.ToString(),
                 ChangedByUserId = h.ChangedBy_UserId,
                 ChangedByName = h.ChangedBy_User == null
                     ? string.Empty
@@ -197,8 +201,8 @@ public class OrderWorkflowService : IOrderWorkflowService
     {
         return TransitionOrderStatusAsync(
             orderId,
-            expectedStatus: OrderStatuses.Processing,
-            nextStatus: OrderStatuses.Picking,
+            expectedStatus: OrderStatus.Processing,
+            nextStatus: OrderStatus.Picking,
             remarks: dto.Remarks,
             notificationTitle: "Order Picking Started",
             notificationType: "OrderPickingStarted");
@@ -217,7 +221,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             return false;
         }
 
-        if (order.Status != OrderStatuses.Picking)
+        if (order.Status != OrderStatus.Picking)
         {
             throw new InvalidOperationException($"Only Picking orders can be moved to Packed.");
         }
@@ -238,9 +242,9 @@ public class OrderWorkflowService : IOrderWorkflowService
                     item.ItemId,
                     branchId: null, // HQ stock
                     quantity: qtyToDeduct,
-                    transactionType: "Order_Fulfillment",
+                    transactionType: TransactionType.OrderFulfillment,
                     remarks: $"Fulfilled order {order.OrderId}",
-                    referenceType: "Order",
+                    referenceType: ReferenceType.Order,
                     referenceId: order.OrderId);
 
                 foreach (var deduction in deductions)
@@ -255,13 +259,13 @@ public class OrderWorkflowService : IOrderWorkflowService
                 }
             }
 
-            order.Status = OrderStatuses.Packed;
+            order.Status = OrderStatus.Packed;
 
             _context.OrderStatusHistories.Add(new OrderStatusHistory
             {
                 TenantId = _currentUser.TenantId.Value,
                 OrderId = order.OrderId,
-                Status = OrderStatuses.Packed,
+                Status = OrderStatus.Packed,
                 ChangedBy_UserId = _currentUser.UserId.Value,
                 Remarks = NormalizeOptional(dto.Remarks),
                 Timestamp = now
@@ -298,20 +302,20 @@ public class OrderWorkflowService : IOrderWorkflowService
             return false;
         }
 
-        if (order.Status != OrderStatuses.Packed)
+        if (order.Status != OrderStatus.Packed)
         {
             throw new InvalidOperationException("Only packed orders can be dispatched.");
         }
 
         var now = DateTime.UtcNow;
 
-        order.Status = OrderStatuses.InTransit;
+        order.Status = OrderStatus.InTransit;
 
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
             TenantId = _currentUser.TenantId.Value,
             OrderId = order.OrderId,
-            Status = OrderStatuses.Dispatched,
+            Status = OrderStatus.Dispatched,
             ChangedBy_UserId = _currentUser.UserId.Value,
             Remarks = NormalizeOptional(dto.Remarks),
             Timestamp = now
@@ -321,7 +325,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         {
             TenantId = _currentUser.TenantId.Value,
             OrderId = order.OrderId,
-            Status = OrderStatuses.InTransit,
+            Status = OrderStatus.InTransit,
             ChangedBy_UserId = _currentUser.UserId.Value,
             Remarks = "System auto-transition after dispatch.",
             Timestamp = now
@@ -368,18 +372,18 @@ public class OrderWorkflowService : IOrderWorkflowService
             return false;
         }
 
-        if (order.Status is not (OrderStatuses.Dispatched or OrderStatuses.InTransit or OrderStatuses.Packed))
+        if (order.Status is not (OrderStatus.Dispatched or OrderStatus.InTransit or OrderStatus.Packed))
         {
             throw new InvalidOperationException("Only dispatched orders can be confirmed as delivered.");
         }
 
-        order.Status = OrderStatuses.Delivered;
+        order.Status = OrderStatus.Delivered;
 
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
             TenantId = _currentUser.TenantId.Value,
             OrderId = order.OrderId,
-            Status = OrderStatuses.Delivered,
+            Status = OrderStatus.Delivered,
             ChangedBy_UserId = _currentUser.UserId.Value,
             Remarks = NormalizeOptional(dto.Remarks),
             Timestamp = DateTime.UtcNow
@@ -391,7 +395,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             {
                 TenantId = _currentUser.TenantId.Value,
                 OrderId = order.OrderId,
-                Status = OrderStatuses.DeliveredWithVariance,
+                Status = OrderStatus.DeliveredWithVariance,
                 ChangedBy_UserId = _currentUser.UserId.Value,
                 Remarks = "Delivery confirmed with quantity variance.",
                 Timestamp = DateTime.UtcNow
@@ -413,8 +417,8 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     private async Task<bool> TransitionOrderStatusAsync(
         int orderId,
-        string expectedStatus,
-        string nextStatus,
+        OrderStatus expectedStatus,
+        OrderStatus nextStatus,
         string? remarks,
         string notificationTitle,
         string notificationType)
@@ -526,7 +530,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             RequestId = order.RequestId,
             BranchId = order.SupplyRequest?.BranchId ?? 0,
             BranchName = order.SupplyRequest?.Branch?.Name ?? string.Empty,
-            Status = order.Status,
+            Status = order.Status.ToString(),
             PushedToFulfillmentAt = order.PushedToFulfillmentAt,
             ItemsCount = requestItems.Count,
             FulfillmentCost = requestItems.Sum(i => (i.QuantityApproved ?? i.QuantityRequested) * (i.Item?.UnitCost ?? 0))
@@ -545,9 +549,9 @@ public class OrderWorkflowService : IOrderWorkflowService
             RequestId = order.RequestId,
             BranchId = order.SupplyRequest?.BranchId ?? 0,
             BranchName = order.SupplyRequest?.Branch?.Name ?? string.Empty,
-            Status = order.Status,
+            Status = order.Status.ToString(),
             PushedToFulfillmentAt = order.PushedToFulfillmentAt,
-            RequestStatus = order.SupplyRequest?.Status ?? string.Empty,
+            RequestStatus = order.SupplyRequest?.Status.ToString() ?? string.Empty,
             RequestedByUserId = order.SupplyRequest?.RequestedBy_UserId ?? 0,
             RequestedByName = requestedByName,
             Notes = order.SupplyRequest?.Notes,

@@ -57,7 +57,7 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("OccurredAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("OldValues")
                         .HasColumnType("nvarchar(max)");
@@ -98,13 +98,13 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<decimal>("CurrentQuantity")
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<DateTime>("ExpiryDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
@@ -147,16 +147,17 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("CustomThresholds")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -173,8 +174,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<TimeOnly?>("OpenTime")
                         .HasColumnType("time");
@@ -208,10 +209,10 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -251,25 +252,22 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime>("LogDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int>("LoggedBy_UserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Method")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<byte>("Method")
+                        .HasColumnType("tinyint");
 
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Shift")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<byte?>("Shift")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
@@ -341,25 +339,26 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DateHired")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -369,8 +368,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Position")
                         .IsRequired()
@@ -398,14 +397,14 @@ namespace Kettan.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -418,8 +417,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
@@ -448,9 +447,8 @@ namespace Kettan.Server.Migrations
                     b.Property<int?>("ReferenceId")
                         .HasColumnType("int");
 
-                    b.Property<string>("ReferenceType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte?>("ReferenceType")
+                        .HasColumnType("tinyint");
 
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
@@ -459,12 +457,10 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
-                    b.Property<string>("TransactionType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte>("TransactionType")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -492,13 +488,13 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<decimal>("DefaultThreshold")
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<decimal>("HoldingCost")
                         .HasColumnType("decimal(18,2)");
@@ -517,8 +513,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal?>("PreviousUnitCost")
                         .HasColumnType("decimal(18,2)");
@@ -546,7 +542,7 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.HasKey("ItemId");
 
@@ -568,14 +564,14 @@ namespace Kettan.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemCategoryId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -588,8 +584,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
@@ -610,10 +606,10 @@ namespace Kettan.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -626,8 +622,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
@@ -654,36 +650,34 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.HasKey("MenuItemId");
 
@@ -715,8 +709,8 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("UnitOfMeasure")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("MenuItemIngredientId");
 
@@ -757,10 +751,10 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(7)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -792,10 +786,10 @@ namespace Kettan.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VariantId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -811,16 +805,14 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("PricingMode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                    b.Property<byte>("PricingMode")
+                        .HasColumnType("tinyint");
 
                     b.HasKey("VariantId");
 
@@ -838,7 +830,7 @@ namespace Kettan.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
@@ -849,27 +841,24 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("ReadAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int?>("ReferenceId")
                         .HasColumnType("int");
 
-                    b.Property<string>("ReferenceType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte?>("ReferenceType")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<byte>("Type")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -892,21 +881,19 @@ namespace Kettan.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderId"));
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("PushedToFulfillmentAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int>("RequestId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
@@ -968,16 +955,14 @@ namespace Kettan.Server.Migrations
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.HasKey("HistoryId");
 
@@ -1002,35 +987,35 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CooldownUntilUtc")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("ExpiresAtUtc")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<bool>("IsUsed")
                         .HasColumnType("bit");
 
                     b.Property<string>("OtpHash")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("ResendCount")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("VerifiedAtUtc")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.HasKey("OtpId");
 
@@ -1048,21 +1033,21 @@ namespace Kettan.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SessionId"));
 
                     b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("ExpiresAtUtc")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<bool>("IsUsed")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("UsedAtUtc")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("VerificationToken")
                         .IsRequired()
@@ -1092,13 +1077,13 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("LoggedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
@@ -1107,16 +1092,14 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Resolution")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte>("Resolution")
+                        .HasColumnType("tinyint");
 
                     b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int?>("ReviewedBy_UserId")
                         .HasColumnType("int");
@@ -1152,8 +1135,8 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("ReturnId")
                         .HasColumnType("int");
@@ -1181,16 +1164,16 @@ namespace Kettan.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShipmentId"));
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DispatchDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<decimal?>("DistanceMap")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("EstimatedArrival")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1202,8 +1185,8 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("TrackingNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<int?>("VehicleId")
                         .HasColumnType("int");
@@ -1232,15 +1215,15 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
 
                     b.Property<DateTime?>("DueAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
@@ -1248,19 +1231,17 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("IssuedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("ProviderReference")
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("TenantSubscriptionId")
                         .HasColumnType("int");
@@ -1284,35 +1265,31 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
 
                     b.Property<int>("InvoiceId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
-                    b.Property<string>("PaymentMethod")
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
+                    b.Property<byte?>("PaymentMethod")
+                        .HasColumnType("tinyint");
 
-                    b.Property<string>("Provider")
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
+                    b.Property<byte?>("Provider")
+                        .HasColumnType("tinyint");
 
                     b.Property<string>("ProviderPaymentId")
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
 
                     b.HasKey("PaymentId");
 
@@ -1333,14 +1310,14 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1350,8 +1327,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("PlanCode")
                         .IsRequired()
@@ -1384,18 +1361,16 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DispatchDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
-                    b.Property<string>("DispatchWindow")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<byte>("DispatchWindow")
+                        .HasColumnType("tinyint");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1404,29 +1379,27 @@ namespace Kettan.Server.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<byte>("Priority")
+                        .HasColumnType("tinyint");
 
-                    b.Property<string>("RequestType")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte>("RequestType")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("RequestedBy_UserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.HasKey("RequestId");
 
@@ -1486,17 +1459,17 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int?>("CurrentSubscriptionId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1505,49 +1478,47 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("LegalName")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("LogoUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("SubscriptionPeriodEnd")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("SubscriptionPeriodStart")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
-                    b.Property<string>("SubscriptionStatus")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<byte>("SubscriptionStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("tinyint");
 
-                    b.Property<string>("SubscriptionTier")
-                        .IsRequired()
+                    b.Property<byte>("SubscriptionTier")
+                        .HasMaxLength(20)
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("SupportEmail")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("SupportEmail")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
                     b.Property<string>("TaxId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("Website")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("TenantId");
 
@@ -1567,45 +1538,41 @@ namespace Kettan.Server.Migrations
                     b.Property<bool>("AutoRenew")
                         .HasColumnType("bit");
 
-                    b.Property<string>("BillingCycle")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<byte>("BillingCycle")
+                        .HasColumnType("tinyint");
 
                     b.Property<DateTime?>("CanceledAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("PeriodEnd")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime>("PeriodStart")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<int>("PlanId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.HasKey("TenantSubscriptionId");
 
@@ -1635,23 +1602,24 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1661,18 +1629,16 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte>("Role")
+                        .HasColumnType("tinyint");
 
                     b.Property<int?>("TenantId")
                         .HasColumnType("int");
@@ -1724,14 +1690,14 @@ namespace Kettan.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VehicleId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1747,10 +1713,8 @@ namespace Kettan.Server.Migrations
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
-                    b.Property<string>("VehicleType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte>("VehicleType")
+                        .HasColumnType("tinyint");
 
                     b.HasKey("VehicleId");
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Kettan.Server.Data;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Controllers;
 
@@ -24,23 +25,23 @@ public class AdminController : ControllerBase
     {
         var totalTenants = await _context.Tenants.IgnoreQueryFilters().CountAsync(ct);
         var activeTenants = await _context.Tenants.IgnoreQueryFilters()
-            .CountAsync(t => t.IsActive && t.SubscriptionStatus == "Active", ct);
+            .CountAsync(t => t.IsActive && t.SubscriptionStatus == SubscriptionStatus.Active, ct);
         var pendingPaymentTenants = await _context.Tenants.IgnoreQueryFilters()
-            .CountAsync(t => t.SubscriptionStatus == "PendingPayment", ct);
+            .CountAsync(t => t.SubscriptionStatus == SubscriptionStatus.PendingPayment, ct);
 
         var totalBranches = await _context.Branches.IgnoreQueryFilters().CountAsync(ct);
         var totalUsers = await _context.Users.IgnoreQueryFilters()
-            .CountAsync(u => u.Role != "SuperAdmin", ct);
+            .CountAsync(u => u.Role != UserRole.SuperAdmin, ct);
 
         // MRR = sum of monthly prices for all active subscriptions
         var mrr = await _context.TenantSubscriptions.IgnoreQueryFilters()
-            .Where(ts => ts.Status == "Active")
+            .Where(ts => ts.Status == SubscriptionStatus.Active)
             .Join(_context.SubscriptionPlans, ts => ts.PlanId, p => p.PlanId, (ts, p) => p.PriceMonthly)
             .SumAsync(price => price, ct);
 
         // Plan distribution
         var planDistribution = await _context.TenantSubscriptions.IgnoreQueryFilters()
-            .Where(ts => ts.Status == "Active")
+            .Where(ts => ts.Status == SubscriptionStatus.Active)
             .Join(_context.SubscriptionPlans, ts => ts.PlanId, p => p.PlanId, (ts, p) => p)
             .GroupBy(p => p.Name)
             .Select(g => new
@@ -98,7 +99,10 @@ public class AdminController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            query = query.Where(t => t.SubscriptionStatus == status);
+            if (Enum.TryParse<SubscriptionStatus>(status.Trim(), true, out var statusEnum))
+            {
+                query = query.Where(t => t.SubscriptionStatus == statusEnum);
+            }
         }
 
         var tenants = await query
@@ -212,7 +216,7 @@ public class AdminController : ControllerBase
         if (tenant == null) return NotFound(new { message = "Tenant not found." });
 
         tenant.IsActive = false;
-        tenant.SubscriptionStatus = "Suspended";
+        tenant.SubscriptionStatus = SubscriptionStatus.Suspended;
 
         await _context.SaveChangesAsync(ct);
 
@@ -230,7 +234,7 @@ public class AdminController : ControllerBase
         if (tenant == null) return NotFound(new { message = "Tenant not found." });
 
         tenant.IsActive = true;
-        tenant.SubscriptionStatus = "Active";
+        tenant.SubscriptionStatus = SubscriptionStatus.Active;
 
         await _context.SaveChangesAsync(ct);
 
@@ -247,7 +251,7 @@ public class AdminController : ControllerBase
         // Monthly revenue trend (last 6 months)
         var sixMonthsAgo = now.AddMonths(-6);
         var revenueTrend = await _context.SubscriptionPayments.IgnoreQueryFilters()
-            .Where(p => p.PaidAt != null && p.PaidAt >= sixMonthsAgo && p.Status == "Paid")
+            .Where(p => p.PaidAt != null && p.PaidAt >= sixMonthsAgo && p.Status == PaymentStatus.Paid)
             .GroupBy(p => new { p.PaidAt!.Value.Year, p.PaidAt!.Value.Month })
             .Select(g => new
             {
@@ -273,7 +277,7 @@ public class AdminController : ControllerBase
 
         // Plan distribution
         var planDistribution = await _context.TenantSubscriptions.IgnoreQueryFilters()
-            .Where(ts => ts.Status == "Active")
+            .Where(ts => ts.Status == SubscriptionStatus.Active)
             .Join(_context.SubscriptionPlans, ts => ts.PlanId, p => p.PlanId, (ts, p) => p)
             .GroupBy(p => p.Name)
             .Select(g => new
@@ -300,7 +304,7 @@ public class AdminController : ControllerBase
 
         // Total all-time revenue
         var totalRevenue = await _context.SubscriptionPayments.IgnoreQueryFilters()
-            .Where(p => p.Status == "Paid")
+            .Where(p => p.Status == PaymentStatus.Paid)
             .SumAsync(p => p.Amount, ct);
 
         // New tenants this month

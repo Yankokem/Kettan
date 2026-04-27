@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Kettan.Server.Data;
 using Kettan.Server.DTOs.Auth;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Services.Auth;
 
@@ -19,7 +20,7 @@ public class AuthService : IAuthService
         _configuration = configuration;
     }
 
-    public async Task<string?> LoginAsync(LoginRequest request)
+    public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
         // Must bypass tenant filter during login since user isn't authenticated yet
         var user = await _context.Users
@@ -31,7 +32,22 @@ public class AuthService : IAuthService
             return null;
         }
 
-        return GenerateJwtToken(user);
+        var token = GenerateJwtToken(user);
+        var fullName = string.Join(
+            " ",
+            new[] { user.FirstName, user.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+        return new LoginResponse
+        {
+            UserId = user.UserId,
+            Email = user.Email,
+            Name = fullName,
+            Role = user.Role.ToString(),
+            Token = token,
+            TenantId = user.TenantId,
+            BranchId = user.BranchId,
+            ImageUrl = user.ImageUrl
+        };
     }
 
     private string GenerateJwtToken(Entities.User user)
@@ -45,7 +61,7 @@ public class AuthService : IAuthService
         {
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role),
+            new Claim(ClaimTypes.Role, user.Role.ToString()),
         };
 
         if (user.TenantId.HasValue)

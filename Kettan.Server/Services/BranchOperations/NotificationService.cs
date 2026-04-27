@@ -3,6 +3,7 @@ using Kettan.Server.Data;
 using Kettan.Server.DTOs.Notifications;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Services.BranchOperations;
 
@@ -46,14 +47,18 @@ public class NotificationService : INotificationService
             return;
         }
 
+        var notificationType = Enum.TryParse<NotificationType>(type, true, out var parsedType) ? parsedType : NotificationType.General;
+        var notificationReferenceType = string.IsNullOrWhiteSpace(referenceType) ? (NotificationReferenceType?)null :
+            Enum.TryParse<NotificationReferenceType>(referenceType, true, out var parsedRefType) ? parsedRefType : (NotificationReferenceType?)null;
+
         var notifications = existingUsers.Select(userId => new Notification
         {
             TenantId = _currentUser.TenantId.Value,
             UserId = userId,
             Title = title,
             Message = message,
-            Type = type,
-            ReferenceType = referenceType,
+            Type = notificationType,
+            ReferenceType = notificationReferenceType,
             ReferenceId = referenceId,
             IsRead = false,
             CreatedAt = DateTime.UtcNow
@@ -90,7 +95,7 @@ public class NotificationService : INotificationService
 
         var recipientsQuery = _context.Users
             .Where(u => u.TenantId == _currentUser.TenantId.Value && u.IsActive)
-            .Where(u => normalizedRoles.Contains(u.Role));
+            .Where(u => normalizedRoles.Contains(u.Role.ToString()));
 
         if (branchId.HasValue)
         {
@@ -128,8 +133,8 @@ public class NotificationService : INotificationService
                 NotificationId = n.NotificationId,
                 Title = n.Title,
                 Message = n.Message,
-                Type = n.Type,
-                ReferenceType = n.ReferenceType,
+                Type = n.Type.ToString(),
+                ReferenceType = n.ReferenceType.HasValue ? n.ReferenceType.Value.ToString() : null,
                 ReferenceId = n.ReferenceId,
                 IsRead = n.IsRead,
                 CreatedAt = n.CreatedAt
