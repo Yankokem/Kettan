@@ -40,6 +40,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   } catch (error: any) {
     throw new Error(error.response?.data?.message || `Request failed: ${error.message}`);
   }
+}
 
 export async function fetchInventorySummary(branchId?: number): Promise<InventorySummaryDto> {
   const qs = branchId ? `?branchId=${branchId}` : '';
