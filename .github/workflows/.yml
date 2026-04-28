@@ -1,0 +1,29 @@
+name: Deploy Kettan OM (Frontend)
+on:
+  push:
+    branches: [ latest ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install & Build
+        run: |
+          npm install
+          npm run build # Generates the /dist folder
+
+      - name: Deploy to MonsterASP (FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.OM_FTP_SERVER }}
+          username: ${{ secrets.OM_FTP_USERNAME }}
+          password: ${{ secrets.OM_FTP_PASSWORD }}
+          local-dir: ./dist/ # Uploads only the compiled frontend
+          server-dir: /wwwroot/

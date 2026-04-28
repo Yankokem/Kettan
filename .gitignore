@@ -20,6 +20,8 @@ yarn-error.log*
 Kettan.Server/tmp-*/
 kettan.client/dist/
 kettan.client/build/
+kettan.client/.env.development
+kettan.client/.env.production
 
 # OS
 .DS_Store

@@ -17,8 +17,6 @@ using Kettan.Server.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 // Setup JWT Auth
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
@@ -40,8 +38,7 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
     };
-    
-    // Support reading token from HttpOnly cookie
+
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
@@ -71,11 +68,9 @@ builder.Services.AddScoped<ICsvExportService, CsvExportService>();
 builder.Services.AddScoped<IPdfExportService, PdfExportService>();
 builder.Services.AddScoped<IImageService, CloudinaryService>();
 
-// Add Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
     options.AddPolicy("LoginRateLimit", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown_ip",
@@ -97,41 +92,58 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-// Audit Log Interceptor (must be registered before DbContext)
 builder.Services.AddSingleton<Kettan.Server.Middleware.AuditLogInterceptor>();
 
-// Add Database Context
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
            .AddInterceptors(serviceProvider.GetRequiredService<Kettan.Server.Middleware.AuditLogInterceptor>()));
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+            "http://kettan-om.runasp.net",
+            "https://kettan-om.runasp.net",
+            "http://localhost:5173",
+            "https://localhost:61643"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
-// Seed the database only in development.
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    var loggerFactory = services.GetRequiredService<ILoggerFactory>();
-    var seedingLogger = loggerFactory.CreateLogger("DbInitializer");
-    await DbInitializer.InitializeAsync(context, seedingLogger);
-}
+// Enable detailed errors in Prod so we can actually see the C# crash message
+app.UseDeveloperExceptionPage();
 
 app.UseDefaultFiles();
 app.MapStaticAssets();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// 1. MUST USE CORS FIRST
+app.UseCors("AllowFrontend");
+
+// 2. Then handle the manual OPTIONS if needed, but CORS middleware usually handles it
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 200;
+        await context.Response.CompleteAsync();
+        return;
+    }
+    await next();
+});
 
 app.UseRateLimiter();
 app.UseAuthentication();
@@ -139,7 +151,5 @@ app.UseAuthorization();
 app.UseMiddleware<SubscriptionCheckMiddleware>();
 
 app.MapControllers();
-
-app.MapFallbackToFile("/index.html");
 
 app.Run();
