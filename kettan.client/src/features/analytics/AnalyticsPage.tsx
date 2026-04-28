@@ -28,13 +28,13 @@ interface AnalyticsData {
 async function fetchAnalytics(): Promise<AnalyticsData> {
   const res = await api.get('/api/admin/analytics');
   
-  return res.json();
+  return res.data;
 }
 
 async function fetchDashboardKPIs(): Promise<{ activeTenants: number; monthlyRecurringRevenue: number }> {
   const res = await api.get('/api/admin/dashboard');
   
-  return res.json();
+  return res.data;
 }
 
 export function AnalyticsPage() {

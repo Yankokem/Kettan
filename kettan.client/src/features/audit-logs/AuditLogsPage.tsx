@@ -87,7 +87,7 @@ export function AuditLogsPage() {
 
       const res = await api.get(`/api/audit-logs?${params}`);
       
-      const data: AuditLogResponse = await res.json();
+      const data: AuditLogResponse = res.data;
       setRows(data.data);
       setTotalCount(data.totalCount);
     } catch (e) {

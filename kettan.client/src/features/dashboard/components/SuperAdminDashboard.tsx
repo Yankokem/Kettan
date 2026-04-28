@@ -31,7 +31,7 @@ interface DashboardData {
 async function fetchDashboard(): Promise<DashboardData> {
   const res = await api.get('/api/admin/dashboard');
   
-  return res.json();
+  return res.data;
 }
 
 export function SuperAdminDashboard() {
