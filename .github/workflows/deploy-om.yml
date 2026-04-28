@@ -17,6 +17,9 @@ jobs:
       - name: Install & Build
         # This tells GitHub to go INTO the kettan.client folder before running npm
         working-directory: kettan.client
+        # This part ensures the frontend knows the production API address
+        env:
+          VITE_API_URL: https://kettan-api.runasp.net
         run: |
           npm install
           npm run build
