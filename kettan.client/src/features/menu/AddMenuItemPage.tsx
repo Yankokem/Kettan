@@ -106,7 +106,7 @@ export function AddMenuItemPage() {
       if (formData.imageFile) {
         const uploadFormData = new FormData();
         uploadFormData.append('file', formData.imageFile);
-        const uploadRes = await api.post('/api/uploads/image', uploadFormData);
+        const uploadRes = await api.post('/api/uploads/image', uploadFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
         if (uploadRes.status >= 200 && uploadRes.status < 300) {
           const uploadData = uploadRes.data;

@@ -238,7 +238,7 @@ export function CompanyProfilePage() {
         const formData = new FormData();
         formData.append('file', nextData.logoFile);
         try {
-          const uploadRes = await api.post('/api/uploads/image', formData);
+          const uploadRes = await api.post('/api/uploads/image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
           if (uploadRes.status >= 200 && uploadRes.status < 300) {
             const uploadData = uploadRes.data;
             // Backend returns { Url, PublicId } (PascalCase)

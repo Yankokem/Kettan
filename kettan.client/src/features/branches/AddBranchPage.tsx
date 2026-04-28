@@ -130,7 +130,7 @@ export function AddBranchPage() {
       if (imageFile) {
         const uploadFormData = new FormData();
         uploadFormData.append('file', imageFile);
-        const uploadRes = await api.post('/api/uploads/image', uploadFormData);
+        const uploadRes = await api.post('/api/uploads/image', uploadFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
         if (uploadRes.status >= 200 && uploadRes.status < 300) {
           const uploadData = uploadRes.data;
           // Backend returns { Url, PublicId } (PascalCase)

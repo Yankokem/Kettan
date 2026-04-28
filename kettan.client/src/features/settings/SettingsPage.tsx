@@ -124,7 +124,7 @@ export function SettingsPage() {
       if (profileForm.imageFile) {
         const formData = new FormData();
         formData.append('file', profileForm.imageFile);
-        const uploadRes = await api.post('/api/uploads/image', formData);
+        const uploadRes = await api.post('/api/uploads/image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
         if (uploadRes.status >= 200 && uploadRes.status < 300) {
           const uploadData = uploadRes.data;
