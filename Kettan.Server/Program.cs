@@ -165,7 +165,14 @@ using (var scope = app.Services.CreateScope())
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
+        System.IO.File.WriteAllText(Path.Combine(builder.Environment.ContentRootPath, "seed_error.txt"), ex.ToString());
     }
 }
+
+app.MapGet("/api/debug/seed-error", (IWebHostEnvironment env) => 
+{
+    var path = Path.Combine(env.ContentRootPath, "seed_error.txt");
+    return File.Exists(path) ? Results.Text(File.ReadAllText(path)) : Results.Ok("No error");
+});
 
 app.Run();
