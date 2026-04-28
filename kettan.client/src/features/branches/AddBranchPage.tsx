@@ -1,5 +1,6 @@
 import { Box, Typography, Paper, Divider, Grid } from '@mui/material';
 import { useState, useEffect } from 'react';
+import { api } from '../../utils/api';
 import { useNavigate } from '@tanstack/react-router';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
@@ -58,8 +59,7 @@ export function AddBranchPage() {
   const [users, setUsers] = useState<UserDto[]>([]);
 
   useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
+    api.get('/api/users').then(res => res.data)
       .then(data => setUsers(data))
       .catch(err => console.error('Failed to fetch users:', err));
   }, []);
@@ -130,18 +130,14 @@ export function AddBranchPage() {
       if (imageFile) {
         const uploadFormData = new FormData();
         uploadFormData.append('file', imageFile);
-        const uploadRes = await fetch('/api/uploads/image', {
-          method: 'POST',
-          credentials: 'include',
-          body: uploadFormData,
-        });
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
+        const uploadRes = await api.post('/api/uploads/image', uploadFormData);
+        if (uploadRes.status >= 200 && uploadRes.status < 300) {
+          const uploadData = uploadRes.data;
           // Backend returns { Url, PublicId } (PascalCase)
           imageUrl = uploadData.Url ?? uploadData.url ?? null;
           console.log('[Upload] Branch image URL:', imageUrl);
         } else {
-          const errData = await uploadRes.json().catch(() => ({}));
+          const errData = uploadRes.data;
           console.error('[Upload] Branch image upload failed:', uploadRes.status, errData);
         }
       }

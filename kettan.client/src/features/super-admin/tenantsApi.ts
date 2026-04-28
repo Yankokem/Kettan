@@ -1,3 +1,5 @@
+import { api } from '../../utils/api';
+
 export interface TenantRow {
   tenantId: number;
   name: string;
@@ -42,19 +44,28 @@ export async function fetchTenants(search?: string, status?: string): Promise<Te
   const params = new URLSearchParams();
   if (search) params.set('search', search);
   if (status) params.set('status', status);
-  const res = await fetch(`/api/admin/tenants?${params.toString()}`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load tenants');
-  return res.json();
+  try {
+    const res = await api.get(`/api/admin/tenants?${params.toString()}`);
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to load tenants');
+  }
 }
 
 export async function fetchTenantDetail(id: string): Promise<TenantDetail> {
-  const res = await fetch(`/api/admin/tenants/${id}`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load tenant details');
-  return res.json();
+  try {
+    const res = await api.get(`/api/admin/tenants/${id}`);
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to load tenant details');
+  }
 }
 
 export async function toggleTenantStatus(id: string, activate: boolean): Promise<void> {
   const endpoint = activate ? 'activate' : 'deactivate';
-  const res = await fetch(`/api/admin/tenants/${id}/${endpoint}`, { method: 'PUT', credentials: 'include' });
-  if (!res.ok) throw new Error(`Failed to ${endpoint} tenant`);
+  try {
+    await api.put(`/api/admin/tenants/${id}/${endpoint}`);
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || `Failed to ${endpoint} tenant`);
+  }
 }

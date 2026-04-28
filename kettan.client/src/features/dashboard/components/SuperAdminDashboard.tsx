@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { api } from '../../../utils/api';
 import { Box, Typography, Card } from '@mui/material';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import GroupRoundedIcon from '@mui/icons-material/GroupRounded';
@@ -28,8 +29,8 @@ interface DashboardData {
 }
 
 async function fetchDashboard(): Promise<DashboardData> {
-  const res = await fetch('/api/admin/dashboard', { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load dashboard');
+  const res = await api.get('/api/admin/dashboard');
+  
   return res.json();
 }
 

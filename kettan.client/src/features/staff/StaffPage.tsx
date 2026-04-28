@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { api } from '../../utils/api';
 import { Box, Grid } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
@@ -82,18 +83,14 @@ export function StaffPage() {
       try {
         const uploadFormData = new FormData();
         uploadFormData.append('file', formValues.imageFile);
-        const uploadRes = await fetch('/api/uploads/image', {
-          method: 'POST',
-          credentials: 'include',
-          body: uploadFormData,
-        });
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
+        const uploadRes = await api.post('/api/uploads/image', uploadFormData);
+        if (uploadRes.status >= 200 && uploadRes.status < 300) {
+          const uploadData = uploadRes.data;
           // Backend returns { Url, PublicId } (PascalCase)
           uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
           console.log('[Upload] Cloudinary URL:', uploadedImageUrl);
         } else {
-          const errData = await uploadRes.json().catch(() => ({}));
+          const errData = uploadRes.data;
           console.error('[Upload] Image upload failed:', uploadRes.status, errData);
         }
       } catch (err) {

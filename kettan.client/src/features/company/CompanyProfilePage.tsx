@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { api } from '../../utils/api';
 import { Avatar, Box, Chip, Grid, Paper, Typography } from '@mui/material';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import BuildRoundedIcon from '@mui/icons-material/BuildRounded';
@@ -237,18 +238,14 @@ export function CompanyProfilePage() {
         const formData = new FormData();
         formData.append('file', nextData.logoFile);
         try {
-          const uploadRes = await fetch('/api/uploads/image', {
-            method: 'POST',
-            credentials: 'include',
-            body: formData,
-          });
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
+          const uploadRes = await api.post('/api/uploads/image', formData);
+          if (uploadRes.status >= 200 && uploadRes.status < 300) {
+            const uploadData = uploadRes.data;
             // Backend returns { Url, PublicId } (PascalCase)
             finalLogoUrl = uploadData.Url ?? uploadData.url ?? null;
             console.log('[Upload] Logo URL:', finalLogoUrl);
           } else {
-            const errData = await uploadRes.json().catch(() => ({}));
+            const errData = uploadRes.data;
             console.error('[Upload] Logo upload failed:', uploadRes.status, errData);
           }
         } catch (err) {

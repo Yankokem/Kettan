@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { api } from '../../utils/api';
 import { Box, Typography, Card, Grid } from '@mui/material';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, Legend,
@@ -25,14 +26,14 @@ interface AnalyticsData {
 }
 
 async function fetchAnalytics(): Promise<AnalyticsData> {
-  const res = await fetch('/api/admin/analytics', { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load analytics');
+  const res = await api.get('/api/admin/analytics');
+  
   return res.json();
 }
 
 async function fetchDashboardKPIs(): Promise<{ activeTenants: number; monthlyRecurringRevenue: number }> {
-  const res = await fetch('/api/admin/dashboard', { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load dashboard');
+  const res = await api.get('/api/admin/dashboard');
+  
   return res.json();
 }
 

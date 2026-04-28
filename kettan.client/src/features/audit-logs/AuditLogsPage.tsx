@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { api } from '../../utils/api';
 import { Box, Chip, Typography } from '@mui/material';
 import FeedRoundedIcon from '@mui/icons-material/FeedRounded';
 import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded';
@@ -84,8 +85,8 @@ export function AuditLogsPage() {
       if (endDate) params.set('endDate', endDate);
       params.set('pageSize', '200');
 
-      const res = await fetch(`/api/audit-logs?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to load audit logs');
+      const res = await api.get(`/api/audit-logs?${params}`);
+      
       const data: AuditLogResponse = await res.json();
       setRows(data.data);
       setTotalCount(data.totalCount);

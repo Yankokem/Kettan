@@ -1,4 +1,5 @@
 import { useMemo, useState, type ElementType } from 'react';
+import { api } from '../../utils/api';
 import { Box, Paper, TextField, Typography } from '@mui/material';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
@@ -123,29 +124,21 @@ export function SettingsPage() {
       if (profileForm.imageFile) {
         const formData = new FormData();
         formData.append('file', profileForm.imageFile);
-        const uploadRes = await fetch('/api/uploads/image', {
-          method: 'POST',
-          credentials: 'include',
-          body: formData,
-        });
+        const uploadRes = await api.post('/api/uploads/image', formData);
 
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
+        if (uploadRes.status >= 200 && uploadRes.status < 300) {
+          const uploadData = uploadRes.data;
           uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
         }
       }
 
       // Update user profile via API
-      const response = await fetch('/api/auth/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: profileForm.name,
-          imageUrl: uploadedImageUrl,
-        }),
+      const response = await api.put('/api/auth/profile', {
+        name: profileForm.name,
+        imageUrl: uploadedImageUrl,
       });
 
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         useAuthStore.getState().updateUser({ name: profileForm.name, imageUrl: uploadedImageUrl });
         alert('Profile updated successfully!');
       } else {

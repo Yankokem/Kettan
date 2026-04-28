@@ -1,5 +1,6 @@
 import { Box, Chip, CircularProgress, Paper, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { api } from '../../utils/api';
 import { useParams } from '@tanstack/react-router';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
@@ -168,14 +169,10 @@ export function MenuItemProfilePage() {
       if (formData.imageFile) {
         const uploadFormData = new FormData();
         uploadFormData.append('file', formData.imageFile);
-        const uploadRes = await fetch('/api/uploads/image', {
-          method: 'POST',
-          credentials: 'include',
-          body: uploadFormData,
-        });
+        const uploadRes = await api.post('/api/uploads/image', uploadFormData);
 
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
+        if (uploadRes.status >= 200 && uploadRes.status < 300) {
+          const uploadData = uploadRes.data;
           uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
           console.log('[Upload] Menu item image updated URL:', uploadedImageUrl);
         }

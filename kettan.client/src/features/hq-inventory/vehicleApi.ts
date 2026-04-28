@@ -1,3 +1,4 @@
+import { api } from '../../utils/api';
 /**
  * Vehicles API — live backend adapter.
  * Replaces the previous localStorage mock with calls to /api/vehicles.
@@ -20,13 +21,17 @@ export interface VehicleFormData {
 }
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { credentials: 'include', ...options });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error((body as { message?: string }).message ?? `Request failed: ${res.status}`);
+  try {
+    const res = await api({
+      url,
+      method: options?.method || 'GET',
+      data: options?.body ? JSON.parse(options.body as string) : undefined,
+      headers: options?.headers as any,
+    });
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || `Request failed: ${error.message}`);
   }
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
 }
 
 export async function listVehicles(includeInactive = false): Promise<Vehicle[]> {
