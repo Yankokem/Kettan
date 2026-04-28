@@ -175,4 +175,37 @@ app.MapGet("/api/debug/seed-error", (IWebHostEnvironment env) =>
     return File.Exists(path) ? Results.Text(File.ReadAllText(path)) : Results.Ok("No error");
 });
 
+app.MapGet("/api/debug/auth-diag", async (string email, ApplicationDbContext db, IConfiguration config) =>
+{
+    var connString = config.GetConnectionString("DefaultConnection");
+    var maskedConn = connString?.Contains("Password=") == true 
+        ? System.Text.RegularExpressions.Regex.Replace(connString, @"Password=[^;]+", "Password=***")
+        : connString ?? "NULL_OR_EMPTY";
+
+    bool canConnect = false;
+    try { canConnect = await db.Database.CanConnectAsync(); } catch { }
+
+    var user = await db.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == email);
+    
+    bool passwordMatches = false;
+    if (user != null && !string.IsNullOrEmpty(user.PasswordHash))
+    {
+        try { passwordMatches = BCrypt.Net.BCrypt.Verify("password123", user.PasswordHash); } catch { }
+    }
+
+    var jwtKey = config.GetSection("JwtSettings")["SecretKey"];
+
+    return Results.Ok(new {
+        Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
+        ConnectionStringMasked = maskedConn,
+        CanConnectToDb = canConnect,
+        UserFound = user != null,
+        IsActive = user?.IsActive,
+        IsDeleted = user?.IsDeleted,
+        HasPasswordHash = !string.IsNullOrEmpty(user?.PasswordHash),
+        PasswordMatches = passwordMatches,
+        JwtSecretConfigured = !string.IsNullOrEmpty(jwtKey)
+    });
+});
+
 app.Run();
