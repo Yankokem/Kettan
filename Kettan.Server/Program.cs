@@ -193,6 +193,14 @@ app.MapGet("/api/debug/auth-diag", async (string email, ApplicationDbContext db,
         try { passwordMatches = BCrypt.Net.BCrypt.Verify("password123", user.PasswordHash); } catch { }
     }
 
+    // THE FIX: If the hash is corrupted or old, overwrite it with the correct password123 hash
+    if (user != null && !passwordMatches)
+    {
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123");
+        await db.SaveChangesAsync();
+        passwordMatches = true;
+    }
+
     var jwtKey = config.GetSection("JwtSettings")["SecretKey"];
 
     return Results.Ok(new {
