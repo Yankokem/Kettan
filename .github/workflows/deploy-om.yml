@@ -1,4 +1,4 @@
-name: Deploy Kettan OM (Frontend)
+name: Deploy Kettan API
 on:
   push:
     branches: [ latest ]
@@ -9,27 +9,39 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
         with:
-          node-version: '20'
+          dotnet-version: '10.0.x'
 
-      - name: Install & Build
-        # This tells GitHub to go INTO the kettan.client folder before running npm
-        working-directory: kettan.client
-        # This part ensures the frontend knows the production API address
-        env:
-          VITE_API_URL: https://kettan-api.runasp.net
-        run: |
-          npm install
-          npm run build
+      - name: Publish
+        run: dotnet publish Kettan.Server/Kettan.Server.csproj -c Release -o ./publish
 
+      # Step 1: Create the "Kill Switch" file
+      - name: Create app_offline.htm
+        run: echo "<h1>System is updating. Please wait...</h1>" > ./publish/app_offline.htm
+
+      # Step 2: Deploy everything (including the offline file to lock the process)
       - name: Deploy to MonsterASP (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.OM_FTP_SERVER }}
-          username: ${{ secrets.OM_FTP_USERNAME }}
-          password: ${{ secrets.OM_FTP_PASSWORD }}
-          # The build output will be inside the subfolder's dist directory
-          local-dir: ./kettan.client/dist/
+          server: ${{ secrets.API_FTP_SERVER }}
+          username: ${{ secrets.API_FTP_USERNAME }}
+          password: ${{ secrets.API_FTP_PASSWORD }}
+          local-dir: ./publish/
           server-dir: /wwwroot/
+
+      # Step 3: Remove the offline file locally and sync one last time to bring it back online
+      - name: Bring App Back Online
+        run: rm ./publish/app_offline.htm
+
+      - name: Final Sync
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.API_FTP_SERVER }}
+          username: ${{ secrets.API_FTP_USERNAME }}
+          password: ${{ secrets.API_FTP_PASSWORD }}
+          local-dir: ./publish/
+          server-dir: /wwwroot/
+          # This tells the action to delete files on the server that aren't in the local folder
+          dangerous-clean-slate: false
