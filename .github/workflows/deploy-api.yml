@@ -18,11 +18,15 @@ jobs:
         # Targets the backend subfolder
         run: dotnet publish Kettan.Server/Kettan.Server.csproj -c Release -o ./publish
 
-      - name: Create app_offline.htm
-        # This shuts down the app gracefully to unlock files
-        run: echo "<h1>System Updating...</h1>" > ./publish/app_offline.htm
+      - name: Take App Offline
+        # Use cURL to specifically upload app_offline.htm alone, then sleep so IIS releases the DLLs
+        run: |
+          echo "<h1>System Updating...</h1>" > app_offline.htm
+          FTP_HOST=$(echo "${{ secrets.API_FTP_SERVER }}" | sed -e 's|^ftp://||' -e 's|^ftps://||')
+          curl --insecure --ftp-ssl -T app_offline.htm "ftp://${FTP_HOST}/wwwroot/app_offline.htm" --user "${{ secrets.API_FTP_USERNAME }}:${{ secrets.API_FTP_PASSWORD }}"
+          sleep 10
 
-      - name: Deploy to MonsterASP (Lock Files)
+      - name: Deploy to MonsterASP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.API_FTP_SERVER }}
@@ -32,14 +36,7 @@ jobs:
           server-dir: /wwwroot/
 
       - name: Bring App Back Online
-        run: rm ./publish/app_offline.htm
-
-      - name: Final Sync (Restart App)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.API_FTP_SERVER }}
-          username: ${{ secrets.API_FTP_USERNAME }}
-          password: ${{ secrets.API_FTP_PASSWORD }}
-          local-dir: ./publish/
-          server-dir: /wwwroot/
-          dangerous-clean-slate: false
+        # Delete app_offline.htm via cURL to restore the app
+        run: |
+          FTP_HOST=$(echo "${{ secrets.API_FTP_SERVER }}" | sed -e 's|^ftp://||' -e 's|^ftps://||')
+          curl --insecure --ftp-ssl -Q "DELE /wwwroot/app_offline.htm" "ftp://${FTP_HOST}/" --user "${{ secrets.API_FTP_USERNAME }}:${{ secrets.API_FTP_PASSWORD }}" || true
