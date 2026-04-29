@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { StaticMotionDiv } from "./noMotion";
-import { ArrowLeft, Loader2, Mail, RefreshCcw, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, RefreshCcw } from "lucide-react";
 import { api } from "../../utils/api";
 import { resolvePlan } from "./registerPlans";
 
