@@ -105,16 +105,25 @@ export function UserProfilePage() {
   return (
     <Box sx={{ pb: 5 }}>
       {/* Back navigation */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/" />
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            My Profile
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-            View your account information and settings.
-          </Typography>
+      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <BackButton to="/" />
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+              My Profile
+            </Typography>
+            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
+              View your account information and settings.
+            </Typography>
+          </Box>
         </Box>
+        <Button
+          variant="contained"
+          startIcon={<EditRoundedIcon />}
+          onClick={() => navigate({ to: '/profile/edit' })}
+        >
+          Edit Profile
+        </Button>
       </Box>
 
       {/* Profile Content */}
@@ -172,17 +181,6 @@ export function UserProfilePage() {
               mb: 3,
             }}
           />
-
-          {/* Edit Profile Button */}
-          <Button
-            variant="contained"
-            startIcon={<EditRoundedIcon />}
-            onClick={() => navigate({ to: '/profile/edit' })}
-            fullWidth
-            sx={{ mb: 3 }}
-          >
-            Edit Profile
-          </Button>
 
           <Divider sx={{ width: '100%', mb: 3 }} />
 

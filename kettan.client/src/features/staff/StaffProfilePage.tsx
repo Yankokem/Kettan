@@ -100,16 +100,25 @@ export function StaffProfilePage() {
   return (
     <Box sx={{ pb: 5 }}>
       {/* Back navigation */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/staff" />
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            Staff Profile
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-            View staff member information and account details.
-          </Typography>
+      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <BackButton to="/staff" />
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+              Staff Profile
+            </Typography>
+            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
+              View staff member information and account details.
+            </Typography>
+          </Box>
         </Box>
+        <Button
+          variant="contained"
+          startIcon={<EditRoundedIcon />}
+          onClick={() => navigate({ to: `/staff/${staffId}/edit` })}
+        >
+          Edit Staff
+        </Button>
       </Box>
 
       {/* Profile Content */}
@@ -169,17 +178,6 @@ export function StaffProfilePage() {
               color: '#6B4C2A',
             }}
           />
-
-          {/* Edit Staff Button */}
-          <Button
-            variant="contained"
-            startIcon={<EditRoundedIcon />}
-            onClick={() => navigate({ to: `/staff/${staffId}/edit` })}
-            fullWidth
-            sx={{ mb: 3 }}
-          >
-            Edit Staff
-          </Button>
 
           <Divider sx={{ width: '100%', mb: 3 }} />
 
