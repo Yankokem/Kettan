@@ -202,7 +202,7 @@ export function ConsumptionPage() {
   if (!canViewPage) {
     return (
       <Box sx={{ pb: 3 }}>
-        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+        <Paper sx={{ p: 3, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Consumption Logging</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
             This module is available for Branch Manager and Branch Owner only.

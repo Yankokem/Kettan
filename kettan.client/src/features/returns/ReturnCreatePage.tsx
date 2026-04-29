@@ -88,7 +88,7 @@ export function ReturnCreatePage() {
         </Box>
       </Box>
 
-      <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+      <Paper sx={{ p: 2.25, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
         <Box
           sx={{
             display: 'grid',

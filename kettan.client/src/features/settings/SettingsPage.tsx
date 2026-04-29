@@ -74,7 +74,7 @@ export function SettingsPage() {
             sx={{
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               overflow: 'hidden',
               position: { md: 'sticky' },
               top: { md: 12 },
@@ -165,7 +165,7 @@ export function SettingsPage() {
         </div>
 
         <div>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
             <Box sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
             <Box sx={{ mb: 2.4, pb: 2, borderBottom: '1px dashed', borderColor: 'divider' }}>
               <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.01em' }}>

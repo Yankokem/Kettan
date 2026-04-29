@@ -86,7 +86,7 @@ export function RecipeBuilder({
       <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: 'text.primary' }}>
         Recipe Ingredients
       </Typography>
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
         <TableContainer>
           <Table size="small">
             <TableHead>

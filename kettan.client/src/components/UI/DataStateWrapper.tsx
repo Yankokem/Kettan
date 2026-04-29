@@ -30,7 +30,7 @@ export function DataStateWrapper({
 }: DataStateWrapperProps) {
   if (notAvailable) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300, bgcolor: 'background.paper', borderRadius: 2, border: '1px dashed', borderColor: 'divider' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300, bgcolor: 'background.paper', borderRadius: '14px', border: '1px dashed', borderColor: 'divider' }}>
         <Typography sx={{ color: 'text.secondary', fontSize: 14, fontWeight: 500 }}>
           {notAvailableMessage}
         </Typography>
