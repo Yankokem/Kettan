@@ -3,8 +3,6 @@ import { Avatar, Box, Chip, Typography } from '@mui/material';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
-import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
-import { Button } from '../../../../components/UI/Button';
 import { DataTable, type ColumnDef } from '../../../../components/UI/DataTable';
 import { SearchInput } from '../../../../components/UI/SearchInput';
 import { FilterDropdown } from '../../../../components/UI/FilterAndSort';
