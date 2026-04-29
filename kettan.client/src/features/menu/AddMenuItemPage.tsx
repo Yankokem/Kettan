@@ -167,16 +167,19 @@ export function AddMenuItemPage() {
         </Box>
       </Box>
 
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
-          {/* LEFT SECTION: Image & Basic Info */}
-          <Box sx={{ 
-            width: { xs: '100%', md: '40%' }, 
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+        {/* LEFT SECTION: Image & Basic Info */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', md: '38%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
             p: 4,
-            borderRight: { xs: 'none', md: '1px solid' },
-            borderBottom: { xs: '1px solid', md: 'none' },
-            borderColor: 'divider'
-          }}>
+          }}
+        >
             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
               Basic Information
             </Typography>
@@ -256,10 +259,19 @@ export function AddMenuItemPage() {
                   fullWidth
                 />
             </Box>
-          </Box>
+          </Paper>
 
           {/* RIGHT SECTION: Variants & Pricing */}
-          <Box sx={{ width: { xs: '100%', md: '60%' }, p: 4 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              flex: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 4,
+              p: 4,
+            }}
+          >
             {/* Variants Section */}
             <Box sx={{ mb: 4 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
@@ -275,20 +287,18 @@ export function AddMenuItemPage() {
                   inventoryOptions={inventoryItems}
                 />
               </Box>
-          </Box>
-        </Box>
 
-        {/* Form Actions */}
-        <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
-          <FormActions 
-            cancelTo="/menu" 
-            saveText={isSubmitting ? 'Saving...' : 'Save Menu Item'} 
-            saveIcon={<LocalCafeRoundedIcon />}
-            onSave={handleSubmit}
-            saveDisabled={isSubmitting}
-          />
+            <Box sx={{ pt: 3, mt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+              <FormActions 
+                cancelTo="/menu" 
+                saveText={isSubmitting ? 'Saving...' : 'Save Menu Item'} 
+                saveIcon={<LocalCafeRoundedIcon />}
+                onSave={handleSubmit}
+                saveDisabled={isSubmitting}
+              />
+            </Box>
+          </Paper>
         </Box>
-      </Paper>
     </Box>
   );
 }

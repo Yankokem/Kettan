@@ -175,18 +175,19 @@ export function AddBranchPage() {
       </Box>
 
       {/* Form Content */}
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
-          {/* Left Panel */}
-          <Box
-            sx={{
-              width: { xs: '100%', md: '40%' },
-              p: 4,
-              borderRight: { xs: 'none', md: '1px solid' },
-              borderBottom: { xs: '1px solid', md: 'none' },
-              borderColor: 'divider',
-            }}
-          >
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+        {/* Left Panel */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', md: '38%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            p: 4,
+          }}
+        >
             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
               Basic Information
             </Typography>
@@ -239,10 +240,19 @@ export function AddBranchPage() {
                 fullWidth
               />
             </Box>
-          </Box>
+          </Paper>
 
-          {/* Right Panel */}
-          <Box sx={{ width: { xs: '100%', md: '60%' }, p: 4 }}>
+        {/* Right Panel */}
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            p: 4,
+          }}
+        >
             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
               Branch Details
             </Typography>
@@ -350,18 +360,17 @@ export function AddBranchPage() {
                 fullWidth
               />
             </Box>
-          </Box>
-        </Box>
 
-        <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
-          <FormActions
-            cancelTo="/branches"
-            saveText={isSubmitting ? 'Registering...' : 'Register Branch'}
-            saveIcon={<BusinessRoundedIcon />}
-            onSave={() => { void handleSubmit(); }}
-          />
+            <Box sx={{ pt: 3, mt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+              <FormActions
+                cancelTo="/branches"
+                saveText={isSubmitting ? 'Registering...' : 'Register Branch'}
+                saveIcon={<BusinessRoundedIcon />}
+                onSave={() => { void handleSubmit(); }}
+              />
+            </Box>
+          </Paper>
         </Box>
-      </Paper>
     </Box>
   );
 }
