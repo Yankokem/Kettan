@@ -227,12 +227,6 @@ export function BranchMenuTab({ menuItems, branchInventoryItems }: BranchMenuTab
     return result;
   }, [menuItemsWithAvailability, searchQuery, sortBy, statusFilter, availabilityFilter]);
 
-  // Category filter options
-  const categoryOptions = useMemo(() => {
-    const categories = new Set(menuItems.map((item) => item.categoryName).filter(Boolean));
-    return Array.from(categories).sort().map((cat) => ({ value: cat, label: cat }));
-  }, [menuItems]);
-
   const columns = useMemo<ColumnDef<MenuItemWithAvailability>[]>(
     () => [
       {
