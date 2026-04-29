@@ -420,7 +420,6 @@ export function VehicleManagementPage() {
             </DataStateWrapper>
           </Paper>
         </Box>
-      </Paper>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

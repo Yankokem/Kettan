@@ -425,7 +425,6 @@ export function ItemCategoriesPage() {
             </DataStateWrapper>
           </Paper>
         </Box>
-      </Paper>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
