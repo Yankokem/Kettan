@@ -178,7 +178,7 @@ export function LoginPage() {
       </div>
 
       {/* Right - Form */}
-      <div className="w-[30%] flex items-center justify-center p-6 lg:p-12">
+      <div className="w-full lg:w-[30%] flex items-center justify-center p-6 lg:p-12">
         <StaticMotionDiv
           className="w-full max-w-sm"
           initial={{ opacity: 0, y: 20 }}
