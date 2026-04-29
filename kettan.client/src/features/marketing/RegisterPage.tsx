@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { api } from "../../utils/api";
 import { MarketingAuthInput } from "./components/MarketingAuthInput";
 import { resolvePlan } from "./registerPlans";
+import logo from "../../assets/logo.png";
 
 interface RequestOtpResponse {
   email: string;
@@ -83,14 +84,7 @@ export function RegisterPage() {
         >
           {/* Logo */}
           <div className="flex items-center gap-2 mb-8 justify-center">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="15" fill="rgba(107,76,42,0.08)" />
-              <path
-                d="M16 5C12.5 5 7.5 9 7.5 15.5C7.5 20 10 23 14 24.5C14 24.5 13.5 21 15 18C16.5 15 19 13.5 22.5 13C22.5 13 21 16.5 19 19C17 21.5 16 24 16 24L16.5 26C18 25.5 24.5 21.5 24.5 15.5C24.5 9 19.5 5 16 5Z"
-                fill="#6B4C2A"
-              />
-              <path d="M14 24.5C11.5 24 9.5 21.5 8.5 19L15.5 14.5L14 24.5Z" fill="#546B3F" fillOpacity="0.7" />
-            </svg>
+            <img src={logo} alt="Kettan" width="32" height="32" style={{ borderRadius: "50%" }} />
             <div>
               <div style={{ fontWeight: 800, fontSize: "14px", color: "#2C1A0E", letterSpacing: "0.15em" }}>KETTAN</div>
               <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>

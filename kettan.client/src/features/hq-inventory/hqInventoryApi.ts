@@ -294,9 +294,17 @@ export async function fetchItemCategories(): Promise<InventoryCategory[]> {
 }
 
 
-export async function fetchInventoryItems(search?: string): Promise<InventoryItem[]> {
+export async function fetchInventoryItems(
+  search?: string,
+  options?: { branchId?: number; hqOnly?: boolean }
+): Promise<InventoryItem[]> {
+  const params: Record<string, string | number | boolean> = {};
+  if (search) params.search = search;
+  if (options?.branchId) params.branchId = options.branchId;
+  if (options?.hqOnly) params.hqOnly = true;
+
   const response = await api.get<ItemDto[]>('/api/items', {
-    params: search ? { search } : undefined,
+    params: Object.keys(params).length > 0 ? params : undefined,
   });
 
   return response.data.map(toItem);

@@ -65,7 +65,7 @@ export const canAccessModule = (userRole: string, module: string): boolean => {
   const permissions: Record<string, string[]> = {
     'dashboard': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
     'order-processing': ['TenantAdmin', 'HqManager', 'HqStaff'],
-    'hq-inventory': ['TenantAdmin', 'HqManager', 'HqStaff'],
+    'hq-inventory': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
     'menu': ['TenantAdmin', 'HqManager'],
     'consumption': ['HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
     'branches': ['TenantAdmin', 'HqManager', 'HqStaff'],
@@ -75,6 +75,7 @@ export const canAccessModule = (userRole: string, module: string): boolean => {
     'supply-requests': ['HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
     'settings': ['TenantAdmin'],
     'company-profile': ['TenantAdmin'],
+    'branch-profile': ['BranchOwner', 'BranchManager'],
   };
   
   return permissions[module]?.includes(userRole) ?? false;

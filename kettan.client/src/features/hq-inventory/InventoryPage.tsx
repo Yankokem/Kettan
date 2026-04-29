@@ -11,8 +11,13 @@ import {
   fetchInventoryItems,
   fetchInventoryItemTransactions,
 } from './hqInventoryApi';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export function InventoryPage() {
+  const { user } = useAuthStore();
+  const isBranchUser = user?.branchId != null;
+  const branchId = user?.branchId ?? undefined;
+
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +31,10 @@ export function InventoryPage() {
         setIsLoading(true);
         setErrorMessage(null);
 
-        const liveItems = await fetchInventoryItems();
+        const liveItems = await fetchInventoryItems(
+          undefined,
+          isBranchUser && branchId ? { branchId } : undefined
+        );
         if (!isMounted) {
           return;
         }
@@ -73,7 +81,7 @@ export function InventoryPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [branchId, isBranchUser]);
 
   const stats = useMemo(() => {
     const totalSkus = items.length;
@@ -152,7 +160,8 @@ export function InventoryPage() {
       <InventoryTable
         items={items}
         transactions={transactions}
+        isBranchView={isBranchUser}
       />
     </Box>
   );
-}
+}

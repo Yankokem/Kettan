@@ -56,7 +56,7 @@ export function SupplyRequestCreatePage() {
   useEffect(() => {
     const loadInventory = async () => {
       try {
-        const rows = await fetchInventoryItems();
+        const rows = await fetchInventoryItems(undefined, { hqOnly: true });
         const mapped: InventoryItem[] = rows.map((item) => ({
           id: item.id,
           name: item.name,

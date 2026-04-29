@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { StaticMotionDiv } from "../marketing/noMotion";
-import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2, Coffee } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { api } from "../../utils/api";
+import logo from "../../assets/logo.png";
 import { MarketingNavbar } from "../../components/Marketing/MarketingNavbar";
 
 interface AuthMeResponse {
@@ -111,69 +112,132 @@ export function LoginPage() {
       <div
         className="hidden lg:flex flex-col justify-between w-[70%] flex-shrink-0 p-10 relative overflow-hidden"
         style={{
-          background: "linear-gradient(180deg, #2C1A0E 0%, #6B4C2A 60%, #C9A87D 100%)",
+          background: "linear-gradient(170deg, #3D2B16 0%, #251409 100%)",
         }}
       >
-        {/* Decorative circles */}
+        {/* Subtle decorative elements */}
         <div
-          className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-10 pointer-events-none"
+          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-5 pointer-events-none"
           style={{ background: "radial-gradient(circle, #C9A84C, transparent)" }}
         />
         <div
-          className="absolute -bottom-10 -left-10 w-60 h-60 rounded-full opacity-10 pointer-events-none"
+          className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full opacity-5 pointer-events-none"
           style={{ background: "radial-gradient(circle, #93AF7E, transparent)" }}
         />
 
         <div className="relative z-10">
-          <Link to="/market" className="flex items-center gap-2 mb-14">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="15" fill="rgba(201,168,125,0.1)" />
-              <path d="M16 5C12.5 5 7.5 9 7.5 15.5C7.5 20 10 23 14 24.5L15.5 14.5L22.5 13C19 13.5 16.5 15 15 18C13.5 21 14 24.5 14 24.5C16 25 24.5 21.5 24.5 15.5C24.5 9 19.5 5 16 5Z" fill="#C9A87D" />
-              <path d="M14 24.5C11.5 24 9.5 21.5 8.5 19L15.5 14.5L14 24.5Z" fill="#93AF7E" fillOpacity="0.8" />
-            </svg>
+          <Link to="/market" className="flex items-center gap-3 mb-16">
+            <img src={logo} alt="Kettan" width="36" height="36" style={{ borderRadius: "50%" }} />
             <div>
-              <div style={{ fontWeight: 800, fontSize: "14px", color: "#F5F0E8", letterSpacing: "0.15em" }}>KETTAN</div>
-              <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
+              <div style={{ fontWeight: 800, fontSize: "16px", color: "#F5F0E8", letterSpacing: "0.15em" }}>KETTAN</div>
+              <div style={{ fontSize: "8px", color: "#A0845C", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
             </div>
           </Link>
 
           <h2
             style={{
-              fontSize: "clamp(1.4rem, 2.5vw, 2rem)",
+              fontSize: "clamp(1.6rem, 2.8vw, 2.4rem)",
               fontWeight: 800,
               color: "#F5F0E8",
-              lineHeight: 1.35,
-              marginBottom: "14px",
+              lineHeight: 1.3,
+              marginBottom: "18px",
             }}
           >
-            Welcome back to your coffee chain platform
+            Welcome back to your coffee chain command center
           </h2>
-          <p style={{ fontSize: "14px", color: "#C9A87D", lineHeight: 1.7 }}>
-            Your supply orders, inventory, and branch operations are waiting for you.
+          <p style={{ fontSize: "15px", color: "#C9A87D", lineHeight: 1.7, marginBottom: "32px" }}>
+            Streamline your multi-branch operations with real-time inventory tracking, supply chain management, and comprehensive analytics.
           </p>
+
+          {/* Feature highlights */}
+          <div className="space-y-4 mb-8">
+            {[
+              {
+                icon: "📊",
+                title: "Real-time Analytics",
+                desc: "Monitor performance across all locations instantly"
+              },
+              {
+                icon: "📦",
+                title: "Smart Inventory",
+                desc: "Automated stock management and reorder alerts"
+              },
+              {
+                icon: "🚚",
+                title: "Supply Chain",
+                desc: "Streamlined ordering and delivery coordination"
+              }
+            ].map((feature, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "rgba(201,168,125,0.15)" }}
+                >
+                  <span style={{ fontSize: "14px" }}>{feature.icon}</span>
+                </div>
+                <div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#F5F0E8", marginBottom: "2px" }}>
+                    {feature.title}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#A0845C", lineHeight: 1.5 }}>
+                    {feature.desc}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Bottom stats */}
-        <div
-          className="relative z-10 grid grid-cols-2 gap-4"
-          style={{
-            padding: "20px",
-            borderRadius: "16px",
-            backgroundColor: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(201,168,125,0.15)",
-          }}
-        >
-          {[
-            { value: "50+", label: "Branches" },
-            { value: "10K+", label: "Orders" },
-            { value: "18", label: "Modules" },
-            { value: "99.9%", label: "Uptime" },
-          ].map(({ value, label }) => (
-            <div key={label} className="text-center">
-              <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#F5F0E8" }}>{value}</div>
-              <div style={{ fontSize: "11px", color: "#8C6B43", fontWeight: 500 }}>{label}</div>
+        {/* Enhanced stats section */}
+        <div className="relative z-10 space-y-4">
+          <div
+            className="grid grid-cols-2 gap-4 p-6"
+            style={{
+              borderRadius: "18px",
+              backgroundColor: "rgba(245,240,232,0.08)",
+              border: "1px solid rgba(201,168,125,0.12)",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            {[
+              { value: "2,500+", label: "Active Branches", sublabel: "Across 15 countries" },
+              { value: "1.2M+", label: "Monthly Orders", sublabel: "Growing 23% YoY" },
+              { value: "18", label: "Core Modules", sublabel: "Fully integrated" },
+              { value: "99.97%", label: "System Uptime", sublabel: "Enterprise grade" },
+            ].map(({ value, label, sublabel }) => (
+              <div key={label} className="text-center">
+                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#F5F0E8", marginBottom: "4px" }}>{value}</div>
+                <div style={{ fontSize: "11px", color: "#C9A87D", fontWeight: 600, marginBottom: "2px" }}>{label}</div>
+                <div style={{ fontSize: "9px", color: "#8C6B43", fontWeight: 500 }}>{sublabel}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Trust indicators */}
+          <div
+            className="flex items-center justify-center gap-6 py-4 px-6"
+            style={{
+              borderRadius: "14px",
+              backgroundColor: "rgba(245,240,232,0.06)",
+              border: "1px solid rgba(201,168,125,0.08)",
+            }}
+          >
+            <div className="text-center">
+              <div style={{ fontSize: "10px", color: "#8C6B43", fontWeight: 600, marginBottom: "2px" }}>TRUSTED BY</div>
+              <div style={{ fontSize: "12px", color: "#C9A87D", fontWeight: 700 }}>Fortune 500 Chains</div>
             </div>
-          ))}
+            <div
+              style={{
+                width: "1px",
+                height: "24px",
+                backgroundColor: "rgba(201,168,125,0.2)",
+              }}
+            />
+            <div className="text-center">
+              <div style={{ fontSize: "10px", color: "#8C6B43", fontWeight: 600, marginBottom: "2px" }}>CERTIFIED</div>
+              <div style={{ fontSize: "12px", color: "#C9A87D", fontWeight: 700 }}>ISO 27001 Secure</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -187,54 +251,59 @@ export function LoginPage() {
         >
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <Coffee size={22} style={{ color: "#6B4C2A" }} />
+            <img src={logo} alt="Kettan" width="24" height="24" style={{ borderRadius: "50%" }} />
             <span style={{ fontWeight: 800, fontSize: "16px", color: "#2C1A0E", letterSpacing: "0.1em" }}>KETTAN</span>
           </div>
 
           <Link
             to="/market"
-            className="inline-flex items-center gap-1.5 mb-7 text-sm"
+            className="inline-flex items-center gap-1.5 mb-8 text-sm"
             style={{ color: "#8C6B43", fontWeight: 500 }}
           >
             <ArrowLeft size={14} />
             Back to home
           </Link>
 
-          <h1
-            style={{
-              fontSize: "1.7rem",
-              fontWeight: 800,
-              color: "#2C1A0E",
-              marginBottom: "6px",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Sign in to Kettan
-          </h1>
-          <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "28px" }}>
-            Don't have an account?{" "}
-            <Link to="/market/pricing" style={{ color: "#6B4C2A", fontWeight: 600 }}>
-              Sign up -&gt;
-            </Link>
-          </p>
+          <div className="mb-8">
+            <h1
+              style={{
+                fontSize: "1.8rem",
+                fontWeight: 800,
+                color: "#2C1A0E",
+                marginBottom: "8px",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Sign in to Kettan
+            </h1>
+            <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "6px" }}>
+              Access your coffee chain management dashboard
+            </p>
+            <p style={{ fontSize: "13px", color: "#8C6B43" }}>
+              Don't have an account?{" "}
+              <Link to="/market/pricing" style={{ color: "#6B4C2A", fontWeight: 600 }}>
+                Sign up →
+              </Link>
+            </p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {submitError && (
               <div
-                className="rounded-lg px-3 py-2"
-                style={{ backgroundColor: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}
+                className="rounded-xl px-4 py-3"
+                style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
               >
-                <p style={{ fontSize: "12px", color: "#B91C1C", fontWeight: 600 }}>{submitError}</p>
+                <p style={{ fontSize: "13px", color: "#B91C1C", fontWeight: 600 }}>{submitError}</p>
               </div>
             )}
 
             {/* Email */}
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2C1A0E", marginBottom: "6px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2C1A0E", marginBottom: "8px" }}>
                 Email Address
               </label>
               <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
                   <Mail size={16} style={{ color: "#8C6B43" }} />
                 </div>
                 <input
@@ -243,30 +312,31 @@ export function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@coffeeco.ph"
                   maxLength={256}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl outline-none"
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl outline-none"
                   style={{
-                    border: errors.email ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.2)",
+                    border: errors.email ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.15)",
                     backgroundColor: "#FDFAF5",
                     fontSize: "14px",
                     color: "#2C1A0E",
                     transition: "border-color 0.2s, box-shadow 0.2s",
+                    boxShadow: "0 1px 3px rgba(107,76,42,0.05)",
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = "#6B4C2A";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08)";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08), 0 1px 3px rgba(107,76,42,0.05)";
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = errors.email ? "#EF4444" : "rgba(107,76,42,0.2)";
-                    e.target.style.boxShadow = "none";
+                    e.target.style.borderColor = errors.email ? "#EF4444" : "rgba(107,76,42,0.15)";
+                    e.target.style.boxShadow = "0 1px 3px rgba(107,76,42,0.05)";
                   }}
                 />
               </div>
-              {errors.email && <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "4px" }}>{errors.email}</p>}
+              {errors.email && <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "6px" }}>{errors.email}</p>}
             </div>
 
             {/* Password */}
             <div>
-              <div className="flex justify-between items-center mb-1.5">
+              <div className="flex justify-between items-center mb-2">
                 <label style={{ fontSize: "13px", fontWeight: 600, color: "#2C1A0E" }}>Password</label>
                 <button
                   type="button"
@@ -276,7 +346,7 @@ export function LoginPage() {
                 </button>
               </div>
               <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
                   <Lock size={16} style={{ color: "#8C6B43" }} />
                 </div>
                 <input
@@ -285,44 +355,45 @@ export function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   maxLength={64}
-                  className="w-full pl-10 pr-12 py-3 rounded-xl outline-none"
+                  className="w-full pl-11 pr-12 py-3.5 rounded-xl outline-none"
                   style={{
-                    border: errors.password ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.2)",
+                    border: errors.password ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.15)",
                     backgroundColor: "#FDFAF5",
                     fontSize: "14px",
                     color: "#2C1A0E",
                     transition: "border-color 0.2s, box-shadow 0.2s",
+                    boxShadow: "0 1px 3px rgba(107,76,42,0.05)",
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = "#6B4C2A";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08)";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08), 0 1px 3px rgba(107,76,42,0.05)";
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = errors.password ? "#EF4444" : "rgba(107,76,42,0.2)";
-                    e.target.style.boxShadow = "none";
+                    e.target.style.borderColor = errors.password ? "#EF4444" : "rgba(107,76,42,0.15)";
+                    e.target.style.boxShadow = "0 1px 3px rgba(107,76,42,0.05)";
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                  className="absolute right-4 top-1/2 -translate-y-1/2"
                   style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
                 >
                   {showPw ? <EyeOff size={16} style={{ color: "#8C6B43" }} /> : <Eye size={16} style={{ color: "#8C6B43" }} />}
                 </button>
               </div>
-              {errors.password && <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "4px" }}>{errors.password}</p>}
+              {errors.password && <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "6px" }}>{errors.password}</p>}
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white transition-all duration-200 mt-2"
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white transition-all duration-200 mt-6"
               style={{
                 backgroundColor: loading ? "#8C6B43" : "#6B4C2A",
                 fontWeight: 700,
                 fontSize: "15px",
-                boxShadow: loading ? "none" : "0 4px 16px rgba(107,76,42,0.3)",
+                boxShadow: loading ? "none" : "0 4px 20px rgba(107,76,42,0.25)",
                 cursor: loading ? "not-allowed" : "pointer",
               }}
             >
@@ -332,7 +403,7 @@ export function LoginPage() {
                   Signing in...
                 </>
               ) : (
-                "Sign In to Dashboard ->"
+                "Sign In to Dashboard →"
               )}
             </button>
           </form>

@@ -34,7 +34,9 @@ import { BranchStaffTab } from './components/profile/BranchStaffTab';
 import { BranchActivityTab } from './components/profile/BranchActivityTab';
 import { BranchTransactionsTab } from './components/profile/BranchTransactionsTab';
 import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
+import { BranchMenuTab } from './components/profile/BranchMenuTab';
 import { BranchEditModal } from './components/profile/BranchEditModal.tsx';
+import { fetchMenuItems, type MenuItemDto } from '../menu/menuItemsApi';
 import type {
   Branch,
   BranchActivityLog,
@@ -70,6 +72,7 @@ export function BranchProfilePage() {
   const [activityLogs, setActivityLogs] = useState<BranchActivityLog[]>([]);
   const [transactions, setTransactions] = useState<BranchTransactionRow[]>([]);
   const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItemDto[]>([]);
   
   const [branchLoading, setBranchLoading] = useState(true);
   const [tabLoading, setTabLoading] = useState(false);
@@ -121,6 +124,15 @@ export function BranchProfilePage() {
           const invDto = await fetchBranchInventory(parsedBranchId);
           setInventoryItems(invDto.map(mapInventoryItem));
           break;
+        case 'menu':
+          const menuDto = await fetchMenuItems();
+          setMenuItems(menuDto);
+          // Also load inventory if not already loaded, needed for availability check
+          if (inventoryItems.length === 0) {
+            const invDtoForMenu = await fetchBranchInventory(parsedBranchId);
+            setInventoryItems(invDtoForMenu.map(mapInventoryItem));
+          }
+          break;
       }
     } catch (error) {
       console.error(`Failed to load ${tab} content:`, error);
@@ -168,8 +180,9 @@ export function BranchProfilePage() {
       activity: activityLogs.length,
       transactions: transactions.length,
       inventory: inventoryItems.length,
+      menu: menuItems.length,
     }),
-    [activityLogs.length, inventoryItems.length, staffMembers.length, transactions.length]
+    [activityLogs.length, inventoryItems.length, menuItems.length, staffMembers.length, transactions.length]
   );
 
   const kpis = useMemo(
@@ -180,8 +193,9 @@ export function BranchProfilePage() {
         activityLogs,
         transactions,
         inventoryItems,
+        menuItems: menuItems.map((m) => ({ status: m.status })),
       }) : [],
-    [activeTab, activityLogs, inventoryItems, selectedBranch, staffMembers, transactions]
+    [activeTab, activityLogs, inventoryItems, menuItems, selectedBranch, staffMembers, transactions]
   );
 
   // if (branchLoading) removed to prevent jarring "Connecting" text
@@ -342,6 +356,8 @@ export function BranchProfilePage() {
         {activeTab === 'transactions' ? <BranchTransactionsTab transactions={transactions} /> : null}
 
         {activeTab === 'inventory' ? <BranchInventoryTab items={inventoryItems} /> : null}
+
+        {activeTab === 'menu' ? <BranchMenuTab menuItems={menuItems} branchInventoryItems={inventoryItems} /> : null}
 
       </Paper>
 

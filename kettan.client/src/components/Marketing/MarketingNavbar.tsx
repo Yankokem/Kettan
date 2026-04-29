@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
+import logo from "../../assets/logo.png";
 
 export function MarketingNavbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -146,19 +147,7 @@ export function MarketingNavbar() {
 function KettanLogo() {
   return (
     <div className="flex items-center gap-2">
-      {/* Leaf icon */}
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="16" cy="16" r="15" fill="#6B4C2A" fillOpacity="0.08" />
-        <path
-          d="M16 6C13 6 8 9.5 8 15.5C8 19.5 10.5 22.5 14 23.5C14 23.5 13.5 20 15 17.5C16.5 15 19 13.5 22 13C22 13 20.5 16.5 19 18.5C17.5 20.5 16.5 23 16.5 23L17 25C18.5 24.5 24 21 24 15.5C24 9.5 19 6 16 6Z"
-          fill="#6B4C2A"
-        />
-        <path
-          d="M14 23.5C12 23 10.5 21 9.5 19L16 15L14 23.5Z"
-          fill="#546B3F"
-          fillOpacity="0.7"
-        />
-      </svg>
+      <img src={logo} alt="Kettan" width="32" height="32" style={{ borderRadius: "50%" }} />
       <div>
         <div
           className="tracking-wider uppercase"

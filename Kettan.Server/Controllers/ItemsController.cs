@@ -34,7 +34,8 @@ public class ItemsController : ControllerBase
         [FromQuery] int? inventoryCategoryId = null,
         [FromQuery] int? itemCategoryId = null,
         [FromQuery] string? search = null,
-        [FromQuery] int? branchId = null)
+        [FromQuery] int? branchId = null,
+        [FromQuery] bool hqOnly = false)
     {
         if (!_currentUser.TenantId.HasValue)
         {
@@ -69,7 +70,11 @@ public class ItemsController : ControllerBase
         var itemIds = items.Select(i => i.ItemId).ToList();
         var batchQuery = _context.Batches.Where(b => itemIds.Contains(b.ItemId));
 
-        if (branchId.HasValue)
+        if (hqOnly)
+        {
+            batchQuery = batchQuery.Where(b => b.BranchId == null);
+        }
+        else if (branchId.HasValue)
         {
             batchQuery = batchQuery.Where(b => b.BranchId == branchId.Value);
         }

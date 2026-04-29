@@ -30,6 +30,7 @@ interface InventoryTableProps {
   items: InventoryItem[];
   transactions?: InventoryTransaction[];
   onRowClick?: (id: string | number) => void;
+  isBranchView?: boolean;
 }
 
 type ViewMode = 'default' | 'levels' | 'transactions';
@@ -67,7 +68,7 @@ const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: strin
   },
 };
 
-export function InventoryTable({ items, transactions = [], onRowClick }: InventoryTableProps) {
+export function InventoryTable({ items, transactions = [], onRowClick, isBranchView = false }: InventoryTableProps) {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [searchQuery, setSearchQuery] = useState('');
@@ -414,26 +415,30 @@ export function InventoryTable({ items, transactions = [], onRowClick }: Invento
           options={viewOptions as never}
           onChange={(newView: ViewMode) => setViewMode(newView)}
         />
-        <Button
-          variant="outlined"
-          startIcon={<CategoryRoundedIcon />}
-          onClick={() => navigate({ to: '/hq-inventory/categories' })}
-        >
-          Item Categories
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<LocalShippingRoundedIcon />}
-          onClick={() => navigate({ to: '/hq-inventory/vehicles' })}
-        >
-          Vehicles
-        </Button>
-        <Button
-          startIcon={<CallReceivedRoundedIcon />}
-          onClick={() => navigate({ to: '/hq-inventory/transaction' })}
-        >
-          New Transaction
-        </Button>
+        {!isBranchView && (
+          <>
+            <Button
+              variant="outlined"
+              startIcon={<CategoryRoundedIcon />}
+              onClick={() => navigate({ to: '/hq-inventory/categories' })}
+            >
+              Item Categories
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<LocalShippingRoundedIcon />}
+              onClick={() => navigate({ to: '/hq-inventory/vehicles' })}
+            >
+              Vehicles
+            </Button>
+            <Button
+              startIcon={<CallReceivedRoundedIcon />}
+              onClick={() => navigate({ to: '/hq-inventory/transaction' })}
+            >
+              New Transaction
+            </Button>
+          </>
+        )}
       </Box>
     </Box>
   );

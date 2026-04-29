@@ -11,6 +11,7 @@ import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import type {
   Branch,
   BranchActivityLog,
@@ -43,6 +44,7 @@ interface BranchKpiContext {
   activityLogs: BranchActivityLog[];
   transactions: BranchTransactionRow[];
   inventoryItems: BranchInventoryItem[];
+  menuItems: { status: string }[];
 }
 
 export const BRANCH_PROFILE_TABS: BranchTabDefinition[] = [
@@ -51,6 +53,7 @@ export const BRANCH_PROFILE_TABS: BranchTabDefinition[] = [
   { key: 'activity', label: 'Activity Logs', icon: AnalyticsRoundedIcon },
   { key: 'transactions', label: 'Transactions', icon: ReceiptLongRoundedIcon },
   { key: 'inventory', label: 'Inventory', icon: Inventory2RoundedIcon },
+  { key: 'menu', label: 'Menu', icon: LocalCafeRoundedIcon },
 ];
 
 export const toBranchFormData = (branch: Branch): BranchFormData => ({
@@ -383,6 +386,47 @@ const buildInventoryKpis = ({ inventoryItems }: BranchKpiContext): BranchProfile
   ];
 };
 
+const buildMenuKpis = ({ menuItems }: BranchKpiContext): BranchProfileKpi[] => {
+  const active = menuItems.filter((m) => m.status === 'Active').length;
+  const inactive = menuItems.filter((m) => m.status === 'Inactive').length;
+  const outOfStock = menuItems.filter((m) => m.status === 'Out of Stock').length;
+
+  return [
+    {
+      id: 'menu-total',
+      label: 'Total Menu Items',
+      value: menuItems.length.toString(),
+      icon: LocalCafeRoundedIcon,
+      iconColor: '#6B4C2A',
+      iconBg: 'rgba(107,76,42,0.16)',
+    },
+    {
+      id: 'menu-active',
+      label: 'Active',
+      value: active.toString(),
+      icon: CheckCircleRoundedIcon,
+      iconColor: '#166534',
+      iconBg: '#DCFCE7',
+    },
+    {
+      id: 'menu-inactive',
+      label: 'Inactive',
+      value: inactive.toString(),
+      icon: BlockRoundedIcon,
+      iconColor: '#991B1B',
+      iconBg: '#FEE2E2',
+    },
+    {
+      id: 'menu-oos',
+      label: 'Out of Stock',
+      value: outOfStock.toString(),
+      icon: WarningAmberRoundedIcon,
+      iconColor: '#B45309',
+      iconBg: '#FEF3C7',
+    },
+  ];
+};
+
 export const getKpisForTab = (activeTab: BranchProfileTabKey, context: BranchKpiContext): BranchProfileKpi[] => {
   switch (activeTab) {
     case 'staff':
@@ -393,6 +437,8 @@ export const getKpisForTab = (activeTab: BranchProfileTabKey, context: BranchKpi
       return buildTransactionKpis(context);
     case 'inventory':
       return buildInventoryKpis(context);
+    case 'menu':
+      return buildMenuKpis(context);
     case 'details':
     default:
       return buildDetailsKpis(context);

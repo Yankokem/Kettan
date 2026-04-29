@@ -53,7 +53,7 @@ export interface BranchEmployee {
   isActive: boolean;
 }
 
-export type BranchProfileTabKey = 'details' | 'staff' | 'activity' | 'transactions' | 'inventory';
+export type BranchProfileTabKey = 'details' | 'staff' | 'activity' | 'transactions' | 'inventory' | 'menu';
 
 export interface BranchActivityLog {
   id: string;
