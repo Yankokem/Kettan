@@ -112,64 +112,48 @@ export function RegisterOtpPage() {
 
   return (
     <div
-      className="min-h-screen flex"
+      className="min-h-screen flex items-center justify-center"
       style={{
         fontFamily: '"DM Sans", "Inter", sans-serif',
-        background: "linear-gradient(135deg, #FDFAF5 0%, #F5EDD8 100%)",
+        background: "linear-gradient(135deg, #FDFAF5 0%, #F5EDD8 50%, #EDE0C4 100%)",
       }}
     >
-      <div
-        className="hidden lg:flex flex-col justify-between w-[70%] flex-shrink-0 p-10"
-        style={{
-          background: "linear-gradient(180deg, #2C1A0E 0%, #6B4C2A 60%, #C9A87D 100%)",
-        }}
-      >
-        <div>
-          <Link to="/market" className="flex items-center gap-2 mb-16">
+      <div className="w-full max-w-md px-6 py-12">
+        <StaticMotionDiv initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          {/* Logo */}
+          <div className="flex items-center gap-2 mb-8 justify-center">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="15" fill="rgba(201,168,125,0.1)" />
-              <path d="M16 5C12.5 5 7.5 9 7.5 15.5C7.5 20 10 23 14 24.5C14 24.5 13.5 21 15 18C16.5 15 19 13.5 22.5 13C22.5 13 21 16.5 19 19C17 21.5 16 24 16 24L16.5 26C18 25.5 24.5 21.5 24.5 15.5C24.5 9 19.5 5 16 5Z" fill="#C9A87D" />
-              <path d="M14 24.5C11.5 24 9.5 21.5 8.5 19L15.5 14.5L14 24.5Z" fill="#93AF7E" fillOpacity="0.8" />
+              <circle cx="16" cy="16" r="15" fill="rgba(107,76,42,0.08)" />
+              <path d="M16 5C12.5 5 7.5 9 7.5 15.5C7.5 20 10 23 14 24.5C14 24.5 13.5 21 15 18C16.5 15 19 13.5 22.5 13C22.5 13 21 16.5 19 19C17 21.5 16 24 16 24L16.5 26C18 25.5 24.5 21.5 24.5 15.5C24.5 9 19.5 5 16 5Z" fill="#6B4C2A" />
+              <path d="M14 24.5C11.5 24 9.5 21.5 8.5 19L15.5 14.5L14 24.5Z" fill="#546B3F" fillOpacity="0.7" />
             </svg>
             <div>
-              <div style={{ fontWeight: 800, fontSize: "14px", color: "#F5F0E8", letterSpacing: "0.15em" }}>KETTAN</div>
+              <div style={{ fontWeight: 800, fontSize: "14px", color: "#2C1A0E", letterSpacing: "0.15em" }}>KETTAN</div>
               <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
             </div>
-          </Link>
+          </div>
 
-          <h2 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#F5F0E8", lineHeight: 1.3, marginBottom: "16px" }}>
-            Enter your 6-digit OTP
-          </h2>
-          <p style={{ fontSize: "14px", color: "#C9A87D", lineHeight: 1.7 }}>
-            For security, we only complete registration after email verification.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          {["OTP expires in 10 minutes", "5 verification attempts per code", "60-second resend cooldown", "Maximum 3 resends"].map((item) => (
-            <div key={item} className="flex items-center gap-3">
-              <ShieldCheck size={15} style={{ color: "#C9A84C", flexShrink: 0 }} />
-              <span style={{ fontSize: "14px", color: "#C9A87D" }}>{item}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="w-[30%] flex items-center justify-center p-6 lg:p-12">
-        <StaticMotionDiv className="w-full max-w-md" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <Link to={`/market/register?plan=${encodeURIComponent(planId)}` as any} className="inline-flex items-center gap-1.5 mb-7 text-sm" style={{ color: "#8C6B43", fontWeight: 500 }}>
             <ArrowLeft size={14} />
             Back to email step
           </Link>
 
-          <h1 style={{ fontSize: "1.7rem", fontWeight: 800, color: "#2C1A0E", marginBottom: "6px", letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#2C1A0E", marginBottom: "6px", letterSpacing: "-0.02em", textAlign: "center" }}>
             Verify your code
           </h1>
-          <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "18px" }}>
+          <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "18px", textAlign: "center" }}>
             Code sent to <span style={{ fontWeight: 700 }}>{maskedEmail || "your email"}</span>
           </p>
 
-          <div className="flex items-center justify-between px-4 py-3 rounded-xl mb-6" style={{ backgroundColor: planInfo.bg, border: `1.5px solid ${planInfo.color}30` }}>
+          {/* Plan info badge with floating design */}
+          <div
+            className="flex items-center justify-between px-4 py-3 rounded-xl mb-6"
+            style={{
+              backgroundColor: planInfo.bg,
+              border: `1.5px solid ${planInfo.color}30`,
+              boxShadow: "0 2px 12px rgba(107,76,42,0.08)",
+            }}
+          >
             <div>
               <p style={{ fontSize: "11px", color: planInfo.color, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 Selected Plan
@@ -214,6 +198,16 @@ export function RegisterOtpPage() {
                     fontSize: "16px",
                     color: "#2C1A0E",
                     fontWeight: 700,
+                    boxShadow: "0 2px 8px rgba(107,76,42,0.06)",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "#6B4C2A";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08), 0 4px 12px rgba(107,76,42,0.12)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = submitError ? "#EF4444" : "rgba(107,76,42,0.2)";
+                    e.target.style.boxShadow = "0 2px 8px rgba(107,76,42,0.06)";
                   }}
                 />
               </div>
@@ -255,6 +249,7 @@ export function RegisterOtpPage() {
                 cursor: resending || cooldownSeconds > 0 || remainingResends <= 0 ? "not-allowed" : "pointer",
                 fontWeight: 600,
                 fontSize: "12px",
+                boxShadow: "0 2px 8px rgba(107,76,42,0.06)",
               }}
             >
               <RefreshCcw size={14} className={resending ? "animate-spin" : ""} />
@@ -269,6 +264,10 @@ export function RegisterOtpPage() {
               Remaining resends: <span style={{ fontWeight: 700 }}>{remainingResends}</span>
             </p>
           </div>
+
+          <p style={{ textAlign: "center", fontSize: "12px", color: "#A39C93", marginTop: "16px" }}>
+            The OTP expires in 10 minutes for your account security.
+          </p>
         </StaticMotionDiv>
       </div>
     </div>

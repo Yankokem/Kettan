@@ -4,6 +4,7 @@ import { StaticMotionDiv } from "../marketing/noMotion";
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2, Coffee } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { api } from "../../utils/api";
+import { MarketingNavbar } from "../../components/Marketing/MarketingNavbar";
 
 interface AuthMeResponse {
   user: {
@@ -98,13 +99,14 @@ export function LoginPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex"
-      style={{
-        fontFamily: '"DM Sans", "Inter", sans-serif',
-        background: "linear-gradient(135deg, #FDFAF5 0%, #F5EDD8 100%)",
-      }}
-    >
+    <div className="min-h-screen flex flex-col" style={{ fontFamily: '"DM Sans", "Inter", sans-serif' }}>
+      <MarketingNavbar />
+      <div
+        className="flex flex-1"
+        style={{
+          background: "linear-gradient(135deg, #FDFAF5 0%, #F5EDD8 100%)",
+        }}
+      >
       {/* Left decorative panel */}
       <div
         className="hidden lg:flex flex-col justify-between w-[70%] flex-shrink-0 p-10 relative overflow-hidden"
@@ -211,7 +213,7 @@ export function LoginPage() {
           </h1>
           <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "28px" }}>
             Don't have an account?{" "}
-            <Link to="/market/register" style={{ color: "#6B4C2A", fontWeight: 600 }}>
+            <Link to="/market/pricing" style={{ color: "#6B4C2A", fontWeight: 600 }}>
               Sign up -&gt;
             </Link>
           </p>
@@ -334,23 +336,6 @@ export function LoginPage() {
               )}
             </button>
           </form>
-
-          <div
-            className="mt-6 p-4 rounded-xl"
-            style={{ backgroundColor: "rgba(107,76,42,0.05)", border: "1px solid rgba(107,76,42,0.1)" }}
-          >
-            <p style={{ fontSize: "12px", color: "#8C6B43", fontWeight: 600, marginBottom: "6px" }}>
-             Demo Credentials
-            </p>
-            <p style={{ fontSize: "12px", color: "#5C4A37", lineHeight: 1.6 }}>
-              Email: <code style={{ fontFamily: "monospace", backgroundColor: "rgba(107,76,42,0.08)", padding: "1px 5px", borderRadius: "4px" }}>admin@demo.kettan.io</code><br />
-              Password: <code style={{ fontFamily: "monospace", backgroundColor: "rgba(107,76,42,0.08)", padding: "1px 5px", borderRadius: "4px" }}>password123</code>
-            </p>
-          </div>
-
-          <p style={{ textAlign: "center", fontSize: "12px", color: "#A39C93", marginTop: "16px" }}>
-            Secured by JWT - Your session is encrypted
-          </p>
         </StaticMotionDiv>
       </div>
     </div>

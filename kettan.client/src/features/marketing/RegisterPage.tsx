@@ -69,69 +69,32 @@ export function RegisterPage() {
 
   return (
     <div
-      className="min-h-screen flex"
+      className="min-h-screen flex items-center justify-center"
       style={{
         fontFamily: '"DM Sans", "Inter", sans-serif',
-        background: "linear-gradient(135deg, #FDFAF5 0%, #F5EDD8 100%)",
+        background: "linear-gradient(135deg, #FDFAF5 0%, #F5EDD8 50%, #EDE0C4 100%)",
       }}
     >
-      <div
-        className="hidden lg:flex flex-col justify-between w-[70%] flex-shrink-0 p-10"
-        style={{
-          background: "linear-gradient(180deg, #2C1A0E 0%, #6B4C2A 60%, #C9A87D 100%)",
-        }}
-      >
-        <div>
-          <Link to="/market" className="flex items-center gap-2 mb-16">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="15" fill="rgba(201,168,125,0.1)" />
-              <path
-                d="M16 5C12.5 5 7.5 9 7.5 15.5C7.5 20 10 23 14 24.5C14 24.5 13.5 21 15 18C16.5 15 19 13.5 22.5 13C22.5 13 21 16.5 19 19C17 21.5 16 24 16 24L16.5 26C18 25.5 24.5 21.5 24.5 15.5C24.5 9 19.5 5 16 5Z"
-                fill="#C9A87D"
-              />
-              <path d="M14 24.5C11.5 24 9.5 21.5 8.5 19L15.5 14.5L14 24.5Z" fill="#93AF7E" fillOpacity="0.8" />
-            </svg>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: "14px", color: "#F5F0E8", letterSpacing: "0.15em" }}>KETTAN</div>
-              <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
-            </div>
-          </Link>
-
-          <h2 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#F5F0E8", lineHeight: 1.3, marginBottom: "16px" }}>
-            Verify your email to start registration
-          </h2>
-          <p style={{ fontSize: "14px", color: "#C9A87D", lineHeight: 1.7 }}>
-            We will send a 6-digit OTP code to your email. After verification, you can complete your company onboarding details.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          {[
-            "Email-based OTP verification",
-            "5 verification attempts per code",
-            "Resend available every 60 seconds",
-            "Registration completes after verification",
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-3">
-              <CheckCircle2 size={15} style={{ color: "#C9A84C", flexShrink: 0 }} />
-              <span style={{ fontSize: "14px", color: "#C9A87D" }}>{item}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="w-[30%] flex items-center justify-center p-6 lg:p-12">
+      <div className="w-full max-w-md px-6 py-12">
         <StaticMotionDiv
-          className="w-full max-w-md"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-              <path d="M16 5C12.5 5 7.5 9 7.5 15.5C7.5 20 10 23 14 24.5L15.5 14.5L22.5 13C19 13.5 16.5 15 15 18C13.5 21 14 24.5 14 24.5C16 25 24.5 21.5 24.5 15.5C24.5 9 19.5 5 16 5Z" fill="#6B4C2A" />
+          {/* Logo */}
+          <div className="flex items-center gap-2 mb-8 justify-center">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="15" fill="rgba(107,76,42,0.08)" />
+              <path
+                d="M16 5C12.5 5 7.5 9 7.5 15.5C7.5 20 10 23 14 24.5C14 24.5 13.5 21 15 18C16.5 15 19 13.5 22.5 13C22.5 13 21 16.5 19 19C17 21.5 16 24 16 24L16.5 26C18 25.5 24.5 21.5 24.5 15.5C24.5 9 19.5 5 16 5Z"
+                fill="#6B4C2A"
+              />
+              <path d="M14 24.5C11.5 24 9.5 21.5 8.5 19L15.5 14.5L14 24.5Z" fill="#546B3F" fillOpacity="0.7" />
             </svg>
-            <span style={{ fontWeight: 800, fontSize: "16px", color: "#2C1A0E", letterSpacing: "0.1em" }}>KETTAN</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "14px", color: "#2C1A0E", letterSpacing: "0.15em" }}>KETTAN</div>
+              <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
+            </div>
           </div>
 
           <Link
@@ -143,17 +106,22 @@ export function RegisterPage() {
             Back to Pricing
           </Link>
 
-          <h1 style={{ fontSize: "1.7rem", fontWeight: 800, color: "#2C1A0E", marginBottom: "6px", letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#2C1A0E", marginBottom: "6px", letterSpacing: "-0.02em", textAlign: "center" }}>
             Verify your email
           </h1>
-          <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "24px" }}>
+          <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "24px", textAlign: "center" }}>
             Already have an account?{" "}
             <Link to="/login" style={{ color: "#6B4C2A", fontWeight: 600 }}>Sign in -&gt;</Link>
           </p>
 
+          {/* Plan info badge with floating design */}
           <div
             className="flex items-center justify-between px-4 py-3 rounded-xl mb-6"
-            style={{ backgroundColor: planInfo.bg, border: `1.5px solid ${planInfo.color}30` }}
+            style={{
+              backgroundColor: planInfo.bg,
+              border: `1.5px solid ${planInfo.color}30`,
+              boxShadow: "0 2px 12px rgba(107,76,42,0.08)",
+            }}
           >
             <div>
               <p style={{ fontSize: "11px", color: planInfo.color, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
