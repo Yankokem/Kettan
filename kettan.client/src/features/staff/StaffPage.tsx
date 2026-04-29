@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '../../utils/api';
 import { Box, Grid } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
@@ -20,7 +19,7 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
-import { fetchEmployees, createEmployee, createUser, type EmployeeDto } from './staffApi';
+import { fetchEmployees, type EmployeeDto } from './staffApi';
 
 function toStaffMember(e: EmployeeDto): StaffMember {
   return {
