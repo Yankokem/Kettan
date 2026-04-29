@@ -13,7 +13,6 @@ import { formatDate } from '../../branchProfileData';
 
 interface BranchStaffTabProps {
   employees: BranchEmployee[];
-  onAddStaff: () => void;
   onOpenStaffProfile: (employee: BranchEmployee) => void;
 }
 
@@ -29,7 +28,7 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'inactive', label: 'Inactive' },
 ];
 
-export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: BranchStaffTabProps) {
+export function BranchStaffTab({ employees, onOpenStaffProfile }: BranchStaffTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState(SORT_OPTIONS[0].value);
   const [statusFilter, setStatusFilter] = useState('');
@@ -221,10 +220,6 @@ export function BranchStaffTab({ employees, onAddStaff, onOpenStaffProfile }: Br
             minWidth={170}
           />
         </Box>
-
-        <Button startIcon={<PersonAddAlt1RoundedIcon sx={{ fontSize: 18 }} />} onClick={onAddStaff} sx={{ ml: 'auto' }}>
-          Add Staff
-        </Button>
       </Box>
 
       <DataTable

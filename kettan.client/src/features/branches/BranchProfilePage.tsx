@@ -35,7 +35,6 @@ import { BranchActivityTab } from './components/profile/BranchActivityTab';
 import { BranchTransactionsTab } from './components/profile/BranchTransactionsTab';
 import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
 import { BranchEditModal } from './components/profile/BranchEditModal.tsx';
-import { AddStaffModal } from '../staff/components/AddStaffModal.tsx';
 import type {
   Branch,
   BranchActivityLog,
@@ -76,7 +75,6 @@ export function BranchProfilePage() {
   const [tabLoading, setTabLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<BranchProfileTabKey>('details');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   
   const [formData, setFormData] = useState<BranchFormData | null>(null);
@@ -252,11 +250,6 @@ export function BranchProfilePage() {
     setActiveTab('details');
   };
 
-  const handleCreateStaff = () => {
-    loadTabContent('staff'); // Refresh staff list
-    setIsAddStaffModalOpen(false);
-    setActiveTab('staff');
-  };
 
   return (
     <Box sx={{ pb: 5 }}>
@@ -335,7 +328,6 @@ export function BranchProfilePage() {
         {activeTab === 'staff' ? (
           <BranchStaffTab
             employees={staffMembers}
-            onAddStaff={() => setIsAddStaffModalOpen(true)}
             onOpenStaffProfile={(employee) =>
               navigate({
                 to: '/staff/$staffId',
@@ -365,11 +357,7 @@ export function BranchProfilePage() {
         onUpdate={updateEditDraft}
       />
 
-      <AddStaffModal
-        open={isAddStaffModalOpen}
-        onClose={() => setIsAddStaffModalOpen(false)}
-        onSave={handleCreateStaff}
-      />
+
     </Box>
   );
 }

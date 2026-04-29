@@ -31,24 +31,31 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("LoginRateLimit")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var response = await _authService.LoginAsync(request);
-
-        if (response == null)
+        try
         {
-            return Unauthorized(new { message = "Invalid email or password." });
+            var response = await _authService.LoginAsync(request);
+
+            if (response == null)
+            {
+                return Unauthorized(new { message = "Invalid email or password." });
+            }
+
+            // Return JWT in HttpOnly Cookie for security against XSS
+            Response.Cookies.Append("jwt", response.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // Set to true to enforce HTTPS
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(1440)
+            });
+
+            // Return full login response with user information
+            return Ok(response);
         }
-
-        // Return JWT in HttpOnly Cookie for security against XSS
-        Response.Cookies.Append("jwt", response.Token, new CookieOptions
+        catch (UnauthorizedAccessException ex)
         {
-            HttpOnly = true,
-            Secure = true, // Set to true to enforce HTTPS
-            SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddMinutes(1440)
-        });
-
-        // Return full login response with user information
-        return Ok(response);
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
     }
 
     [HttpPost("logout")]

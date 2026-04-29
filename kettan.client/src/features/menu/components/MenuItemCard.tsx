@@ -34,7 +34,7 @@ export function MenuItemCard({ item }: Props) {
       <Paper
         sx={{
           display: 'block',
-          borderRadius: 3,
+          borderRadius: '14px',
           overflow: 'hidden',
           border: '1px solid',
           borderColor: 'divider',
@@ -50,7 +50,7 @@ export function MenuItemCard({ item }: Props) {
       >
         {/* Top container with padding and image box */}
         <Box sx={{ position: 'relative', p: 1.5, pb: 0 }}>
-          <Box sx={{ position: 'relative', width: '100%', paddingTop: '100%', bgcolor: '#FAF5EF', borderRadius: 2, overflow: 'hidden' }}>
+          <Box sx={{ position: 'relative', width: '100%', paddingTop: '100%', bgcolor: '#FAF5EF', borderRadius: '11px', overflow: 'hidden' }}>
             {/* Image with fade-in */}
             <Box
               component="img"

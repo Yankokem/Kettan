@@ -29,7 +29,7 @@ export function MenuVariantCard({
       sx={{
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 3,
+        borderRadius: '14px',
         bgcolor: 'background.paper',
         p: 2.25,
         display: 'flex',

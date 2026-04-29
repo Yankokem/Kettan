@@ -162,17 +162,20 @@ function toItem(row: ItemDto): InventoryItem {
   const totalStock = Number(row.totalStock || 0);
   const defaultThreshold = Number(row.defaultThreshold || 0);
 
+  const categoryId = row.inventoryCategoryId ?? row.itemCategoryId;
+  const categoryName = row.inventoryCategoryName ?? row.itemCategoryName;
+
   return {
     id: String(row.itemId),
     sku: row.sku,
     name: row.name,
     unit: row.unit,
-    categoryId: row.inventoryCategoryId != null ? String(row.inventoryCategoryId) : '',
+    categoryId: categoryId != null ? String(categoryId) : '',
     category:
-      row.inventoryCategoryId != null
+      categoryId != null
         ? {
-          id: String(row.inventoryCategoryId),
-          name: row.inventoryCategoryName ?? 'Uncategorized',
+          id: String(categoryId),
+          name: categoryName ?? 'Uncategorized',
           displayOrder: 0,
           isActive: true,
           isDeleted: false,
