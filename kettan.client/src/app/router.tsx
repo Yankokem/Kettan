@@ -45,6 +45,7 @@ import { TenantProfilePage } from '../features/super-admin/TenantProfilePage';
 import { AnalyticsPage } from '../features/analytics/AnalyticsPage';
 import { HelpPage } from '../features/support/HelpPage';
 import { MarketingLayout } from '../components/Marketing/MarketingLayout';
+import { UserProfilePage } from '../features/auth/UserProfilePage';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
 // Base root route, just rendering children
@@ -329,6 +330,12 @@ const helpRoute = createRoute({
   component: HelpPage,
 });
 
+const userProfileRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/profile',
+  component: UserProfilePage,
+});
+
 // The login route (independent of layout workspace)
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -386,7 +393,8 @@ const routeTree = rootRoute.addChildren([
     tenantsRoute,
     tenantProfileRoute,
     analyticsRoute,
-    helpRoute
+    helpRoute,
+    userProfileRoute
   ]),
   loginRoute
 ]);

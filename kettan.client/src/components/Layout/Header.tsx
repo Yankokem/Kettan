@@ -7,7 +7,7 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import WifiRoundedIcon from '@mui/icons-material/WifiRounded';
 import WifiOffRoundedIcon from '@mui/icons-material/WifiOffRounded';
 import { useThemeStore } from '../../store/useThemeStore';
-import { useLocation } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { NotificationBell } from '../UI/NotificationBell';
 import { fetchDevConnectionStatus } from '../../features/company/companyProfileApi';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -37,6 +37,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/settings':  'Settings',
   '/audit-logs': 'Audit Logs',
   '/reports':   'Finance & Reports',
+  '/profile':   'My Profile',
 };
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
@@ -56,12 +57,14 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/settings':  'System settings, user roles, and platform permissions.',
   '/audit-logs': 'Track key actions across returns and admin workflows.',
   '/reports':   'Financial analytics, performance leaderboards, and aggregated invoices.',
+  '/profile':   'Manage your personal information and account settings.',
 };
 
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   const user = useAuthStore((state) => state.user);
   const { mode, toggleTheme } = useThemeStore();
   const location = useLocation();
+  const navigate = useNavigate();
   const showDevConnectionIndicator = import.meta.env.DEV;
   const [connectionState, setConnectionState] = useState<'checking' | 'online' | 'degraded' | 'offline' | 'disabled'>('checking');
   const [connectionTooltip, setConnectionTooltip] = useState('Checking development backend...');
@@ -308,7 +311,22 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
           <Box sx={{ width: 1, height: 24, background: 'rgba(201,168,77,0.2)', mx: 0.5 }} />
 
           {/* User info with role badge */}
-          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
+          <Box 
+            sx={{ 
+              display: { xs: 'none', sm: 'flex' }, 
+              alignItems: 'center', 
+              gap: 1,
+              cursor: 'pointer',
+              borderRadius: 2,
+              px: 1,
+              py: 0.5,
+              transition: 'background 160ms',
+              '&:hover': {
+                background: 'rgba(201,168,77,0.1)',
+              }
+            }}
+            onClick={() => navigate({ to: '/profile' })}
+          >
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
               <Typography 
                 variant="body2" 
@@ -334,7 +352,7 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
                 }}
               />
             </Box>
-            <Tooltip title={user?.name || 'User Profile'}>
+            <Tooltip title="View Profile">
               <IconButton sx={{ p: 0.3 }}>
                 <Avatar
                   alt={user?.name || 'User'}
@@ -356,8 +374,11 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
           </Box>
 
           {/* Mobile: Avatar only */}
-          <Tooltip title={user?.name || 'User Profile'}>
-            <IconButton sx={{ p: 0.3, display: { xs: 'flex', sm: 'none' } }}>
+          <Tooltip title="View Profile">
+            <IconButton 
+              sx={{ p: 0.3, display: { xs: 'flex', sm: 'none' } }}
+              onClick={() => navigate({ to: '/profile' })}
+            >
               <Avatar
                 alt={user?.name || 'User'}
                 src={user?.imageUrl || ''}
