@@ -23,10 +23,10 @@ import { fetchEmployees, type EmployeeDto } from './staffApi';
 
 function toStaffMember(e: EmployeeDto): StaffMember {
   return {
-    id: e.employeeId,
+    id: e.userId,
     name: `${e.firstName} ${e.lastName}`.trim(),
     email: e.email ?? '',
-    role: e.position,
+    role: e.role,
     location: e.branchName ?? 'Unassigned',
     status: e.isActive ? 'active' : 'inactive',
     avatar: `${e.firstName.charAt(0)}${e.lastName.charAt(0)}`.toUpperCase(),
@@ -64,7 +64,7 @@ export function StaffPage() {
   };
 
   const handleEditStaff = (staffId: number) => {
-    console.log('Edit staff:', staffId);
+    navigate({ to: '/staff/$staffId/edit', params: { staffId: staffId.toString() } });
   };
 
   const handleInactivateStaff = (staffId: number) => {

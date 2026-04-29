@@ -5,6 +5,7 @@ public class UserDto
     public int UserId { get; set; }
     public int? TenantId { get; set; }
     public int? BranchId { get; set; }
+    public string? BranchName { get; set; }
     public required string Email { get; set; }
     public required string Role { get; set; }
     public required string FirstName { get; set; }

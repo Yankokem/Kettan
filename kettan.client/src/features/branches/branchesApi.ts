@@ -73,7 +73,7 @@ export async function deleteBranch(branchId: number): Promise<void> {
 }
 
 export async function fetchBranchStaff(branchId: number) {
-  return request<any[]>(`/api/employees?branchId=${branchId}`);
+  return request<any[]>(`/api/users?branchId=${branchId}`);
 }
 
 export async function fetchBranchActivity(branchId: number) {

@@ -24,7 +24,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers([FromQuery] int? branchId = null)
     {
         var usersQuery = _context.Users.AsQueryable();
 
@@ -34,13 +34,20 @@ public class UsersController : ControllerBase
             usersQuery = usersQuery.Where(u => u.TenantId == _currentUserService.TenantId.Value);
         }
 
+        if (branchId.HasValue)
+        {
+            usersQuery = usersQuery.Where(u => u.BranchId == branchId.Value);
+        }
+
         var users = await usersQuery
+            .Include(u => u.Branch)
             .OrderByDescending(u => u.CreatedAt)
             .Select(u => new UserDto
             {
                 UserId = u.UserId,
                 TenantId = u.TenantId,
                 BranchId = u.BranchId,
+                BranchName = u.Branch != null ? u.Branch.Name : null,
                 Email = u.Email,
                 Role = u.Role.ToString(),
                 FirstName = u.FirstName,
@@ -59,7 +66,7 @@ public class UsersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<UserDto>> GetUser(int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.Users.Include(u => u.Branch).FirstOrDefaultAsync(u => u.UserId == id);
         if (user == null) return NotFound();
 
         // Enforce tenant isolation on User fetching
@@ -71,6 +78,7 @@ public class UsersController : ControllerBase
             UserId = user.UserId,
             TenantId = user.TenantId,
             BranchId = user.BranchId,
+            BranchName = user.Branch?.Name,
             Email = user.Email,
             Role = user.Role.ToString(),
             FirstName = user.FirstName,
@@ -126,6 +134,7 @@ public class UsersController : ControllerBase
             UserId = user.UserId,
             TenantId = user.TenantId,
             BranchId = user.BranchId,
+            BranchName = user.Branch?.Name,
             Email = user.Email,
             Role = user.Role.ToString(),
             FirstName = user.FirstName,

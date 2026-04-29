@@ -98,14 +98,14 @@ export const mapActivityLog = (dto: any): BranchActivityLog => ({
 });
 
 export const mapEmployee = (dto: any): BranchEmployee => ({
-  id: dto.employeeId,
+  id: dto.userId,
   branchId: dto.branchId,
   firstName: dto.firstName,
   lastName: dto.lastName,
   email: dto.email || 'N/A',
-  position: dto.position || 'Staff',
-  contactNumber: dto.contactNumber || 'N/A',
-  dateHired: dto.dateHired || new Date().toISOString(),
+  position: dto.role || 'Staff',
+  contactNumber: dto.contactNo || 'N/A',
+  dateHired: dto.createdAt || new Date().toISOString(),
   isActive: dto.isActive,
 });
 

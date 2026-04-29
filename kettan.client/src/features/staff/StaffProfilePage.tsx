@@ -26,24 +26,11 @@ import { Button } from '../../components/UI/Button';
 import { fetchEmployee, type EmployeeDto } from './staffApi';
 import { api } from '../../utils/api';
 
-interface StaffUserData {
-  userId: number;
-  email: string;
-  role: string;
-  firstName: string;
-  lastName: string;
-  birthday: string | null;
-  contactNo: string | null;
-  isActive: boolean;
-  createdAt: string;
-  branchId: number | null;
-}
 
 export function StaffProfilePage() {
   const { staffId } = useParams({ from: '/layout/staff/$staffId' });
   const navigate = useNavigate();
   const [employee, setEmployee] = useState<EmployeeDto | null>(null);
-  const [userData, setUserData] = useState<StaffUserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -57,21 +44,17 @@ export function StaffProfilePage() {
     }
 
     setLoading(true);
-    Promise.all([
-      fetchEmployee(id),
-      api.get(`/api/users/${id}`).then(res => res.data).catch(() => null)
-    ])
-      .then(([employeeData, user]) => {
+    fetchEmployee(id)
+      .then((employeeData) => {
         setEmployee(employeeData);
-        setUserData(user);
       })
       .catch(() => setError('Could not load staff profile.'))
       .finally(() => setLoading(false));
   }, [staffId]);
 
   const handleCopyEmployeeId = () => {
-    if (employee?.employeeId) {
-      navigator.clipboard.writeText(String(employee.employeeId));
+    if (employee?.userId) {
+      navigator.clipboard.writeText(String(employee.userId));
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     }
@@ -166,7 +149,7 @@ export function StaffProfilePage() {
 
           <Chip
             icon={<BadgeRoundedIcon fontSize="small" />}
-            label={employee.position}
+            label={employee.role}
             color="primary"
             sx={{
               fontWeight: 700,
@@ -204,7 +187,7 @@ export function StaffProfilePage() {
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
-                    ST-{String(employee.employeeId).padStart(4, '0')}
+                    ST-{String(employee.userId).padStart(4, '0')}
                   </Typography>
                   <Tooltip title={copySuccess ? 'Copied!' : 'Copy Employee ID'}>
                     <IconButton size="small" onClick={handleCopyEmployeeId} sx={{ p: 0.5 }}>
@@ -302,7 +285,7 @@ export function StaffProfilePage() {
               )}
 
               {/* Contact Number */}
-              {employee.contactNumber && (
+              {employee.contactNo && (
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                   <PhoneRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
                   <Box sx={{ flex: 1 }}>
@@ -310,14 +293,14 @@ export function StaffProfilePage() {
                       Contact Number
                     </Typography>
                     <Typography sx={{ fontSize: 15, color: 'text.primary' }}>
-                      {employee.contactNumber}
+                      {employee.contactNo}
                     </Typography>
                   </Box>
                 </Box>
               )}
 
               {/* Birthday */}
-              {userData?.birthday && (
+              {employee.birthday && (
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                   <CakeRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
                   <Box sx={{ flex: 1 }}>
@@ -325,7 +308,7 @@ export function StaffProfilePage() {
                       Birthday
                     </Typography>
                     <Typography sx={{ fontSize: 15, color: 'text.primary' }}>
-                      {new Date(userData.birthday).toLocaleDateString('en-US', {
+                      {new Date(employee.birthday).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -366,10 +349,10 @@ export function StaffProfilePage() {
                 <WorkRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
-                    Position
+                    Role
                   </Typography>
                   <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>
-                    {employee.position}
+                    {employee.role}
                   </Typography>
                 </Box>
               </Box>
@@ -387,24 +370,6 @@ export function StaffProfilePage() {
                 </Box>
               </Box>
 
-              {/* Date Hired */}
-              {employee.dateHired && (
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                  <CalendarTodayRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
-                      Date Hired
-                    </Typography>
-                    <Typography sx={{ fontSize: 15, color: 'text.primary' }}>
-                      {new Date(employee.dateHired).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
 
               {/* Account Created */}
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
@@ -423,28 +388,7 @@ export function StaffProfilePage() {
                 </Box>
               </Box>
 
-              {/* Account Status */}
-              {userData && (
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                  <BadgeRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
-                      Account Status
-                    </Typography>
-                    <Chip
-                      label={userData.isActive ? 'Active' : 'Inactive'}
-                      size="small"
-                      sx={{
-                        bgcolor: userData.isActive ? '#FEF3C7' : '#F3F4F6',
-                        color: userData.isActive ? '#92400E' : '#4B5563',
-                        fontWeight: 700,
-                        borderRadius: 2,
-                        height: 24,
-                      }}
-                    />
-                  </Box>
-                </Box>
-              )}
+
             </Box>
           </Paper>
         </Box>
