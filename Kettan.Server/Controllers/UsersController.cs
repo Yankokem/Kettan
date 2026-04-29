@@ -48,7 +48,8 @@ public class UsersController : ControllerBase
                 Birthday = u.Birthday,
                 ContactNo = u.ContactNo,
                 IsActive = u.IsActive,
-                CreatedAt = u.CreatedAt
+                CreatedAt = u.CreatedAt,
+                ImageUrl = u.ImageUrl
             })
             .ToListAsync();
 
@@ -77,13 +78,21 @@ public class UsersController : ControllerBase
             Birthday = user.Birthday,
             ContactNo = user.ContactNo,
             IsActive = user.IsActive,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            ImageUrl = user.ImageUrl
         });
     }
 
     [HttpPost]
     public async Task<ActionResult<UserDto>> CreateUser(CreateUserDto dto)
     {
+        // First check if email already exists
+        var existingUser = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == dto.Email);
+        if (existingUser != null)
+        {
+            return BadRequest(new { message = "Email is already in use by another account." });
+        }
+
         // Note: Password hashing should normally happen here. 
         // For project scope, utilizing a simple hash implementation or directly saving (not recommended for prod).
         // Using BCrypt.Net-Next (Assuming logic is handled inside AuthService or directly here)
@@ -99,6 +108,7 @@ public class UsersController : ControllerBase
             LastName = dto.LastName,
             Birthday = dto.Birthday,
             ContactNo = dto.ContactNo,
+            ImageUrl = dto.ImageUrl,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -122,6 +132,7 @@ public class UsersController : ControllerBase
             LastName = user.LastName,
             Birthday = user.Birthday,
             ContactNo = user.ContactNo,
+            ImageUrl = user.ImageUrl,
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt
         });
@@ -143,6 +154,14 @@ public class UsersController : ControllerBase
         user.Role = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : user.Role;
         user.BranchId = dto.BranchId;
         user.IsActive = dto.IsActive;
+        
+        // Only update ImageUrl if a new one is provided. Or if explicitly nulling? Usually it's if not null. 
+        // For project scope, allow it to be updated to whatever is sent, except in partial updates.
+        // If frontend doesn't send it, maybe it shouldn't overwrite. But UpdateUserDto is full update.
+        if (dto.ImageUrl != null)
+        {
+            user.ImageUrl = dto.ImageUrl;
+        }
 
         await _context.SaveChangesAsync();
 

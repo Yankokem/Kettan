@@ -147,9 +147,14 @@ export function AddStaffPage() {
 
       alert('Staff member created successfully!');
       void navigate({ to: '/staff' });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create staff member:', err);
-      alert('An error occurred while creating the staff member. Please try again.');
+      // Check if backend returned a nicely formatted 400 error message (like "Email already in use")
+      if (err.response?.data?.message) {
+        alert(`Error: ${err.response.data.message}`);
+      } else {
+        alert('An error occurred while creating the staff member. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

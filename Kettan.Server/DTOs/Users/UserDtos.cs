@@ -13,6 +13,7 @@ public class UserDto
     public string? ContactNo { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? ImageUrl { get; set; }
 }
 
 public class CreateUserDto
@@ -25,6 +26,7 @@ public class CreateUserDto
     public DateOnly? Birthday { get; set; }
     public string? ContactNo { get; set; }
     public int? BranchId { get; set; }
+    public string? ImageUrl { get; set; }
 }
 
 public class UpdateUserDto
@@ -36,4 +38,5 @@ public class UpdateUserDto
     public string? ContactNo { get; set; }
     public int? BranchId { get; set; }
     public bool IsActive { get; set; }
+    public string? ImageUrl { get; set; }
 }

@@ -202,6 +202,7 @@ export function EditStaffPage() {
         role: formData.role,
         branchId: formData.branchId ? parseInt(formData.branchId) : null,
         isActive: true,
+        imageUrl: imageUrl !== null ? imageUrl : undefined
       });
 
       // TODO: Handle password change if needed
@@ -209,9 +210,13 @@ export function EditStaffPage() {
 
       alert('Staff member updated successfully!');
       void navigate({ to: `/staff/${staffId}` });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update staff member:', err);
-      alert('An error occurred while updating the staff member. Please try again.');
+      if (err.response?.data?.message) {
+        alert(`Error: ${err.response.data.message}`);
+      } else {
+        alert('An error occurred while updating the staff member. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
