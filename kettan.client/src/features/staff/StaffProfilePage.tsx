@@ -1,19 +1,52 @@
 import { useEffect, useState } from 'react';
-import { useParams } from '@tanstack/react-router';
-import { Box, Typography, Grid, Paper, Avatar, Divider, Chip, CircularProgress } from '@mui/material';
+import { useParams, useNavigate } from '@tanstack/react-router';
+import {
+  Box,
+  Typography,
+  Paper,
+  Avatar,
+  Divider,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
-import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
+import CakeRoundedIcon from '@mui/icons-material/CakeRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
+import WorkRoundedIcon from '@mui/icons-material/WorkRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import { BackButton } from '../../components/UI/BackButton';
+import { Button } from '../../components/UI/Button';
 import { fetchEmployee, type EmployeeDto } from './staffApi';
+import { api } from '../../utils/api';
+
+interface StaffUserData {
+  userId: number;
+  email: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+  birthday: string | null;
+  contactNo: string | null;
+  isActive: boolean;
+  createdAt: string;
+  branchId: number | null;
+}
 
 export function StaffProfilePage() {
   const { staffId } = useParams({ from: '/layout/staff/$staffId' });
+  const navigate = useNavigate();
   const [employee, setEmployee] = useState<EmployeeDto | null>(null);
+  const [userData, setUserData] = useState<StaffUserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     const id = Number(staffId);
@@ -24,11 +57,25 @@ export function StaffProfilePage() {
     }
 
     setLoading(true);
-    fetchEmployee(id)
-      .then((data) => setEmployee(data))
+    Promise.all([
+      fetchEmployee(id),
+      api.get(`/api/users/${id}`).then(res => res.data).catch(() => null)
+    ])
+      .then(([employeeData, user]) => {
+        setEmployee(employeeData);
+        setUserData(user);
+      })
       .catch(() => setError('Could not load staff profile.'))
       .finally(() => setLoading(false));
   }, [staffId]);
+
+  const handleCopyEmployeeId = () => {
+    if (employee?.employeeId) {
+      navigator.clipboard.writeText(String(employee.employeeId));
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
 
   if (loading) {
     return (
@@ -53,132 +100,357 @@ export function StaffProfilePage() {
   return (
     <Box sx={{ pb: 5 }}>
       {/* Back navigation */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
         <BackButton to="/staff" />
-      </Box>
-
-      {/* Header Profile Section */}
-      <Box sx={{ mb: 4, display: 'flex', gap: 3, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <Avatar
-          src={employee.imageUrl ?? undefined}
-          variant="rounded"
-          sx={{
-            width: 140,
-            height: 140,
-            bgcolor: '#FAF5EF',
-            borderRadius: 4,
-            color: '#6B4C2A',
-            border: '2px solid',
-            borderColor: 'divider',
-            fontSize: 52,
-            fontWeight: 700,
-          }}
-        >
-          {!employee.imageUrl ? (
-            initials || <PersonRoundedIcon sx={{ fontSize: 70 }} />
-          ) : null}
-        </Avatar>
-
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 1 }}>
-            {fullName}
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+            Staff Profile
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
-            <Chip
-              icon={<BadgeRoundedIcon fontSize="small" />}
-              label={employee.position}
-              size="small"
-              sx={{ bgcolor: '#E8D3A9', color: '#6B4C2A', fontWeight: 700, borderRadius: 2, height: 28 }}
-            />
-            <Chip
-              label={employee.isActive ? 'Active' : 'Inactive'}
-              size="small"
-              sx={{
-                bgcolor: employee.isActive ? '#FEF3C7' : '#F3F4F6',
-                color: employee.isActive ? '#92400E' : '#4B5563',
-                fontWeight: 700,
-                borderRadius: 2,
-                height: 28,
-              }}
-            />
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-              ID: ST-{String(employee.employeeId).padStart(4, '0')}
-            </Typography>
-          </Box>
+          <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
+            View staff member information and account details.
+          </Typography>
         </Box>
       </Box>
 
-      {/* Info Cards */}
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 800, color: '#6B4C2A', mb: 2.5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Contact &amp; Assignment
+      {/* Profile Content */}
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+        {/* Left Panel - Profile Picture & Quick Info */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', md: '38%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            p: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          {/* Profile Picture */}
+          <Avatar
+            src={employee.imageUrl ?? undefined}
+            variant="rounded"
+            sx={{
+              width: 150,
+              height: 150,
+              bgcolor: 'linear-gradient(135deg, #6B4C2A 0%, #C9A84C 100%)',
+              color: '#FAF5EF',
+              fontSize: 52,
+              fontWeight: 700,
+              border: '4px solid',
+              borderColor: 'divider',
+              borderRadius: 4,
+              mb: 3,
+              boxShadow: '0 8px 24px rgba(107, 76, 42, 0.15)',
+            }}
+          >
+            {!employee.imageUrl ? initials : null}
+          </Avatar>
+
+          {/* Name & Position */}
+          <Typography variant="h5" sx={{ fontWeight: 800, textAlign: 'center', mb: 1, letterSpacing: '-0.01em' }}>
+            {fullName}
+          </Typography>
+
+          <Chip
+            icon={<BadgeRoundedIcon fontSize="small" />}
+            label={employee.position}
+            color="primary"
+            sx={{
+              fontWeight: 700,
+              borderRadius: 2,
+              height: 32,
+              fontSize: 13,
+              mb: 3,
+              bgcolor: '#E8D3A9',
+              color: '#6B4C2A',
+            }}
+          />
+
+          {/* Edit Staff Button */}
+          <Button
+            variant="contained"
+            startIcon={<EditRoundedIcon />}
+            onClick={() => navigate({ to: `/staff/${staffId}/edit` })}
+            fullWidth
+            sx={{ mb: 3 }}
+          >
+            Edit Staff
+          </Button>
+
+          <Divider sx={{ width: '100%', mb: 3 }} />
+
+          {/* Account Summary */}
+          <Box sx={{ width: '100%' }}>
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 800,
+                color: '#6B4C2A',
+                mb: 2,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Account Summary
             </Typography>
+
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {employee.email && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <EmailRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
-                  <Typography sx={{ fontSize: 14, color: 'text.primary' }}>{employee.email}</Typography>
+              {/* Employee ID */}
+              <Box>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                  Employee ID
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
+                    ST-{String(employee.employeeId).padStart(4, '0')}
+                  </Typography>
+                  <Tooltip title={copySuccess ? 'Copied!' : 'Copy Employee ID'}>
+                    <IconButton size="small" onClick={handleCopyEmployeeId} sx={{ p: 0.5 }}>
+                      <ContentCopyRoundedIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
-              )}
-              {employee.contactNumber && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <PersonRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
-                  <Typography sx={{ fontSize: 14, color: 'text.primary' }}>{employee.contactNumber}</Typography>
-                </Box>
-              )}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <StorefrontRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
-                <Typography sx={{ fontSize: 14, color: 'text.primary' }}>
-                  {employee.branchName ?? 'Unassigned'}
+              </Box>
+
+              {/* Status */}
+              <Box>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                  Employment Status
+                </Typography>
+                <Chip
+                  label={employee.isActive ? 'Active' : 'Inactive'}
+                  size="small"
+                  sx={{
+                    bgcolor: employee.isActive ? '#FEF3C7' : '#F3F4F6',
+                    color: employee.isActive ? '#92400E' : '#4B5563',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    height: 24,
+                  }}
+                />
+              </Box>
+
+              {/* Member Since */}
+              <Box>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                  Member Since
+                </Typography>
+                <Typography sx={{ fontSize: 14 }}>
+                  {new Date(employee.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
                 </Typography>
               </Box>
-              {employee.dateHired && (
-                <>
-                  <Divider />
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <CalendarTodayRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
-                    <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>
-                      Hired: {new Date(employee.dateHired).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Right Panel - Detailed Information */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          {/* Personal Information Card */}
+          <Paper
+            elevation={0}
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 4,
+              p: 3.5,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 800,
+                color: '#6B4C2A',
+                mb: 3,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Personal Information
+            </Typography>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              {/* Full Name */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                <PersonRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                    Full Name
+                  </Typography>
+                  <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>
+                    {fullName}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Email */}
+              {employee.email && (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  <EmailRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                      Email Address
+                    </Typography>
+                    <Typography sx={{ fontSize: 15, color: 'text.primary' }}>{employee.email}</Typography>
+                  </Box>
+                </Box>
+              )}
+
+              {/* Contact Number */}
+              {employee.contactNumber && (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  <PhoneRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                      Contact Number
+                    </Typography>
+                    <Typography sx={{ fontSize: 15, color: 'text.primary' }}>
+                      {employee.contactNumber}
                     </Typography>
                   </Box>
-                </>
+                </Box>
+              )}
+
+              {/* Birthday */}
+              {userData?.birthday && (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  <CakeRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                      Birthday
+                    </Typography>
+                    <Typography sx={{ fontSize: 15, color: 'text.primary' }}>
+                      {new Date(userData.birthday).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </Typography>
+                  </Box>
+                </Box>
               )}
             </Box>
           </Paper>
-        </Grid>
 
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 800, color: '#6B4C2A', mb: 2.5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Position Details
+          {/* Employment & Access Card */}
+          <Paper
+            elevation={0}
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 4,
+              p: 3.5,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 800,
+                color: '#6B4C2A',
+                mb: 3,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Employment &amp; Access
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box>
-                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>Full Name</Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{fullName}</Typography>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              {/* Position */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                <WorkRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                    Position
+                  </Typography>
+                  <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>
+                    {employee.position}
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>Position</Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{employee.position}</Typography>
+
+              {/* Branch Assignment */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                <StorefrontRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                    Branch Assignment
+                  </Typography>
+                  <Typography sx={{ fontSize: 15, color: 'text.primary' }}>
+                    {employee.branchName ?? 'Unassigned'}
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>Status</Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 700, color: employee.isActive ? '#6B4C2A' : '#4B5563' }}>
-                  {employee.isActive ? 'Active' : 'Inactive'}
-                </Typography>
+
+              {/* Date Hired */}
+              {employee.dateHired && (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  <CalendarTodayRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                      Date Hired
+                    </Typography>
+                    <Typography sx={{ fontSize: 15, color: 'text.primary' }}>
+                      {new Date(employee.dateHired).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+
+              {/* Account Created */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                <CalendarTodayRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                    Account Created
+                  </Typography>
+                  <Typography sx={{ fontSize: 15, color: 'text.primary' }}>
+                    {new Date(employee.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>Member Since</Typography>
-                <Typography sx={{ fontSize: 14 }}>
-                  {new Date(employee.createdAt).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                </Typography>
-              </Box>
+
+              {/* Account Status */}
+              {userData && (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  <BadgeRoundedIcon sx={{ fontSize: 20, color: 'text.disabled', mt: 0.3 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+                      Account Status
+                    </Typography>
+                    <Chip
+                      label={userData.isActive ? 'Active' : 'Inactive'}
+                      size="small"
+                      sx={{
+                        bgcolor: userData.isActive ? '#FEF3C7' : '#F3F4F6',
+                        color: userData.isActive ? '#92400E' : '#4B5563',
+                        fontWeight: 700,
+                        borderRadius: 2,
+                        height: 24,
+                      }}
+                    />
+                  </Box>
+                </Box>
+              )}
             </Box>
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 }

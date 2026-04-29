@@ -13,7 +13,6 @@ import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
 import type { StaffMember } from './types';
 import { StaffCard } from './components/StaffCard';
-import { AddStaffModal, type AddStaffFormValues } from './components/AddStaffModal';
 import { StaffTableView } from './components/StaffTableView';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
@@ -22,15 +21,6 @@ import { ViewToggle } from '../../components/UI/ViewToggle';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { fetchEmployees, createEmployee, createUser, type EmployeeDto } from './staffApi';
-
-const ROLE_LABEL_MAP: Record<Exclude<AddStaffFormValues['role'], ''>, string> = {
-  TenantAdmin: 'Tenant Admin',
-  HqManager: 'HQ Manager',
-  HqStaff: 'HQ Staff',
-  BranchOwner: 'Branch Owner',
-  BranchManager: 'Branch Manager',
-  StoreStaff: 'Store Staff',
-};
 
 function toStaffMember(e: EmployeeDto): StaffMember {
   return {
@@ -54,7 +44,6 @@ export function StaffPage() {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<StaffStatusFilter>('all');
@@ -70,66 +59,6 @@ export function StaffPage() {
       .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
       .finally(() => setLoading(false));
   }, []);
-
-  const handleCreateStaff = async (formValues: AddStaffFormValues) => {
-    const roleValue = formValues.role;
-
-    if (roleValue === '') {
-      return;
-    }
-
-    let uploadedImageUrl = null;
-    if (formValues.imageFile) {
-      try {
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', formValues.imageFile);
-        const uploadRes = await api.post('/api/uploads/image', uploadFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
-        if (uploadRes.status >= 200 && uploadRes.status < 300) {
-          const uploadData = uploadRes.data;
-          // Backend returns { Url, PublicId } (PascalCase)
-          uploadedImageUrl = uploadData.Url ?? uploadData.url ?? null;
-          console.log('[Upload] Cloudinary URL:', uploadedImageUrl);
-        } else {
-          const errData = uploadRes.data;
-          console.error('[Upload] Image upload failed:', uploadRes.status, errData);
-        }
-      } catch (err) {
-        console.error('Failed to upload image:', err);
-      }
-    }
-
-    try {
-      // Map AddStaffFormValues role to backend position string
-      const position = ROLE_LABEL_MAP[roleValue] || roleValue;
-
-      // 1. Create User account so they can log in
-      await createUser({
-        email: formValues.email,
-        password: formValues.password,
-        role: roleValue,
-        firstName: formValues.firstName,
-        lastName: formValues.lastName,
-        birthday: formValues.birthday,
-        contactNo: formValues.contactNo,
-      });
-      
-      // 2. Save Employee record for directory/payroll
-      const newEmployee = await createEmployee({
-        firstName: formValues.firstName,
-        lastName: formValues.lastName,
-        position: position,
-        isActive: true,
-        email: formValues.email,
-        imageUrl: uploadedImageUrl,
-      });
-
-      // Update local state with the saved data
-      setStaffMembers((previous) => [toStaffMember(newEmployee), ...previous]);
-    } catch (err) {
-      console.error('Failed to create staff member:', err);
-      alert('An error occurred while creating the staff member.');
-    }
-  };
 
   const handleOpenProfile = (staffId: number) => {
     navigate({ to: '/staff/$staffId', params: { staffId: staffId.toString() } });
@@ -293,7 +222,7 @@ export function StaffPage() {
           ]}
         />
 
-        <Button startIcon={<PersonAddAlt1RoundedIcon />} onClick={() => setIsAddStaffModalOpen(true)}>
+        <Button startIcon={<PersonAddAlt1RoundedIcon />} onClick={() => navigate({ to: '/staff/add' })}>
           Add Staff
         </Button>
       </Box>
@@ -334,12 +263,6 @@ export function StaffPage() {
           />
         )}
       </DataStateWrapper>
-
-      <AddStaffModal
-        open={isAddStaffModalOpen}
-        onClose={() => setIsAddStaffModalOpen(false)}
-        onSave={handleCreateStaff}
-      />
     </Box>
   );
 }

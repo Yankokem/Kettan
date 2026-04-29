@@ -7,6 +7,8 @@ import { AddBranchPage } from '../features/branches/AddBranchPage';
 import { BranchProfilePage } from '../features/branches/BranchProfilePage';
 import { StaffPage } from '../features/staff/StaffPage';
 import { StaffProfilePage } from '../features/staff/StaffProfilePage';
+import { AddStaffPage } from '../features/staff/AddStaffPage';
+import { EditStaffPage } from '../features/staff/EditStaffPage';
 import { InventoryPage } from '../features/hq-inventory/InventoryPage';
 import { InventoryItemProfilePage } from '../features/hq-inventory/InventoryItemProfilePage';
 import InventoryTransactionPage from '../features/hq-inventory/InventoryTransactionPage';
@@ -145,10 +147,22 @@ const staffRoute = createRoute({
   component: StaffPage,
 });
 
+const addStaffRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/staff/add',
+  component: AddStaffPage,
+});
+
 const staffProfileRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/staff/$staffId',
   component: StaffProfilePage,
+});
+
+const editStaffRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/staff/$staffId/edit',
+  component: EditStaffPage,
 });
 
 const inventoryRoute = createRoute({
@@ -371,7 +385,9 @@ const routeTree = rootRoute.addChildren([
     addBranchRoute,
     branchProfileRoute,
     staffRoute,
+    addStaffRoute,
     staffProfileRoute,
+    editStaffRoute,
     inventoryRoute,
     inventoryTransactionRoute,
     itemCategoriesRoute,

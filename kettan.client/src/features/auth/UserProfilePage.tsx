@@ -137,6 +137,7 @@ export function UserProfilePage() {
           {/* Profile Picture */}
           <Avatar
             src={user?.imageUrl ?? undefined}
+            variant="rounded"
             sx={{
               width: 150,
               height: 150,
@@ -146,6 +147,7 @@ export function UserProfilePage() {
               fontWeight: 700,
               border: '4px solid',
               borderColor: 'divider',
+              borderRadius: 4,
               mb: 3,
               boxShadow: '0 8px 24px rgba(107, 76, 42, 0.15)',
             }}
