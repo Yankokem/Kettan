@@ -338,6 +338,7 @@ export function LoginPage() {
           </form>
         </StaticMotionDiv>
       </div>
+      </div>
     </div>
   );
 }
