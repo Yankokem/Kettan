@@ -38,6 +38,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/audit-logs': 'Audit Logs',
   '/reports':   'Finance & Reports',
   '/profile':   'My Profile',
+  '/profile/edit': 'Edit Profile',
 };
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
@@ -57,7 +58,8 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/settings':  'System settings, user roles, and platform permissions.',
   '/audit-logs': 'Track key actions across returns and admin workflows.',
   '/reports':   'Financial analytics, performance leaderboards, and aggregated invoices.',
-  '/profile':   'Manage your personal information and account settings.',
+  '/profile':   'View your account information and settings.',
+  '/profile/edit': 'Update your personal information and account settings.',
 };
 
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
