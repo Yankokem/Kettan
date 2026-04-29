@@ -32,7 +32,7 @@ public class AuthService : IAuthService
             return null;
         }
 
-        if ((user.Role == UserRole.BranchManager || user.Role == UserRole.BranchOwner || user.Role == UserRole.BranchStaff) && !user.BranchId.HasValue)
+        if ((user.Role == UserRole.BranchManager || user.Role == UserRole.BranchOwner || user.Role == UserRole.StoreStaff) && !user.BranchId.HasValue)
         {
             throw new UnauthorizedAccessException("Your account is pending assignment to a branch. Please contact your administrator.");
         }

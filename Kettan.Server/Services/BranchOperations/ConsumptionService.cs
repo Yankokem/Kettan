@@ -272,7 +272,7 @@ public class ConsumptionService : IConsumptionService
         }
 
         var itemIds = consolidated.Keys.ToList();
-        var stocks = await _inventoryService.CheckThresholdsAsync(_currentUser.BranchId.Value);
+        var stocks = await _inventoryService.CheckThresholdsAsync(_currentUser.BranchId!.Value);
         // Wait, CheckThresholdsAsync only returns below threshold stock! I need GetStockLevelAsync!
         
         foreach (var previewItem in consolidated.Values)
