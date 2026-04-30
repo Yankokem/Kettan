@@ -76,8 +76,11 @@ export function SupplyRequestsPage() {
   const { user } = useAuthStore();
 
   const role = user?.role ?? '';
-  const canAccessPage = role === 'BranchManager' || role === 'BranchOwner';
-  const canCreateRequests = role === 'BranchManager' || role === 'BranchOwner';
+  const isHq = role === 'TenantAdmin' || role === 'HqManager' || role === 'HqStaff';
+  const isBranch = role === 'BranchManager' || role === 'BranchOwner';
+
+  const canAccessPage = isHq || isBranch;
+  const canCreateRequests = isBranch; // HQ shouldn't usually "request" from themselves via this UI
 
   const [rows, setRows] = useState<SupplyRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
