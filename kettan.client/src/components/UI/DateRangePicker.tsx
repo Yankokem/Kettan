@@ -89,6 +89,8 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
         <Typography sx={{ fontSize: 14, fontWeight: 600 }}>Custom Date Range</Typography>
         <Box sx={{ display: 'flex', gap: 1.5 }}>
           <TextField
+            id="start-date"
+            name="start-date"
             label="Start Date"
             type="date"
             size="small"
@@ -99,6 +101,8 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
             sx={{ flex: 1, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider', borderRadius: 2 } }}
           />
           <TextField
+            id="end-date"
+            name="end-date"
             label="End Date"
             type="date"
             size="small"

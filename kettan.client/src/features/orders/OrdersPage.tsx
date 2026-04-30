@@ -306,7 +306,8 @@ export function OrdersPage() {
     const matchesStatus = datasetMode === 'active'
       ? order.status === activeStatusTab
       : !historyStatusFilter || order.status === historyStatusFilter;
-    const inRange = order.date >= startDate && order.date <= endDate;
+    const orderDateOnly = order.date.slice(0, 10);
+    const inRange = orderDateOnly >= startDate && orderDateOnly <= endDate;
     return matchesQuery && matchesStatus && inRange;
   });
 
@@ -429,6 +430,8 @@ export function OrdersPage() {
         }}
       >
         <SearchInput
+          id="order-search"
+          name="search"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search order ID, branch, or actor..."
