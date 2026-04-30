@@ -26,14 +26,7 @@ export function StatCard({ label, value, sub, trend, trendValue, icon, accentCla
         height: '100%',
         gap: 1.5,
         cursor: 'default',
-        background: '#FFFFFF',
-        border: '1px solid rgba(107,76,42,0.08)',
-        boxShadow: '0 2px 8px rgba(107,76,42,0.06), 0 1px 2px rgba(107,76,42,0.04)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 8px 24px rgba(107,76,42,0.12), 0 2px 8px rgba(107,76,42,0.08)',
-        },
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
         '&::after': {
           marginTop: 'auto !important'
         }

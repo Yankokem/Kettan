@@ -146,10 +146,9 @@ export function DashboardChart() {
         sx={{
           p: 2.5,
           height: '100%',
-          background: '#FFFFFF',
-          border: '1px solid rgba(107,76,42,0.08)',
-          boxShadow: '0 2px 12px rgba(107,76,42,0.08), 0 1px 3px rgba(107,76,42,0.04)',
-          borderRadius: '14px',
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -166,10 +165,9 @@ export function DashboardChart() {
       sx={{
         p: 2.5,
         height: '100%',
-        background: '#FFFFFF',
-        border: '1px solid rgba(107,76,42,0.08)',
-        boxShadow: '0 2px 12px rgba(107,76,42,0.08), 0 1px 3px rgba(107,76,42,0.04)',
-        borderRadius: '14px',
+        border: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
         display: 'flex',
         flexDirection: 'column',
       }}

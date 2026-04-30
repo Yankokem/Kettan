@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Avatar, Box, Chip, Paper, Skeleton, Typography } from '@mui/material';
+import { Avatar, Box, Chip, Divider, Grid, Paper, Skeleton, Typography } from '@mui/material';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import CallRoundedIcon from '@mui/icons-material/CallRounded';
@@ -21,6 +21,7 @@ import {
 } from './branchProfileData';
 import type { Branch, BranchEmployee, BranchInventoryItem, BranchProfileTabKey } from './types';
 import { BranchProfileTabHeader } from './components/profile/BranchProfileTabHeader';
+import { BranchDetailsTab } from './components/profile/BranchDetailsTab';
 import { BranchStaffTab } from './components/profile/BranchStaffTab';
 import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
 import { BranchMenuTab } from './components/profile/BranchMenuTab';
@@ -389,44 +390,58 @@ export function BranchInfoPage() {
 
         {/* Summary Bar - same as BranchProfilePage */}
         <Box sx={{ p: 2, bgcolor: '#FAFAFA', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: 2 }}>
+          <Grid container spacing={2}>
             {kpis.map((kpi) => (
-              <Box key={kpi.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: kpi.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <kpi.icon sx={{ fontSize: 16, color: kpi.iconColor }} />
+              <Grid item xs={6} sm={3} key={kpi.id}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: kpi.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <kpi.icon sx={{ fontSize: 16, color: kpi.iconColor }} />
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{kpi.value}</Typography>
+                    <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>{kpi.label}</Typography>
+                  </Box>
                 </Box>
-                <Box>
-                  <Typography sx={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{kpi.value}</Typography>
-                  <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>{kpi.label}</Typography>
-                </Box>
-              </Box>
+              </Grid>
             ))}
-          </Box>
+          </Grid>
         </Box>
 
         {/* Tab Content */}
         <Box>
           {activeTab === 'details' && branch && (
             <Box sx={{ p: { xs: 3, md: 4 } }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
-                <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={8}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
                     <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
                     <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Details</Typography>
                   </Box>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
-                    <DetailRow label="Branch Name" value={branch.name} />
-                    <DetailRow label="Status" value={branch.status === 'active' ? 'Active (Operational)' : 'Setup Pending'} />
-                    <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <DetailRow label="Branch Name" value={branch.name} />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <DetailRow label="Status" value={branch.status === 'active' ? 'Active (Operational)' : 'Setup Pending'} />
+                    </Grid>
+                    <Grid item xs={12}>
                       <DetailRow label="Address" value={branch.address} />
-                    </Box>
-                    <DetailRow label="City" value={branch.city} />
-                    <DetailRow label="Contact" value={branch.contactNumber} />
-                    <DetailRow label="Schedule" value={`${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}`} />
-                    <DetailRow label="Manager" value={branch.manager || 'Unassigned'} />
-                  </Box>
-                </Box>
-                <Box>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <DetailRow label="City" value={branch.city} />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <DetailRow label="Contact" value={branch.contactNumber} />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <DetailRow label="Schedule" value={`${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}`} />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <DetailRow label="Manager" value={branch.manager || 'Unassigned'} />
+                    </Grid>
+                  </Grid>
+                </Grid>
+                <Grid item xs={12} md={4}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     <SummaryCard
                       icon={<PeopleRoundedIcon sx={{ fontSize: 18 }} />}
@@ -447,8 +462,8 @@ export function BranchInfoPage() {
                       iconBg={lowStockCount > 0 ? 'linear-gradient(135deg, #B91C1C 0%, #F87171 100%)' : 'linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)'}
                     />
                   </Box>
-                </Box>
-              </Box>
+                </Grid>
+              </Grid>
             </Box>
           )}
 
