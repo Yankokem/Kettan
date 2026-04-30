@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Avatar, Box, Chip, Divider, Grid, Paper, Skeleton, Typography } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
+import { Avatar, Box, Chip, Paper, Skeleton, Typography } from '@mui/material';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import CallRoundedIcon from '@mui/icons-material/CallRounded';
@@ -8,8 +8,22 @@ import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import { useAuthStore } from '../../store/useAuthStore';
 import { fetchBranch, fetchBranchStaff, fetchBranchInventory } from './branchesApi';
-import { mapBranch, mapEmployee, mapInventoryItem, formatSchedule, isOpenNow, getInitials } from './branchProfileData';
-import type { Branch, BranchEmployee, BranchInventoryItem } from './types';
+import { fetchMenuItems, type MenuItemDto } from '../menu/menuItemsApi';
+import { 
+  mapBranch, 
+  mapEmployee, 
+  mapInventoryItem, 
+  formatSchedule, 
+  isOpenNow, 
+  getInitials,
+  BRANCH_PROFILE_TABS,
+  getKpisForTab
+} from './branchProfileData';
+import type { Branch, BranchEmployee, BranchInventoryItem, BranchProfileTabKey } from './types';
+import { BranchProfileTabHeader } from './components/profile/BranchProfileTabHeader';
+import { BranchStaffTab } from './components/profile/BranchStaffTab';
+import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
+import { BranchMenuTab } from './components/profile/BranchMenuTab';
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -81,30 +95,74 @@ export function BranchInfoPage() {
   const { user } = useAuthStore();
   const branchId = user?.branchId;
 
+  const [activeTab, setActiveTab] = useState<BranchProfileTabKey>('details');
   const [branch, setBranch] = useState<Branch | null>(null);
   const [staff, setStaff] = useState<BranchEmployee[]>([]);
   const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItemDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tabLoading, setTabLoading] = useState(false);
+
+  // Filter tabs for branch users (hide Activity and Transactions if they aren't supposed to see them here)
+  // Actually, let's show what was in the BRANCH_PROFILE_TABS except maybe hide those that might be sensitive
+  // But the user said "info of the branch just like company profile"
+  // For now let's show Details, Staff, Inventory, Menu.
+  const filteredTabs = useMemo(() => {
+    return BRANCH_PROFILE_TABS.filter(tab => 
+      ['details', 'staff', 'inventory', 'menu'].includes(tab.key)
+    );
+  }, []);
+
+  const loadTabContent = async (tab: BranchProfileTabKey) => {
+    if (!branchId) return;
+    setTabLoading(true);
+    try {
+      const parsedId = Number(branchId);
+      switch (tab) {
+        case 'staff':
+          if (staff.length === 0) {
+            const dto = await fetchBranchStaff(parsedId);
+            setStaff(dto.map(mapEmployee));
+          }
+          break;
+        case 'inventory':
+          if (inventoryItems.length === 0) {
+            const dto = await fetchBranchInventory(parsedId);
+            setInventoryItems(dto.map(mapInventoryItem));
+          }
+          break;
+        case 'menu':
+          const mDto = await fetchMenuItems();
+          setMenuItems(mDto);
+          // Also need inventory for availability cross-reference
+          if (inventoryItems.length === 0) {
+            const iDto = await fetchBranchInventory(parsedId);
+            setInventoryItems(iDto.map(mapInventoryItem));
+          }
+          break;
+      }
+    } catch (err) {
+      console.error(`Failed to load ${tab} content:`, err);
+    } finally {
+      setTabLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTabContent(activeTab);
+  }, [activeTab, branchId]);
 
   useEffect(() => {
     if (!branchId) return;
 
     let isMounted = true;
 
-    const load = async () => {
+    const loadInitial = async () => {
       setLoading(true);
       try {
-        const [branchDto, staffDto, invDto] = await Promise.all([
-          fetchBranch(branchId),
-          fetchBranchStaff(branchId),
-          fetchBranchInventory(branchId),
-        ]);
-
+        const branchDto = await fetchBranch(Number(branchId));
         if (!isMounted) return;
-
         setBranch(mapBranch(branchDto));
-        setStaff(staffDto.map(mapEmployee));
-        setInventoryItems(invDto.map(mapInventoryItem));
       } catch (err) {
         console.error('Failed to load branch info:', err);
       } finally {
@@ -112,7 +170,7 @@ export function BranchInfoPage() {
       }
     };
 
-    void load();
+    void loadInitial();
     return () => { isMounted = false; };
   }, [branchId]);
 
@@ -145,8 +203,26 @@ export function BranchInfoPage() {
 
   const branchCode = branch ? `BR-${branch.id.toString().padStart(5, '0')}` : '';
   const branchOpen = branch ? isOpenNow(branch.openTime, branch.closeTime) : false;
-  const activeStaff = staff.filter((s) => s.isActive).length;
+  const activeStaffCount = staff.length > 0 ? staff.filter((s) => s.isActive).length : 0;
   const lowStockCount = inventoryItems.filter((i) => i.status === 'low-stock' || i.status === 'out-of-stock').length;
+
+  const tabBadges = useMemo(() => ({
+    staff: staff.length || undefined,
+    inventory: inventoryItems.length || undefined,
+    menu: menuItems.length || undefined,
+  }), [staff.length, inventoryItems.length, menuItems.length]);
+
+  const kpis = useMemo(() => {
+    if (!branch) return [];
+    return getKpisForTab(activeTab, {
+      branch,
+      employees: staff,
+      activityLogs: [], // Not used in filtered tabs
+      transactions: [], // Not used in filtered tabs
+      inventoryItems,
+      menuItems: menuItems.map(m => ({ status: m.status }))
+    });
+  }, [activeTab, branch, staff, inventoryItems, menuItems]);
 
   return (
     <Box sx={{ pb: 5 }}>
@@ -301,100 +377,94 @@ export function BranchInfoPage() {
         </Box>
       </Paper>
 
-      {/* Main content — two column layout */}
-      <Grid container spacing={3}>
-        {/* Left: Branch Details */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: { xs: 3, md: 4 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
-              <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Details</Typography>
+      {/* Navigation Tabs */}
+      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, mb: 3, overflow: 'hidden' }}>
+        <BranchProfileTabHeader 
+          tabs={filteredTabs} 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+          badgeMap={tabBadges}
+          loading={tabLoading}
+        />
+
+        {/* Summary Bar - same as BranchProfilePage */}
+        <Box sx={{ p: 2, bgcolor: '#FAFAFA', borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: 2 }}>
+            {kpis.map((kpi) => (
+              <Box key={kpi.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: kpi.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <kpi.icon sx={{ fontSize: 16, color: kpi.iconColor }} />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{kpi.value}</Typography>
+                  <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>{kpi.label}</Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Tab Content */}
+        <Box>
+          {activeTab === 'details' && branch && (
+            <Box sx={{ p: { xs: 3, md: 4 } }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+                    <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
+                    <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Details</Typography>
+                  </Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2 }}>
+                    <DetailRow label="Branch Name" value={branch.name} />
+                    <DetailRow label="Status" value={branch.status === 'active' ? 'Active (Operational)' : 'Setup Pending'} />
+                    <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
+                      <DetailRow label="Address" value={branch.address} />
+                    </Box>
+                    <DetailRow label="City" value={branch.city} />
+                    <DetailRow label="Contact" value={branch.contactNumber} />
+                    <DetailRow label="Schedule" value={`${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}`} />
+                    <DetailRow label="Manager" value={branch.manager || 'Unassigned'} />
+                  </Box>
+                </Box>
+                <Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <SummaryCard
+                      icon={<PeopleRoundedIcon sx={{ fontSize: 18 }} />}
+                      label="Staff"
+                      value={activeStaffCount.toString()}
+                      iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+                    />
+                    <SummaryCard
+                      icon={<Inventory2RoundedIcon sx={{ fontSize: 18 }} />}
+                      label="Inventory Items"
+                      value={inventoryItems.length.toString()}
+                      iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+                    />
+                    <SummaryCard
+                      icon={<StoreRoundedIcon sx={{ fontSize: 18 }} />}
+                      label="Issues"
+                      value={lowStockCount.toString()}
+                      iconBg={lowStockCount > 0 ? 'linear-gradient(135deg, #B91C1C 0%, #F87171 100%)' : 'linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)'}
+                    />
+                  </Box>
+                </Box>
+              </Box>
             </Box>
+          )}
 
-            {loading ? (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} variant="text" width="70%" height={32} />
-                ))}
-              </Box>
-            ) : (
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <DetailRow label="Branch Name" value={branch?.name || 'N/A'} />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <DetailRow label="Status" value={branch?.status === 'active' ? 'Active (Operational)' : 'Setup Pending'} />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <DetailRow label="Address" value={branch?.address || 'N/A'} />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <DetailRow label="City" value={branch?.city || 'N/A'} />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <DetailRow label="Contact Number" value={branch?.contactNumber || 'N/A'} />
-                </Grid>
+          {activeTab === 'staff' && (
+            <BranchStaffTab employees={staff} onOpenStaffProfile={() => {}} />
+          )}
 
-                <Grid size={{ xs: 12 }}>
-                  <Divider sx={{ my: 1 }} />
-                </Grid>
+          {activeTab === 'inventory' && (
+            <BranchInventoryTab items={inventoryItems} />
+          )}
 
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <DetailRow label="Opening Time" value={branch ? formatSchedule(branch.openTime) : 'N/A'} />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <DetailRow label="Closing Time" value={branch ? formatSchedule(branch.closeTime) : 'N/A'} />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <DetailRow label="Assigned Owner" value={branch?.owner || 'Unassigned'} />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <DetailRow label="Branch Manager" value={branch?.manager || 'Not assigned'} />
-                </Grid>
-              </Grid>
-            )}
-          </Paper>
-        </Grid>
-
-        {/* Right: Summary */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: { xs: 3, md: 3.5 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
-              <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Summary</Typography>
-            </Box>
-
-            {loading ? (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} variant="rectangular" height={64} sx={{ borderRadius: 2 }} />
-                ))}
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <SummaryCard
-                  icon={<PeopleRoundedIcon sx={{ fontSize: 18 }} />}
-                  label="Active Staff"
-                  value={activeStaff.toString()}
-                  iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
-                />
-                <SummaryCard
-                  icon={<Inventory2RoundedIcon sx={{ fontSize: 18 }} />}
-                  label="Tracked Items"
-                  value={inventoryItems.length.toString()}
-                  iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
-                />
-                <SummaryCard
-                  icon={<StoreRoundedIcon sx={{ fontSize: 18 }} />}
-                  label="Low / Out of Stock"
-                  value={lowStockCount.toString()}
-                  iconBg={lowStockCount > 0 ? 'linear-gradient(135deg, #B91C1C 0%, #F87171 100%)' : 'linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)'}
-                />
-              </Box>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
+          {activeTab === 'menu' && (
+            <BranchMenuTab menuItems={menuItems} branchInventoryItems={inventoryItems} />
+          )}
+        </Box>
+      </Paper>
     </Box>
   );
 }

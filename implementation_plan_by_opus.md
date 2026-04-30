@@ -393,3 +393,26 @@ cd Kettan.Server && dotnet build    # Must produce zero C# errors
 | Inventory page | BranchManager | Shows only their branch's stock, no Categories/Vehicles/Transaction buttons |
 | Inventory page | HqManager | Shows full catalog (all stock), all management buttons visible |
 | Supply request create | BranchManager | Inventory modal shows HQ stock only |
+
+---
+
+## Post-Implementation Fixes: Session & Branch View Cleanup ⚠️ NEW
+
+**Problem 1**: 'No branch assigned' error for branch users.
+**Cause**: `LoginPage.tsx` is missing `branchId` in its response mapping.
+
+**Problem 2**: 'Menu' not visible for branch users.
+**Cause**: `BranchInfoPage.tsx` was created without tabs, but the user wants the 'menus tab' available in the branch view.
+
+### Proposed Fixes
+
+#### 1. [MODIFY] [LoginPage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/auth/LoginPage.tsx)
+- Add `branchId: number | null` to `AuthMeResponse.user`.
+- Map `branchId: me.user.branchId` in the `login()` call.
+
+#### 2. [MODIFY] [BranchInfoPage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/branches/BranchInfoPage.tsx)
+- Re-introduce tabbed navigation (Details, Staff, Inventory, Menu).
+- Keep it read-only but ensure branch managers can access the Menu tab.
+
+#### 3. [VERIFY] [roleHelpers.ts](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/utils/roleHelpers.ts)
+- Ensure `TenantAdmin` has sidebar access to `menu` (should be working, will re-check).

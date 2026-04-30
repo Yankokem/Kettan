@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Grid, Typography } from '@mui/material';
+import { Box, Chip, Typography } from '@mui/material';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
@@ -277,53 +277,43 @@ export function SupplyRequestsPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ mb: 4 }}>
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Filed Requests"
-              value={safeRows.length}
-              icon={<AssignmentTurnedInRoundedIcon />}
-              trend="up"
-              trendValue="Queue"
-              accentClass="stat-accent-brown"
-              iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Pending Review"
-              value={safeRows.filter((row) => ['Draft', 'AutoDrafted', 'PendingApproval'].includes(row.status)).length}
-              icon={<PendingActionsRoundedIcon />}
-              trend="up"
-              trendValue="Needs action"
-              accentClass="stat-accent-gold"
-              iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Approved"
-              value={safeRows.filter((row) => ['Approved', 'PartiallyApproved'].includes(row.status)).length}
-              icon={<TaskAltRoundedIcon />}
-              trend="up"
-              trendValue="Processed"
-              accentClass="stat-accent-sage"
-              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Rejected"
-              value={safeRows.filter((row) => row.status === 'Rejected').length}
-              icon={<HighlightOffRoundedIcon />}
-              trend="up"
-              trendValue="Needs review"
-              accentClass="stat-accent-rust"
-              iconBg="linear-gradient(135deg, #D48C6B 0%, #EAA989 100%)"
-            />
-          </Grid>
-        </Grid>
+      <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
+        <StatCard
+          label="Filed Requests"
+          value={safeRows.length}
+          icon={<AssignmentTurnedInRoundedIcon />}
+          trend="up"
+          trendValue="Queue"
+          accentClass="stat-accent-brown"
+          iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+        />
+        <StatCard
+          label="Pending Review"
+          value={safeRows.filter((row) => ['Draft', 'AutoDrafted', 'PendingApproval'].includes(row.status)).length}
+          icon={<PendingActionsRoundedIcon />}
+          trend="up"
+          trendValue="Needs action"
+          accentClass="stat-accent-gold"
+          iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+        />
+        <StatCard
+          label="Approved"
+          value={safeRows.filter((row) => ['Approved', 'PartiallyApproved'].includes(row.status)).length}
+          icon={<TaskAltRoundedIcon />}
+          trend="up"
+          trendValue="Processed"
+          accentClass="stat-accent-sage"
+          iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+        />
+        <StatCard
+          label="Rejected"
+          value={safeRows.filter((row) => row.status === 'Rejected').length}
+          icon={<HighlightOffRoundedIcon />}
+          trend="up"
+          trendValue="Needs review"
+          accentClass="stat-accent-rust"
+          iconBg="linear-gradient(135deg, #D48C6B 0%, #EAA989 100%)"
+        />
       </Box>
 
       <Box

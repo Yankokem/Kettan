@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { fetchSupplyRequestById, submitSupplyRequest } from '../branch-operations/api';
 import { OrderFulfillmentStepper } from '../orders/components/OrderFulfillmentStepper';
@@ -128,16 +128,16 @@ export function SupplyRequestDetailPage() {
 
       {showStepper ? <OrderFulfillmentStepper status={request.status} /> : null}
 
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 3.5 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '3.5fr 8.5fr' }, gap: 3 }}>
+        <Box>
           <SupplyRequestDetailsPanel request={request} />
-        </Grid>
+        </Box>
 
-        <Grid size={{ xs: 12, md: 8.5 }}>
+        <Box>
           <SupplyRequestItemsTable items={request.items} />
           <SupplyRequestStatusTimeline entries={request.timeline} />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 }

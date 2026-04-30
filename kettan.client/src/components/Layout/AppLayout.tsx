@@ -43,6 +43,7 @@ export function AppLayout() {
           minWidth: 0,
           width: { sm: `calc(100% - ${effectiveWidth}px)` },
           transition: 'width 220ms cubic-bezier(0.4,0,0.2,1), margin 220ms cubic-bezier(0.4,0,0.2,1)',
+          background: 'linear-gradient(135deg, #FAF5EF 0%, #F5EDD8 50%, #EDE0C4 100%)',
         }}
       >
         <Toolbar sx={{ height: 64, minHeight: 64, flexShrink: 0 }} />

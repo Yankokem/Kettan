@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, Chip, Grid, Typography, Card } from '@mui/material';
+import { Box, Chip, Typography, Card } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import GroupRoundedIcon from '@mui/icons-material/GroupRounded';
@@ -140,8 +140,8 @@ export function TenantProfilePage() {
 
       {/* ── Tab Content ── */}
       {activeTab === 'overview' && (
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 8 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '8fr 4fr' }, gap: 3 }}>
+          <Box>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2.5, mb: 3 }}>
               <StatCard label="Active Branches" value={branches.filter(b => b.isActive).length} icon={<StorefrontRoundedIcon />} accentClass="stat-accent-brown" iconBg="none" />
               <StatCard label="Total Users" value={userCount} icon={<GroupRoundedIcon />} accentClass="stat-accent-sage" iconBg="none" />
@@ -169,8 +169,8 @@ export function TenantProfilePage() {
                 </Box>
               </Box>
             </Card>
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
+          </Box>
+          <Box>
             <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 3, bgcolor: '#f8fafc' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <PaymentRoundedIcon sx={{ color: 'text.secondary' }} />
@@ -195,8 +195,8 @@ export function TenantProfilePage() {
                 </>
               )}
             </Card>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       )}
 
       {activeTab === 'subscription' && (

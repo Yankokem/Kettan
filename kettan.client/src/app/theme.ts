@@ -81,14 +81,14 @@ export const lightTheme = createTheme({
       contrastText: '#FFFFFF',
     },
     background: {
-      default: '#F5F5F5',   // clean neutral light gray
+      default: '#FAF5EF',   // Warm café cream
       paper:   '#FFFFFF',
     },
     text: {
-      primary:   '#111827',  // near-black — clean neutral
-      secondary: '#6B7280',  // cool gray
+      primary:   '#2C1A0E',  // Rich coffee brown
+      secondary: '#8C6B43',  // Warm caramel
     },
-    divider: '#E5E7EB',
+    divider: 'rgba(107,76,42,0.12)',
     error:   { main: '#DC2626' },
     warning: { main: '#D97706' },
     info:    { main: '#3B82F6' },

@@ -13,6 +13,7 @@ interface AuthMeResponse {
     email: string;
     name: string;
     role: string;
+    branchId?: number | null;
     imageUrl?: string | null;
   };
   tenant?: {
@@ -71,6 +72,7 @@ export function LoginPage() {
           email: me.user.email,
           name: me.user.name,
           role: me.user.role,
+          branchId: me.user.branchId,
           imageUrl: me.user.imageUrl,
           tenant: me.tenant
             ? {
