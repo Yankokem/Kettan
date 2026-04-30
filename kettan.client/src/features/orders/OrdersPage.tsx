@@ -457,50 +457,17 @@ export function OrdersPage() {
         />
 
         {datasetMode === 'active' ? (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.8,
-              px: 0.75,
-              py: 0.5,
-              border: '1px solid',
-              borderColor: 'rgba(107, 76, 42, 0.3)',
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              flexShrink: 0,
-              overflowX: 'auto',
-            }}
-          >
-            {ACTIVE_STATUS_TABS.map((status) => {
-              const isSelected = activeStatusTab === status;
-
-              return (
-                <Chip
-                  key={status}
-                  label={getStatusDisplayLabel(status)}
-                  size="small"
-                  onClick={() => setActiveStatusTab(status)}
-                  sx={{
-                    height: 30,
-                    borderRadius: 1.5,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    bgcolor: isSelected ? '#6B4C2A' : 'transparent',
-                    color: isSelected ? '#fff' : 'text.secondary',
-                    border: '1px solid',
-                    borderColor: isSelected ? '#6B4C2A' : 'divider',
-                    '&:hover': {
-                      borderColor: '#6B4C2A',
-                      color: isSelected ? '#fff' : '#6B4C2A',
-                      bgcolor: isSelected ? '#5A3E23' : 'rgba(107, 76, 42, 0.06)',
-                    },
-                  }}
-                />
-              );
-            })}
-          </Box>
+          <FilterDropdown
+            label="Status"
+            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+            value={activeStatusTab}
+            onChange={(value) => setActiveStatusTab(value as ActiveStatusTab)}
+            minWidth={160}
+            options={ACTIVE_STATUS_TABS.map((status) => ({
+              value: status,
+              label: getStatusDisplayLabel(status),
+            }))}
+          />
         ) : (
           <FilterDropdown
             label="Status"

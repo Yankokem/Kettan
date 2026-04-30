@@ -25,7 +25,6 @@ interface StaffFormData {
 
 const ROLE_OPTIONS: Array<{ value: StaffFormData['role']; label: string }> = [
   { value: '', label: 'Select a role...' },
-  { value: 'TenantAdmin', label: 'Tenant Admin' },
   { value: 'HqManager', label: 'HQ Manager' },
   { value: 'HqStaff', label: 'HQ Staff' },
   { value: 'BranchOwner', label: 'Branch Owner' },
@@ -345,26 +344,38 @@ export function AddStaffPage() {
               label="Role"
               value={formData.role}
               options={ROLE_OPTIONS}
-              onChange={(event) => setFormData((prev) => ({ ...prev, role: event.target.value as StaffFormData['role'] }))}
+              onChange={(event) => {
+                const newRole = event.target.value as StaffFormData['role'];
+                const isHq = newRole === 'HqManager' || newRole === 'HqStaff';
+                setFormData((prev) => ({
+                  ...prev,
+                  role: newRole,
+                  // Auto-clear branch if switching to HQ role to prevent data bugs
+                  branchId: isHq ? '' : prev.branchId,
+                }));
+              }}
               fullWidth
             />
           </Box>
 
-          <Box sx={{ mb: 3 }}>
-            <FormDropdown
-              label="Branch (Optional)"
-              value={formData.branchId}
-              options={[
-                { value: '', label: 'Select a branch...' },
-                ...branches.map((b) => ({ value: String(b.branchId), label: b.name })),
-              ]}
-              onChange={(event) => setFormData((prev) => ({ ...prev, branchId: event.target.value as string }))}
-              fullWidth
-            />
-            <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
-              Assign this staff member to a specific branch. Leave blank for HQ staff.
-            </Typography>
-          </Box>
+          {/* Only show Branch selection for Branch-specific roles */}
+          {formData.role && (formData.role === 'BranchOwner' || formData.role === 'BranchManager' || formData.role === 'StoreStaff') && (
+            <Box sx={{ mb: 3 }}>
+              <FormDropdown
+                label="Branch (Optional)"
+                value={formData.branchId}
+                options={[
+                  { value: '', label: 'Select a branch...' },
+                  ...branches.map((b) => ({ value: String(b.branchId), label: b.name })),
+                ]}
+                onChange={(event) => setFormData((prev) => ({ ...prev, branchId: event.target.value as string }))}
+                fullWidth
+              />
+              <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
+                Assign this staff member to a specific branch. Leave blank for HQ staff.
+              </Typography>
+            </Box>
+          )}
           
           {showPendingWarning && (
             <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
