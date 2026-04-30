@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Avatar, Box, Chip, Grid, Paper, Typography } from '@mui/material';
 import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import MapRoundedIcon from '@mui/icons-material/MapRounded';
@@ -102,7 +102,6 @@ export function BranchInfoPage() {
   const [branch, setBranch] = useState<Branch | null>(null);
   const [staff, setStaff] = useState<BranchEmployee[]>([]);
   const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!branchId) return;
@@ -110,7 +109,6 @@ export function BranchInfoPage() {
     let isMounted = true;
 
     const load = async () => {
-      setLoading(true);
       try {
         const [branchDto, staffDto, invDto] = await Promise.all([
           fetchBranch(Number(branchId)),
@@ -125,8 +123,6 @@ export function BranchInfoPage() {
         setInventoryItems(invDto.map(mapInventoryItem));
       } catch (err) {
         console.error('Failed to load branch info:', err);
-      } finally {
-        if (isMounted) setLoading(false);
       }
     };
 
