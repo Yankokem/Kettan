@@ -38,33 +38,40 @@ function defaultEndDate() {
 }
 
 function formatStatusLabel(status: string) {
-  if (status === 'PendingApproval') {
-    return 'Pending Approval';
+  switch (status) {
+    case 'PendingApproval': return 'Awaiting HQ';
+    case 'AutoDrafted': return 'Auto Drafted';
+    case 'PartiallyApproved': return 'Partially Approved';
+    case 'InTransit':
+    case 'Dispatched': return 'In Transit';
+    default: return status;
   }
-
-  if (status === 'AutoDrafted') {
-    return 'Auto Drafted';
-  }
-
-  if (status === 'PartiallyApproved') {
-    return 'Partially Approved';
-  }
-
-  return status;
 }
 
 function statusChip(status: string) {
   const normalized = status.toLowerCase();
 
-  if (normalized.includes('pending') || normalized.includes('draft')) {
+  if (normalized === 'draft' || normalized.includes('autodrafted')) {
+    return { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };
+  }
+
+  if (normalized === 'pendingapproval') {
     return { color: '#B45309', bg: 'rgba(180,83,9,0.12)' };
   }
 
-  if (normalized.includes('approved')) {
+  if (['approved', 'completed', 'delivered'].includes(normalized)) {
     return { color: '#047857', bg: 'rgba(4,120,87,0.12)' };
   }
 
-  if (normalized.includes('rejected')) {
+  if (['picking', 'packing', 'processing'].includes(normalized)) {
+    return { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' };
+  }
+
+  if (['dispatched', 'intransit', 'arrived'].includes(normalized)) {
+    return { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' };
+  }
+
+  if (normalized.includes('rejected') || normalized.includes('cancelled')) {
     return { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' };
   }
 
@@ -364,9 +371,13 @@ export function SupplyRequestsPage() {
           options={[
             { value: 'Draft', label: 'Draft' },
             { value: 'AutoDrafted', label: 'Auto-Drafted' },
-            { value: 'PendingApproval', label: 'Pending Approval' },
+            { value: 'PendingApproval', label: 'Awaiting HQ' },
             { value: 'Approved', label: 'Approved' },
-            { value: 'PartiallyApproved', label: 'Partially Approved' },
+            { value: 'Picking', label: 'Picking' },
+            { value: 'Packing', label: 'Packing' },
+            { value: 'Dispatched', label: 'In Transit' },
+            { value: 'Arrived', label: 'Arrived' },
+            { value: 'Completed', label: 'Completed' },
             { value: 'Rejected', label: 'Rejected' },
           ]}
         />

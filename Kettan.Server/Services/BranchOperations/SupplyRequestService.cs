@@ -39,6 +39,10 @@ public class SupplyRequestService : ISupplyRequestService
             .Include(r => r.RequestedBy_User)
             .Include(r => r.Items)
                 .ThenInclude(i => i.Item)
+            .Include(r => r.Orders)
+                .ThenInclude(o => o.ArrivedConfirmedByUser)
+            .Include(r => r.Orders)
+                .ThenInclude(o => o.CompletedByUser)
             .AsQueryable();
 
         if (IsBranchScopedUser())
@@ -641,7 +645,7 @@ public class SupplyRequestService : ISupplyRequestService
 
     private static SupplyRequestDto MapToDto(SupplyRequest request)
     {
-        var order = request.Orders.OrderByDescending(o => o.PushedToFulfillmentAt).FirstOrDefault();
+        var order = request.Orders?.OrderByDescending(o => o.PushedToFulfillmentAt).FirstOrDefault();
 
         return new SupplyRequestDto
         {
@@ -663,11 +667,11 @@ public class SupplyRequestService : ISupplyRequestService
 
             OrderId = order?.OrderId,
             ArrivedAt = order?.ArrivedAt,
-            ArrivedConfirmedByName = order?.ArrivedConfirmedByUser != null 
+            ArrivedConfirmedByName = (order?.ArrivedConfirmedByUser != null)
                 ? $"{order.ArrivedConfirmedByUser.FirstName} {order.ArrivedConfirmedByUser.LastName}".Trim() 
                 : null,
             CompletedAt = order?.CompletedAt,
-            CompletedByName = order?.CompletedByUser != null 
+            CompletedByName = (order?.CompletedByUser != null)
                 ? $"{order.CompletedByUser.FirstName} {order.CompletedByUser.LastName}".Trim() 
                 : null,
 

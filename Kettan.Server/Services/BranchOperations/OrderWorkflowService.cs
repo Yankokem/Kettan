@@ -35,6 +35,8 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
+            .Include(o => o.ArrivedConfirmedByUser)
+            .Include(o => o.CompletedByUser)
             .AsQueryable();
 
         if (branchId.HasValue)
@@ -539,22 +541,23 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     private static OrderDetailDto MapToOrderDetailDto(Order order, Shipment? shipment)
     {
-        var requestedByName = order.SupplyRequest?.RequestedBy_User == null
+        var request = order.SupplyRequest;
+        var requestedByName = request?.RequestedBy_User == null
             ? string.Empty
-            : $"{order.SupplyRequest.RequestedBy_User.FirstName} {order.SupplyRequest.RequestedBy_User.LastName}".Trim();
+            : $"{request.RequestedBy_User.FirstName} {request.RequestedBy_User.LastName}".Trim();
 
         return new OrderDetailDto
         {
             OrderId = order.OrderId,
             RequestId = order.RequestId,
-            BranchId = order.SupplyRequest?.BranchId ?? 0,
-            BranchName = order.SupplyRequest?.Branch?.Name ?? string.Empty,
+            BranchId = request?.BranchId ?? 0,
+            BranchName = request?.Branch?.Name ?? string.Empty,
             Status = order.Status.ToString(),
             PushedToFulfillmentAt = order.PushedToFulfillmentAt,
-            RequestStatus = order.SupplyRequest?.Status.ToString() ?? string.Empty,
-            RequestedByUserId = order.SupplyRequest?.RequestedBy_UserId ?? 0,
+            RequestStatus = request?.Status.ToString() ?? string.Empty,
+            RequestedByUserId = request?.RequestedBy_UserId ?? 0,
             RequestedByName = requestedByName,
-            Notes = order.SupplyRequest?.Notes,
+            Notes = request?.Notes,
             TrackingNumber = shipment?.TrackingNumber,
 
             VehicleId = shipment?.VehicleId,
@@ -562,10 +565,14 @@ public class OrderWorkflowService : IOrderWorkflowService
             EstimatedArrival = shipment?.EstimatedArrival,
 
             ArrivedAt = order.ArrivedAt,
-            ArrivedConfirmedByName = order.ArrivedConfirmedByUser != null ? $"{order.ArrivedConfirmedByUser.FirstName} {order.ArrivedConfirmedByUser.LastName}".Trim() : null,
+            ArrivedConfirmedByName = order.ArrivedConfirmedByUser != null 
+                ? $"{order.ArrivedConfirmedByUser.FirstName} {order.ArrivedConfirmedByUser.LastName}".Trim() 
+                : null,
             CompletedAt = order.CompletedAt,
-            CompletedByName = order.CompletedByUser != null ? $"{order.CompletedByUser.FirstName} {order.CompletedByUser.LastName}".Trim() : null,
-            RequestedItems = (order.SupplyRequest?.Items ?? [])
+            CompletedByName = order.CompletedByUser != null 
+                ? $"{order.CompletedByUser.FirstName} {order.CompletedByUser.LastName}".Trim() 
+                : null,
+            RequestedItems = (request?.Items ?? [])
                 .Select(i => new OrderRequestItemDto
                 {
                     ItemId = i.ItemId,
@@ -576,16 +583,17 @@ public class OrderWorkflowService : IOrderWorkflowService
                     UnitCost = i.Item?.UnitCost ?? 0,
                 })
                 .ToList(),
-            Allocations = order.Allocations.Select(a => new OrderAllocationDto
-            {
-                AllocationId = a.AllocationId,
-                BatchId = a.BatchId,
-                BatchNumber = a.Batch?.BatchNumber ?? string.Empty,
-                ItemId = a.Batch?.ItemId ?? 0,
-                ItemName = a.Batch?.Item?.Name ?? string.Empty,
-                QuantityPicked = a.QuantityPicked,
-                RemainingBatchQuantity = a.Batch?.CurrentQuantity ?? 0
-            }).ToList()
+            Allocations = (order.Allocations ?? [])
+                .Select(a => new OrderAllocationDto
+                {
+                    AllocationId = a.AllocationId,
+                    BatchId = a.BatchId,
+                    BatchNumber = a.Batch?.BatchNumber ?? string.Empty,
+                    ItemId = a.Batch?.ItemId ?? 0,
+                    ItemName = a.Batch?.Item?.Name ?? string.Empty,
+                    QuantityPicked = a.QuantityPicked,
+                    RemainingBatchQuantity = a.Batch?.CurrentQuantity ?? 0
+                }).ToList()
         };
     }
 
