@@ -8,6 +8,14 @@ public class SupplyRequestItemDto
     public string ItemSku { get; set; } = string.Empty;
     public decimal QuantityRequested { get; set; }
     public decimal? QuantityApproved { get; set; }
+
+    // Workflow fields
+    public bool IsPicked { get; set; }
+    public decimal? SendQuantity { get; set; }
+    public bool IsRejectedDuringPicking { get; set; }
+    public string? PickingRejectionReason { get; set; }
+    public bool IsPacked { get; set; }
+    public bool IsBranchChecked { get; set; }
 }
 
 public class SupplyRequestDto
@@ -26,6 +34,13 @@ public class SupplyRequestDto
     public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    public int? OrderId { get; set; }
+    public DateTime? ArrivedAt { get; set; }
+    public string? ArrivedConfirmedByName { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public string? CompletedByName { get; set; }
+
     public List<SupplyRequestItemDto> Items { get; set; } = [];
 }
 

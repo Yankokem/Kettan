@@ -44,6 +44,12 @@ public class OrderDetailDto : BranchOrderDto
     public int? VehicleId { get; set; }
     public DateTime? DispatchDate { get; set; }
     public DateTime? EstimatedArrival { get; set; }
+
+    public DateTime? ArrivedAt { get; set; }
+    public string? ArrivedConfirmedByName { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public string? CompletedByName { get; set; }
+
     public List<OrderRequestItemDto> RequestedItems { get; set; } = [];
     public List<OrderAllocationDto> Allocations { get; set; } = [];
 }

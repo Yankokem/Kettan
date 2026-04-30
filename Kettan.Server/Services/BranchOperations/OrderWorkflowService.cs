@@ -560,6 +560,11 @@ public class OrderWorkflowService : IOrderWorkflowService
             VehicleId = shipment?.VehicleId,
             DispatchDate = shipment?.DispatchDate,
             EstimatedArrival = shipment?.EstimatedArrival,
+
+            ArrivedAt = order.ArrivedAt,
+            ArrivedConfirmedByName = order.ArrivedConfirmedByUser != null ? $"{order.ArrivedConfirmedByUser.FirstName} {order.ArrivedConfirmedByUser.LastName}".Trim() : null,
+            CompletedAt = order.CompletedAt,
+            CompletedByName = order.CompletedByUser != null ? $"{order.CompletedByUser.FirstName} {order.CompletedByUser.LastName}".Trim() : null,
             RequestedItems = (order.SupplyRequest?.Items ?? [])
                 .Select(i => new OrderRequestItemDto
                 {
@@ -595,6 +600,224 @@ public class OrderWorkflowService : IOrderWorkflowService
     }
 
 
+
+    // ── SR WORKFLOW METHODS ──
+
+    public async Task<List<PickingSuggestionDto>> GetPickingSuggestionsAsync(int orderId)
+    {
+        var order = await _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+                    .ThenInclude(i => i.Item)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+        if (order?.SupplyRequest == null) return [];
+
+        var branchId = order.SupplyRequest.BranchId;
+        var suggestions = new List<PickingSuggestionDto>();
+
+        foreach (var reqItem in order.SupplyRequest.Items)
+        {
+            var hqStock = await _inventoryService.GetStockLevelAsync(reqItem.ItemId, null);
+            var branchStock = await _inventoryService.GetStockLevelAsync(reqItem.ItemId, branchId);
+            var threshold = reqItem.Item?.DefaultThreshold ?? 0;
+            var approvedQty = reqItem.QuantityApproved ?? reqItem.QuantityRequested;
+
+            var branchDeficit = Math.Max(0, threshold - branchStock);
+            var suggestedQty = Math.Min(branchDeficit, Math.Min(hqStock, approvedQty));
+
+            suggestions.Add(new PickingSuggestionDto
+            {
+                RequestItemId = reqItem.RequestItemId,
+                ItemId = reqItem.ItemId,
+                ItemName = reqItem.Item?.Name ?? string.Empty,
+                ItemSku = reqItem.Item?.SKU ?? string.Empty,
+                ApprovedQty = approvedQty,
+                HqStock = hqStock,
+                BranchCurrentStock = branchStock,
+                BranchThreshold = threshold,
+                SuggestedSendQty = suggestedQty
+            });
+        }
+
+        return suggestions;
+    }
+
+    public async Task<OrderDetailDto?> SavePickingAsync(int orderId, PickingSubmitDto dto)
+    {
+        var order = await _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+        if (order?.SupplyRequest == null) return null;
+
+        var now = DateTime.UtcNow;
+
+        foreach (var item in dto.Items)
+        {
+            var reqItem = order.SupplyRequest.Items.FirstOrDefault(i => i.RequestItemId == item.RequestItemId);
+            if (reqItem != null)
+            {
+                reqItem.IsPicked = item.IsPicked;
+                reqItem.SendQuantity = item.SendQuantity;
+                reqItem.IsRejectedDuringPicking = item.IsRejected;
+                reqItem.PickingRejectionReason = item.RejectionReason;
+            }
+        }
+
+        order.Status = OrderStatus.Picking;
+        
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = order.TenantId,
+            OrderId = order.OrderId,
+            Status = OrderStatus.Picking,
+            ChangedBy_UserId = _currentUser.UserId,
+            Timestamp = now,
+            Remarks = "Picking in progress."
+        });
+
+        await _context.SaveChangesAsync();
+        return await GetOrderDetailAsync(orderId);
+    }
+
+    public async Task<OrderDetailDto?> SavePackingAsync(int orderId, PackingSubmitDto dto)
+    {
+        var order = await _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+        if (order?.SupplyRequest == null) return null;
+
+        var now = DateTime.UtcNow;
+
+        foreach (var item in dto.Items)
+        {
+            var reqItem = order.SupplyRequest.Items.FirstOrDefault(i => i.RequestItemId == item.RequestItemId);
+            if (reqItem != null && !reqItem.IsRejectedDuringPicking)
+            {
+                reqItem.IsPacked = item.IsPacked;
+            }
+        }
+
+        order.Status = OrderStatus.Packing;
+        
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = order.TenantId,
+            OrderId = order.OrderId,
+            Status = OrderStatus.Packing,
+            ChangedBy_UserId = _currentUser.UserId,
+            Timestamp = now,
+            Remarks = "Packing in progress."
+        });
+
+        await _context.SaveChangesAsync();
+        return await GetOrderDetailAsync(orderId);
+    }
+
+    public async Task<OrderDetailDto?> SubmitDispatchAsync(int orderId)
+    {
+        var order = await _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+        if (order?.SupplyRequest == null) return null;
+
+        var now = DateTime.UtcNow;
+
+        if (order.SupplyRequest.Items.Where(i => !i.IsRejectedDuringPicking).Any(i => !i.IsPacked))
+        {
+            throw new InvalidOperationException("Cannot dispatch until all non-rejected items are packed.");
+        }
+
+        order.Status = OrderStatus.Dispatched;
+        
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = order.TenantId,
+            OrderId = order.OrderId,
+            Status = OrderStatus.Dispatched,
+            ChangedBy_UserId = _currentUser.UserId,
+            Timestamp = now,
+            Remarks = "Order dispatched."
+        });
+
+        await _context.SaveChangesAsync();
+        return await GetOrderDetailAsync(orderId);
+    }
+
+    public async Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId)
+    {
+        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+        if (order == null) return null;
+
+        var now = DateTime.UtcNow;
+
+        order.Status = OrderStatus.Arrived;
+        order.ArrivedAt = now;
+        order.ArrivedConfirmedByUserId = _currentUser.UserId;
+        
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = order.TenantId,
+            OrderId = order.OrderId,
+            Status = OrderStatus.Arrived,
+            ChangedBy_UserId = _currentUser.UserId,
+            Timestamp = now,
+            Remarks = "Package arrived."
+        });
+
+        await _context.SaveChangesAsync();
+        return await GetOrderDetailAsync(orderId);
+    }
+
+    public async Task<OrderDetailDto?> CompleteTransactionAsync(int orderId, BranchCheckSubmitDto dto)
+    {
+        var order = await _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+        if (order?.SupplyRequest == null) return null;
+
+        var now = DateTime.UtcNow;
+
+        foreach (var item in dto.Items)
+        {
+            var reqItem = order.SupplyRequest.Items.FirstOrDefault(i => i.RequestItemId == item.RequestItemId);
+            if (reqItem != null && !reqItem.IsRejectedDuringPicking)
+            {
+                reqItem.IsBranchChecked = item.IsChecked;
+            }
+        }
+
+        if (order.SupplyRequest.Items.Where(i => !i.IsRejectedDuringPicking).Any(i => !i.IsBranchChecked))
+        {
+             throw new InvalidOperationException("Cannot complete until all valid items are checked.");
+        }
+
+        order.Status = OrderStatus.Completed;
+        order.CompletedAt = now;
+        order.CompletedByUserId = _currentUser.UserId;
+        
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = order.TenantId,
+            OrderId = order.OrderId,
+            Status = OrderStatus.Completed,
+            ChangedBy_UserId = _currentUser.UserId,
+            Timestamp = now,
+            Remarks = "Transaction completed."
+        });
+
+        await _context.SaveChangesAsync();
+        return await GetOrderDetailAsync(orderId);
+    }
 
     private async Task ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items)
     {

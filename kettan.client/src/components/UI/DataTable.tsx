@@ -42,6 +42,7 @@ export interface DataTableProps<T> {
   rightAction?: React.ReactNode;
   striped?: boolean;
   className?: string;
+  rowSx?: (row: T, index: number) => any;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -67,6 +68,7 @@ export function DataTable<T>({
   rightAction,
   striped = false,
   className,
+  rowSx,
 }: DataTableProps<T>) {
   const effectiveDefaultPageSize = defaultRowsPerPage ?? defaultPageSize;
   const effectivePageSizes = rowsPerPageOptions ?? pageSizes;
@@ -398,6 +400,7 @@ export function DataTable<T>({
               borderColor: 'divider',
               cursor: onRowClick ? 'pointer' : 'default',
               '&:hover': { bgcolor: 'action.hover' },
+              ...(rowSx ? rowSx(row, rowIndex) : {}),
             }}
           >
             {columns.map((col) => (

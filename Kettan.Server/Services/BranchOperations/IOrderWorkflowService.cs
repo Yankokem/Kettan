@@ -12,4 +12,10 @@ public interface IOrderWorkflowService
     Task<bool> ConfirmPackedAsync(int orderId, UpdateOrderStatusDto dto);
     Task<bool> DispatchAsync(int orderId, DispatchOrderDto dto);
     Task<bool> ConfirmDeliveryAsync(int orderId, ConfirmDeliveryDto dto);
+    Task<List<PickingSuggestionDto>> GetPickingSuggestionsAsync(int orderId);
+    Task<OrderDetailDto?> SavePickingAsync(int orderId, PickingSubmitDto dto);
+    Task<OrderDetailDto?> SavePackingAsync(int orderId, PackingSubmitDto dto);
+    Task<OrderDetailDto?> SubmitDispatchAsync(int orderId);
+    Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId);
+    Task<OrderDetailDto?> CompleteTransactionAsync(int orderId, BranchCheckSubmitDto dto);
 }

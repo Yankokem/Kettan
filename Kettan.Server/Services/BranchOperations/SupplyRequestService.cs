@@ -581,6 +581,10 @@ public class SupplyRequestService : ISupplyRequestService
             .Include(r => r.RequestedBy_User)
             .Include(r => r.Items)
                 .ThenInclude(i => i.Item)
+            .Include(r => r.Orders)
+                .ThenInclude(o => o.ArrivedConfirmedByUser)
+            .Include(r => r.Orders)
+                .ThenInclude(o => o.CompletedByUser)
             .FirstOrDefaultAsync(r => r.RequestId == requestId);
     }
 
@@ -637,6 +641,8 @@ public class SupplyRequestService : ISupplyRequestService
 
     private static SupplyRequestDto MapToDto(SupplyRequest request)
     {
+        var order = request.Orders.OrderByDescending(o => o.PushedToFulfillmentAt).FirstOrDefault();
+
         return new SupplyRequestDto
         {
             RequestId = request.RequestId,
@@ -654,6 +660,17 @@ public class SupplyRequestService : ISupplyRequestService
             Notes = request.Notes,
             CreatedAt = request.CreatedAt,
             UpdatedAt = request.UpdatedAt,
+
+            OrderId = order?.OrderId,
+            ArrivedAt = order?.ArrivedAt,
+            ArrivedConfirmedByName = order?.ArrivedConfirmedByUser != null 
+                ? $"{order.ArrivedConfirmedByUser.FirstName} {order.ArrivedConfirmedByUser.LastName}".Trim() 
+                : null,
+            CompletedAt = order?.CompletedAt,
+            CompletedByName = order?.CompletedByUser != null 
+                ? $"{order.CompletedByUser.FirstName} {order.CompletedByUser.LastName}".Trim() 
+                : null,
+
             Items = request.Items.Select(item => new SupplyRequestItemDto
             {
                 RequestItemId = item.RequestItemId,
@@ -661,7 +678,14 @@ public class SupplyRequestService : ISupplyRequestService
                 ItemName = item.Item?.Name ?? string.Empty,
                 ItemSku = item.Item?.SKU ?? string.Empty,
                 QuantityRequested = item.QuantityRequested,
-                QuantityApproved = item.QuantityApproved
+                QuantityApproved = item.QuantityApproved,
+                
+                IsPicked = item.IsPicked,
+                SendQuantity = item.SendQuantity,
+                IsRejectedDuringPicking = item.IsRejectedDuringPicking,
+                PickingRejectionReason = item.PickingRejectionReason,
+                IsPacked = item.IsPacked,
+                IsBranchChecked = item.IsBranchChecked
             }).ToList()
         };
     }
