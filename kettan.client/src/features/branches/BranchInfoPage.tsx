@@ -1,29 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Avatar, Box, Chip, Grid, Paper, Skeleton, Typography } from '@mui/material';
-import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
+import { Avatar, Box, Chip, Grid, Paper, Typography } from '@mui/material';
+import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
+import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import CallRoundedIcon from '@mui/icons-material/CallRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import { useAuthStore } from '../../store/useAuthStore';
 import { fetchBranch, fetchBranchStaff, fetchBranchInventory } from './branchesApi';
-import { fetchMenuItems, type MenuItemDto } from '../menu/menuItemsApi';
 import { 
   mapBranch, 
   mapEmployee, 
   mapInventoryItem, 
   formatSchedule, 
-  isOpenNow, 
-  getInitials,
-  BRANCH_PROFILE_TABS,
-  getKpisForTab
+  getInitials 
 } from './branchProfileData';
-import type { Branch, BranchEmployee, BranchInventoryItem, BranchProfileTabKey } from './types';
-import { BranchProfileTabHeader } from './components/profile/BranchProfileTabHeader';
-import { BranchStaffTab } from './components/profile/BranchStaffTab';
-import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
-import { BranchMenuTab } from './components/profile/BranchMenuTab';
+import type { Branch, BranchEmployee, BranchInventoryItem } from './types';
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -45,47 +37,59 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SummaryCard({
-  icon,
+function SummaryMeter({
   label,
-  value,
-  iconBg,
+  current,
+  icon,
+  tone,
 }: {
-  icon: React.ReactNode;
   label: string;
-  value: string;
-  iconBg: string;
+  current: number;
+  icon: React.ReactNode;
+  tone: 'gold' | 'sage';
 }) {
+  const toneStyles =
+    tone === 'gold'
+      ? {
+        track: 'rgba(201,168,76,0.15)',
+        fill: 'linear-gradient(90deg, #9F7B3A 0%, #C9A84C 100%)',
+        chipBg: 'rgba(201,168,76,0.16)',
+        chipColor: '#6B4C2A',
+      }
+      : {
+        track: 'rgba(113,143,88,0.18)',
+        fill: 'linear-gradient(90deg, #5F7C49 0%, #7FA45E 100%)',
+        chipBg: 'rgba(113,143,88,0.15)',
+        chipColor: '#3F5831',
+      };
+
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        p: 1.75,
-        borderRadius: 2.5,
-        border: '1px solid',
-        borderColor: 'divider',
-        bgcolor: '#FAFAFA',
-      }}
-    >
-      <Box
-        sx={{
-          width: 36,
-          height: 36,
-          borderRadius: 2,
-          background: iconBg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#FFFFFF',
-        }}
-      >
-        {icon}
+    <Box sx={{ p: 1.75, borderRadius: 2.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ color: toneStyles.chipColor }}>{icon}</Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{label}</Typography>
+        </Box>
+        <Chip
+          label={current}
+          size="small"
+          sx={{
+            height: 22,
+            borderRadius: 999,
+            bgcolor: toneStyles.chipBg,
+            color: toneStyles.chipColor,
+            fontWeight: 800,
+            fontSize: 11,
+          }}
+        />
       </Box>
-      <Box>
-        <Typography sx={{ fontSize: 20, fontWeight: 800, lineHeight: 1 }}>{value}</Typography>
-        <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 600 }}>{label}</Typography>
+
+      <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600, mb: 1.2 }}>
+        Current operational count
+      </Typography>
+
+      <Box sx={{ width: '100%', height: 8, bgcolor: toneStyles.track, borderRadius: 999, overflow: 'hidden' }}>
+        <Box sx={{ width: '100%', height: '100%', background: toneStyles.fill, borderRadius: 999 }} />
       </Box>
     </Box>
   );
@@ -95,74 +99,30 @@ export function BranchInfoPage() {
   const { user } = useAuthStore();
   const branchId = user?.branchId;
 
-  const [activeTab, setActiveTab] = useState<BranchProfileTabKey>('details');
   const [branch, setBranch] = useState<Branch | null>(null);
   const [staff, setStaff] = useState<BranchEmployee[]>([]);
   const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItemDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tabLoading, setTabLoading] = useState(false);
-
-  // Filter tabs for branch users (hide Activity and Transactions if they aren't supposed to see them here)
-  // Actually, let's show what was in the BRANCH_PROFILE_TABS except maybe hide those that might be sensitive
-  // But the user said "info of the branch just like company profile"
-  // For now let's show Details, Staff, Inventory, Menu.
-  const filteredTabs = useMemo(() => {
-    return BRANCH_PROFILE_TABS.filter(tab => 
-      ['details', 'staff', 'inventory', 'menu'].includes(tab.key)
-    );
-  }, []);
-
-  const loadTabContent = async (tab: BranchProfileTabKey) => {
-    if (!branchId) return;
-    setTabLoading(true);
-    try {
-      const parsedId = Number(branchId);
-      switch (tab) {
-        case 'staff':
-          if (staff.length === 0) {
-            const dto = await fetchBranchStaff(parsedId);
-            setStaff(dto.map(mapEmployee));
-          }
-          break;
-        case 'inventory':
-          if (inventoryItems.length === 0) {
-            const dto = await fetchBranchInventory(parsedId);
-            setInventoryItems(dto.map(mapInventoryItem));
-          }
-          break;
-        case 'menu':
-          const mDto = await fetchMenuItems();
-          setMenuItems(mDto);
-          // Also need inventory for availability cross-reference
-          if (inventoryItems.length === 0) {
-            const iDto = await fetchBranchInventory(parsedId);
-            setInventoryItems(iDto.map(mapInventoryItem));
-          }
-          break;
-      }
-    } catch (err) {
-      console.error(`Failed to load ${tab} content:`, err);
-    } finally {
-      setTabLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadTabContent(activeTab);
-  }, [activeTab, branchId]);
 
   useEffect(() => {
     if (!branchId) return;
 
     let isMounted = true;
 
-    const loadInitial = async () => {
+    const load = async () => {
       setLoading(true);
       try {
-        const branchDto = await fetchBranch(Number(branchId));
+        const [branchDto, staffDto, invDto] = await Promise.all([
+          fetchBranch(Number(branchId)),
+          fetchBranchStaff(Number(branchId)),
+          fetchBranchInventory(Number(branchId)),
+        ]);
+
         if (!isMounted) return;
+
         setBranch(mapBranch(branchDto));
+        setStaff(staffDto.map(mapEmployee));
+        setInventoryItems(invDto.map(mapInventoryItem));
       } catch (err) {
         console.error('Failed to load branch info:', err);
       } finally {
@@ -170,13 +130,13 @@ export function BranchInfoPage() {
       }
     };
 
-    void loadInitial();
+    void load();
     return () => { isMounted = false; };
   }, [branchId]);
 
   if (!branchId) {
     return (
-      <Box sx={{ pb: 4, display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ pb: 4, display: 'flex', justifyContent: 'center', pt: 4 }}>
         <Paper
           elevation={0}
           sx={{
@@ -201,32 +161,8 @@ export function BranchInfoPage() {
     );
   }
 
-  const branchCode = branch ? `BR-${branch.id.toString().padStart(5, '0')}` : '';
-  const branchOpen = branch ? isOpenNow(branch.openTime, branch.closeTime) : false;
-  const activeStaffCount = staff.length > 0 ? staff.filter((s) => s.isActive).length : 0;
-  const lowStockCount = inventoryItems.filter((i) => i.status === 'low-stock' || i.status === 'out-of-stock').length;
-
-  const tabBadges = useMemo(() => ({
-    staff: staff.length || undefined,
-    inventory: inventoryItems.length || undefined,
-    menu: menuItems.length || undefined,
-  }), [staff.length, inventoryItems.length, menuItems.length]);
-
-  const kpis = useMemo(() => {
-    if (!branch) return [];
-    return getKpisForTab(activeTab, {
-      branch,
-      employees: staff,
-      activityLogs: [], // Not used in filtered tabs
-      transactions: [], // Not used in filtered tabs
-      inventoryItems,
-      menuItems: menuItems.map(m => ({ status: m.status }))
-    });
-  }, [activeTab, branch, staff, inventoryItems, menuItems]);
-
   return (
     <Box sx={{ pb: 5 }}>
-      {/* Hero Banner */}
       <Paper
         elevation={0}
         sx={{
@@ -237,108 +173,115 @@ export function BranchInfoPage() {
           mb: 3,
         }}
       >
-        {/* Gradient header */}
+        {/* ── Banner ── */}
         <Box
           sx={{
             position: 'relative',
-            height: 146,
+            height: 140,
             background: 'linear-gradient(135deg, #6A4120 0%, #8C5F2B 34%, #B78644 68%, #E1C26F 100%)',
           }}
         >
+          {/* Dot texture overlay */}
           <Box
             sx={{
               position: 'absolute',
               inset: 0,
-              opacity: 0.06,
+              opacity: 0.08,
               backgroundImage: 'radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)',
               backgroundSize: '28px 28px',
             }}
           />
 
-          {loading ? (
-            <Skeleton
-              variant="rectangular"
-              sx={{ position: 'absolute', top: 16, right: 16, width: 80, height: 30, borderRadius: 999, bgcolor: 'rgba(255,255,255,0.1)' }}
-            />
-          ) : (
-            <Chip
-              label={branchOpen ? 'Open Now' : 'Closed'}
-              size="small"
+          {/* Branch name — pinned to bottom-left of banner, matching Company Profile */}
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 12,
+              left: { xs: 3, sm: '184px' },
+              right: { xs: 3, sm: '420px' },
+            }}
+          >
+            <Typography
               sx={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                height: 30,
-                borderRadius: 999,
-                bgcolor: branchOpen ? 'rgba(236,253,245,0.96)' : 'rgba(255,251,235,0.95)',
-                color: branchOpen ? '#166534' : '#92400E',
-                border: '1px solid',
-                borderColor: branchOpen ? '#86EFAC' : '#FCD34D',
-                fontSize: 11,
+                fontSize: { xs: 20, sm: 26 },
                 fontWeight: 800,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.14)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+                color: '#FAF5EF',
+                textShadow: '0 1px 6px rgba(0,0,0,0.3)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
-            />
-          )}
+            >
+              {branch?.name || 'Loading Branch...'}
+            </Typography>
+          </Box>
         </Box>
 
-        {/* Branch info below banner */}
-        <Box sx={{ px: { xs: 3, sm: 4 }, pb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mt: -9 }}>
-            {loading ? (
-              <Skeleton variant="rectangular" sx={{ width: 116, height: 116, borderRadius: 3, border: '4px solid #FFFFFF' }} />
-            ) : (
-              <Avatar
-                src={branch?.imageUrl}
-                sx={{
-                  width: 116,
-                  height: 116,
-                  borderRadius: 3,
-                  bgcolor: '#2E1F14',
-                  border: '4px solid #FFFFFF',
-                  fontWeight: 800,
-                  fontSize: 38,
-                }}
-              >
-                {branch ? getInitials(branch.name) : '??'}
-              </Avatar>
-            )}
+        {/* ── Below-banner row: avatar + chips + meta ── */}
+        <Box sx={{ px: { xs: 3, sm: 4 }, pb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2.5, mt: -5, flexWrap: 'wrap' }}>
+            {/* Avatar centered on the seam — half above, half below */}
+            <Avatar
+              variant="rounded"
+              src={branch?.imageUrl || undefined}
+              sx={{
+                width: 132,
+                height: 132,
+                borderRadius: 4,
+                bgcolor: '#FAF5EF',
+                border: '5px solid',
+                borderColor: 'background.paper',
+                color: '#6B4C2A',
+                flexShrink: 0,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                fontSize: 48,
+                fontWeight: 800
+              }}
+            >
+              {branch ? getInitials(branch.name) : '??'}
+            </Avatar>
 
-            <Box sx={{ pb: 0.3, pt: 1.1, minWidth: 0, flex: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', pt: 0.2 }}>
-                {loading ? (
-                  <Skeleton variant="text" width={280} height={48} />
-                ) : (
-                  <>
-                    <Typography sx={{ fontSize: { xs: 24, sm: 40 }, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-                      {branch?.name}
-                    </Typography>
-                    <Chip
-                      label={branch?.status === 'active' ? 'Active' : 'Setup Pending'}
-                      size="small"
-                      sx={{
-                        height: 24,
-                        borderRadius: 999,
-                        bgcolor: branch?.status === 'active' ? 'success.light' : 'grey.200',
-                        color: branch?.status === 'active' ? 'success.dark' : 'text.secondary',
-                        fontWeight: 700,
-                        fontSize: 11,
-                      }}
-                    />
-                    <Chip
-                      label={branchCode}
-                      size="small"
-                      sx={{
-                        height: 22,
-                        borderRadius: 999,
-                        bgcolor: 'rgba(201,168,76,0.2)',
-                        color: '#5C4518',
-                        fontSize: 10.5,
-                        fontWeight: 800,
-                      }}
-                    />
-                  </>
-                )}
+            {/* Chips + meta below the avatar */}
+            <Box sx={{ minWidth: 0, flex: 1, pb: 0.5, pt: 3.5 }}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
+                <Chip
+                  icon={<MapRoundedIcon fontSize="small" />}
+                  label={branch?.city || 'City N/A'}
+                  size="small"
+                  sx={{
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    height: 28,
+                    fontWeight: 600,
+                  }}
+                />
+                <Chip
+                  label={branch?.status === 'active' ? 'Active Branch' : 'Setup Pending'}
+                  size="small"
+                  sx={{
+                    bgcolor: branch?.status === 'active' ? 'rgba(113,143,88,0.15)' : 'rgba(201,168,76,0.18)',
+                    color: branch?.status === 'active' ? '#3F5831' : '#6B4C2A',
+                    borderRadius: 999,
+                    height: 28,
+                    fontWeight: 800,
+                  }}
+                />
+                <Chip
+                  label={`BR-${branchId?.toString().padStart(5, '0')}`}
+                  size="small"
+                  sx={{
+                    bgcolor: 'rgba(107,76,42,0.10)',
+                    color: '#5C4518',
+                    borderRadius: 999,
+                    height: 24,
+                    fontWeight: 700,
+                    fontSize: 11,
+                  }}
+                />
               </Box>
 
               <Box
@@ -346,139 +289,100 @@ export function BranchInfoPage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1.8,
-                  mt: 1.1,
-                  pt: 1.1,
+                  pt: 0.75,
                   borderTop: '1px solid',
                   borderColor: 'divider',
                   flexWrap: 'wrap',
                 }}
               >
-                {loading ? (
-                  <Skeleton variant="text" width="60%" height={24} />
-                ) : (
-                  <>
-                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                      <LocationOnRoundedIcon sx={{ fontSize: 14 }} />
-                      {branch?.city}
-                    </Typography>
-                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                      <AccessTimeRoundedIcon sx={{ fontSize: 14 }} />
-                      {branch ? `${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}` : ''}
-                    </Typography>
-                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                      <CallRoundedIcon sx={{ fontSize: 14 }} />
-                      {branch?.contactNumber}
-                    </Typography>
-                  </>
-                )}
+                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                  <AccessTimeRoundedIcon sx={{ fontSize: 14 }} />
+                  {branch ? `${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}` : 'Schedule Not Set'}
+                </Typography>
+                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                  <CallRoundedIcon sx={{ fontSize: 14 }} />
+                  {branch?.contactNumber || 'No Contact Number'}
+                </Typography>
+                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                  <PeopleRoundedIcon sx={{ fontSize: 14 }} />
+                  {staff.length} Active Staff Members
+                </Typography>
               </Box>
             </Box>
           </Box>
         </Box>
       </Paper>
 
-      {/* Navigation Tabs */}
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, mb: 3, overflow: 'hidden' }}>
-        <BranchProfileTabHeader 
-          tabs={filteredTabs} 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
-          badgeMap={tabBadges}
-          loading={tabLoading}
-        />
-
-        {/* Summary Bar - same as BranchProfilePage */}
-        <Box sx={{ p: 2, bgcolor: '#FAFAFA', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Grid container spacing={2}>
-            {kpis.map((kpi) => (
-              <Grid size={{ xs: 6, sm: 3 }} key={kpi.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: kpi.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <kpi.icon sx={{ fontSize: 16, color: kpi.iconColor }} />
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{kpi.value}</Typography>
-                    <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>{kpi.label}</Typography>
-                  </Box>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-
-        {/* Tab Content */}
-        <Box>
-          {activeTab === 'details' && branch && (
-            <Box sx={{ p: { xs: 3, md: 4 } }}>
-              <Grid container spacing={3}>
-                <Grid size={{ xs: 12, md: 8 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
-                    <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
-                    <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Details</Typography>
-                  </Box>
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <DetailRow label="Branch Name" value={branch.name} />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <DetailRow label="Status" value={branch.status === 'active' ? 'Active (Operational)' : 'Setup Pending'} />
-                    </Grid>
-                    <Grid size={{ xs: 12 }}>
-                      <DetailRow label="Address" value={branch.address} />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <DetailRow label="City" value={branch.city} />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <DetailRow label="Contact" value={branch.contactNumber} />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <DetailRow label="Schedule" value={`${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}`} />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <DetailRow label="Manager" value={branch.manager || 'Unassigned'} />
-                    </Grid>
-                  </Grid>
-                </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    <SummaryCard
-                      icon={<PeopleRoundedIcon sx={{ fontSize: 18 }} />}
-                      label="Staff"
-                      value={activeStaffCount.toString()}
-                      iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
-                    />
-                    <SummaryCard
-                      icon={<Inventory2RoundedIcon sx={{ fontSize: 18 }} />}
-                      label="Inventory Items"
-                      value={inventoryItems.length.toString()}
-                      iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
-                    />
-                    <SummaryCard
-                      icon={<StoreRoundedIcon sx={{ fontSize: 18 }} />}
-                      label="Issues"
-                      value={lowStockCount.toString()}
-                      iconBg={lowStockCount > 0 ? 'linear-gradient(135deg, #B91C1C 0%, #F87171 100%)' : 'linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)'}
-                    />
-                  </Box>
-                </Grid>
-              </Grid>
+      {/* ── Main Content Grid ── */}
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: { xs: 2.5, sm: 3 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
+              <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
+              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Information</Typography>
             </Box>
-          )}
 
-          {activeTab === 'staff' && (
-            <BranchStaffTab employees={staff} onOpenStaffProfile={() => {}} />
-          )}
+            <Grid container spacing={2.4}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <DetailRow label="Legal Name / Entity" value={branch?.name || 'N/A'} />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <DetailRow label="Branch Status" value={branch?.status === 'active' ? 'Operational' : 'Onboarding'} />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <DetailRow label="Full Address" value={branch?.address || 'N/A'} />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <DetailRow label="Operating City" value={branch?.city || 'N/A'} />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <DetailRow label="Official Contact" value={branch?.contactNumber || 'N/A'} />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <DetailRow label="Operating Schedule" value={branch ? `${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}` : 'N/A'} />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <DetailRow label="Assigned Manager" value={branch?.manager || 'Unassigned'} />
+              </Grid>
+            </Grid>
+          </Paper>
+        </Grid>
 
-          {activeTab === 'inventory' && (
-            <BranchInventoryTab items={inventoryItems} />
-          )}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: { xs: 2.5, sm: 3 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
+              <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
+              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Overview</Typography>
+            </Box>
 
-          {activeTab === 'menu' && (
-            <BranchMenuTab menuItems={menuItems} branchInventoryItems={inventoryItems} />
-          )}
-        </Box>
-      </Paper>
+            <Box sx={{ display: 'grid', gap: 1.4 }}>
+              <SummaryMeter 
+                label="Staff Members" 
+                current={staff.length} 
+                icon={<PeopleRoundedIcon fontSize="small" />} 
+                tone="sage" 
+              />
+              <SummaryMeter 
+                label="Inventory Items" 
+                current={inventoryItems.length} 
+                icon={<Inventory2RoundedIcon fontSize="small" />} 
+                tone="gold" 
+              />
+            </Box>
+
+            <Box sx={{ mt: 2.2, pt: 2, borderTop: '1px solid', borderColor: 'divider', display: 'grid', gap: 1 }}>
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.8 }}>
+                <CallRoundedIcon sx={{ fontSize: 15 }} />
+                {branch?.contactNumber || 'Not available'}
+              </Typography>
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.8 }}>
+                <MapRoundedIcon sx={{ fontSize: 15 }} />
+                {branch?.address || 'Address not set'}
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 }

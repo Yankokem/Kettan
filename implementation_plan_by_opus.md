@@ -410,9 +410,9 @@ cd Kettan.Server && dotnet build    # Must produce zero C# errors
 - Add `branchId: number | null` to `AuthMeResponse.user`.
 - Map `branchId: me.user.branchId` in the `login()` call.
 
-#### 2. [MODIFY] [BranchInfoPage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/branches/BranchInfoPage.tsx)
-- Re-introduce tabbed navigation (Details, Staff, Inventory, Menu).
-- Keep it read-only but ensure branch managers can access the Menu tab.
+#### 2. ~~[MODIFY] [BranchInfoPage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/branches/BranchInfoPage.tsx)~~ ✅ DONE
+- **Strict Redesign**: Replaced with a single-page data view (NO TABS) matching `CompanyProfilePage.tsx`.
+- Includes white branch name inside banner, large avatar on seam, and grid-based detail sections.
 
-#### 3. [VERIFY] [roleHelpers.ts](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/utils/roleHelpers.ts)
-- Ensure `TenantAdmin` has sidebar access to `menu` (should be working, will re-check).
+#### 3. ~~[VERIFY] [roleHelpers.ts](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/utils/roleHelpers.ts)~~ ✅ DONE
+- Verified `TenantAdmin` has sidebar access to `menu` and `BranchManager` has access to `branch-profile`.
