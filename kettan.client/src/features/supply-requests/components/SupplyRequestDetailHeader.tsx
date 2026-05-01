@@ -123,8 +123,8 @@ export function SupplyRequestDetailHeader({
             <Button variant="outlined" color="error" startIcon={<CancelRoundedIcon />} onClick={onReject} disabled={isSubmitting}>
               Reject
             </Button>
-            <Button color="success" startIcon={<CheckCircleRoundedIcon />} onClick={onApprove} disabled={isSubmitting}>
-              Approve
+            <Button color="success" startIcon={<CheckCircleRoundedIcon />} onClick={onApprove} loading={isSubmitting} disabled={isSubmitting}>
+              {isSubmitting ? 'Generating Order...' : 'Approve'}
             </Button>
           </>
         )}

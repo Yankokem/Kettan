@@ -1,13 +1,17 @@
-import { Button as MuiButton } from '@mui/material';
+import { Button as MuiButton, CircularProgress } from '@mui/material';
 import type { ButtonProps as MuiButtonProps } from '@mui/material';
 
-export function Button({ variant = 'contained', sx, ...props }: MuiButtonProps) {
+interface ButtonProps extends MuiButtonProps {
+  loading?: boolean;
+}
+
+export function Button({ variant = 'contained', sx, loading, disabled, children, startIcon, ...props }: ButtonProps) {
   const getStyles = () => {
     if (variant === 'contained') {
       return {
         bgcolor: '#2E1F14',
         color: '#fff',
-        border: '1px solid transparent', // Matches the 1px border of outlined buttons so heights align perfectly
+        border: '1px solid transparent',
         '&:hover': { bgcolor: '#4A3424' },
       };
     }
@@ -25,8 +29,10 @@ export function Button({ variant = 'contained', sx, ...props }: MuiButtonProps) 
     <MuiButton
       variant={variant}
       disableElevation
+      disabled={disabled || loading}
+      startIcon={!loading ? startIcon : undefined}
       sx={{
-        height: 40, // Strict height for uniformity
+        height: 40,
         textTransform: 'none',
         fontWeight: 600,
         borderRadius: 2,
@@ -35,6 +41,15 @@ export function Button({ variant = 'contained', sx, ...props }: MuiButtonProps) 
         ...sx,
       }}
       {...props}
-    />
+    >
+      {loading ? (
+        <>
+          <CircularProgress size={18} sx={{ color: 'inherit', mr: 1.5 }} thickness={5} />
+          {children}
+        </>
+      ) : (
+        children
+      )}
+    </MuiButton>
   );
 }

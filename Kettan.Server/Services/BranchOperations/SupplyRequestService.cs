@@ -334,7 +334,7 @@ public class SupplyRequestService : ISupplyRequestService
         {
             TenantId = request.TenantId,
             RequestId = request.RequestId,
-            Status = OrderStatus.Processing,
+            Status = OrderStatus.Picking,
             PushedToFulfillmentAt = now
         };
 
@@ -343,9 +343,9 @@ public class SupplyRequestService : ISupplyRequestService
         {
             TenantId = request.TenantId,
             Order = order,
-            Status = OrderStatus.Processing,
+            Status = OrderStatus.Picking,
             ChangedBy_UserId = _currentUser.UserId.Value,
-            Remarks = "Supply request approved and moved to processing.",
+            Remarks = "Supply request approved and moved to picking.",
             Timestamp = now
         });
 
