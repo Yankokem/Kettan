@@ -246,17 +246,18 @@ export function ItemCategoriesPage() {
         </Box>
       </Box>
 
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
-          <Box
-            sx={{
-              width: { xs: '100%', lg: '38%' },
-              p: 3,
-              borderRight: { xs: 'none', lg: '1px solid' },
-              borderBottom: { xs: '1px solid', lg: 'none' },
-              borderColor: 'divider',
-            }}
-          >
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', lg: '38%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            p: 3,
+          }}
+        >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 2.2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CategoryRoundedIcon sx={{ fontSize: 20, color: '#6B4C2A' }} />
@@ -324,9 +325,18 @@ export function ItemCategoriesPage() {
                 Reset
               </Button>
             </Box>
-          </Box>
+          </Paper>
 
-          <Box sx={{ width: { xs: '100%', lg: '62%' }, p: 3 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              flex: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 4,
+              p: 3,
+            }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap', mb: 2.2 }}>
               <SearchInput
                 value={search}
@@ -388,7 +398,7 @@ export function ItemCategoriesPage() {
                     pr: { xs: 0, lg: 0.8 },
                   }}
                 >
-                  <Grid container spacing={1.8}>
+                  <Grid container spacing={1.8} sx={{ overflow: 'visible' }}>
                     {visibleCategories.map((category) => (
                       <Grid key={category.categoryId} size={{ xs: 12, md: 6 }}>
                         <ItemCategoryCard
@@ -413,9 +423,8 @@ export function ItemCategoriesPage() {
                 />
               )}
             </DataStateWrapper>
-          </Box>
+          </Paper>
         </Box>
-      </Paper>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

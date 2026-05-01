@@ -39,7 +39,7 @@ export function NotificationBell() {
         onClose={handleClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { width: 340, borderRadius: 3, mt: 1.5, border: '1px solid', borderColor: 'divider' } } }}
+        slotProps={{ paper: { sx: { width: 340, borderRadius: '14px', mt: 1.5, border: '1px solid', borderColor: 'divider' } } }}
         elevation={4}
       >
         <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>

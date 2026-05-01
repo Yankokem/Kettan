@@ -4,20 +4,12 @@ import type { SvgIconProps } from '@mui/material/SvgIcon';
 import { motion } from 'motion/react';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import { AccessMatrix } from '../../components/UI/AccessMatrix';
 import { Button } from '../../components/UI/Button';
 import { Switch } from '../../components/UI/Switch';
 
-type SettingsTabKey = 'access' | 'thresholds' | 'approvals' | 'notifications';
-
-interface ThresholdConfig {
-  id: string;
-  label: string;
-  unit: string;
-  value: number;
-}
+type SettingsTabKey = 'access' | 'approvals' | 'notifications';
 
 const SETTINGS_TABS: {
   key: SettingsTabKey;
@@ -32,13 +24,6 @@ const SETTINGS_TABS: {
     icon: ShieldRoundedIcon,
     hint: 'Permissions by role and module',
     detail: 'Define who can view, create, update, and delete records across each major system module.',
-  },
-  {
-    key: 'thresholds',
-    label: 'Thresholds',
-    icon: TuneRoundedIcon,
-    hint: 'Low-stock defaults for catalog items',
-    detail: 'Set chain-wide minimum stock levels used by alerts, replenishment planning, and branch monitoring.',
   },
   {
     key: 'approvals',
@@ -59,13 +44,6 @@ const SETTINGS_TABS: {
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTabKey>('access');
 
-  const [thresholds, setThresholds] = useState<ThresholdConfig[]>([
-    { id: 'beans', label: 'Arabica Beans', unit: 'kg', value: 5 },
-    { id: 'milk', label: 'Fresh Milk', unit: 'L', value: 20 },
-    { id: 'cups', label: 'Medium Cups', unit: 'pcs', value: 120 },
-    { id: 'lids', label: 'Cup Lids', unit: 'pcs', value: 120 },
-  ]);
-
   const [autoApproveEnabled, setAutoApproveEnabled] = useState(true);
   const [autoApproveLimit, setAutoApproveLimit] = useState('5000');
 
@@ -80,18 +58,6 @@ export function SettingsPage() {
     () => SETTINGS_TABS.find((entry) => entry.key === activeTab) ?? SETTINGS_TABS[0],
     [activeTab]
   );
-
-  const updateThreshold = (id: string, value: string) => {
-    const parsed = Number(value);
-
-    if (!Number.isFinite(parsed)) {
-      return;
-    }
-
-    setThresholds((previous) =>
-      previous.map((entry) => (entry.id === id ? { ...entry, value: parsed } : entry))
-    );
-  };
 
   return (
     <Box sx={{ pb: 4 }}>
@@ -113,7 +79,7 @@ export function SettingsPage() {
             sx={{
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               overflow: 'hidden',
               position: { md: 'sticky' },
               top: { md: 12 },
@@ -217,47 +183,6 @@ export function SettingsPage() {
             </Box>
 
             {activeTab === 'access' ? <AccessMatrix hideHeader /> : null}
-
-            {activeTab === 'thresholds' ? (
-              <Box>
-                <Box sx={{ display: 'grid', gap: 1.5 }}>
-                  {thresholds.map((entry) => (
-                    <Box
-                      key={entry.id}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        px: 2,
-                        py: 1.5,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: 2,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <Box>
-                        <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'text.primary' }}>{entry.label}</Typography>
-                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Unit: {entry.unit}</Typography>
-                      </Box>
-
-                      <TextField
-                        size="small"
-                        type="number"
-                        value={entry.value}
-                        onChange={(event) => updateThreshold(entry.id, event.target.value)}
-                        sx={{ width: 120 }}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-
-                <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button>Save Threshold Defaults</Button>
-                </Box>
-              </Box>
-            ) : null}
 
             {activeTab === 'approvals' ? (
               <Box>

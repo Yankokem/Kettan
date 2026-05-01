@@ -880,6 +880,18 @@ namespace Kettan.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderId"));
 
+                    b.Property<DateTime?>("ArrivedAt")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int?>("ArrivedConfirmedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int?>("CompletedByUserId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2(3)");
 
@@ -899,6 +911,10 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("OrderId");
+
+                    b.HasIndex("ArrivedConfirmedByUserId");
+
+                    b.HasIndex("CompletedByUserId");
 
                     b.HasIndex("RequestId");
 
@@ -1420,8 +1436,24 @@ namespace Kettan.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestItemId"));
 
+                    b.Property<bool>("IsBranchChecked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPacked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPicked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRejectedDuringPicking")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
+
+                    b.Property<string>("PickingRejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<decimal?>("QuantityApproved")
                         .HasColumnType("decimal(18,4)");
@@ -1431,6 +1463,9 @@ namespace Kettan.Server.Migrations
 
                     b.Property<int>("RequestId")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("SendQuantity")
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
@@ -1501,11 +1536,9 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("datetime2(3)");
 
                     b.Property<byte>("SubscriptionStatus")
-                        .HasMaxLength(20)
                         .HasColumnType("tinyint");
 
                     b.Property<byte>("SubscriptionTier")
-                        .HasMaxLength(20)
                         .HasColumnType("tinyint");
 
                     b.Property<string>("SupportEmail")
@@ -2089,8 +2122,18 @@ namespace Kettan.Server.Migrations
 
             modelBuilder.Entity("Kettan.Server.Entities.Order", b =>
                 {
-                    b.HasOne("Kettan.Server.Entities.SupplyRequest", "SupplyRequest")
+                    b.HasOne("Kettan.Server.Entities.User", "ArrivedConfirmedByUser")
                         .WithMany()
+                        .HasForeignKey("ArrivedConfirmedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kettan.Server.Entities.User", "CompletedByUser")
+                        .WithMany()
+                        .HasForeignKey("CompletedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kettan.Server.Entities.SupplyRequest", "SupplyRequest")
+                        .WithMany("Orders")
                         .HasForeignKey("RequestId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -2100,6 +2143,10 @@ namespace Kettan.Server.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ArrivedConfirmedByUser");
+
+                    b.Navigation("CompletedByUser");
 
                     b.Navigation("SupplyRequest");
 
@@ -2421,6 +2468,8 @@ namespace Kettan.Server.Migrations
             modelBuilder.Entity("Kettan.Server.Entities.SupplyRequest", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Kettan.Server.Entities.Tenant", b =>

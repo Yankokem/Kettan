@@ -243,7 +243,7 @@ public class ReturnService : IReturnService
             OrderId = row.OrderId,
             BranchId = row.BranchId,
             BranchName = row.Branch?.Name ?? string.Empty,
-            Reason = row.Reason,
+            Reason = row.Reason ?? string.Empty,
             Resolution = row.Resolution.ToString(),
             PhotoUrls = row.PhotoUrls,
             CreditAmount = row.CreditAmount,
@@ -254,7 +254,7 @@ public class ReturnService : IReturnService
                 ItemId = i.ItemId,
                 ItemName = i.Item?.Name ?? string.Empty,
                 QuantityReturned = i.QuantityReturned,
-                Reason = i.Reason
+                Reason = i.Reason ?? string.Empty
             }).ToList()
         };
     }

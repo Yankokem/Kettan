@@ -271,7 +271,7 @@ export function SupplyRequestEditDraftPage() {
   if (!canAccessPage) {
     return (
       <Box sx={{ pb: 3 }}>
-        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+        <Paper sx={{ p: 3, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Edit Supply Request</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
             This page is available for Branch Manager and Branch Owner only.
@@ -295,7 +295,7 @@ export function SupplyRequestEditDraftPage() {
             </Typography>
           </Box>
         </Box>
-        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+        <Paper sx={{ p: 3, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
             <Typography sx={{ fontSize: 15, fontWeight: 700 }}>Cannot Edit</Typography>
             <Chip
@@ -350,7 +350,7 @@ export function SupplyRequestEditDraftPage() {
         </Box>
       </Box>
 
-      <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+      <Paper sx={{ p: 2.25, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
           {/* ── Left panel: Request Details ─────────────────────────────── */}
           <Box

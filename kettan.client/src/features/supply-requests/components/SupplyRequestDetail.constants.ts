@@ -9,10 +9,13 @@ export const SUPPLY_REQUEST_STATUS_COLORS: Record<SupplyRequestLifecycleStatus, 
   Rejected: { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
   Processing: { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' },
   Picking: { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
+  Packing: { color: '#0891B2', bg: 'rgba(8,145,178,0.12)' },
   Packed: { color: '#0891B2', bg: 'rgba(8,145,178,0.12)' },
   Dispatched: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
   InTransit: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
   Delivered: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
+  Arrived: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
+  Completed: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
   Returned: { color: '#9333EA', bg: 'rgba(147,51,234,0.12)' },
 };
 

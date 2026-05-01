@@ -191,7 +191,7 @@ export function ConsumptionCreatePage() {
   if (!canAccessPage) {
     return (
       <Box sx={{ pb: 3 }}>
-        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+        <Paper sx={{ p: 3, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Create Consumption Log</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
             This page is available for Branch Manager and Branch Owner only.
@@ -214,14 +214,14 @@ export function ConsumptionCreatePage() {
       </Box>
 
       {!canCreateRequests ? (
-        <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+        <Paper sx={{ p: 2.25, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Consumption Logging</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
             Branch Owner can view consumption history, but only Branch Manager can submit consumption logs.
           </Typography>
         </Paper>
       ) : (
-        <Paper sx={{ p: 2.25, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+        <Paper sx={{ p: 2.25, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
             <Box
               sx={{

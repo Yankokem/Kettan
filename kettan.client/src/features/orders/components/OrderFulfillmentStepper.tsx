@@ -5,6 +5,7 @@ import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import WhereToVoteRoundedIcon from '@mui/icons-material/WhereToVoteRounded';
+import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 
 const STEPS = [
   { key: 'PendingApproval', label: 'Requested', icon: <AccessTimeFilledRoundedIcon sx={{ fontSize: 30 }} /> },
@@ -12,7 +13,8 @@ const STEPS = [
   { key: 'Picking', label: 'Picking', icon: <Inventory2RoundedIcon sx={{ fontSize: 30 }} /> },
   { key: 'Packed', label: 'Packed', icon: <BackpackRoundedIcon sx={{ fontSize: 30 }} /> },
   { key: 'Dispatched', label: 'Dispatched', icon: <LocalShippingRoundedIcon sx={{ fontSize: 30 }} /> },
-  { key: 'Delivered', label: 'Delivered', icon: <WhereToVoteRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Arrived', label: 'Arrived', icon: <WhereToVoteRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Completed', label: 'Completed', icon: <TaskAltRoundedIcon sx={{ fontSize: 30 }} /> },
 ];
 
 /** Maps any order/supply-request status to the corresponding stepper index */
@@ -25,12 +27,15 @@ function getStepIndex(status: string): number {
     Approved: 1,
     Processing: 1,
     Picking: 2,
+    Packing: 3,
     Packed: 3,
     Dispatched: 4,
     InTransit: 4,
+    Arrived: 5,
     Delivered: 5,
+    Completed: 6,
     Rejected: 0,      // stays at first step (request was rejected)
-    Returned: 5,       // delivered then returned
+    Returned: 6,       // delivered then returned
     PartiallyApproved: 1,
   };
   return mapping[status] ?? 0;

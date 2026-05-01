@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Grid, Typography } from '@mui/material';
+import { Box, Chip, Typography } from '@mui/material';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
@@ -38,33 +38,40 @@ function defaultEndDate() {
 }
 
 function formatStatusLabel(status: string) {
-  if (status === 'PendingApproval') {
-    return 'Pending Approval';
+  switch (status) {
+    case 'PendingApproval': return 'Awaiting HQ';
+    case 'AutoDrafted': return 'Auto Drafted';
+    case 'PartiallyApproved': return 'Partially Approved';
+    case 'InTransit':
+    case 'Dispatched': return 'In Transit';
+    default: return status;
   }
-
-  if (status === 'AutoDrafted') {
-    return 'Auto Drafted';
-  }
-
-  if (status === 'PartiallyApproved') {
-    return 'Partially Approved';
-  }
-
-  return status;
 }
 
 function statusChip(status: string) {
   const normalized = status.toLowerCase();
 
-  if (normalized.includes('pending') || normalized.includes('draft')) {
+  if (normalized === 'draft' || normalized.includes('autodrafted')) {
+    return { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };
+  }
+
+  if (normalized === 'pendingapproval') {
     return { color: '#B45309', bg: 'rgba(180,83,9,0.12)' };
   }
 
-  if (normalized.includes('approved')) {
+  if (['approved', 'completed', 'delivered'].includes(normalized)) {
     return { color: '#047857', bg: 'rgba(4,120,87,0.12)' };
   }
 
-  if (normalized.includes('rejected')) {
+  if (['picking', 'packing', 'processing'].includes(normalized)) {
+    return { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' };
+  }
+
+  if (['dispatched', 'intransit', 'arrived'].includes(normalized)) {
+    return { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' };
+  }
+
+  if (normalized.includes('rejected') || normalized.includes('cancelled')) {
     return { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' };
   }
 
@@ -76,8 +83,11 @@ export function SupplyRequestsPage() {
   const { user } = useAuthStore();
 
   const role = user?.role ?? '';
-  const canAccessPage = role === 'BranchManager' || role === 'BranchOwner';
-  const canCreateRequests = role === 'BranchManager' || role === 'BranchOwner';
+  const isHq = role === 'TenantAdmin' || role === 'HqManager' || role === 'HqStaff';
+  const isBranch = role === 'BranchManager' || role === 'BranchOwner';
+
+  const canAccessPage = isHq || isBranch;
+  const canCreateRequests = isBranch; // HQ shouldn't usually "request" from themselves via this UI
 
   const [rows, setRows] = useState<SupplyRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -277,53 +287,43 @@ export function SupplyRequestsPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ mb: 4 }}>
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Filed Requests"
-              value={safeRows.length}
-              icon={<AssignmentTurnedInRoundedIcon />}
-              trend="up"
-              trendValue="Queue"
-              accentClass="stat-accent-brown"
-              iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Pending Review"
-              value={safeRows.filter((row) => ['Draft', 'AutoDrafted', 'PendingApproval'].includes(row.status)).length}
-              icon={<PendingActionsRoundedIcon />}
-              trend="up"
-              trendValue="Needs action"
-              accentClass="stat-accent-gold"
-              iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Approved"
-              value={safeRows.filter((row) => ['Approved', 'PartiallyApproved'].includes(row.status)).length}
-              icon={<TaskAltRoundedIcon />}
-              trend="up"
-              trendValue="Processed"
-              accentClass="stat-accent-sage"
-              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Rejected"
-              value={safeRows.filter((row) => row.status === 'Rejected').length}
-              icon={<HighlightOffRoundedIcon />}
-              trend="up"
-              trendValue="Needs review"
-              accentClass="stat-accent-rust"
-              iconBg="linear-gradient(135deg, #D48C6B 0%, #EAA989 100%)"
-            />
-          </Grid>
-        </Grid>
+      <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
+        <StatCard
+          label="Filed Requests"
+          value={safeRows.length}
+          icon={<AssignmentTurnedInRoundedIcon />}
+          trend="up"
+          trendValue="Queue"
+          accentClass="stat-accent-brown"
+          iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+        />
+        <StatCard
+          label="Pending Review"
+          value={safeRows.filter((row) => ['Draft', 'AutoDrafted', 'PendingApproval'].includes(row.status)).length}
+          icon={<PendingActionsRoundedIcon />}
+          trend="up"
+          trendValue="Needs action"
+          accentClass="stat-accent-gold"
+          iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+        />
+        <StatCard
+          label="Approved"
+          value={safeRows.filter((row) => ['Approved', 'PartiallyApproved'].includes(row.status)).length}
+          icon={<TaskAltRoundedIcon />}
+          trend="up"
+          trendValue="Processed"
+          accentClass="stat-accent-sage"
+          iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+        />
+        <StatCard
+          label="Rejected"
+          value={safeRows.filter((row) => row.status === 'Rejected').length}
+          icon={<HighlightOffRoundedIcon />}
+          trend="up"
+          trendValue="Needs review"
+          accentClass="stat-accent-rust"
+          iconBg="linear-gradient(135deg, #D48C6B 0%, #EAA989 100%)"
+        />
       </Box>
 
       <Box
@@ -371,9 +371,13 @@ export function SupplyRequestsPage() {
           options={[
             { value: 'Draft', label: 'Draft' },
             { value: 'AutoDrafted', label: 'Auto-Drafted' },
-            { value: 'PendingApproval', label: 'Pending Approval' },
+            { value: 'PendingApproval', label: 'Awaiting HQ' },
             { value: 'Approved', label: 'Approved' },
-            { value: 'PartiallyApproved', label: 'Partially Approved' },
+            { value: 'Picking', label: 'Picking' },
+            { value: 'Packing', label: 'Packing' },
+            { value: 'Dispatched', label: 'In Transit' },
+            { value: 'Arrived', label: 'Arrived' },
+            { value: 'Completed', label: 'Completed' },
             { value: 'Rejected', label: 'Rejected' },
           ]}
         />

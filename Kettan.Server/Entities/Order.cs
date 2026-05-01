@@ -24,6 +24,20 @@ public class Order : ITenantEntity
 
     public DateTime PushedToFulfillmentAt { get; set; } = DateTime.UtcNow;
 
+    // ── Arrival tracking (Branch confirms) ──
+    public DateTime? ArrivedAt { get; set; }
+    public int? ArrivedConfirmedByUserId { get; set; }
+
+    [ForeignKey(nameof(ArrivedConfirmedByUserId))]
+    public User? ArrivedConfirmedByUser { get; set; }
+
+    // ── Completion tracking (Branch completes) ──
+    public DateTime? CompletedAt { get; set; }
+    public int? CompletedByUserId { get; set; }
+
+    [ForeignKey(nameof(CompletedByUserId))]
+    public User? CompletedByUser { get; set; }
+
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 

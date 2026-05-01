@@ -1,5 +1,5 @@
-import { Box, Typography, Paper, Grid } from '@mui/material';
-import { useState } from 'react';
+import { Box, Typography, Paper, Grid, Alert } from '@mui/material';
+import { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
 import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
@@ -9,12 +9,14 @@ import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormActions } from '../../components/Form/FormActions';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
+import { fetchBranches, type BranchDto } from '../branches/branchesApi';
 
 interface StaffFormData {
   firstName: string;
   lastName: string;
   email: string;
   password: string;
+  confirmPassword: string;
   birthday: string;
   contactNo: string;
   role: '' | 'TenantAdmin' | 'HqManager' | 'HqStaff' | 'BranchOwner' | 'BranchManager' | 'StoreStaff';
@@ -23,7 +25,6 @@ interface StaffFormData {
 
 const ROLE_OPTIONS: Array<{ value: StaffFormData['role']; label: string }> = [
   { value: '', label: 'Select a role...' },
-  { value: 'TenantAdmin', label: 'Tenant Admin' },
   { value: 'HqManager', label: 'HQ Manager' },
   { value: 'HqStaff', label: 'HQ Staff' },
   { value: 'BranchOwner', label: 'Branch Owner' },
@@ -38,14 +39,20 @@ export function AddStaffPage() {
     lastName: '',
     email: '',
     password: '',
+    confirmPassword: '',
     birthday: '',
     contactNo: '',
     role: '',
     branchId: '',
   });
+  const [branches, setBranches] = useState<BranchDto[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchBranches().then(setBranches).catch(console.error);
+  }, []);
 
   const handleImageChange = (file: File | null) => {
     setImageFile(file);
@@ -82,6 +89,11 @@ export function AddStaffPage() {
 
     if (!formData.password) {
       alert('Please enter a password.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match.');
       return;
     }
 
@@ -147,13 +159,21 @@ export function AddStaffPage() {
 
       alert('Staff member created successfully!');
       void navigate({ to: '/staff' });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create staff member:', err);
-      alert('An error occurred while creating the staff member. Please try again.');
+      // Check if backend returned a nicely formatted 400 error message (like "Email already in use")
+      if (err.response?.data?.message) {
+        alert(`Error: ${err.response.data.message}`);
+      } else {
+        alert('An error occurred while creating the staff member. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const isBranchRole = formData.role === 'BranchManager' || formData.role === 'BranchOwner' || formData.role === 'StoreStaff';
+  const showPendingWarning = isBranchRole && !formData.branchId;
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -271,19 +291,31 @@ export function AddStaffPage() {
             />
           </Box>
 
-          <Box sx={{ mb: 2.5 }}>
-            <FormTextField
-              label="Password"
-              type="password"
-              placeholder="Minimum 8 characters"
-              value={formData.password}
-              onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
-              fullWidth
-            />
-            <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
-              Must be at least 8 characters with uppercase, number, and special character.
-            </Typography>
-          </Box>
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <FormTextField
+                label="Password"
+                type="password"
+                placeholder="Minimum 8 characters"
+                value={formData.password}
+                onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
+                fullWidth
+              />
+              <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
+                Must be at least 8 characters with uppercase, number, and special character.
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <FormTextField
+                label="Confirm Password"
+                type="password"
+                placeholder="Confirm password"
+                value={formData.confirmPassword}
+                onChange={(event) => setFormData((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                fullWidth
+              />
+            </Grid>
+          </Grid>
 
           <Grid container spacing={2.5} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -312,24 +344,44 @@ export function AddStaffPage() {
               label="Role"
               value={formData.role}
               options={ROLE_OPTIONS}
-              onChange={(event) => setFormData((prev) => ({ ...prev, role: event.target.value as StaffFormData['role'] }))}
+              onChange={(event) => {
+                const newRole = event.target.value as StaffFormData['role'];
+                const isHq = newRole === 'HqManager' || newRole === 'HqStaff';
+                setFormData((prev) => ({
+                  ...prev,
+                  role: newRole,
+                  // Auto-clear branch if switching to HQ role to prevent data bugs
+                  branchId: isHq ? '' : prev.branchId,
+                }));
+              }}
               fullWidth
             />
           </Box>
 
-          <Box sx={{ mb: 3 }}>
-            <FormTextField
-              label="Branch ID (Optional)"
-              placeholder="e.g. 1"
-              type="number"
-              value={formData.branchId}
-              onChange={(event) => setFormData((prev) => ({ ...prev, branchId: event.target.value }))}
-              fullWidth
-            />
-            <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
-              Assign this staff member to a specific branch. Leave blank for HQ staff.
-            </Typography>
-          </Box>
+          {/* Only show Branch selection for Branch-specific roles */}
+          {formData.role && (formData.role === 'BranchOwner' || formData.role === 'BranchManager' || formData.role === 'StoreStaff') && (
+            <Box sx={{ mb: 3 }}>
+              <FormDropdown
+                label="Branch (Optional)"
+                value={formData.branchId}
+                options={[
+                  { value: '', label: 'Select a branch...' },
+                  ...branches.map((b) => ({ value: String(b.branchId), label: b.name })),
+                ]}
+                onChange={(event) => setFormData((prev) => ({ ...prev, branchId: event.target.value as string }))}
+                fullWidth
+              />
+              <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
+                Assign this staff member to a specific branch. Leave blank for HQ staff.
+              </Typography>
+            </Box>
+          )}
+          
+          {showPendingWarning && (
+            <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+              The account's status will be Pending and cannot log in until assigned to a branch.
+            </Alert>
+          )}
 
           <Box sx={{ pt: 3, mt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
             <FormActions

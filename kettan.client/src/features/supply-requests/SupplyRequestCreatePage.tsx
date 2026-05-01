@@ -56,7 +56,7 @@ export function SupplyRequestCreatePage() {
   useEffect(() => {
     const loadInventory = async () => {
       try {
-        const rows = await fetchInventoryItems();
+        const rows = await fetchInventoryItems(undefined, { hqOnly: true });
         const mapped: InventoryItem[] = rows.map((item) => ({
           id: item.id,
           name: item.name,
@@ -226,7 +226,7 @@ export function SupplyRequestCreatePage() {
   if (!canAccessPage) {
     return (
       <Box sx={{ pb: 3 }}>
-        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+        <Paper sx={{ p: 3, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Create Supply Request</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
             This page is available for Branch Manager and Branch Owner only.
@@ -257,7 +257,7 @@ export function SupplyRequestCreatePage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 3.5,
             display: 'flex',
             flexDirection: 'column',
@@ -329,7 +329,7 @@ export function SupplyRequestCreatePage() {
             flex: 1,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 3.5,
             display: 'flex',
             flexDirection: 'column',

@@ -39,7 +39,7 @@ export function OrderListCard({ order, datasetMode, onOpen, onApprove, onProceed
   const dateLabel = datasetMode === 'history' ? 'Completed' : 'Requested';
 
   return (
-    <Card sx={{ borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+    <Card sx={{ borderRadius: '14px', border: '1px solid', borderColor: 'divider' }}>
       <CardActionArea onClick={() => onOpen(order.id)} sx={{ p: 2.25 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
           <Box sx={{ minWidth: 0 }}>

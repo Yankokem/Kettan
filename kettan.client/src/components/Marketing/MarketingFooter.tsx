@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import logo from "../../assets/logo.png";
 
 export function MarketingFooter() {
   return (
@@ -14,13 +15,7 @@ export function MarketingFooter() {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                <path
-                  d="M16 4C12.5 4 7 8 7 15C7 19.5 9.5 23 13.5 24.5C13.5 24.5 13 20.5 14.5 17.5C16 14.5 19 12.5 22.5 12C22.5 12 20.5 16 18.5 18.5C16.5 21 15.5 24 15.5 24L16 26.5C17.5 26 24 22 24 15C24 8 19.5 4 16 4Z"
-                  fill="#C9A87D"
-                />
-                <path d="M13.5 24.5C11 24 9 21.5 8 19L15.5 14.5L13.5 24.5Z" fill="#93AF7E" fillOpacity="0.8" />
-              </svg>
+              <img src={logo} alt="Kettan" width="28" height="28" style={{ borderRadius: "50%" }} />
               <div>
                 <div
                   style={{

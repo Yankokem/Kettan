@@ -51,4 +51,5 @@ public class SupplyRequest : ITenantEntity
     public DateTime? DeletedAt { get; set; }
 
     public ICollection<SupplyRequestItem> Items { get; set; } = [];
+    public ICollection<Order> Orders { get; set; } = [];
 }

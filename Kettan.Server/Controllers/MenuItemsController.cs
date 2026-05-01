@@ -484,9 +484,9 @@ public class MenuItemsController : ControllerBase
             }
 
             var pricingMode = variant.PricingMode.Trim().ToLowerInvariant();
-            if (pricingMode is not ("fixed" or "addon"))
+            if (pricingMode is not ("fixed" or "absolute" or "addon"))
             {
-                throw new InvalidOperationException("Variant pricing mode must be fixed or addon.");
+                throw new InvalidOperationException("Variant pricing mode must be fixed, absolute, or addon.");
             }
 
             foreach (var ingredient in variant.Ingredients)

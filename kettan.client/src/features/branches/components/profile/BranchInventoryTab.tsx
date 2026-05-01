@@ -1,25 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Pagination, Paper, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { useMemo, useState } from 'react';
+import { Box, Chip, Typography } from '@mui/material';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
-import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
-import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import { SearchInput } from '../../../../components/UI/SearchInput';
 import { FilterDropdown } from '../../../../components/UI/FilterAndSort';
 import { DataTable, type ColumnDef } from '../../../../components/UI/DataTable';
-import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded';
 import type { BranchInventoryItem, BranchInventoryStatus } from '../../types';
 import { formatDate } from '../../branchProfileData';
-import { BranchInventoryCard } from './BranchInventoryCard';
 
 interface BranchInventoryTabProps {
   items: BranchInventoryItem[];
 }
-
-const CARDS_PER_PAGE = 20;
 
 const SORT_OPTIONS = [
   { value: 'risk-desc', label: 'Highest Risk First' },
@@ -48,8 +42,6 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [supplierFilter, setSupplierFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [page, setPage] = useState(1);
 
   const categoryOptions = useMemo(
     () =>
@@ -107,17 +99,6 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
 
     return nextItems;
   }, [categoryFilter, items, searchQuery, sortBy, statusFilter, supplierFilter]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery, sortBy, statusFilter, categoryFilter, supplierFilter, viewMode]);
-
-  const pageCount = Math.max(1, Math.ceil(filteredItems.length / CARDS_PER_PAGE));
-
-  const pagedItems = useMemo(() => {
-    const start = (page - 1) * CARDS_PER_PAGE;
-    return filteredItems.slice(start, start + CARDS_PER_PAGE);
-  }, [filteredItems, page]);
 
   const tableColumns = useMemo<ColumnDef<BranchInventoryItem>[]>(
     () => [
@@ -232,37 +213,6 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
           icon={<LocalShippingRoundedIcon sx={{ fontSize: 16 }} />}
           minWidth={170}
         />
-
-        <ToggleButtonGroup
-          exclusive
-          value={viewMode}
-          onChange={(_event, value: 'cards' | 'table' | null) => {
-            if (value) {
-              setViewMode(value);
-            }
-          }}
-          size="small"
-          sx={{
-            height: 40,
-            borderRadius: 2,
-            '& .MuiToggleButton-root': {
-              px: 1.4,
-              borderColor: 'rgba(107, 76, 42, 0.3)',
-              color: '#6B4C2A',
-              '&.Mui-selected': {
-                bgcolor: 'rgba(107, 76, 42, 0.12)',
-                color: '#4A3424',
-              },
-            },
-          }}
-        >
-          <ToggleButton value="cards">
-            <ViewModuleRoundedIcon sx={{ fontSize: 16 }} />
-          </ToggleButton>
-          <ToggleButton value="table">
-            <ViewListRoundedIcon sx={{ fontSize: 16 }} />
-          </ToggleButton>
-        </ToggleButtonGroup>
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5, flexWrap: 'wrap', gap: 1.2 }}>
@@ -279,93 +229,20 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
         </Box>
       </Box>
 
-      {viewMode === 'cards' ? (
-        <>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: 'repeat(3, minmax(0, 1fr))',
-              },
-              gap: 1.5,
-            }}
-          >
-            {pagedItems.map((item) => (
-              <BranchInventoryCard key={item.id} item={item} />
-            ))}
-          </Box>
-
-          {filteredItems.length > CARDS_PER_PAGE ? (
-            <Box sx={{ mt: 2.2, display: 'flex', justifyContent: 'center' }}>
-              <Pagination
-                count={pageCount}
-                page={page}
-                onChange={(_event, value) => setPage(value)}
-                shape="rounded"
-                color="primary"
-                sx={{ '& .MuiPaginationItem-root': { fontWeight: 600 } }}
-              />
-            </Box>
-          ) : null}
-        </>
-      ) : (
-        <DataTable
-          data={filteredItems}
-          columns={tableColumns}
-          keyExtractor={(item) => item.id}
-          defaultPageSize={20}
-          pageSizes={[20, 40, 80]}
-          emptyMessage="No inventory items match your filters."
-        />
-      )}
-
-      {filteredItems.length === 0 ? (
-        <Paper
-          elevation={0}
-          sx={{
-            mt: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 4,
-            py: 10,
-            px: 3,
-            textAlign: 'center',
-            bgcolor: 'transparent',
-          }}
-        >
-          <Box
-            sx={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              bgcolor: 'rgba(107, 76, 42, 0.05)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto',
-              mb: 3,
-            }}
-          >
-            {searchQuery || statusFilter || categoryFilter || supplierFilter ? (
-              <SearchOffRoundedIcon sx={{ fontSize: 40, color: '#6B4C2A', opacity: 0.8 }} />
-            ) : (
-              <Inventory2RoundedIcon sx={{ fontSize: 40, color: '#6B4C2A', opacity: 0.8 }} />
-            )}
-          </Box>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
-            {searchQuery || statusFilter || categoryFilter || supplierFilter 
-              ? "No items found for these filters" 
-              : "This branch inventory is empty"}
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary', maxWidth: 400, margin: '0 auto' }}>
-            {searchQuery || statusFilter || categoryFilter || supplierFilter
-              ? "Try adjusting your search terms or filters to find what you're looking for."
-              : "There are currently no items tracked in this branch. Start by adding items to the inventory system."}
-          </Typography>
-        </Paper>
-      ) : null}
-
+      <DataTable
+        data={filteredItems}
+        columns={tableColumns}
+        keyExtractor={(item) => item.id}
+        defaultPageSize={20}
+        pageSizes={[20, 40, 80]}
+        emptyIcon={<Inventory2RoundedIcon />}
+        emptyTitle="No inventory items found"
+        emptyMessage={
+          searchQuery || statusFilter || categoryFilter || supplierFilter
+            ? "No items match your current filters. Try adjusting your search."
+            : "This branch inventory is currently empty."
+        }
+      />
     </Box>
   );
 }

@@ -138,4 +138,73 @@ public class OrdersController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    // ── SR WORKFLOW ENDPOINTS ──
+
+    [HttpGet("{id:int}/picking-suggestions")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<List<PickingSuggestionDto>>> GetPickingSuggestions(int id)
+    {
+        var suggestions = await _service.GetPickingSuggestionsAsync(id);
+        return Ok(suggestions);
+    }
+
+    [HttpPut("{id:int}/workflow/pick")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<OrderDetailDto>> SavePicking(int id, [FromBody] PickingSubmitDto dto)
+    {
+        var result = await _service.SavePickingAsync(id, dto);
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
+
+    [HttpPut("{id:int}/workflow/pack")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<OrderDetailDto>> SavePacking(int id, [FromBody] PackingSubmitDto dto)
+    {
+        var result = await _service.SavePackingAsync(id, dto);
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
+
+    [HttpPut("{id:int}/workflow/dispatch")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<OrderDetailDto>> SubmitDispatch(int id)
+    {
+        try
+        {
+            var result = await _service.SubmitDispatchAsync(id);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id:int}/workflow/arrive")]
+    [Authorize(Roles = "BranchManager,BranchOwner")]
+    public async Task<ActionResult<OrderDetailDto>> ConfirmArrival(int id)
+    {
+        var result = await _service.ConfirmArrivalAsync(id);
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
+
+    [HttpPost("{id:int}/workflow/complete")]
+    [Authorize(Roles = "BranchManager,BranchOwner")]
+    public async Task<ActionResult<OrderDetailDto>> CompleteTransaction(int id, [FromBody] BranchCheckSubmitDto dto)
+    {
+        try
+        {
+            var result = await _service.CompleteTransactionAsync(id, dto);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

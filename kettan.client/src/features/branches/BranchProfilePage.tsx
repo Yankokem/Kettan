@@ -34,8 +34,9 @@ import { BranchStaffTab } from './components/profile/BranchStaffTab';
 import { BranchActivityTab } from './components/profile/BranchActivityTab';
 import { BranchTransactionsTab } from './components/profile/BranchTransactionsTab';
 import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
+import { BranchMenuTab } from './components/profile/BranchMenuTab';
 import { BranchEditModal } from './components/profile/BranchEditModal.tsx';
-import { AddStaffModal } from '../staff/components/AddStaffModal.tsx';
+import { fetchMenuItems, type MenuItemDto } from '../menu/menuItemsApi';
 import type {
   Branch,
   BranchActivityLog,
@@ -71,12 +72,12 @@ export function BranchProfilePage() {
   const [activityLogs, setActivityLogs] = useState<BranchActivityLog[]>([]);
   const [transactions, setTransactions] = useState<BranchTransactionRow[]>([]);
   const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItemDto[]>([]);
   
   const [branchLoading, setBranchLoading] = useState(true);
   const [tabLoading, setTabLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<BranchProfileTabKey>('details');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   
   const [formData, setFormData] = useState<BranchFormData | null>(null);
@@ -122,6 +123,15 @@ export function BranchProfilePage() {
         case 'inventory':
           const invDto = await fetchBranchInventory(parsedBranchId);
           setInventoryItems(invDto.map(mapInventoryItem));
+          break;
+        case 'menu':
+          const menuDto = await fetchMenuItems();
+          setMenuItems(menuDto);
+          // Also load inventory if not already loaded, needed for availability check
+          if (inventoryItems.length === 0) {
+            const invDtoForMenu = await fetchBranchInventory(parsedBranchId);
+            setInventoryItems(invDtoForMenu.map(mapInventoryItem));
+          }
           break;
       }
     } catch (error) {
@@ -170,8 +180,9 @@ export function BranchProfilePage() {
       activity: activityLogs.length,
       transactions: transactions.length,
       inventory: inventoryItems.length,
+      menu: menuItems.length,
     }),
-    [activityLogs.length, inventoryItems.length, staffMembers.length, transactions.length]
+    [activityLogs.length, inventoryItems.length, menuItems.length, staffMembers.length, transactions.length]
   );
 
   const kpis = useMemo(
@@ -182,8 +193,9 @@ export function BranchProfilePage() {
         activityLogs,
         transactions,
         inventoryItems,
+        menuItems: menuItems.map((m) => ({ status: m.status })),
       }) : [],
-    [activeTab, activityLogs, inventoryItems, selectedBranch, staffMembers, transactions]
+    [activeTab, activityLogs, inventoryItems, menuItems, selectedBranch, staffMembers, transactions]
   );
 
   // if (branchLoading) removed to prevent jarring "Connecting" text
@@ -252,11 +264,6 @@ export function BranchProfilePage() {
     setActiveTab('details');
   };
 
-  const handleCreateStaff = () => {
-    loadTabContent('staff'); // Refresh staff list
-    setIsAddStaffModalOpen(false);
-    setActiveTab('staff');
-  };
 
   return (
     <Box sx={{ pb: 5 }}>
@@ -335,7 +342,6 @@ export function BranchProfilePage() {
         {activeTab === 'staff' ? (
           <BranchStaffTab
             employees={staffMembers}
-            onAddStaff={() => setIsAddStaffModalOpen(true)}
             onOpenStaffProfile={(employee) =>
               navigate({
                 to: '/staff/$staffId',
@@ -351,6 +357,8 @@ export function BranchProfilePage() {
 
         {activeTab === 'inventory' ? <BranchInventoryTab items={inventoryItems} /> : null}
 
+        {activeTab === 'menu' ? <BranchMenuTab menuItems={menuItems} branchInventoryItems={inventoryItems} /> : null}
+
       </Paper>
 
       <BranchEditModal
@@ -365,11 +373,7 @@ export function BranchProfilePage() {
         onUpdate={updateEditDraft}
       />
 
-      <AddStaffModal
-        open={isAddStaffModalOpen}
-        onClose={() => setIsAddStaffModalOpen(false)}
-        onSave={handleCreateStaff}
-      />
+
     </Box>
   );
 }

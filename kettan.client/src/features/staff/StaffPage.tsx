@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Grid } from '@mui/material';
+import { Box } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import Groups2RoundedIcon from '@mui/icons-material/Groups2Rounded';
@@ -23,10 +23,10 @@ import { fetchEmployees, type EmployeeDto } from './staffApi';
 
 function toStaffMember(e: EmployeeDto): StaffMember {
   return {
-    id: e.employeeId,
+    id: e.userId,
     name: `${e.firstName} ${e.lastName}`.trim(),
     email: e.email ?? '',
-    role: e.position,
+    role: e.role,
     location: e.branchName ?? 'Unassigned',
     status: e.isActive ? 'active' : 'inactive',
     avatar: `${e.firstName.charAt(0)}${e.lastName.charAt(0)}`.toUpperCase(),
@@ -64,7 +64,7 @@ export function StaffPage() {
   };
 
   const handleEditStaff = (staffId: number) => {
-    console.log('Edit staff:', staffId);
+    navigate({ to: '/staff/$staffId/edit', params: { staffId: staffId.toString() } });
   };
 
   const handleInactivateStaff = (staffId: number) => {
@@ -120,53 +120,43 @@ export function StaffPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ mb: 4 }}>
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Total Staff"
-              value={stats.total}
-              trend="up"
-              trendValue="+1"
-              icon={<Groups2RoundedIcon />}
-              accentClass="stat-accent-brown"
-              iconBg="#B08B5A"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Active Staff"
-              value={stats.active}
-              trend="up"
-              trendValue="+2"
-              icon={<VerifiedUserRoundedIcon />}
-              accentClass="stat-accent-gold"
-              iconBg="#C2AA6B"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Inactive Staff"
-              value={stats.inactive}
-              trend="down"
-              trendValue="-1"
-              icon={<PersonOffRoundedIcon />}
-              accentClass="stat-accent-sage"
-              iconBg="#7EAD6D"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              label="Archived Staff"
-              value={stats.archived}
-              trend="down"
-              trendValue="-1"
-              icon={<ArchiveRoundedIcon />}
-              accentClass="stat-accent-error"
-              iconBg="#EC6666"
-            />
-          </Grid>
-        </Grid>
+      <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
+        <StatCard
+          label="Total Staff"
+          value={stats.total}
+          trend="up"
+          trendValue="+1"
+          icon={<Groups2RoundedIcon />}
+          accentClass="stat-accent-brown"
+          iconBg="#B08B5A"
+        />
+        <StatCard
+          label="Active Staff"
+          value={stats.active}
+          trend="up"
+          trendValue="+2"
+          icon={<VerifiedUserRoundedIcon />}
+          accentClass="stat-accent-gold"
+          iconBg="#C2AA6B"
+        />
+        <StatCard
+          label="Inactive Staff"
+          value={stats.inactive}
+          trend="down"
+          trendValue="-1"
+          icon={<PersonOffRoundedIcon />}
+          accentClass="stat-accent-sage"
+          iconBg="#7EAD6D"
+        />
+        <StatCard
+          label="Archived Staff"
+          value={stats.archived}
+          trend="down"
+          trendValue="-1"
+          icon={<ArchiveRoundedIcon />}
+          accentClass="stat-accent-error"
+          iconBg="#EC6666"
+        />
       </Box>
 
       <Box sx={{ display: 'flex', gap: 1.2, mb: 2.5, flexWrap: 'wrap', alignItems: 'center' }}>

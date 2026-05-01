@@ -3,7 +3,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { AppBar, Toolbar, Box, Button, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText, Typography } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
-import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import logo from "../../assets/logo.png";
 
 const NAV_LINKS = [
   { label: "Home", path: "/" },
@@ -32,7 +32,7 @@ export function MarketingNavbar() {
         <Toolbar sx={{ justifyContent: "space-between", maxWidth: 1200, mx: "auto", width: "100%", px: { xs: 2, md: 4 } }}>
           {/* Logo */}
           <Link to="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 8 }}>
-            <LocalCafeIcon sx={{ color: "#6B4C2A", fontSize: 28 }} />
+            <img src={logo} alt="Kettan" width="28" height="28" style={{ borderRadius: "50%" }} />
             <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: "0.1em", color: "#2C1A0E" }}>
               KETTAN
             </Typography>

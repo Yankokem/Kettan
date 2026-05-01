@@ -7,6 +7,13 @@ export interface SupplyRequestItem {
   itemSku: string;
   quantityRequested: number;
   quantityApproved: number | null;
+  isPicked: boolean;
+  sendQuantity: number | null;
+  isRejectedDuringPicking: boolean;
+  pickingRejectionReason: string | null;
+  isPacked: boolean;
+  isBranchChecked: boolean;
+  hqStock?: number;
 }
 
 export interface SupplyRequest {
@@ -24,6 +31,12 @@ export interface SupplyRequest {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  orderId?: number | null;
+  orderStatus?: string | null;
+  arrivedAt?: string | null;
+  arrivedConfirmedByName?: string | null;
+  completedAt?: string | null;
+  completedByName?: string | null;
   items: SupplyRequestItem[];
 }
 
@@ -112,6 +125,12 @@ export interface OrderDetail extends BranchOrder {
   vehicleId: number | null;
   dispatchDate: string | null;
   estimatedArrival: string | null;
+
+  arrivedAt: string | null;
+  arrivedConfirmedByName: string | null;
+  completedAt: string | null;
+  completedByName: string | null;
+
   requestedItems: OrderRequestItem[];
   allocations: OrderAllocation[];
 }
@@ -155,12 +174,14 @@ export async function fetchSupplyRequests(status?: string): Promise<SupplyReques
     return payload.map((row) => ({
       ...row,
       status: normalizeSupplyRequestStatus(row.status),
+      orderStatus: row.orderStatus ? normalizeOrderStatus(row.orderStatus) : null,
     }));
   }
   if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
     return (payload as { items: SupplyRequest[] }).items.map((row) => ({
       ...row,
       status: normalizeSupplyRequestStatus(row.status),
+      orderStatus: row.orderStatus ? normalizeOrderStatus(row.orderStatus) : null,
     }));
   }
   return [];
@@ -171,6 +192,7 @@ export async function fetchSupplyRequestById(requestId: number): Promise<SupplyR
   return {
     ...response.data,
     status: normalizeSupplyRequestStatus(response.data.status),
+    orderStatus: response.data.orderStatus ? normalizeOrderStatus(response.data.orderStatus) : null,
   };
 }
 
@@ -376,4 +398,66 @@ export async function confirmDelivery(orderId: number, payload: {
   lines: Array<{ itemId: number; quantityReceived: number }>;
 }): Promise<void> {
   await api.post(`/api/BranchOrders/${orderId}/confirm-delivery`, payload);
+}
+
+// ── SR WORKFLOW APIs ──
+
+export interface PickingSuggestion {
+  requestItemId: number;
+  itemId: number;
+  itemName: string;
+  itemSku: string;
+  approvedQty: number;
+  hqStock: number;
+  branchCurrentStock: number;
+  branchThreshold: number;
+  suggestedSendQty: number;
+}
+
+export interface PickingItemPayload {
+  requestItemId: number;
+  isPicked: boolean;
+  sendQuantity: number | null;
+  isRejected: boolean;
+  rejectionReason: string | null;
+}
+
+export interface PackingItemPayload {
+  requestItemId: number;
+  isPacked: boolean;
+}
+
+export interface BranchCheckItemPayload {
+  requestItemId: number;
+  isChecked: boolean;
+}
+
+export async function getPickingSuggestions(orderId: number): Promise<PickingSuggestion[]> {
+  const response = await api.get<PickingSuggestion[]>(`/api/Orders/${orderId}/picking-suggestions`);
+  return response.data;
+}
+
+export async function submitPicking(orderId: number, items: PickingItemPayload[]): Promise<OrderDetail> {
+  const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/pick`, { items });
+  return { ...response.data, status: normalizeOrderStatus(response.data.status) };
+}
+
+export async function submitPacking(orderId: number, items: PackingItemPayload[]): Promise<OrderDetail> {
+  const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/pack`, { items });
+  return { ...response.data, status: normalizeOrderStatus(response.data.status) };
+}
+
+export async function submitDispatch(orderId: number): Promise<OrderDetail> {
+  const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/dispatch`, {});
+  return { ...response.data, status: normalizeOrderStatus(response.data.status) };
+}
+
+export async function confirmArrival(orderId: number): Promise<OrderDetail> {
+  const response = await api.post<OrderDetail>(`/api/Orders/${orderId}/workflow/arrive`, {});
+  return { ...response.data, status: normalizeOrderStatus(response.data.status) };
+}
+
+export async function completeTransaction(orderId: number, items: BranchCheckItemPayload[]): Promise<OrderDetail> {
+  const response = await api.post<OrderDetail>(`/api/Orders/${orderId}/workflow/complete`, { items });
+  return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }

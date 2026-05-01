@@ -5,6 +5,7 @@ import { LoginPage } from '../features/auth/LoginPage';
 import { BranchesPage } from '../features/branches/BranchesPage';
 import { AddBranchPage } from '../features/branches/AddBranchPage';
 import { BranchProfilePage } from '../features/branches/BranchProfilePage';
+import { BranchInfoPage } from '../features/branches/BranchInfoPage';
 import { StaffPage } from '../features/staff/StaffPage';
 import { StaffProfilePage } from '../features/staff/StaffProfilePage';
 import { AddStaffPage } from '../features/staff/AddStaffPage';
@@ -139,6 +140,12 @@ const branchProfileRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/branches/$branchId',
   component: BranchProfilePage,
+});
+
+const branchInfoRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/branch-profile',
+  component: BranchInfoPage,
 });
 
 const staffRoute = createRoute({
@@ -418,7 +425,8 @@ const routeTree = rootRoute.addChildren([
     analyticsRoute,
     helpRoute,
     userProfileRoute,
-    userProfileEditRoute
+    userProfileEditRoute,
+    branchInfoRoute,
   ]),
   loginRoute
 ]);

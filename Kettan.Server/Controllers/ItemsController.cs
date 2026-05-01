@@ -34,17 +34,32 @@ public class ItemsController : ControllerBase
         [FromQuery] int? inventoryCategoryId = null,
         [FromQuery] int? itemCategoryId = null,
         [FromQuery] string? search = null,
-        [FromQuery] int? branchId = null)
+        [FromQuery] int? branchId = null,
+        [FromQuery] bool hqOnly = false)
     {
         if (!_currentUser.TenantId.HasValue)
         {
             return Forbid();
         }
 
+        // Determine effective filters based on user role
+        bool isBranchUser = _currentUser.BranchId.HasValue;
+        
+        // If they explicitly ask for HQ Only (e.g. Supply Requests), allow it.
+        // Otherwise, if they are a branch user, restrict to their branch.
+        int? effectiveBranchId = (isBranchUser && !hqOnly) ? _currentUser.BranchId : branchId;
+        bool effectiveHqOnly = hqOnly;
+
         var query = _context.Items
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
             .AsQueryable();
+
+        // If branch user and NOT viewing HQ catalog, only show items they have stock for
+        if (isBranchUser && !effectiveHqOnly)
+        {
+            query = query.Where(i => _context.Batches.Any(b => b.ItemId == i.ItemId && b.BranchId == effectiveBranchId));
+        }
 
         if (inventoryCategoryId.HasValue)
         {
@@ -69,9 +84,13 @@ public class ItemsController : ControllerBase
         var itemIds = items.Select(i => i.ItemId).ToList();
         var batchQuery = _context.Batches.Where(b => itemIds.Contains(b.ItemId));
 
-        if (branchId.HasValue)
+        if (effectiveHqOnly)
         {
-            batchQuery = batchQuery.Where(b => b.BranchId == branchId.Value);
+            batchQuery = batchQuery.Where(b => b.BranchId == null);
+        }
+        else if (effectiveBranchId.HasValue)
+        {
+            batchQuery = batchQuery.Where(b => b.BranchId == effectiveBranchId.Value);
         }
 
         var stockByItem = await batchQuery

@@ -29,8 +29,11 @@ interface ActivityItem {
   time: string;
 }
 
-const STATUS_MAP = {
+const STATUS_MAP: Record<string, any> = {
   processing: { label: 'Processing', color: '#B45309', bg: 'rgba(180,83,9,0.12)', icon: <RadioButtonCheckedRoundedIcon sx={{ fontSize: 12 }} /> },
+  pendingapproval: { label: 'Pending Approval', color: '#B45309', bg: 'rgba(180,83,9,0.12)', icon: <RadioButtonCheckedRoundedIcon sx={{ fontSize: 12 }} /> },
+  approved: { label: 'Approved', color: '#047857', bg: 'rgba(4,120,87,0.12)', icon: <CheckCircleOutlineRoundedIcon sx={{ fontSize: 12 }} /> },
+  rejected: { label: 'Rejected', color: '#B91C1C', bg: 'rgba(185,28,28,0.10)', icon: <WarningAmberRoundedIcon sx={{ fontSize: 12 }} /> },
   picking: { label: 'Picking', color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)', icon: <LocalMallRoundedIcon sx={{ fontSize: 12 }} /> },
   packed: { label: 'Packed', color: '#546B3F', bg: 'rgba(84,107,63,0.12)', icon: <CheckCircleOutlineRoundedIcon sx={{ fontSize: 12 }} /> },
   dispatched: { label: 'Dispatched', color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)', icon: <LocalShippingRoundedIcon sx={{ fontSize: 12 }} /> },
@@ -74,10 +77,10 @@ const activityColumns: ColumnDef<ActivityItem>[] = [
     label: 'Status',
     width: 130,
     render: (row) => {
-      const st = STATUS_MAP[row.status];
+      const st = STATUS_MAP[row.status] || { label: row.status, color: '#64748B', bg: 'rgba(100,116,139,0.12)', icon: null };
       return (
         <Chip
-          icon={st.icon}
+          icon={st.icon ?? undefined}
           label={st.label}
           size="small"
           sx={{

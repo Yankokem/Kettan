@@ -17,7 +17,7 @@ export function VehicleCard({ vehicle, selected, onSelect, onDelete }: VehicleCa
       onClick={onSelect}
       sx={{
         p: 2,
-        borderRadius: 3,
+        borderRadius: '14px',
         border: '1px solid',
         borderColor: selected ? 'primary.main' : 'divider',
         bgcolor: selected ? 'rgba(201, 168, 77, 0.08)' : 'background.paper',

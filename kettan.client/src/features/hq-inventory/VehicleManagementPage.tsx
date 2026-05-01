@@ -33,6 +33,13 @@ const INITIAL_FORM: VehicleFormData = {
   isActive: true,
 };
 
+const VEHICLE_TYPE_OPTIONS = [
+  { value: 'Motorcycle', label: 'Motorcycle' },
+  { value: 'Van', label: 'Van' },
+  { value: 'Truck', label: 'Truck' },
+  { value: 'Car', label: 'Car' },
+];
+
 const VIEW_OPTIONS = [
   { value: 'cards' as const, label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> },
   { value: 'table' as const, label: '', icon: <ViewListRoundedIcon sx={{ fontSize: 16 }} /> },
@@ -247,17 +254,18 @@ export function VehicleManagementPage() {
         </Box>
       </Box>
 
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
-          <Box
-            sx={{
-              width: { xs: '100%', lg: '38%' },
-              p: 3,
-              borderRight: { xs: 'none', lg: '1px solid' },
-              borderBottom: { xs: '1px solid', lg: 'none' },
-              borderColor: 'divider',
-            }}
-          >
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', lg: '38%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 4,
+            p: 3,
+          }}
+        >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 2.2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <LocalShippingRoundedIcon sx={{ fontSize: 20, color: '#6B4C2A' }} />
@@ -281,12 +289,11 @@ export function VehicleManagementPage() {
                 inputProps={{ maxLength: 50 }}
               />
 
-              <FormTextField
+              <FormDropdown
                 label="Vehicle Type"
-                placeholder="e.g. Van"
                 value={form.vehicleType}
-                onChange={(event) => setForm((prev) => ({ ...prev, vehicleType: event.target.value }))}
-                inputProps={{ maxLength: 50 }}
+                onChange={(event) => setForm((prev) => ({ ...prev, vehicleType: String(event.target.value) }))}
+                options={VEHICLE_TYPE_OPTIONS}
               />
 
               <FormTextField
@@ -320,9 +327,18 @@ export function VehicleManagementPage() {
                 Reset
               </Button>
             </Box>
-          </Box>
+          </Paper>
 
-          <Box sx={{ width: { xs: '100%', lg: '62%' }, p: 3 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              flex: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 4,
+              p: 3,
+            }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap', mb: 2.2 }}>
               <SearchInput
                 value={search}
@@ -377,7 +393,7 @@ export function VehicleManagementPage() {
                     pr: { xs: 0, lg: 0.8 },
                   }}
                 >
-                  <Grid container spacing={1.8}>
+                  <Grid container spacing={1.8} sx={{ overflow: 'visible' }}>
                     {visibleVehicles.map((v) => (
                       <Grid key={v.vehicleId} size={{ xs: 12, md: 6 }}>
                         <VehicleCard
@@ -402,9 +418,8 @@ export function VehicleManagementPage() {
                 />
               )}
             </DataStateWrapper>
-          </Box>
+          </Paper>
         </Box>
-      </Paper>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

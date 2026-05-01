@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Grid, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, Grid, CircularProgress, Alert } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -9,6 +9,7 @@ import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormActions } from '../../components/Form/FormActions';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
+import { fetchBranches, type BranchDto } from '../branches/branchesApi';
 
 interface StaffFormData {
   firstName: string;
@@ -48,12 +49,15 @@ export function EditStaffPage() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [branches, setBranches] = useState<BranchDto[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    fetchBranches().then(setBranches).catch(console.error);
+    
     const loadStaffData = async () => {
       const id = Number(staffId);
       if (Number.isNaN(id)) {
@@ -202,6 +206,7 @@ export function EditStaffPage() {
         role: formData.role,
         branchId: formData.branchId ? parseInt(formData.branchId) : null,
         isActive: true,
+        imageUrl: imageUrl !== null ? imageUrl : undefined
       });
 
       // TODO: Handle password change if needed
@@ -209,13 +214,20 @@ export function EditStaffPage() {
 
       alert('Staff member updated successfully!');
       void navigate({ to: `/staff/${staffId}` });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update staff member:', err);
-      alert('An error occurred while updating the staff member. Please try again.');
+      if (err.response?.data?.message) {
+        alert(`Error: ${err.response.data.message}`);
+      } else {
+        alert('An error occurred while updating the staff member. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const isBranchRole = formData.role === 'BranchManager' || formData.role === 'BranchOwner' || formData.role === 'StoreStaff';
+  const showPendingWarning = isBranchRole && !formData.branchId;
 
   if (isLoading) {
     return (
@@ -378,18 +390,26 @@ export function EditStaffPage() {
           </Box>
 
           <Box sx={{ mb: 3 }}>
-            <FormTextField
-              label="Branch ID (Optional)"
-              placeholder="e.g. 1"
-              type="number"
+            <FormDropdown
+              label="Branch (Optional)"
               value={formData.branchId}
-              onChange={(event) => setFormData((prev) => ({ ...prev, branchId: event.target.value }))}
+              options={[
+                { value: '', label: 'Select a branch...' },
+                ...branches.map((b) => ({ value: String(b.branchId), label: b.name })),
+              ]}
+              onChange={(event) => setFormData((prev) => ({ ...prev, branchId: event.target.value as string }))}
               fullWidth
             />
             <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
               Assign this staff member to a specific branch. Leave blank for HQ staff.
             </Typography>
           </Box>
+
+          {showPendingWarning && (
+            <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+              The account's status is Pending and cannot log in until assigned to a branch.
+            </Alert>
+          )}
 
           <Box sx={{ pt: 3, mt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
             <FormActions

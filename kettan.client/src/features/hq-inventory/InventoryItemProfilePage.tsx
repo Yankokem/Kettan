@@ -314,7 +314,7 @@ export function InventoryItemProfilePage() {
       <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
         {/* Left Column - Item Details */}
         <Box sx={{ width: { xs: '100%', md: '40%' } }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden', bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden', bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
             {/* Hero Header — name & SKU on warm gradient */}
             <Box
@@ -484,7 +484,7 @@ export function InventoryItemProfilePage() {
         {/* Right Column - Batches & Transactions */}
         <Box sx={{ width: { xs: '100%', md: '60%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Batches Section */}
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 3 }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3 }}>
             <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>
               Batches ({batches.length})
             </Typography>
@@ -498,7 +498,7 @@ export function InventoryItemProfilePage() {
           </Paper>
 
           {/* Recent Transactions Section */}
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 3 }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3 }}>
             <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>
               Recent Transactions
             </Typography>

@@ -14,7 +14,7 @@ export interface OrderDetailsPanelProps {
 
 export function OrderDetailsPanel({ orderId }: OrderDetailsPanelProps) {
   return (
-    <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+    <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 2.5, bgcolor: '#f8fafc', borderBottom: '1px solid', borderColor: 'divider' }}>
         <DescriptionRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
         <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Order Details</Typography>

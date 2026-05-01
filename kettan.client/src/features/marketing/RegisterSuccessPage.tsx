@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { StaticMotionDiv } from "./noMotion";
 import { CheckCircle2, ArrowRight, Coffee, Mail } from "lucide-react";
+import logo from "../../assets/logo.png";
 
 export function RegisterSuccessPage() {
   const email = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "").get("email");
@@ -30,10 +31,7 @@ export function RegisterSuccessPage() {
         </StaticMotionDiv>
 
         <div className="flex items-center justify-center gap-2 mb-6">
-          <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-            <path d="M16 5C12.5 5 7.5 9 7.5 15.5C7.5 20 10 23 14 24.5L15.5 14.5L22.5 13C19 13.5 16.5 15 15 18C13.5 21 14 24.5 14 24.5C16 25 24.5 21.5 24.5 15.5C24.5 9 19.5 5 16 5Z" fill="#6B4C2A" />
-            <path d="M14 24.5C11.5 24 9.5 21.5 8.5 19L15.5 14.5L14 24.5Z" fill="#546B3F" fillOpacity="0.8" />
-          </svg>
+          <img src={logo} alt="Kettan" width="24" height="24" style={{ borderRadius: "50%" }} />
           <span style={{ fontWeight: 800, fontSize: "13px", color: "#2C1A0E", letterSpacing: "0.15em" }}>KETTAN</span>
         </div>
 

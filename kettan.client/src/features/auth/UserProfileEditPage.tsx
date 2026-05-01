@@ -172,6 +172,7 @@ export function UserProfileEditPage() {
         role: user?.role,
         branchId: user?.branchId,
         isActive: true,
+        imageUrl: imageUrl !== null ? imageUrl : undefined
       });
 
       // Update auth profile (name and image)
@@ -191,9 +192,13 @@ export function UserProfileEditPage() {
 
       alert('Profile updated successfully!');
       void navigate({ to: '/' });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update profile:', err);
-      alert('An error occurred while updating your profile. Please try again.');
+      if (err.response?.data?.message) {
+        alert(`Error: ${err.response.data.message}`);
+      } else {
+        alert('An error occurred while updating your profile. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

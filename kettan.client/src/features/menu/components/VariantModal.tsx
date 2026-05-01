@@ -149,7 +149,7 @@ export function VariantModal({
             </Button>
           </Box>
 
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
             <TableContainer>
               <Table size="small">
                 <TableHead>

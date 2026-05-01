@@ -187,7 +187,7 @@ export function ReturnDetailPage() {
         </Box>
       </Box>
 
-      <Paper sx={{ p: 2.2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+      <Paper sx={{ p: 2.2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1.4 }}>
           <Box>
             <Typography sx={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'text.secondary', mb: 0.4 }}>
@@ -232,7 +232,7 @@ export function ReturnDetailPage() {
         defaultRowsPerPage={5}
       />
 
-      <Paper sx={{ p: 2.2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+      <Paper sx={{ p: 2.2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
         <Typography sx={{ fontSize: 15, fontWeight: 800, mb: 1.3 }}>Return Timeline</Typography>
         <Box sx={{ display: 'grid', gap: 0.9 }}>
           {timelineRows.map((event) => {

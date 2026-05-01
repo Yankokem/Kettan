@@ -84,7 +84,7 @@ export function TransactionItemComposer({
   ];
 
   return (
-    <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 3.5 }}>
+    <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3.5 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 2.5 }}>
         <Box>
           <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'text.primary' }}>

@@ -26,7 +26,17 @@ import { SearchInput } from '../../components/UI/SearchInput';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { OrderRowActionsMenu, type OrderActionStatus } from './components/OrderRowActionsMenu';
 import { OrderListCard } from './components/OrderListCard';
-import { fetchOrders, type BranchOrder } from '../branch-operations/api';
+import { fetchOrders, fetchSupplyRequests, type BranchOrder, type SupplyRequest } from '../branch-operations/api';
+
+function defaultStartDate() {
+  const date = new Date();
+  date.setDate(date.getDate() - 30);
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultEndDate() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 // Mock Data for Orders
 interface OrderItem {
@@ -108,7 +118,7 @@ function getColumns(
       width: 120,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          ORD-{row.id}
+          {row.id.startsWith('SR-') ? row.id : `ORD-${row.id}`}
         </Typography>
       ),
     },
@@ -216,8 +226,8 @@ export function OrdersPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
-  const [startDate, setStartDate] = useState('2026-03-25');
-  const [endDate, setEndDate] = useState('2026-04-14');
+  const [startDate, setStartDate] = useState(defaultStartDate());
+  const [endDate, setEndDate] = useState(defaultEndDate());
   const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
   const [viewMode, setViewMode] = useState<OrdersListViewMode>('card');
   const [searchQuery, setSearchQuery] = useState('');
@@ -234,8 +244,14 @@ export function OrdersPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const rows = await fetchOrders();
-        const mapped = rows.map((row: BranchOrder) => ({
+        
+        // Fetch both Orders and Pending Supply Requests
+        const [ordersRows, requestsRows] = await Promise.all([
+          fetchOrders(),
+          fetchSupplyRequests('PendingApproval')
+        ]);
+
+        const mappedOrders = ordersRows.map((row: BranchOrder) => ({
           id: String(row.orderId),
           branch: row.branchName || `Branch ${row.branchId}`,
           itemsCount: Number(row.itemsCount || 0),
@@ -243,16 +259,36 @@ export function OrdersPage() {
           status: row.status as OrderActionStatus,
           date: row.pushedToFulfillmentAt,
         }));
-        setOrders(mapped);
-      } catch {
+
+        const mappedRequests = requestsRows.map((row: SupplyRequest) => ({
+          id: `SR-${row.requestId}`,
+          branch: row.branchName || `Branch ${row.branchId}`,
+          itemsCount: row.items?.length || 0,
+          totalCost: 0, // Costs aren't calculated until approval/allocation
+          status: 'PendingApproval' as OrderActionStatus,
+          date: row.createdAt,
+          actionedBy: row.requestedByName
+        }));
+
+        // Merge results: ensure we don't duplicate if an order was already created for a request
+        // (Though typically a request moves out of 'PendingApproval' when it becomes an order)
+        setOrders([...mappedRequests, ...mappedOrders]);
+      } catch (err) {
+        console.error('Failed to load orders/requests:', err);
         setError('Failed to load orders.');
-        setOrders([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     void loadOrders();
+
+    // ── Real-Time Polling (30 seconds) ──
+    const interval = setInterval(() => {
+      void loadOrders();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const source = orders.filter((order) => {
@@ -270,7 +306,8 @@ export function OrdersPage() {
     const matchesStatus = datasetMode === 'active'
       ? order.status === activeStatusTab
       : !historyStatusFilter || order.status === historyStatusFilter;
-    const inRange = order.date >= startDate && order.date <= endDate;
+    const orderDateOnly = order.date.slice(0, 10);
+    const inRange = orderDateOnly >= startDate && orderDateOnly <= endDate;
     return matchesQuery && matchesStatus && inRange;
   });
 
@@ -297,20 +334,25 @@ export function OrdersPage() {
     label: getStatusDisplayLabel(status),
   }));
 
-  const openDetails = (orderId: string) => {
-    navigate({ to: '/orders/$orderId', params: { orderId } });
+  const openDetails = (id: string) => {
+    if (id.startsWith('SR-')) {
+      const requestId = id.replace('SR-', '');
+      navigate({ to: '/supply-requests/$requestId', params: { requestId } });
+    } else {
+      navigate({ to: '/orders/$orderId', params: { orderId: id } });
+    }
   };
 
-  const handleApprove = (orderId: string) => {
-    navigate({ to: '/orders/$orderId', params: { orderId } });
+  const handleApprove = (id: string) => {
+    openDetails(id);
   };
 
-  const handleProceed = (orderId: string) => {
-    navigate({ to: '/orders/$orderId', params: { orderId } });
+  const handleProceed = (id: string) => {
+    openDetails(id);
   };
 
-  const handleReject = (orderId: string) => {
-    navigate({ to: '/orders/$orderId', params: { orderId } });
+  const handleReject = (id: string) => {
+    openDetails(id);
   };
 
   const handleDatasetModeChange = (nextMode: DatasetMode) => {
@@ -388,6 +430,8 @@ export function OrdersPage() {
         }}
       >
         <SearchInput
+          id="order-search"
+          name="search"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search order ID, branch, or actor..."
@@ -413,50 +457,17 @@ export function OrdersPage() {
         />
 
         {datasetMode === 'active' ? (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.8,
-              px: 0.75,
-              py: 0.5,
-              border: '1px solid',
-              borderColor: 'rgba(107, 76, 42, 0.3)',
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              flexShrink: 0,
-              overflowX: 'auto',
-            }}
-          >
-            {ACTIVE_STATUS_TABS.map((status) => {
-              const isSelected = activeStatusTab === status;
-
-              return (
-                <Chip
-                  key={status}
-                  label={getStatusDisplayLabel(status)}
-                  size="small"
-                  onClick={() => setActiveStatusTab(status)}
-                  sx={{
-                    height: 30,
-                    borderRadius: 1.5,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    bgcolor: isSelected ? '#6B4C2A' : 'transparent',
-                    color: isSelected ? '#fff' : 'text.secondary',
-                    border: '1px solid',
-                    borderColor: isSelected ? '#6B4C2A' : 'divider',
-                    '&:hover': {
-                      borderColor: '#6B4C2A',
-                      color: isSelected ? '#fff' : '#6B4C2A',
-                      bgcolor: isSelected ? '#5A3E23' : 'rgba(107, 76, 42, 0.06)',
-                    },
-                  }}
-                />
-              );
-            })}
-          </Box>
+          <FilterDropdown
+            label="Status"
+            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+            value={activeStatusTab}
+            onChange={(value) => setActiveStatusTab(value as ActiveStatusTab)}
+            minWidth={160}
+            options={ACTIVE_STATUS_TABS.map((status) => ({
+              value: status,
+              label: getStatusDisplayLabel(status),
+            }))}
+          />
         ) : (
           <FilterDropdown
             label="Status"

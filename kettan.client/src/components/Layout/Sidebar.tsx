@@ -59,7 +59,8 @@ const MAIN_NAV: NavItem[] = [
   { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', module: 'returns' },
   { text: 'Branch and Inventory', icon: <StoreRoundedIcon />,            path: '/branches', module: 'branches' },
   { text: 'Company Profile',    icon: <StoreRoundedIcon />,            path: '/company-profile', module: 'company-profile' },
-  { text: 'HQ Inventory',       icon: <Inventory2RoundedIcon />,       path: '/hq-inventory', module: 'hq-inventory' },
+  { text: 'Branch Profile',     icon: <StoreRoundedIcon />,            path: '/branch-profile', module: 'branch-profile' },
+  { text: 'Inventory',          icon: <Inventory2RoundedIcon />,       path: '/hq-inventory', module: 'hq-inventory' },
   { text: 'Menu & Recipes',     icon: <LocalCafeRoundedIcon />,        path: '/menu', module: 'menu' },
   { text: 'Consumption',        icon: <ScaleRoundedIcon />,            path: '/consumption', module: 'consumption' },
   { text: 'Staff Directory',    icon: <BadgeRoundedIcon />,            path: '/staff', module: 'staff' },
@@ -208,7 +209,12 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
   const isSuperAdmin = user?.role === 'SuperAdmin';
   const navItems = isSuperAdmin
     ? SUPER_ADMIN_NAV
-    : MAIN_NAV.filter(navFilter);
+    : MAIN_NAV.filter(navFilter).map(item => {
+        if (item.module === 'hq-inventory' && user?.branchId) {
+          return { ...item, text: 'My Branch Inventory' };
+        }
+        return item;
+      });
 
   const drawerContent = (
     <Box
@@ -277,6 +283,10 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
       {/* ── Footer ── */}
       {!collapsed && (
         <Box
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate({ to: '/profile' });
+          }}
           sx={{
             px: 2,
             py: 1.5,
@@ -286,6 +296,11 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
             alignItems: 'center',
             gap: 1.5,
             flexShrink: 0,
+            cursor: 'pointer',
+            transition: 'background 160ms',
+            '&:hover': {
+              background: 'rgba(201,168,77,0.08)',
+            },
           }}
         >
           <Box
@@ -302,7 +317,7 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
           >
             <PeopleRoundedIcon sx={{ fontSize: 15, color: '#FAF5EF' }} />
           </Box>
-          <Box sx={{ flex: 1, overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+          <Box sx={{ flex: 1, overflow: 'hidden' }}>
             <Typography noWrap sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.primary', lineHeight: 1.2 }}>
               {user?.name || 'Super Admin'}
             </Typography>
@@ -311,16 +326,72 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
             </Typography>
           </Box>
           <Tooltip title="Logout" placement="top">
-            <IconButton onClick={(e) => { e.stopPropagation(); handleLogout(); }} size="small" sx={{ color: 'text.secondary', cursor: 'pointer' }}>
+            <IconButton 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                handleLogout(); 
+              }} 
+              size="small" 
+              sx={{ 
+                color: 'text.secondary', 
+                cursor: 'pointer',
+                '&:hover': {
+                  background: 'rgba(201,168,77,0.15)',
+                  color: '#B91C1C',
+                },
+              }}
+            >
               <LogoutRoundedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         </Box>
       )}
       {collapsed && (
-        <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider', display: 'flex', justifyContent: 'center' }}>
+        <Box 
+          sx={{ 
+            p: 1, 
+            borderTop: 1, 
+            borderColor: 'divider', 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: 0.5,
+            alignItems: 'center',
+          }}
+        >
+          <Tooltip title="View Profile" placement="right">
+            <IconButton 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                navigate({ to: '/profile' }); 
+              }} 
+              size="small" 
+              sx={{ 
+                color: 'text.secondary', 
+                cursor: 'pointer',
+                '&:hover': {
+                  background: 'rgba(201,168,77,0.15)',
+                },
+              }}
+            >
+              <PeopleRoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Logout" placement="right">
-            <IconButton onClick={(e) => { e.stopPropagation(); handleLogout(); }} size="small" sx={{ color: 'text.secondary', cursor: 'pointer' }}>
+            <IconButton 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                handleLogout(); 
+              }} 
+              size="small" 
+              sx={{ 
+                color: 'text.secondary', 
+                cursor: 'pointer',
+                '&:hover': {
+                  background: 'rgba(201,168,77,0.15)',
+                  color: '#B91C1C',
+                },
+              }}
+            >
               <LogoutRoundedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
