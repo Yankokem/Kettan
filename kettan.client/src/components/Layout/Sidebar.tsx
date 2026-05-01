@@ -209,7 +209,12 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
   const isSuperAdmin = user?.role === 'SuperAdmin';
   const navItems = isSuperAdmin
     ? SUPER_ADMIN_NAV
-    : MAIN_NAV.filter(navFilter);
+    : MAIN_NAV.filter(navFilter).map(item => {
+        if (item.module === 'hq-inventory' && user?.branchId) {
+          return { ...item, text: 'My Branch Inventory' };
+        }
+        return item;
+      });
 
   const drawerContent = (
     <Box

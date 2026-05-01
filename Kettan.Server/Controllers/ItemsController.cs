@@ -42,10 +42,21 @@ public class ItemsController : ControllerBase
             return Forbid();
         }
 
+        // Determine effective filters based on user role
+        bool isBranchUser = _currentUser.BranchId.HasValue;
+        int? effectiveBranchId = isBranchUser ? _currentUser.BranchId : branchId;
+        bool effectiveHqOnly = isBranchUser ? false : hqOnly;
+
         var query = _context.Items
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
             .AsQueryable();
+
+        // If branch user, only show items that have (or ever had) a batch in their branch
+        if (isBranchUser)
+        {
+            query = query.Where(i => _context.Batches.Any(b => b.ItemId == i.ItemId && b.BranchId == effectiveBranchId));
+        }
 
         if (inventoryCategoryId.HasValue)
         {
@@ -70,13 +81,13 @@ public class ItemsController : ControllerBase
         var itemIds = items.Select(i => i.ItemId).ToList();
         var batchQuery = _context.Batches.Where(b => itemIds.Contains(b.ItemId));
 
-        if (hqOnly)
+        if (effectiveHqOnly)
         {
             batchQuery = batchQuery.Where(b => b.BranchId == null);
         }
-        else if (branchId.HasValue)
+        else if (effectiveBranchId.HasValue)
         {
-            batchQuery = batchQuery.Where(b => b.BranchId == branchId.Value);
+            batchQuery = batchQuery.Where(b => b.BranchId == effectiveBranchId.Value);
         }
 
         var stockByItem = await batchQuery

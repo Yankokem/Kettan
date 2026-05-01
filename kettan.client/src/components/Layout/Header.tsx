@@ -156,8 +156,15 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   };
   
   const basePath = getParentResource(location.pathname);
-  const pageTitle = PAGE_TITLES[location.pathname] ?? PAGE_TITLES[basePath] ?? 'Kettan';
-  const pageDesc = PAGE_DESCRIPTIONS[location.pathname] ?? PAGE_DESCRIPTIONS[basePath] ?? 'Kettan · Café Chain Operations';
+  let pageTitle = PAGE_TITLES[location.pathname] ?? PAGE_TITLES[basePath] ?? 'Kettan';
+  let pageDesc = PAGE_DESCRIPTIONS[location.pathname] ?? PAGE_DESCRIPTIONS[basePath] ?? 'Kettan · Café Chain Operations';
+
+  // Branch User overrides for Inventory
+  if (user?.branchId && (basePath === '/hq-inventory' || location.pathname === '/hq-inventory')) {
+    pageTitle = 'My Branch Inventory & Stock';
+    pageDesc = 'Track your local branch stock levels, raw ingredients, and reorder levels.';
+  }
+
   const showPageMeta = Boolean(pageTitle.trim());
 
   return (
