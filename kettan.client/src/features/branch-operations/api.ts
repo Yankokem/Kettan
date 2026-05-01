@@ -13,6 +13,7 @@ export interface SupplyRequestItem {
   pickingRejectionReason: string | null;
   isPacked: boolean;
   isBranchChecked: boolean;
+  hqStock?: number;
 }
 
 export interface SupplyRequest {
