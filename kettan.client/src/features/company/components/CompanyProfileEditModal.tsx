@@ -6,15 +6,13 @@ import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import AlternateEmailRoundedIcon from '@mui/icons-material/AlternateEmailRounded';
 import { Button } from '../../../components/UI/Button';
 import { TextField } from '../../../components/UI/TextField';
-import { ProfileImageUploader } from '../../../components/UI/ProfileImageUploader';
 import type { CompanyProfileFormData, CompanyProfileFormErrors } from '../types';
 
 interface CompanyProfileEditModalProps {
   open: boolean;
   formData: CompanyProfileFormData;
   onClose: () => void;
-  onSave: (nextData: CompanyProfileFormData) => void | Promise<void>;
-  isSaving?: boolean;
+  onSave: (nextData: CompanyProfileFormData) => void;
 }
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,7 +31,7 @@ function isValidUrl(url: string): boolean {
   }
 }
 
-export function CompanyProfileEditModal({ open, formData, onClose, onSave, isSaving = false }: CompanyProfileEditModalProps) {
+export function CompanyProfileEditModal({ open, formData, onClose, onSave }: CompanyProfileEditModalProps) {
   const [draft, setDraft] = useState<CompanyProfileFormData>(formData);
   const [errors, setErrors] = useState<CompanyProfileFormErrors>({});
 
@@ -43,8 +41,7 @@ export function CompanyProfileEditModal({ open, formData, onClose, onSave, isSav
     }
 
     setDraft(formData);
-    // Avoid setting state inside an effect directly if it causes linter errors
-    // Instead handled dynamically or initialized correctly
+    setErrors({});
   }, [formData, open]);
 
   const updateField = <K extends keyof CompanyProfileFormData>(field: K, value: CompanyProfileFormData[K]) => {
@@ -104,7 +101,7 @@ export function CompanyProfileEditModal({ open, formData, onClose, onSave, isSav
       return;
     }
 
-    void onSave({
+    onSave({
       ...draft,
       name: draft.name.trim(),
       legalName: draft.legalName.trim(),
@@ -144,19 +141,6 @@ export function CompanyProfileEditModal({ open, formData, onClose, onSave, isSav
         </Box>
 
         <Grid container spacing={2.5}>
-          <Grid size={{ xs: 12 }}>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary', mb: 0.8 }}>Company Logo</Typography>
-            <ProfileImageUploader
-              imageUrl={draft.logoUrl}
-              imageFile={draft.logoFile ?? undefined}
-              label="Upload Logo"
-              subLabel="PNG, JPG or WEBP up to 5MB"
-              onFileChange={(file) => {
-                updateField('logoFile', file);
-                if (!file) updateField('logoUrl', null);
-              }}
-            />
-          </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary', mb: 0.8 }}>Organization Name</Typography>
             <TextField
@@ -280,11 +264,11 @@ export function CompanyProfileEditModal({ open, formData, onClose, onSave, isSav
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2.5, gap: 1.5 }}>
-        <Button variant="outlined" onClick={onClose} disabled={isSaving}>
+        <Button variant="outlined" onClick={onClose}>
           Cancel
         </Button>
-        <Button startIcon={<SaveRoundedIcon sx={{ fontSize: 18 }} />} onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save Changes'}
+        <Button startIcon={<SaveRoundedIcon sx={{ fontSize: 18 }} />} onClick={handleSave}>
+          Save Changes
         </Button>
       </DialogActions>
     </Dialog>
