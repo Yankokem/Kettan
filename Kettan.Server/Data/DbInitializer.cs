@@ -18,7 +18,8 @@ public static class DbInitializer
     {
         logger?.LogInformation("DbSeeder: starting migration and seed process.");
 
-        await context.Database.MigrateAsync(cancellationToken);
+        // Temporarily disabled to isolate startup crash
+        // await context.Database.MigrateAsync(cancellationToken);
 
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
