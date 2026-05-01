@@ -666,6 +666,7 @@ public class SupplyRequestService : ISupplyRequestService
             UpdatedAt = request.UpdatedAt,
 
             OrderId = order?.OrderId,
+            OrderStatus = order?.Status.ToString(),
             ArrivedAt = order?.ArrivedAt,
             ArrivedConfirmedByName = (order?.ArrivedConfirmedByUser != null)
                 ? $"{order.ArrivedConfirmedByUser.FirstName} {order.ArrivedConfirmedByUser.LastName}".Trim() 

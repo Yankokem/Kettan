@@ -36,6 +36,7 @@ public class SupplyRequestDto
     public DateTime UpdatedAt { get; set; }
 
     public int? OrderId { get; set; }
+    public string? OrderStatus { get; set; }
     public DateTime? ArrivedAt { get; set; }
     public string? ArrivedConfirmedByName { get; set; }
     public DateTime? CompletedAt { get; set; }

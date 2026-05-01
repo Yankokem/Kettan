@@ -129,8 +129,8 @@ export function SupplyRequestDetailHeader({
           </>
         )}
 
-        {/* Processing (Order Created) */}
-        {status === 'Processing' && isHq && (
+        {/* Approved -> Move to Picking */}
+        {(status === 'Approved' || status === 'PartiallyApproved' || status === 'Processing') && isHq && (
            <Button startIcon={<Inventory2RoundedIcon />} onClick={onBeginPicking} disabled={isSubmitting}>
              Begin Picking
            </Button>

@@ -31,6 +31,7 @@ export interface SupplyRequest {
   createdAt: string;
   updatedAt: string;
   orderId?: number | null;
+  orderStatus?: string | null;
   arrivedAt?: string | null;
   arrivedConfirmedByName?: string | null;
   completedAt?: string | null;
@@ -172,12 +173,14 @@ export async function fetchSupplyRequests(status?: string): Promise<SupplyReques
     return payload.map((row) => ({
       ...row,
       status: normalizeSupplyRequestStatus(row.status),
+      orderStatus: row.orderStatus ? normalizeOrderStatus(row.orderStatus) : null,
     }));
   }
   if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
     return (payload as { items: SupplyRequest[] }).items.map((row) => ({
       ...row,
       status: normalizeSupplyRequestStatus(row.status),
+      orderStatus: row.orderStatus ? normalizeOrderStatus(row.orderStatus) : null,
     }));
   }
   return [];
@@ -188,6 +191,7 @@ export async function fetchSupplyRequestById(requestId: number): Promise<SupplyR
   return {
     ...response.data,
     status: normalizeSupplyRequestStatus(response.data.status),
+    orderStatus: response.data.orderStatus ? normalizeOrderStatus(response.data.orderStatus) : null,
   };
 }
 

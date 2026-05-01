@@ -12,6 +12,7 @@ import {
   submitDispatch,
   confirmArrival,
   completeTransaction,
+  pickOrder,
   type PickingSuggestion,
   type SupplyRequest as ApiSupplyRequest
 } from '../branch-operations/api';
@@ -28,7 +29,7 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
   
   return {
     requestNumber,
-    status: request.status as SupplyRequestDetailViewModel['status'],
+    status: (request.orderStatus || request.status) as SupplyRequestDetailViewModel['status'],
     branchName: request.branchName,
     requestedByName: request.requestedByName,
     requestedByRole: 'Branch Manager', // In a real app, this might come from the DTO
@@ -133,9 +134,9 @@ export function SupplyRequestDetailPage() {
   const onReject = () => handleAction(() => rejectSupplyRequest(Number(requestId), { reason: 'Rejected by HQ' }));
 
   const onBeginPicking = () => handleAction(async () => {
-     // This would normally call start picking endpoint
-     // For now we assume the backend handles the transition or we use the generic PUT
-     await loadData(); 
+     if (request?.linkedOrderId) {
+        await pickOrder(Number(request.linkedOrderId));
+     }
   });
 
   const onSubmitPicking = () => handleAction(() => submitPicking(Number(request?.linkedOrderId), localItems.map(i => ({
