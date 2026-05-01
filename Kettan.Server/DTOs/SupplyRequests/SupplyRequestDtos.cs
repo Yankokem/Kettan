@@ -16,6 +16,7 @@ public class SupplyRequestItemDto
     public string? PickingRejectionReason { get; set; }
     public bool IsPacked { get; set; }
     public bool IsBranchChecked { get; set; }
+    public decimal? HqStock { get; set; }
 }
 
 public class SupplyRequestDto

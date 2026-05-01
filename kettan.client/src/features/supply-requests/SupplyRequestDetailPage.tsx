@@ -47,8 +47,8 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
       sku: item.itemSku,
       requestedQty: Number(item.quantityRequested),
       approvedQty: item.quantityApproved != null ? Number(item.quantityApproved) : null,
-      hqStock: 0, // In a real app, we'd fetch current HQ stock levels
-      availability: 'Available',
+      hqStock: item.hqStock ?? 0,
+      availability: (item.hqStock ?? 0) > 0 ? 'Available' : 'Out of Stock',
       
       isPicked: item.isPicked,
       sendQuantity: item.sendQuantity,

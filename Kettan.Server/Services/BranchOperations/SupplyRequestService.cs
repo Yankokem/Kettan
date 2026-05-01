@@ -81,7 +81,24 @@ public class SupplyRequestService : ISupplyRequestService
             return null;
         }
 
-        return MapToDto(request);
+        var dto = MapToDto(request);
+        await PopulateHqStockAsync(dto);
+        return dto;
+    }
+
+    private async Task PopulateHqStockAsync(SupplyRequestDto dto)
+    {
+        var itemIds = dto.Items.Select(i => i.ItemId).ToList();
+        var stockLookup = await _context.Batches
+            .Where(b => b.BranchId == null && itemIds.Contains(b.ItemId))
+            .GroupBy(b => b.ItemId)
+            .Select(g => new { ItemId = g.Key, TotalStock = g.Sum(b => b.CurrentQuantity) })
+            .ToDictionaryAsync(x => x.ItemId, x => x.TotalStock);
+
+        foreach (var item in dto.Items)
+        {
+            item.HqStock = stockLookup.TryGetValue(item.ItemId, out var stock) ? stock : 0;
+        }
     }
 
     public async Task<SupplyRequestDto> CreateDraftAsync(CreateSupplyRequestDto dto)
