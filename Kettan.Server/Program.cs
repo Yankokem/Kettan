@@ -109,7 +109,8 @@ builder.Services.AddCors(options =>
             "http://kettan-om.runasp.net",
             "https://kettan-om.runasp.net",
             "http://localhost:5173",
-            "https://localhost:61643"
+            "https://localhost:61643",
+            "http://localhost:61643"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()

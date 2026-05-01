@@ -7,9 +7,10 @@ import { useState } from 'react';
 interface InventoryItemDetailsProps {
   item: InventoryItem;
   onAddItem: (item: InventoryItem, quantity: number, notes: string) => void;
+  showStock?: boolean;
 }
 
-export function InventoryItemDetails({ item, onAddItem }: InventoryItemDetailsProps) {
+export function InventoryItemDetails({ item, onAddItem, showStock = true }: InventoryItemDetailsProps) {
   const [quantity, setQuantity] = useState<number>(1);
   const [notes, setNotes] = useState<string>('');
   const isOutOfStock = item.hqStock === 0;
@@ -39,15 +40,17 @@ export function InventoryItemDetails({ item, onAddItem }: InventoryItemDetailsPr
             <Typography variant="body2" color="text.secondary">Unit Size</Typography>
             <Typography variant="body1" fontWeight={500}>{item.unit}</Typography>
           </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" color="text.secondary">Available HQ Stock</Typography>
-            <Typography variant="body1" fontWeight={700} color={isOutOfStock ? 'error.main' : 'success.main'}>
-              {item.hqStock} {item.unit}
-            </Typography>
-          </Box>
+          {showStock && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">Available HQ Stock</Typography>
+              <Typography variant="body1" fontWeight={700} color={isOutOfStock ? 'error.main' : 'success.main'}>
+                {item.hqStock} {item.unit}
+              </Typography>
+            </Box>
+          )}
         </Stack>
 
-        {isOutOfStock && (
+        {showStock && isOutOfStock && (
           <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ mb: 3 }}>
             This item is currently out of stock at HQ. You may still request it, but fulfillment may be delayed.
           </Alert>

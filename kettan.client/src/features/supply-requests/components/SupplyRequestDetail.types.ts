@@ -14,7 +14,10 @@ export type SupplyRequestLifecycleStatus =
   | 'Delivered'
   | 'Arrived'
   | 'Completed'
-  | 'Returned';
+  | 'Returned'
+  | 'Cancelled'
+  | 'Fulfilled'
+  | 'Pending';
 
 export type SupplyRequestAvailability = 'Available' | 'Low Stock' | 'Out of Stock';
 

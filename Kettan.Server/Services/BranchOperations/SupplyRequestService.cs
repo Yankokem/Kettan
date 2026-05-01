@@ -548,6 +548,62 @@ public class SupplyRequestService : ISupplyRequestService
         return MapToDto(newHydrated!);
     }
 
+    public async Task<SupplyRequestDto?> CancelAsync(int requestId, CancelSupplyRequestDto dto)
+    {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            throw new InvalidOperationException("Authenticated tenant user is required.");
+        }
+
+        var request = await _context.SupplyRequests
+            .Include(r => r.Items)
+            .FirstOrDefaultAsync(r => r.RequestId == requestId);
+
+        if (request == null)
+        {
+            return null;
+        }
+
+        var currentBranchId = _currentUser.BranchId ?? 0;
+        if (IsBranchScopedUser() && request.BranchId != currentBranchId)
+        {
+            return null;
+        }
+
+        if (!IsDraftLike(request.Status) && request.Status != SupplyRequestStatus.PendingApproval)
+        {
+            throw new InvalidOperationException("Only draft, auto-drafted, or pending approval requests can be cancelled.");
+        }
+
+        request.Status = SupplyRequestStatus.Cancelled;
+        request.UpdatedAt = DateTime.UtcNow;
+
+        request.Notes = BuildRejectionNotes(request.Notes, dto.Reason, dto.Notes);
+
+        await _context.SaveChangesAsync();
+
+        var normalizedReason = NormalizeOptional(dto.Reason);
+        var message = string.IsNullOrWhiteSpace(normalizedReason)
+            ? $"Supply request #{request.RequestId} was cancelled."
+            : $"Supply request #{request.RequestId} was cancelled: {normalizedReason}.";
+
+        await _notificationService.CreateForUsersAsync(
+            [request.RequestedBy_UserId],
+            "Supply Request Cancelled",
+            message,
+            type: "SupplyRequestCancelled",
+            referenceType: nameof(SupplyRequest),
+            referenceId: request.RequestId);
+
+        var hydrated = await GetHydratedByIdAsync(request.RequestId);
+        if (hydrated == null)
+        {
+            throw new InvalidOperationException("Unable to load cancelled request.");
+        }
+
+        return MapToDto(hydrated);
+    }
+
     private int ResolveBranchId(int? dtoBranchId)
     {
         if (IsBranchScopedUser())

@@ -27,6 +27,7 @@ function getStepIndex(status: string): number {
     Approved: 1,
     Processing: 1,
     Picking: 2,
+    Allocated: 2,
     Packing: 3,
     Packed: 3,
     Dispatched: 4,

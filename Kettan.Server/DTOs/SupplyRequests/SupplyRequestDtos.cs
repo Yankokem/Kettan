@@ -93,6 +93,12 @@ public class RejectSupplyRequestDto
     public string? Notes { get; set; }
 }
 
+public class CancelSupplyRequestDto
+{
+    public string? Reason { get; set; }
+    public string? Notes { get; set; }
+}
+
 public class SubmitSupplyRequestDto
 {
     public string? Notes { get; set; }

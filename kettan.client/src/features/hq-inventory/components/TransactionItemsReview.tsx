@@ -126,6 +126,7 @@ export function TransactionItemsReview({ items, transactionType, onEdit, onRemov
                     {item.itemSku}
                   </Typography>
                   <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.35 }}>
+                    {item.categoryName ? `${item.categoryName} • ` : ''}
                     Current Stock: {item.currentStock} {item.unit || 'unit'}
                     {item.reason ? ` • ${item.reason}` : ''}
                   </Typography>

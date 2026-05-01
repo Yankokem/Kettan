@@ -17,6 +17,9 @@ export const SUPPLY_REQUEST_STATUS_COLORS: Record<SupplyRequestLifecycleStatus, 
   Arrived: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
   Completed: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
   Returned: { color: '#9333EA', bg: 'rgba(147,51,234,0.12)' },
+  Cancelled: { color: '#DC2626', bg: 'rgba(220,38,38,0.12)' },
+  Fulfilled: { color: '#16A34A', bg: 'rgba(22,163,74,0.12)' },
+  Pending: { color: '#EA8834', bg: 'rgba(234,136,52,0.12)' },
 };
 
 export function getSupplyRequestStatusLabel(status: SupplyRequestLifecycleStatus): string {

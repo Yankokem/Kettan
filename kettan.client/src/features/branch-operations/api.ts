@@ -103,6 +103,13 @@ export interface OrderRequestItem {
   quantityRequested: number;
   quantityApproved: number | null;
   unitCost: number;
+  isPicked: boolean;
+  sendQuantity: number | null;
+  isRejectedDuringPicking: boolean;
+  pickingRejectionReason: string | null;
+  isPacked: boolean;
+  isBranchChecked: boolean;
+  hqStock?: number;
 }
 
 export interface OrderAllocation {
@@ -386,6 +393,17 @@ export async function rejectSupplyRequest(requestId: number, payload: {
   notes?: string;
 }): Promise<SupplyRequest> {
   const response = await api.put<SupplyRequest>(`/api/SupplyRequests/${requestId}/reject`, payload);
+  return {
+    ...response.data,
+    status: normalizeSupplyRequestStatus(response.data.status),
+  };
+}
+
+export async function cancelSupplyRequest(requestId: number, payload: {
+  reason?: string;
+  notes?: string;
+}): Promise<SupplyRequest> {
+  const response = await api.post<SupplyRequest>(`/api/SupplyRequests/${requestId}/cancel`, payload);
   return {
     ...response.data,
     status: normalizeSupplyRequestStatus(response.data.status),

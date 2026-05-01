@@ -21,11 +21,13 @@ interface OrderListCardProps {
   onReject: (orderId: string) => void;
 }
 
-const STATUS_MAP: Record<OrderActionStatus, { color: string; bg: string }> = {
+const STATUS_MAP: Record<string, { color: string; bg: string }> = {
   PendingApproval: { color: '#B45309', bg: 'rgba(180,83,9,0.12)' },
   Approved: { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' },
+  PartiallyApproved: { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' },
   Processing: { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' },
   Picking: { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
+  Allocated: { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
   Packed: { color: '#0891B2', bg: 'rgba(8,145,178,0.12)' },
   Dispatched: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
   InTransit: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
@@ -35,13 +37,32 @@ const STATUS_MAP: Record<OrderActionStatus, { color: string; bg: string }> = {
 };
 
 export function OrderListCard({ order, datasetMode, onOpen, onApprove, onProceed, onReject }: OrderListCardProps) {
-  const statusStyle = STATUS_MAP[order.status];
+  const statusStyle = STATUS_MAP[order.status] || { color: '#666', bg: 'rgba(0,0,0,0.05)' };
   const dateLabel = datasetMode === 'history' ? 'Completed' : 'Requested';
 
   return (
-    <Card sx={{ borderRadius: '14px', border: '1px solid', borderColor: 'divider' }}>
-      <CardActionArea onClick={() => onOpen(order.id)} sx={{ p: 2.25 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
+    <Card sx={{ borderRadius: '14px', border: '1px solid', borderColor: 'divider', position: 'relative' }}>
+      <Box sx={{ position: 'absolute', top: 18, right: 18, zIndex: 2 }}>
+        <OrderRowActionsMenu
+          orderId={order.id}
+          status={order.status}
+          onViewDetails={onOpen}
+          onApprove={onApprove}
+          onProceed={onProceed}
+          onReject={onReject}
+        />
+      </Box>
+      
+      <CardActionArea 
+        onClick={() => onOpen(order.id)} 
+        sx={{ 
+          p: 2.25,
+          '& .MuiCardActionArea-focusHighlight': {
+            borderRadius: '14px'
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5, pr: 4 }}>
           <Box sx={{ minWidth: 0 }}>
             <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
               {order.id}
@@ -62,14 +83,6 @@ export function OrderListCard({ order, datasetMode, onOpen, onApprove, onProceed
                 color: statusStyle.color,
                 border: `1px solid ${statusStyle.color}28`,
               }}
-            />
-            <OrderRowActionsMenu
-              orderId={order.id}
-              status={order.status}
-              onViewDetails={onOpen}
-              onApprove={onApprove}
-              onProceed={onProceed}
-              onReject={onReject}
             />
           </Box>
         </Box>

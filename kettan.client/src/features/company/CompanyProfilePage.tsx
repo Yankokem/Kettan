@@ -253,7 +253,7 @@ export function CompanyProfilePage() {
         }
       }
 
-      await updateCompanyProfile({ ...nextData, logoUrl: finalLogoUrl }, subscriptionTier);
+      await updateCompanyProfile({ ...nextData, logoUrl: finalLogoUrl ?? null }, subscriptionTier);
       const refreshed = await fetchCompanyProfile();
 
       setProfile(refreshed.profile);
@@ -264,7 +264,7 @@ export function CompanyProfilePage() {
       if (sessionTenant) {
         useAuthStore.getState().updateTenant({
           ...sessionTenant,
-          logoUrl: refreshed.profile.logoUrl,
+          logoUrl: refreshed.profile.logoUrl ?? null,
           name: refreshed.profile.name
         });
       }

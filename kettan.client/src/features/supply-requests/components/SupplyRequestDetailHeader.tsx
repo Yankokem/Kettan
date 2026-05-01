@@ -4,9 +4,7 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
-import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -25,18 +23,10 @@ export interface SupplyRequestDetailHeaderProps {
   branchName: string;
   role: string;
   isSubmitting?: boolean;
-  canSubmitPicking?: boolean;
-  canDispatch?: boolean;
-  canComplete?: boolean;
   onSubmitDraft?: () => void;
   onApprove?: () => void;
   onReject?: () => void;
-  onBeginPicking?: () => void;
-  onSubmitPicking?: () => void;
-  onSubmitPacking?: () => void;
-  onDispatch?: () => void;
-  onConfirmArrival?: () => void;
-  onComplete?: () => void;
+  onCancel?: () => void;
   onFileReturn?: () => void;
 }
 
@@ -47,18 +37,10 @@ export function SupplyRequestDetailHeader({
   branchName,
   role,
   isSubmitting,
-  canSubmitPicking,
-  canDispatch,
-  canComplete,
   onSubmitDraft,
   onApprove,
   onReject,
-  onBeginPicking,
-  onSubmitPicking,
-  onSubmitPacking,
-  onDispatch,
-  onConfirmArrival,
-  onComplete,
+  onCancel,
   onFileReturn,
 }: SupplyRequestDetailHeaderProps) {
   const navigate = useNavigate();
@@ -86,6 +68,14 @@ export function SupplyRequestDetailHeader({
                 bgcolor: statusColor.bg,
                 color: statusColor.color,
                 border: `1px solid ${statusColor.color}28`,
+                ...( ['Approved', 'Processing', 'Picking', 'Packing', 'Packed'].includes(status) && {
+                  animation: 'pulse 2s infinite',
+                  '@keyframes pulse': {
+                    '0%': { opacity: 1, boxShadow: `0 0 0 0 ${statusColor.color}40` },
+                    '70%': { opacity: 0.8, boxShadow: `0 0 0 10px ${statusColor.color}00` },
+                    '100%': { opacity: 1, boxShadow: `0 0 0 0 ${statusColor.color}00` }
+                  }
+                })
               }}
             />
           </Box>
@@ -116,7 +106,12 @@ export function SupplyRequestDetailHeader({
 
         {/* Pending Approval */}
         {status === 'PendingApproval' && isBranch && (
-          <Chip label="Awaiting HQ Review" variant="outlined" sx={{ fontWeight: 600, color: 'text.secondary' }} />
+          <>
+            <Button variant="outlined" color="error" startIcon={<CancelRoundedIcon />} onClick={onCancel} disabled={isSubmitting}>
+              Cancel Request
+            </Button>
+            <Chip label="Awaiting HQ Review" variant="outlined" sx={{ fontWeight: 600, color: 'text.secondary' }} />
+          </>
         )}
         {status === 'PendingApproval' && isHq && (
           <>
@@ -130,48 +125,9 @@ export function SupplyRequestDetailHeader({
         )}
 
         {/* Approved -> Move to Picking */}
-        {(status === 'Approved' || status === 'PartiallyApproved' || status === 'Processing') && isHq && (
-           <Button startIcon={<Inventory2RoundedIcon />} onClick={onBeginPicking} disabled={isSubmitting}>
-             Begin Picking
-           </Button>
-        )}
-
-        {/* Picking */}
-        {status === 'Picking' && isHq && (
-          <Button startIcon={<CheckCircleRoundedIcon />} onClick={onSubmitPicking} disabled={isSubmitting || !canSubmitPicking}>
-            Submit Picking
-          </Button>
-        )}
-
-        {/* Packing / Packed */}
-        {(status === 'Packing' || status === 'Packed') && isHq && (
-          <>
-            <Button variant="outlined" startIcon={<TaskAltRoundedIcon />} onClick={onSubmitPacking} disabled={isSubmitting}>
-              Save Packing
-            </Button>
-            <Button startIcon={<LocalShippingRoundedIcon />} onClick={onDispatch} disabled={isSubmitting || !canDispatch}>
-              Dispatch Order
-            </Button>
-          </>
-        )}
-
-        {/* Dispatched / In Transit */}
-        {(status === 'Dispatched' || status === 'InTransit') && isHq && (
-          <Chip label="Awaiting Branch Confirmation" variant="outlined" sx={{ fontWeight: 600, color: 'text.secondary' }} />
-        )}
-        {(status === 'Dispatched' || status === 'InTransit') && isBranch && (
-          <Button startIcon={<TaskAltRoundedIcon />} onClick={onConfirmArrival} disabled={isSubmitting}>
-            Package Arrived
-          </Button>
-        )}
-
-        {/* Arrived */}
-        {status === 'Arrived' && isHq && (
-          <Chip label="Awaiting Branch Completion" variant="outlined" sx={{ fontWeight: 600, color: 'text.secondary' }} />
-        )}
-        {status === 'Arrived' && isBranch && (
-          <Button color="success" startIcon={<CheckCircleRoundedIcon />} onClick={onComplete} disabled={isSubmitting || !canComplete}>
-            Complete Transaction
+        {status !== 'PendingApproval' && status !== 'Draft' && status !== 'AutoDrafted' && status !== 'Cancelled' && status !== 'Rejected' && (
+          <Button variant="outlined" startIcon={<TaskAltRoundedIcon />} onClick={() => navigate({ to: '/orders' })}>
+            View Order Processing
           </Button>
         )}
 

@@ -1,6 +1,6 @@
 import { Box, Typography, Chip, Grid } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
 import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
@@ -11,98 +11,28 @@ import { useAuthStore } from '../../store/useAuthStore';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
-import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
-import { TextField } from '../../components/UI/TextField';
+
 import { OrderFulfillmentStepper } from './components/OrderFulfillmentStepper';
 import { OrderDetailsPanel } from './components/OrderDetailsPanel';
 import {
   fetchOrderById,
-  pickOrder,
-  packOrder,
-  dispatchOrder,
+  submitPicking,
+  submitPacking,
+  submitDispatch,
   type OrderDetail,
-  type OrderRequestItem,
 } from '../branch-operations/api';
+import SRItemTable, { type SRTableMode } from '../supply-requests/components/SRItemTable';
+import type { SupplyRequestDetailItem } from '../supply-requests/components/SupplyRequestDetail.types';
 
-interface RequestItem {
-  id: string;
-  name: string;
-  requestedQty: number;
-  hqStock: number;
-  approvedQty: number;
-  status: 'Available' | 'Low Stock' | 'Out of Stock';
-}
 
-const COLUMNS: ColumnDef<RequestItem>[] = [
-  {
-    key: 'name',
-    label: 'Requested Item',
-    render: (row) => (
-      <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
-        {row.name}
-      </Typography>
-    ),
-  },
-  {
-    key: 'hqStock',
-    label: 'HQ Stock',
-    width: 110,
-    sortable: true,
-    render: (row) => (
-      <Typography sx={{ fontSize: 13, color: row.hqStock < row.requestedQty ? 'error.main' : 'text.secondary', fontWeight: row.hqStock < row.requestedQty ? 700 : 500 }}>
-        {row.hqStock} units
-      </Typography>
-    ),
-  },
-  {
-    key: 'requestedQty',
-    label: 'Requested',
-    width: 110,
-    sortable: true,
-    render: (row) => (
-      <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>
-        {row.requestedQty} units
-      </Typography>
-    ),
-  },
-  {
-    key: 'status',
-    label: 'Availability',
-    width: 140,
-    render: (row) => {
-      const color = row.status === 'Available' ? '#546B3F' : (row.status === 'Low Stock' ? '#B45309' : '#B91C1C');
-      const bg    = row.status === 'Available' ? 'rgba(84,107,63,0.12)' : (row.status === 'Low Stock' ? 'rgba(180,83,9,0.12)' : 'rgba(185,28,28,0.10)');
-      return (
-        <Chip
-          label={row.status}
-          size="small"
-          sx={{ fontSize: 11.5, fontWeight: 600, background: bg, color, border: `1px solid ${color}28` }}
-        />
-      );
-    },
-  },
-  {
-    key: 'approvedQty',
-    label: 'Approved Qty',
-    width: 140,
-    render: (row) => (
-      <TextField
-        size="small"
-        type="number"
-        defaultValue={row.approvedQty}
-        inputProps={{ min: 0, max: row.hqStock, sx: { fontSize: 13, fontWeight: 600, py: 0.5 } }}
-        sx={{ width: 80, '& .MuiOutlinedInput-notchedOutline': { borderColor: row.hqStock < row.requestedQty ? 'error.main' : 'divider' } }}
-      />
-    ),
-  }
-];
+
 
 export function OrderDetailPage() {
   const { orderId } = useParams({ strict: false });
   const { user } = useAuthStore();
   
-  const [orderStatus, setOrderStatus] = useState<string>('PendingApproval');
   const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [localItems, setLocalItems] = useState<SupplyRequestDetailItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -117,7 +47,24 @@ export function OrderDetailPage() {
         setError(null);
         const row = await fetchOrderById(Number(orderId));
         setOrder(row);
-        setOrderStatus(row.status);
+        
+        // Map OrderDetail items to SupplyRequestDetailItem for SRItemTable
+        const items: SupplyRequestDetailItem[] = (row.requestedItems || []).map(i => ({
+          id: String(i.itemId),
+          name: i.itemName,
+          sku: i.itemSku,
+          requestedQty: i.quantityRequested,
+          approvedQty: i.quantityApproved,
+          hqStock: i.hqStock ?? 0,
+          availability: (i.hqStock ?? 0) >= i.quantityRequested ? 'Available' : 'Low Stock',
+          isPicked: i.isPicked,
+          sendQuantity: i.sendQuantity,
+          isRejectedDuringPicking: i.isRejectedDuringPicking,
+          pickingRejectionReason: i.pickingRejectionReason,
+          isPacked: i.isPacked,
+          isBranchChecked: i.isBranchChecked
+        }));
+        setLocalItems(items);
       } catch {
         setError('Failed to load order details.');
       }
@@ -126,48 +73,63 @@ export function OrderDetailPage() {
     void loadOrder();
   }, [orderId]);
 
-  const itemRows: RequestItem[] = useMemo(() => {
-    return (order?.requestedItems ?? []).map((item: OrderRequestItem) => ({
-      id: String(item.itemId),
-      name: item.itemName,
-      requestedQty: Number(item.quantityRequested),
-      hqStock: Number(item.quantityApproved ?? item.quantityRequested),
-      approvedQty: Number(item.quantityApproved ?? 0),
-      status: (item.quantityApproved ?? item.quantityRequested) >= item.quantityRequested ? 'Available' : 'Low Stock',
-    }));
-  }, [order]);
+  const orderStatus = order?.status || 'Processing';
 
-  const handleWorkflowAction = async (action: 'pick' | 'pack' | 'dispatch') => {
-    if (!orderId) {
-      return;
-    }
+
+  const handleWorkflowAction = async (action: 'save-pick' | 'save-pack' | 'dispatch') => {
+    if (!orderId) return;
 
     try {
       setIsSaving(true);
       setError(null);
 
-      if (action === 'pick') {
-        await pickOrder(Number(orderId), 'Picking started from frontend.');
-      } else if (action === 'pack') {
-        await packOrder(Number(orderId), 'Packing confirmed from frontend.');
+      if (action === 'save-pick') {
+        await submitPicking(Number(orderId), localItems.map(i => ({
+          requestItemId: Number(i.id),
+          isPicked: i.isPicked ?? false,
+          sendQuantity: i.sendQuantity ?? i.approvedQty ?? i.requestedQty,
+          isRejected: i.isRejectedDuringPicking ?? false,
+          rejectionReason: i.pickingRejectionReason ?? null
+        })));
+      } else if (action === 'save-pack') {
+        await submitPacking(Number(orderId), localItems.map(i => ({
+          requestItemId: Number(i.id),
+          isPacked: i.isPacked ?? false
+        })));
       } else if (action === 'dispatch') {
-        await dispatchOrder(Number(orderId), {
-          vehicleId: undefined,
-          trackingNumber: undefined,
-          estimatedArrival: undefined,
-          remarks: 'Dispatched from frontend.',
-        });
+        await submitDispatch(Number(orderId));
       }
 
       const refreshed = await fetchOrderById(Number(orderId));
       setOrder(refreshed);
-      setOrderStatus(refreshed.status);
-    } catch {
-      setError('Failed to update order workflow.');
+      
+      const items: SupplyRequestDetailItem[] = (refreshed.requestedItems || []).map(i => ({
+          id: String(i.itemId),
+          name: i.itemName,
+          sku: i.itemSku,
+          requestedQty: i.quantityRequested,
+          approvedQty: i.quantityApproved,
+          hqStock: i.hqStock ?? 0,
+          availability: (i.hqStock ?? 0) >= i.quantityRequested ? 'Available' : 'Low Stock',
+          isPicked: i.isPicked,
+          sendQuantity: i.sendQuantity,
+          isRejectedDuringPicking: i.isRejectedDuringPicking,
+          pickingRejectionReason: i.pickingRejectionReason,
+          isPacked: i.isPacked,
+          isBranchChecked: i.isBranchChecked
+      }));
+      setLocalItems(items);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update order workflow.');
     } finally {
       setIsSaving(false);
     }
   };
+
+  let tableMode: SRTableMode = 'readonly';
+  if (orderStatus === 'Processing' || orderStatus === 'Picking' || orderStatus === 'Allocated') tableMode = 'picking';
+  else if (orderStatus === 'Packed') tableMode = 'packing';
+  else if (orderStatus === 'Arrived') tableMode = 'branch-check';
 
   if (error) {
     return (
@@ -217,21 +179,36 @@ export function OrderDetailPage() {
         {/* Header Actions (Dynamic based on status and role) */}
         <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center' }}>
           
-          {orderStatus === 'Processing' && (
-            <Button startIcon={<InventoryRoundedIcon />} onClick={() => void handleWorkflowAction('pick')} disabled={isSaving}>
-              Start Picking
+          {(orderStatus === 'Processing' || orderStatus === 'Picking') && (
+            <Button 
+              startIcon={<InventoryRoundedIcon />} 
+              onClick={() => void handleWorkflowAction('save-pick')} 
+              loading={isSaving}
+              disabled={isSaving || !localItems.some(i => i.isPicked || i.isRejectedDuringPicking)}
+            >
+              {orderStatus === 'Processing' ? 'Start Picking' : 'Update Picking'}
             </Button>
           )}
 
           {orderStatus === 'Picking' && (
-            <Button startIcon={<BackpackRoundedIcon />} onClick={() => void handleWorkflowAction('pack')} disabled={isSaving}>
+            <Button 
+              startIcon={<BackpackRoundedIcon />} 
+              onClick={() => void handleWorkflowAction('save-pack')} 
+              loading={isSaving}
+              disabled={isSaving || !localItems.filter(i => !i.isRejectedDuringPicking).every(i => i.isPicked)}
+            >
               Confirm Items Packed
             </Button>
           )}
 
           {orderStatus === 'Packed' && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Button startIcon={<LocalShippingRoundedIcon />} onClick={() => void handleWorkflowAction('dispatch')} disabled={isSaving}>
+              <Button 
+                startIcon={<LocalShippingRoundedIcon />} 
+                onClick={() => void handleWorkflowAction('dispatch')} 
+                loading={isSaving}
+                disabled={isSaving || localItems.filter(i => !i.isRejectedDuringPicking).some(i => !i.isPacked)}
+              >
                 Dispatch Order
               </Button>
             </Box>
@@ -260,17 +237,21 @@ export function OrderDetailPage() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 8.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, px: 0.5 }}>
-            <InventoryRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-            <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Item Reconciliation</Typography>
+          <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
+            <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Item Reconciliation</Typography>
+              {tableMode !== 'readonly' && (
+                <Typography variant="caption" color="text.secondary">
+                  {localItems.filter(i => (tableMode === 'picking' ? i.isPicked : tableMode === 'packing' ? i.isPacked : i.isBranchChecked)).length} / {localItems.filter(i => !i.isRejectedDuringPicking).length} Processed
+                </Typography>
+              )}
+            </Box>
+            <SRItemTable 
+              items={localItems} 
+              mode={tableMode} 
+              onItemsChange={setLocalItems}
+            />
           </Box>
-          <DataTable
-            data={itemRows}
-            columns={COLUMNS}
-            keyExtractor={(row) => row.id}
-            defaultRowsPerPage={10}
-            rowsPerPageOptions={[10, 25, 50]}
-          />
         </Grid>
       </Grid>
     </Box>

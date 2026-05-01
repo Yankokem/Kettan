@@ -53,7 +53,7 @@ function DetailField({
 }
 
 export function SupplyRequestDetailsPanel({ request }: SupplyRequestDetailsPanelProps) {
-  const statusColor = SUPPLY_REQUEST_STATUS_COLORS[request.status];
+  const statusColor = SUPPLY_REQUEST_STATUS_COLORS[request.status] || { color: '#6B7280', bg: 'rgba(107,114,128,0.12)' };
 
   return (
     <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>

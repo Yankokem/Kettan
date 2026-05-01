@@ -147,7 +147,7 @@ export function CompanyProfileEditModal({ open, formData, onClose, onSave, isSav
           <Grid size={{ xs: 12 }}>
             <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary', mb: 0.8 }}>Company Logo</Typography>
             <ProfileImageUploader
-              imageUrl={draft.logoUrl}
+              imageUrl={draft.logoUrl ?? null}
               imageFile={draft.logoFile ?? undefined}
               label="Upload Logo"
               subLabel="PNG, JPG or WEBP up to 5MB"

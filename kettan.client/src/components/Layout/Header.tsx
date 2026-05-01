@@ -1,16 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
 import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip, Typography, InputBase } from '@mui/material';
 import MenuIcon          from '@mui/icons-material/Menu';
 import DarkModeRoundedIcon   from '@mui/icons-material/DarkModeRounded';
 import LightModeRoundedIcon  from '@mui/icons-material/LightModeRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import WifiRoundedIcon from '@mui/icons-material/WifiRounded';
-import WifiOffRoundedIcon from '@mui/icons-material/WifiOffRounded';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useLocation } from '@tanstack/react-router';
 import { NotificationBell } from '../UI/NotificationBell';
-import { fetchDevConnectionStatus } from '../../features/company/companyProfileApi';
 import { useAuthStore } from '../../store/useAuthStore';
 
 interface HeaderProps {
@@ -68,84 +64,7 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   const user = useAuthStore((state) => state.user);
   const { mode, toggleTheme } = useThemeStore();
   const location = useLocation();
-  const showDevConnectionIndicator = import.meta.env.DEV;
-  const [connectionState, setConnectionState] = useState<'checking' | 'online' | 'degraded' | 'offline' | 'disabled'>('checking');
-  const [connectionTooltip, setConnectionTooltip] = useState('Checking development backend...');
 
-  useEffect(() => {
-    if (!showDevConnectionIndicator) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const checkConnection = async () => {
-      try {
-        const status = await fetchDevConnectionStatus();
-        if (!isMounted) {
-          return;
-        }
-
-        const checkedAtLabel = Number.isNaN(new Date(status.checkedAtUtc).getTime())
-          ? status.checkedAtUtc
-          : new Date(status.checkedAtUtc).toLocaleTimeString();
-
-        const diagnostics = [
-          `Env: ${status.environment}`,
-          status.databaseName ? `DB: ${status.databaseName}` : null,
-          status.dataSource ? `Source: ${status.dataSource}` : null,
-          status.tenantName ? `Tenant: ${status.tenantName}` : null,
-          status.seedingEnabled ? 'Seeding: active in development' : null,
-          status.error ? `Error: ${status.error}` : null,
-          `Checked: ${checkedAtLabel}`,
-        ]
-          .filter((value): value is string => Boolean(value))
-          .join(' | ');
-
-        if (status.isDatabaseReachable && status.isTenantReadSuccessful) {
-          setConnectionState('online');
-          setConnectionTooltip(`Connected | ${diagnostics}`);
-          return;
-        }
-
-        if (status.isDatabaseReachable) {
-          setConnectionState('degraded');
-          setConnectionTooltip(`Database reachable, tenant check incomplete | ${diagnostics}`);
-          return;
-        }
-
-        setConnectionState('offline');
-        setConnectionTooltip(`Database unreachable | ${diagnostics}`);
-      } catch (err) {
-        if (!isMounted) {
-          return;
-        }
-        setConnectionState('offline');
-        setConnectionTooltip(`Connection failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      }
-    };
-
-    void checkConnection();
-
-    const interval = setInterval(() => {
-      void checkConnection();
-    }, 30000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [showDevConnectionIndicator]);
-
-  const connectionColor = useMemo(() => {
-    switch (connectionState) {
-      case 'online':   return '#546B3F';
-      case 'degraded': return '#B45309';
-      case 'offline':  return '#B91C1C';
-      case 'checking': return '#6B4C2A';
-      default:         return 'text.disabled';
-    }
-  }, [connectionState]);
 
   const getParentResource = (path: string) => {
     const segments = path.split('/');
@@ -296,29 +215,8 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
             </IconButton>
           </Tooltip>
 
-          {showDevConnectionIndicator ? (
-            <Tooltip title={connectionTooltip}>
-              <IconButton
-                size="small"
-                aria-label="Development database connection status"
-                sx={{
-                  color: connectionColor,
-                  '&:hover': {
-                    background: 'rgba(201,168,77,0.1)',
-                  },
-                }}
-              >
-                {connectionState === 'offline' || connectionState === 'disabled' ? (
-                  <WifiOffRoundedIcon sx={{ fontSize: 19 }} />
-                ) : (
-                  <WifiRoundedIcon sx={{ fontSize: 19 }} />
-                )}
-              </IconButton>
-            </Tooltip>
-          ) : null}
-
           {/* Divider */}
-          <Box sx={{ width: 1, height: 24, background: 'rgba(201,168,77,0.2)', mx: 0.5 }} />
+          <Box sx={{ width: '1px', height: 24, background: 'rgba(201,168,77,0.15)', mx: 1 }} />
 
           {/* Company info */}
           <Box 
@@ -326,17 +224,36 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
               display: 'flex', 
               alignItems: 'center', 
               gap: 1.5,
-              px: 1,
+              pl: 1,
               py: 0.5,
             }}
           >
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                display: { xs: 'none', md: '-webkit-box' },
+                fontSize: 13, 
+                fontWeight: 700, 
+                color: '#2E1F0C',
+                lineHeight: 1.2,
+                textAlign: 'right',
+                maxWidth: 140,
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                '.dark &': { color: '#E8D3A9' },
+              }}
+            >
+              {user?.tenant?.name || 'Kettan'}
+            </Typography>
+
             {user?.tenant?.logoUrl ? (
               <Avatar
                 alt={user.tenant.name || 'Company'}
                 src={user.tenant.logoUrl}
                 sx={{
-                  width: 32,
-                  height: 32,
+                  width: 34,
+                  height: 34,
                   borderRadius: '8px',
                   border: '1px solid rgba(201,168,77,0.2)',
                 }}
@@ -344,8 +261,8 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
             ) : (
               <Box
                 sx={{
-                  width: 32,
-                  height: 32,
+                  width: 34,
+                  height: 34,
                   borderRadius: '8px',
                   background: 'linear-gradient(135deg, #6B4C2A 0%, #C9A84C 100%)',
                   display: 'flex',
@@ -357,19 +274,6 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
                 <BusinessRoundedIcon sx={{ fontSize: 18, color: '#FAF5EF' }} />
               </Box>
             )}
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                display: { xs: 'none', md: 'block' },
-                fontSize: 14, 
-                fontWeight: 700, 
-                color: '#2E1F0C',
-                lineHeight: 1.2,
-                '.dark &': { color: '#E8D3A9' },
-              }}
-            >
-              {user?.tenant?.name || 'Kettan'}
-            </Typography>
           </Box>
         </Box>
       </Toolbar>

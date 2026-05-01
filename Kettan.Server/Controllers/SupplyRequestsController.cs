@@ -127,4 +127,23 @@ public class SupplyRequestsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPost("{id:int}/cancel")]
+    public async Task<ActionResult<SupplyRequestDto>> CancelSupplyRequest(int id, [FromBody] CancelSupplyRequestDto dto)
+    {
+        try
+        {
+            var updated = await _service.CancelAsync(id, dto);
+            if (updated == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(updated);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

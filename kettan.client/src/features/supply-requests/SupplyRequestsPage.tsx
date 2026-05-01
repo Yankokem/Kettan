@@ -332,16 +332,18 @@ export function SupplyRequestsPage() {
           alignItems: 'center',
           mb: 2.5,
           gap: 1.2,
-          flexWrap: 'nowrap',
-          overflowX: 'auto',
-          pb: 0.5,
+          flexWrap: 'wrap',
         }}
       >
         <SearchInput
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search request ID, branch, or requestor..."
-          sx={{ minWidth: 300, maxWidth: 420, flexShrink: 0 }}
+          sx={{ 
+            minWidth: { xs: '100%', sm: 240, md: 300 }, 
+            maxWidth: { sm: 420 },
+            flexShrink: 1,
+          }}
         />
 
         <DateRangePicker
@@ -384,7 +386,7 @@ export function SupplyRequestsPage() {
 
         <Button
           startIcon={<AddShoppingCartRoundedIcon />}
-          sx={{ flexShrink: 0, ml: 'auto' }}
+          sx={{ ml: { xs: 0, lg: 'auto' }, whiteSpace: 'nowrap' }}
           onClick={() => navigate({ to: '/supply-requests/new' })}
           disabled={!canCreateRequests}
         >

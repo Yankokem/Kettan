@@ -376,6 +376,7 @@ export function SupplyRequestCreatePage() {
         onClose={() => setIsItemModalOpen(false)}
         onItemsSelected={handleItemSelected}
         inventory={inventory}
+        showStock={false}
       />
     </Box>
   );

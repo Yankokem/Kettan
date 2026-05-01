@@ -15,9 +15,10 @@ interface InventorySelectionModalProps {
   onClose: () => void;
   onItemsSelected: (items: { item: InventoryItem; quantity: number; notes: string }[]) => void;
   inventory: InventoryItem[];
+  showStock?: boolean;
 }
 
-export function InventorySelectionModal({ open, onClose, onItemsSelected, inventory }: InventorySelectionModalProps) {
+export function InventorySelectionModal({ open, onClose, onItemsSelected, inventory, showStock = true }: InventorySelectionModalProps) {
   const [search, setSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [pendingSelections, setPendingSelections] = useState<{ item: InventoryItem; quantity: number; notes: string }[]>([]);
@@ -27,6 +28,7 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
   
   const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'stock_asc' | 'stock_desc'>('name_asc');
   const [filterInStock, setFilterInStock] = useState<boolean>(false);
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const filteredInventory = useMemo(() => {
     let result = inventory.filter(item =>
@@ -51,6 +53,23 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
 
     return result;
   }, [inventory, search, sortBy, filterInStock]);
+
+  const visibleInventory = useMemo(() => {
+    return filteredInventory.slice(0, visibleCount);
+  }, [filteredInventory, visibleCount]);
+
+  const handleScroll = (e: React.UIEvent<HTMLElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 100) {
+      if (visibleCount < filteredInventory.length) {
+        setVisibleCount(prev => prev + 20);
+      }
+    }
+  };
+
+  useMemo(() => {
+    setVisibleCount(20);
+  }, [search]);
 
   const selectedItem = inventory.find(i => i.id === selectedItemId);
 
@@ -99,15 +118,17 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
               ),
             }}
           />
-          <Tooltip title="Filter">
-            <IconButton 
-              onClick={(e) => setFilterAnchorEl(e.currentTarget)}
-              sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }} 
-              size="small"
-            >
-              <FilterListIcon />
-            </IconButton>
-          </Tooltip>
+          {showStock && (
+            <Tooltip title="Filter">
+              <IconButton 
+                onClick={(e) => setFilterAnchorEl(e.currentTarget)}
+                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }} 
+                size="small"
+              >
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title="Sort">
             <IconButton 
               onClick={(e) => setSortAnchorEl(e.currentTarget)}
@@ -120,24 +141,30 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
         </Box>
 
         <Grid container sx={{ flex: 1, minHeight: 0 }}>
-          <Grid size={{ xs: 5 }} sx={{ borderRight: '1px solid', borderColor: 'divider', overflowY: 'auto', height: '100%' }}>
-            {filteredInventory.map(item => (
+          <Grid size={{ xs: 5 }} sx={{ borderRight: '1px solid', borderColor: 'divider', overflowY: 'auto', height: '100%' }} onScroll={handleScroll}>
+            {visibleInventory.map(item => (
               <InventoryItemCard
                 key={item.id}
                 item={item}
                 isSelected={selectedItemId === item.id}
                 onClick={() => setSelectedItemId(item.id)}
+                showStock={showStock}
               />
             ))}
-            {filteredInventory.length === 0 && (
+            {visibleInventory.length === 0 && (
               <Box sx={{ p: 4, textAlign: 'center' }}>
                 <Typography color="text.secondary">No items found matching search criteria.</Typography>
+              </Box>
+            )}
+            {visibleInventory.length < filteredInventory.length && (
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Loading more...</Typography>
               </Box>
             )}
           </Grid>
           <Grid size={{ xs: 7 }} sx={{ height: '100%', overflowY: 'auto' }}>
             {selectedItem ? (
-              <InventoryItemDetails item={selectedItem} onAddItem={handleAddItem} />
+              <InventoryItemDetails item={selectedItem} onAddItem={handleAddItem} showStock={showStock} />
             ) : (
               <Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', p: 4 }}>
                 <Typography color="text.secondary" align="center">
@@ -179,12 +206,16 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
         <MenuItem selected={sortBy === 'name_desc'} onClick={() => { setSortBy('name_desc'); setSortAnchorEl(null); }}>
           <ListItemText>Name (Z-A)</ListItemText>
         </MenuItem>
-        <MenuItem selected={sortBy === 'stock_desc'} onClick={() => { setSortBy('stock_desc'); setSortAnchorEl(null); }}>
-          <ListItemText>Stock (High to Low)</ListItemText>
-        </MenuItem>
-        <MenuItem selected={sortBy === 'stock_asc'} onClick={() => { setSortBy('stock_asc'); setSortAnchorEl(null); }}>
-          <ListItemText>Stock (Low to High)</ListItemText>
-        </MenuItem>
+        {showStock && (
+          <>
+            <MenuItem selected={sortBy === 'stock_desc'} onClick={() => { setSortBy('stock_desc'); setSortAnchorEl(null); }}>
+              <ListItemText>Stock (High to Low)</ListItemText>
+            </MenuItem>
+            <MenuItem selected={sortBy === 'stock_asc'} onClick={() => { setSortBy('stock_asc'); setSortAnchorEl(null); }}>
+              <ListItemText>Stock (Low to High)</ListItemText>
+            </MenuItem>
+          </>
+        )}
       </Menu>
 
       {/* Filter Menu */}

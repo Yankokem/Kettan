@@ -54,6 +54,7 @@ const STATUS_MAP: Record<string, { color: string; bg: string }> = {
   Approved: { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' },
   Processing: { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' },
   Picking: { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
+  Allocated: { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
   Packed: { color: '#0891B2', bg: 'rgba(8,145,178,0.12)' },
   Dispatched: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
   InTransit: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
@@ -64,11 +65,11 @@ const STATUS_MAP: Record<string, { color: string; bg: string }> = {
 
 type DatasetMode = 'active' | 'history';
 type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
-type ActiveStatusTab = 'PendingApproval' | 'Approved' | 'Processing' | 'Picking' | 'Packed';
+type ActiveStatusTab = 'Approved' | 'Processing' | 'Picking' | 'Packed';
 
-const ACTIVE_STATUSES: OrderActionStatus[] = ['PendingApproval', 'Approved', 'Processing', 'Picking', 'Packed'];
+const ACTIVE_STATUSES: OrderActionStatus[] = ['Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Allocated', 'Packed'];
 const HISTORY_STATUSES: OrderActionStatus[] = ['Dispatched', 'InTransit', 'Delivered', 'Rejected', 'Returned'];
-const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['PendingApproval', 'Approved', 'Processing', 'Picking', 'Packed'];
+const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['Approved', 'Processing', 'Picking', 'Packed'];
 type OrdersListViewMode = 'card' | 'table';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
@@ -93,15 +94,11 @@ function getStatusDisplayLabel(status: OrderActionStatus): string {
 }
 
 function getDefaultActiveStatusByRole(role?: string): ActiveStatusTab {
-  if (role === 'HqManager' || role === 'TenantAdmin') {
-    return 'PendingApproval';
+  if (role === 'HqManager' || role === 'TenantAdmin' || role === 'HqStaff') {
+    return 'Picking';
   }
 
-  if (role === 'HqStaff') {
-    return 'Approved';
-  }
-
-  return 'PendingApproval';
+  return 'Approved';
 }
 
 function getColumns(
@@ -245,10 +242,9 @@ export function OrdersPage() {
         setIsLoading(true);
         setError(null);
         
-        // Fetch both Orders and Pending Supply Requests
         const [ordersRows, requestsRows] = await Promise.all([
           fetchOrders(),
-          fetchSupplyRequests('PendingApproval')
+          fetchSupplyRequests() 
         ]);
 
         const mappedOrders = ordersRows.map((row: BranchOrder) => ({
@@ -258,21 +254,34 @@ export function OrdersPage() {
           totalCost: Number(row.fulfillmentCost || 0),
           status: row.status as OrderActionStatus,
           date: row.pushedToFulfillmentAt,
+          requestId: row.requestId,
         }));
 
-        const mappedRequests = requestsRows.map((row: SupplyRequest) => ({
-          id: `SR-${row.requestId}`,
-          branch: row.branchName || `Branch ${row.branchId}`,
-          itemsCount: row.items?.length || 0,
-          totalCost: 0, // Costs aren't calculated until approval/allocation
-          status: 'PendingApproval' as OrderActionStatus,
-          date: row.createdAt,
-          actionedBy: row.requestedByName
-        }));
+        // SIMPLE FILTER: Show everything EXCEPT Pending, Draft, and AutoDrafted
+        const excludedStatuses = ['PendingApproval', 'Draft', 'AutoDrafted'];
 
-        // Merge results: ensure we don't duplicate if an order was already created for a request
-        // (Though typically a request moves out of 'PendingApproval' when it becomes an order)
-        setOrders([...mappedRequests, ...mappedOrders]);
+        // Get IDs of requests that already have a corresponding Order record
+        const existingOrderRequestIds = new Set(
+          ordersRows
+            .map((o: any) => o.requestId)
+            .filter((id: any) => !!id)
+        );
+
+        const mappedRequests = requestsRows
+          .filter(row => !existingOrderRequestIds.has(row.requestId) && !excludedStatuses.includes(row.status)) 
+          .map((row: SupplyRequest) => ({
+            id: `SR-${row.requestId}`,
+            requestId: row.requestId,
+            branch: row.branchName || `Branch ${row.branchId}`,
+            itemsCount: row.items?.length || 0,
+            totalCost: 0,
+            status: row.status as OrderActionStatus,
+            date: row.createdAt,
+            actionedBy: row.requestedByName
+          }));
+
+        const finalMerged = [...mappedRequests, ...mappedOrders];
+        setOrders(finalMerged);
       } catch (err) {
         console.error('Failed to load orders/requests:', err);
         setError('Failed to load orders.');
@@ -304,10 +313,17 @@ export function OrdersPage() {
       order.branch.toLowerCase().includes(query) ||
       (order.actionedBy || '').toLowerCase().includes(query);
     const matchesStatus = datasetMode === 'active'
-      ? order.status === activeStatusTab
+      ? (
+          order.status === activeStatusTab || 
+          (activeStatusTab === 'Approved' && order.status === 'PartiallyApproved') ||
+          (activeStatusTab === 'Picking' && order.status === 'Allocated')
+        )
       : !historyStatusFilter || order.status === historyStatusFilter;
-    const orderDateOnly = order.date.slice(0, 10);
+    
+    // Check date filtering
+    const orderDateOnly = order.date ? order.date.slice(0, 10) : '';
     const inRange = orderDateOnly >= startDate && orderDateOnly <= endDate;
+    
     return matchesQuery && matchesStatus && inRange;
   });
 
@@ -372,8 +388,8 @@ export function OrdersPage() {
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              label="Pending Requests"
-              value={orders.filter((o) => o.status === 'PendingApproval').length.toString()}
+              label="Pending Fulfillment"
+              value={orders.filter((o) => ['Approved', 'PartiallyApproved', 'Processing'].includes(o.status)).length.toString()}
               trend="up"
               trendValue="1.5%"
               icon={<AccessTimeRoundedIcon />}
@@ -384,7 +400,7 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Orders Picking"
-              value={orders.filter((o) => o.status === 'Picking' || o.status === 'Packed').length.toString()}
+              value={orders.filter((o) => o.status === 'Picking' || o.status === 'Allocated' || o.status === 'Packed').length.toString()}
               trend="up"
               trendValue="2.4%"
               icon={<LocalMallRoundedIcon />}
@@ -424,9 +440,7 @@ export function OrdersPage() {
           alignItems: 'center',
           mb: 2.5,
           gap: 1.2,
-          flexWrap: 'nowrap',
-          overflowX: 'auto',
-          pb: 0.5,
+          flexWrap: 'wrap',
         }}
       >
         <SearchInput
@@ -435,7 +449,11 @@ export function OrdersPage() {
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search order ID, branch, or actor..."
-          sx={{ minWidth: 280, maxWidth: 360, flexShrink: 0 }}
+          sx={{ 
+            minWidth: { xs: '100%', sm: 240, md: 280 }, 
+            maxWidth: { sm: 360 },
+            flexShrink: 1,
+          }}
         />
 
         <DateRangePicker
@@ -479,7 +497,14 @@ export function OrdersPage() {
           />
         )}
 
-        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.2, flexShrink: 0 }}>
+        <Box 
+          sx={{ 
+            ml: { xs: 0, lg: 'auto' }, 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1.2,
+          }}
+        >
           <Tooltip title="Active Orders">
             <ToggleButtonGroup
               value={datasetMode}
@@ -493,7 +518,6 @@ export function OrdersPage() {
               sx={{
                 height: 40,
                 borderRadius: 2,
-                flexShrink: 0,
                 '& .MuiToggleButton-root': {
                   px: 1.4,
                   color: '#6B4C2A',
@@ -526,7 +550,7 @@ export function OrdersPage() {
           <Button
             startIcon={<LocalMallRoundedIcon />}
             onClick={() => navigate({ to: '/orders/new' })}
-            sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+            sx={{ whiteSpace: 'nowrap' }}
           >
             New Request
           </Button>

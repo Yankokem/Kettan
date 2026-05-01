@@ -14,9 +14,10 @@ interface InventoryItemCardProps {
   item: InventoryItem;
   isSelected: boolean;
   onClick: () => void;
+  showStock?: boolean;
 }
 
-export function InventoryItemCard({ item, isSelected, onClick }: InventoryItemCardProps) {
+export function InventoryItemCard({ item, isSelected, onClick, showStock = true }: InventoryItemCardProps) {
   const isOutOfStock = item.hqStock === 0;
 
   return (
@@ -40,18 +41,20 @@ export function InventoryItemCard({ item, isSelected, onClick }: InventoryItemCa
           </Typography>
           <Chip label={item.category} size="small" sx={{ width: 'max-content', height: 20, fontSize: 10, mt: 0.5 }} />
         </Box>
-        <Box sx={{ textAlign: 'right' }}>
-          <Typography
-            sx={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: isOutOfStock ? 'error.main' : 'success.main',
-            }}
-          >
-            {item.hqStock} {item.unit}
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Available</Typography>
-        </Box>
+        {showStock && (
+          <Box sx={{ textAlign: 'right' }}>
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: isOutOfStock ? 'error.main' : 'success.main',
+              }}
+            >
+              {item.hqStock} {item.unit}
+            </Typography>
+            <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Available</Typography>
+          </Box>
+        )}
       </Box>
     </CardActionArea>
   );

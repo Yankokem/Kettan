@@ -20,6 +20,15 @@ public class OrderRequestItemDto
     public decimal QuantityRequested { get; set; }
     public decimal? QuantityApproved { get; set; }
     public decimal UnitCost { get; set; }
+
+    // Workflow fields
+    public bool IsPicked { get; set; }
+    public decimal? SendQuantity { get; set; }
+    public bool IsRejectedDuringPicking { get; set; }
+    public string? PickingRejectionReason { get; set; }
+    public bool IsPacked { get; set; }
+    public bool IsBranchChecked { get; set; }
+    public decimal? HqStock { get; set; }
 }
 
 public class OrderAllocationDto

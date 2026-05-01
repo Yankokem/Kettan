@@ -1,18 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Box, Typography, Alert, CircularProgress } from '@mui/material';
+import { Box, Typography, Alert, CircularProgress, Button } from '@mui/material';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { 
   fetchSupplyRequestById, 
   submitSupplyRequest,
   approveSupplyRequest,
   rejectSupplyRequest,
+  cancelSupplyRequest,
   getPickingSuggestions,
-  submitPicking,
-  submitPacking,
-  submitDispatch,
-  confirmArrival,
-  completeTransaction,
-  pickOrder,
   type PickingSuggestion,
   type SupplyRequest as ApiSupplyRequest
 } from '../branch-operations/api';
@@ -133,33 +128,7 @@ export function SupplyRequestDetailPage() {
 
   const onReject = () => handleAction(() => rejectSupplyRequest(Number(requestId), { reason: 'Rejected by HQ' }));
 
-  const onBeginPicking = () => handleAction(async () => {
-     if (request?.linkedOrderId) {
-        await pickOrder(Number(request.linkedOrderId));
-     }
-  });
-
-  const onSubmitPicking = () => handleAction(() => submitPicking(Number(request?.linkedOrderId), localItems.map(i => ({
-    requestItemId: Number(i.id),
-    isPicked: i.isPicked || false,
-    sendQuantity: i.sendQuantity ?? null,
-    isRejected: i.isRejectedDuringPicking || false,
-    rejectionReason: i.pickingRejectionReason || null
-  }))));
-
-  const onSubmitPacking = () => handleAction(() => submitPacking(Number(request?.linkedOrderId), localItems.map(i => ({
-    requestItemId: Number(i.id),
-    isPacked: i.isPacked || false
-  }))));
-
-  const onDispatch = () => handleAction(() => submitDispatch(Number(request?.linkedOrderId)));
-
-  const onConfirmArrival = () => handleAction(() => confirmArrival(Number(request?.linkedOrderId)));
-
-  const onComplete = () => handleAction(() => completeTransaction(Number(request?.linkedOrderId), localItems.map(i => ({
-    requestItemId: Number(i.id),
-    isChecked: i.isBranchChecked || false
-  }))));
+  const onCancel = () => handleAction(() => cancelSupplyRequest(Number(requestId), { reason: 'Cancelled by branch' }));
 
   const handleFileReturn = () => navigate({ to: '/returns/new' });
 
@@ -178,16 +147,12 @@ export function SupplyRequestDetailPage() {
   if (!request) return null;
 
   const showStepper = request.status !== 'Draft' && request.status !== 'AutoDrafted' && request.status !== 'Rejected';
+  const isInProgress = ['Approved', 'Processing', 'Picking', 'Packed', 'Dispatched', 'InTransit'].includes(request.status);
   
   // Determine table mode
   let tableMode: SRTableMode = 'readonly';
-  if (request.status === 'Picking') tableMode = 'picking';
-  if (request.status === 'Packing' || request.status === 'Packed') tableMode = 'packing';
-  if (request.status === 'Arrived') tableMode = 'branch-check';
 
-  const canSubmitPicking = localItems.every(i => i.isPicked || i.isRejectedDuringPicking);
-  const canDispatch = localItems.filter(i => !i.isRejectedDuringPicking).every(i => i.isPacked);
-  const canComplete = localItems.filter(i => !i.isRejectedDuringPicking).every(i => i.isBranchChecked);
+
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -200,20 +165,48 @@ export function SupplyRequestDetailPage() {
         branchName={request.branchName}
         role={user?.role || ''}
         isSubmitting={actionLoading}
-        canSubmitPicking={canSubmitPicking}
-        canDispatch={canDispatch}
-        canComplete={canComplete}
         onSubmitDraft={onSubmitDraft}
         onApprove={onApprove}
         onReject={onReject}
-        onBeginPicking={onBeginPicking}
-        onSubmitPicking={onSubmitPicking}
-        onSubmitPacking={onSubmitPacking}
-        onDispatch={onDispatch}
-        onConfirmArrival={onConfirmArrival}
-        onComplete={onComplete}
+        onCancel={onCancel}
         onFileReturn={handleFileReturn}
       />
+
+      {isInProgress && (
+        <Box 
+          sx={{ 
+            mb: 3, 
+            p: 2, 
+            bgcolor: 'rgba(201,168,77,0.08)', 
+            borderRadius: 2, 
+            border: '1px solid rgba(201,168,77,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            animation: 'fadeIn 0.5s ease-out'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <CircularProgress size={20} thickness={6} sx={{ color: '#C9A84C' }} />
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700} color="#6B4C2A">
+                Fulfillment in Progress
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                This request has been approved and is currently being processed by HQ.
+              </Typography>
+            </Box>
+          </Box>
+          <Button 
+            variant="outlined" 
+            size="small" 
+            onClick={() => navigate({ to: '/orders' })}
+            sx={{ borderColor: '#C9A84C', color: '#6B4C2A', '&:hover': { bgcolor: 'rgba(201,168,77,0.1)', borderColor: '#6B4C2A' } }}
+          >
+            View Order Processing
+          </Button>
+        </Box>
+      )}
 
       {showStepper ? <OrderFulfillmentStepper status={request.status} /> : null}
 

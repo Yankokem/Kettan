@@ -12,6 +12,7 @@ type StaticMotionDivProps = HTMLAttributes<HTMLDivElement> & {
 };
 
 export function StaticMotionDiv({
+  children,
   initial,
   animate,
   exit,
@@ -31,7 +32,7 @@ export function StaticMotionDiv({
   void whileHover;
   void layoutId;
 
-  return <div {...rest} />;
+  return <div {...rest}>{children}</div>;
 }
 
 type StaticAnimatePresenceProps = {

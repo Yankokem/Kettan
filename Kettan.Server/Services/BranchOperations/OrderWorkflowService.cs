@@ -581,6 +581,12 @@ public class OrderWorkflowService : IOrderWorkflowService
                     QuantityRequested = i.QuantityRequested,
                     QuantityApproved = i.QuantityApproved,
                     UnitCost = i.Item?.UnitCost ?? 0,
+                    IsPicked = i.IsPicked,
+                    SendQuantity = i.SendQuantity,
+                    IsRejectedDuringPicking = i.IsRejectedDuringPicking,
+                    PickingRejectionReason = i.PickingRejectionReason,
+                    IsPacked = i.IsPacked,
+                    IsBranchChecked = i.IsBranchChecked,
                 })
                 .ToList(),
             Allocations = (order.Allocations ?? [])
@@ -812,6 +818,10 @@ public class OrderWorkflowService : IOrderWorkflowService
         order.Status = OrderStatus.Completed;
         order.CompletedAt = now;
         order.CompletedByUserId = _currentUser.UserId;
+
+        // Update the parent SupplyRequest to Fulfilled
+        order.SupplyRequest.Status = SupplyRequestStatus.Fulfilled;
+        order.SupplyRequest.UpdatedAt = now;
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {

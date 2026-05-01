@@ -184,7 +184,7 @@ export function InventoryItemProfilePage() {
         sku: form.sku,
         name: form.name,
         unit: form.unit,
-        itemCategoryId: form.categoryId || undefined,
+        inventoryCategoryId: form.categoryId || undefined,
         defaultThreshold: threshold,
         unitCost,
       });

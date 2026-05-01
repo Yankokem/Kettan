@@ -9,8 +9,10 @@ import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 export type OrderActionStatus =
   | 'PendingApproval'
   | 'Approved'
+  | 'PartiallyApproved'
   | 'Processing'
   | 'Picking'
+  | 'Allocated'
   | 'Packed'
   | 'Dispatched'
   | 'InTransit'
@@ -39,7 +41,7 @@ export function OrderRowActionsMenu({
   const open = Boolean(anchorEl);
 
   const isPending = status === 'PendingApproval';
-  const canProceed = status === 'Approved' || status === 'Processing' || status === 'Picking' || status === 'Packed';
+  const canProceed = status === 'Approved' || status === 'PartiallyApproved' || status === 'Processing' || status === 'Picking' || status === 'Allocated' || status === 'Packed';
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();

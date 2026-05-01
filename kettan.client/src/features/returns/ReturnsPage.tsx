@@ -271,16 +271,18 @@ export function ReturnsPage() {
           alignItems: 'center',
           mb: 2.5,
           gap: 1.2,
-          flexWrap: 'nowrap',
-          overflowX: 'auto',
-          pb: 0.5,
+          flexWrap: 'wrap',
         }}
       >
         <SearchInput
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search return ID, order, branch, or reason..."
-          sx={{ minWidth: 300, maxWidth: 420, flexShrink: 0 }}
+          sx={{ 
+            minWidth: { xs: '100%', sm: 240, md: 300 }, 
+            maxWidth: { sm: 420 },
+            flexShrink: 1,
+          }}
         />
 
         <DateRangePicker
@@ -318,7 +320,7 @@ export function ReturnsPage() {
         <Button
           startIcon={<AssignmentReturnRoundedIcon />}
           onClick={() => navigate({ to: '/returns/new' })}
-          sx={{ flexShrink: 0, ml: 'auto' }}
+          sx={{ ml: { xs: 0, lg: 'auto' }, whiteSpace: 'nowrap' }}
         >
           File Return
         </Button>

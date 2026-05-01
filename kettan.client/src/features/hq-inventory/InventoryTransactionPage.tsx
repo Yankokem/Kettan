@@ -325,6 +325,7 @@ export default function InventoryTransactionPage() {
       expiryDate: draft.expiryDate || undefined,
       reason: undefined,
       isNewItem: true,
+      newCategoryId: draft.newCategoryId,
       newUnit: draft.newUnit,
     };
 
@@ -419,7 +420,7 @@ export default function InventoryTransactionPage() {
             sku: line.itemSku,
             name: line.itemName,
             unit: line.newUnit,
-            itemCategoryId: line.newCategoryId || undefined,
+            inventoryCategoryId: line.newCategoryId || undefined,
             defaultThreshold: 0,
             unitCost: line.unitCost ?? 0,
           });

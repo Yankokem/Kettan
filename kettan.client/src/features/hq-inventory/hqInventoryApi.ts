@@ -267,7 +267,7 @@ function toDateOrFallback(expiryDate?: string): string {
 }
 
 function toItemPayload(input: CreateItemInput | UpdateItemInput): CreateOrUpdateItemPayload {
-  const rawCategoryId = input.itemCategoryId?.trim();
+  const rawItemCategoryId = input.itemCategoryId?.trim();
   const rawInventoryCategoryId = input.inventoryCategoryId?.trim();
 
   return {
@@ -275,7 +275,7 @@ function toItemPayload(input: CreateItemInput | UpdateItemInput): CreateOrUpdate
     name: input.name.trim(),
     unit: input.unit,
     inventoryCategoryId: rawInventoryCategoryId ? Number(rawInventoryCategoryId) : null,
-    itemCategoryId: rawCategoryId ? Number(rawCategoryId) : null,
+    itemCategoryId: rawItemCategoryId ? Number(rawItemCategoryId) : null,
     defaultThreshold: Number(input.defaultThreshold || 0),
     unitCost: Number(input.unitCost || 0),
     sellingPrice:
