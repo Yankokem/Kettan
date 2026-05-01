@@ -1,7 +1,6 @@
 import { useMemo, useState, type ElementType } from 'react';
 import { Box, Paper, TextField, Typography } from '@mui/material';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
-import { motion } from 'motion/react';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
@@ -69,11 +68,7 @@ export function SettingsPage() {
           alignItems: 'start',
         }}
       >
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.26 }}
-        >
+        <div>
           <Paper
             elevation={0}
             sx={{
@@ -168,9 +163,9 @@ export function SettingsPage() {
               })}
             </Box>
           </Paper>
-        </motion.div>
+        </div>
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <div>
           <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
             <Box sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
             <Box sx={{ mb: 2.4, pb: 2, borderBottom: '1px dashed', borderColor: 'divider' }}>
@@ -290,7 +285,7 @@ export function SettingsPage() {
 
             </Box>
           </Paper>
-        </motion.div>
+        </div>
       </Box>
     </Box>
   );

@@ -21,6 +21,7 @@ const COMPANY_PROFILE_MOCK: CompanyProfile = {
   legalName: 'Philippine Roasters Corporation',
   organizationId: 'ORG-10029',
   planName: 'Enterprise Plan',
+  logoUrl: null,
   headquartersCity: 'Makati City',
   headquartersAddress: 'Level 20, Ayala Triangle Gardens Tower 2, Makati City, Metro Manila',
   billingEmail: 'finance@phroasters.com',

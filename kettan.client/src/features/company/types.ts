@@ -3,6 +3,7 @@ export interface CompanyProfile {
   legalName: string;
   organizationId: string;
   planName: string;
+  logoUrl: string | null;
   headquartersCity: string;
   headquartersAddress: string;
   billingEmail: string;
@@ -20,6 +21,7 @@ export interface CompanyProfile {
 export interface CompanyProfileFormData {
   name: string;
   legalName: string;
+  logoUrl: string | null;
   headquartersCity: string;
   headquartersAddress: string;
   billingEmail: string;
@@ -35,6 +37,7 @@ export function toCompanyProfileFormData(profile: CompanyProfile): CompanyProfil
   return {
     name: profile.name,
     legalName: profile.legalName,
+    logoUrl: profile.logoUrl,
     headquartersCity: profile.headquartersCity,
     headquartersAddress: profile.headquartersAddress,
     billingEmail: profile.billingEmail,
