@@ -44,16 +44,19 @@ public class ItemsController : ControllerBase
 
         // Determine effective filters based on user role
         bool isBranchUser = _currentUser.BranchId.HasValue;
-        int? effectiveBranchId = isBranchUser ? _currentUser.BranchId : branchId;
-        bool effectiveHqOnly = isBranchUser ? false : hqOnly;
+        
+        // If they explicitly ask for HQ Only (e.g. Supply Requests), allow it.
+        // Otherwise, if they are a branch user, restrict to their branch.
+        int? effectiveBranchId = (isBranchUser && !hqOnly) ? _currentUser.BranchId : branchId;
+        bool effectiveHqOnly = hqOnly;
 
         var query = _context.Items
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
             .AsQueryable();
 
-        // If branch user, only show items that have (or ever had) a batch in their branch
-        if (isBranchUser)
+        // If branch user and NOT viewing HQ catalog, only show items they have stock for
+        if (isBranchUser && !effectiveHqOnly)
         {
             query = query.Where(i => _context.Batches.Any(b => b.ItemId == i.ItemId && b.BranchId == effectiveBranchId));
         }
