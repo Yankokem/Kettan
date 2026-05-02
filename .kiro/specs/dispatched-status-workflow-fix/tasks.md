@@ -1,0 +1,150 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - Dispatched/Arrived Status UI Elements Missing and Hardcoded Data
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bugs exist
+  - **Scoped PBT Approach**: Scope the property to concrete failing cases with status="Dispatched" or "Arrived"
+  - Test implementation details from Bug Condition in design:
+    - When status is "Dispatched" AND role is "BranchManager" or "BranchOwner", assert "Package Arrived" button is present
+    - When status is "Arrived" AND role is "BranchManager" or "BranchOwner" AND all items checked, assert "Complete Transaction" button is present
+    - When OrderDetailsPanel receives an order prop with actual data, assert all fields display actual data (not hardcoded strings like "Apr 02, 2026, 09:41 AM", "Downtown Main", "Pending Approval")
+    - Assert OrderDetailsPanel accepts order: OrderDetail prop instead of orderId: string prop
+  - The test assertions should match the Expected Behavior Properties from design (Properties 1-3)
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bugs exist)
+  - Document counterexamples found:
+    - "Package Arrived" button missing for branch users when status is "Dispatched"
+    - "Complete Transaction" button missing for branch users when status is "Arrived" and all items checked
+    - OrderDetailsPanel displays hardcoded strings instead of actual order data
+    - OrderDetailsPanel only accepts orderId prop instead of full order prop
+  - Mark task complete when test is written, run, and failures are documented
+  - _Requirements: 1.1, 1.2, 1.3, 1.4_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Non-Dispatched/Arrived Status Behavior Unchanged
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-Dispatched/Arrived statuses:
+    - Status "Processing" → "Start Picking" button displays for HQ users
+    - Status "Picking" → "Update Picking" button displays for HQ users
+    - Status "Packing" → "Confirm Items Packed" button displays for HQ users
+    - Status "Packed" → DispatchAssignmentCard displays for HQ users
+    - Status "Delivered" with branch role → "File Return" button displays
+    - All statuses → OrderDetailsPanel displays data (currently hardcoded, but after fix should show actual data for all statuses)
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements
+  - Property-based testing generates many test cases for stronger guarantees across all non-Dispatched/Arrived statuses
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+- [x] 3. Fix for Dispatched/Arrived status workflow issues and hardcoded data
+
+  - [x] 3.1 Refactor OrderDetailsPanel component to accept full order data
+    - Update `OrderDetailsPanelProps` interface to accept `order: OrderDetail` instead of `orderId: string`
+    - Import `OrderDetail` type from `../../branch-operations/api`
+    - Replace all hardcoded strings (lines 40-70) with actual order prop fields:
+      - Order ID: Use `order.orderId`
+      - Date Requested: Use `new Date(order.pushedToFulfillmentAt).toLocaleString()`
+      - Destination Branch: Use `order.branchName`
+      - Status: Use `order.status`
+      - Assigned Vehicle: Use `order.vehicleId ? order.vehicleName : "Not yet assigned"`
+      - Reviewed By: Use appropriate field from order (may need to add to OrderDetail interface)
+      - Filled By: Use appropriate field from order (may need to add to OrderDetail interface)
+      - Notes: Use `order.notes` or appropriate field from order
+    - _Bug_Condition: isBugCondition(input) where hardcoded data is displayed_
+    - _Expected_Behavior: Property 2 from design - display actual order data from props_
+    - _Preservation: All order statuses will now show actual data instead of hardcoded data_
+    - _Requirements: 1.2, 1.3, 2.2, 2.3, 3.3_
+
+  - [x] 3.2 Update OrderDetailPage to pass full order object to OrderDetailsPanel
+    - Change `<OrderDetailsPanel orderId={orderId} />` to `<OrderDetailsPanel order={order} />`
+    - Ensure this change is made in the correct location where OrderDetailsPanel is rendered
+    - _Bug_Condition: isBugCondition(input) where orderId string is passed instead of full order_
+    - _Expected_Behavior: Property 2 from design - OrderDetailsPanel receives full order data_
+    - _Preservation: No change to other components or logic_
+    - _Requirements: 1.2, 1.3, 2.2, 2.3, 3.3_
+
+  - [x] 3.3 Add Package Arrived button for Dispatched status
+    - Add conditional block in OrderDetailPage header actions area:
+      - Condition: `orderStatus === 'Dispatched' && (user?.role === 'BranchManager' || user?.role === 'BranchOwner')`
+      - Button: Primary button with CheckCircleRoundedIcon, label "Package Arrived", onClick calls `handleConfirmArrival`
+      - Position: After Dispatched status check, before Delivered status check
+    - Add `handleConfirmArrival` async function that calls `confirmArrival` API
+    - Import `confirmArrival` from `../branch-operations/api` (create if doesn't exist)
+    - Implement handler: `const handleConfirmArrival = async () => { await confirmArrival(Number(orderId)); await loadOrder(); }`
+    - _Bug_Condition: isBugCondition(input) where input.status == 'Dispatched'_
+    - _Expected_Behavior: Property 1 from design - display Package Arrived button_
+    - _Preservation: No change to other status workflows_
+    - _Requirements: 1.1, 2.1, 3.1_
+
+  - [x] 3.4 Add Complete Transaction button for Arrived status
+    - Add conditional block in OrderDetailPage header actions area:
+      - Condition: `orderStatus === 'Arrived' && (user?.role === 'BranchManager' || user?.role === 'BranchOwner') && localItems.every(i => i.isBranchChecked)`
+      - Button: Primary button with CheckCircleRoundedIcon, label "Complete Transaction", onClick calls `handleCompleteTransaction`
+      - Position: After Arrived status check
+    - Add `handleCompleteTransaction` async function that calls `completeTransaction` API
+    - Import `completeTransaction` from `../branch-operations/api` (create if doesn't exist)
+    - Implement handler: `const handleCompleteTransaction = async () => { await completeTransaction(Number(orderId)); await loadOrder(); }`
+    - _Bug_Condition: isBugCondition(input) where input.status == 'Arrived'_
+    - _Expected_Behavior: Property 3 from design - display Complete Transaction button_
+    - _Preservation: No change to other status workflows_
+    - _Requirements: 1.4, 2.4, 3.6_
+
+  - [x] 3.5 Create confirmArrival API function (if it doesn't exist)
+    - File: `kettan.client/src/features/branch-operations/api.ts`
+    - Function signature: `export async function confirmArrival(orderId: number): Promise<void>`
+    - API call: `POST /api/orders/${orderId}/confirm-arrival`
+    - This updates order status to "Arrived" and stamps arrival timestamp
+    - _Bug_Condition: API function needed for Package Arrived button_
+    - _Expected_Behavior: API call updates order status correctly_
+    - _Requirements: 2.1_
+
+  - [x] 3.6 Create completeTransaction API function (if it doesn't exist)
+    - File: `kettan.client/src/features/branch-operations/api.ts`
+    - Function signature: `export async function completeTransaction(orderId: number): Promise<void>`
+    - API call: `POST /api/orders/${orderId}/complete`
+    - This updates order status to "Completed" after branch checklist validation
+    - _Bug_Condition: API function needed for Complete Transaction button_
+    - _Expected_Behavior: API call updates order status correctly_
+    - _Requirements: 2.4_
+
+  - [x] 3.7 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Dispatched/Arrived Status UI Elements Correct and Actual Data Displayed
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bugs are fixed)
+    - Verify all assertions pass:
+      - "Package Arrived" button is present for branch users when status is "Dispatched"
+      - "Complete Transaction" button is present for branch users when status is "Arrived" and all items checked
+      - OrderDetailsPanel displays actual order data from order prop (not hardcoded strings)
+      - OrderDetailsPanel accepts order: OrderDetail prop
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+
+  - [x] 3.8 Verify preservation tests still pass
+    - **Property 2: Preservation** - Non-Dispatched/Arrived Status Behavior Unchanged
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all tests still pass after fix:
+      - "Start Picking" button displays for Processing status with HQ role
+      - "Update Picking" button displays for Picking status with HQ role
+      - "Confirm Items Packed" button displays for Packing status with HQ role
+      - DispatchAssignmentCard displays for Packed status with HQ role
+      - "File Return" button displays for Delivered status with branch role
+      - OrderDetailsPanel displays actual data for all statuses (after fix)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Run all bug condition exploration tests - verify they pass
+  - Run all preservation property tests - verify they pass
+  - Run any existing unit tests for OrderDetailPage and OrderDetailsPanel
+  - Verify no regressions in other order statuses
+  - Test manually if needed: create an order, process through workflow to Dispatched status, verify "Package Arrived" button appears for branch users
+  - Test manually: after clicking "Package Arrived", verify "Complete Transaction" button appears when all items are checked
+  - Verify OrderDetailsPanel displays actual order data for all statuses
+  - Ensure all tests pass, ask the user if questions arise

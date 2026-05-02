@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Box, Typography, Alert, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, Alert, CircularProgress } from '@mui/material';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { 
   fetchSupplyRequestById, 
@@ -8,6 +8,8 @@ import {
   rejectSupplyRequest,
   cancelSupplyRequest,
   getPickingSuggestions,
+  confirmArrival,
+  completeTransaction,
   type PickingSuggestion,
   type SupplyRequest as ApiSupplyRequest
 } from '../branch-operations/api';
@@ -147,10 +149,26 @@ export function SupplyRequestDetailPage() {
   if (!request) return null;
 
   const showStepper = request.status !== 'Draft' && request.status !== 'AutoDrafted' && request.status !== 'Rejected';
-  const isInProgress = ['Approved', 'Processing', 'Picking', 'Packed', 'Dispatched', 'InTransit'].includes(request.status);
+  const isInProgress = ['Approved', 'Processing', 'Picking', 'Packed'].includes(request.status);
   
   // Determine table mode
   let tableMode: SRTableMode = 'readonly';
+
+  const isBranch = user?.role === 'BranchManager' || user?.role === 'BranchOwner';
+
+  const handleConfirmArrival = async () => {
+    if (!request.linkedOrderId) return;
+    await handleAction(() => confirmArrival(Number(request.linkedOrderId)));
+  };
+
+  const handleCompleteTransaction = async () => {
+    if (!request.linkedOrderId) return;
+    const payload = localItems.map(i => ({
+      requestItemId: Number(i.id),
+      isChecked: i.isBranchChecked ?? false
+    }));
+    await handleAction(() => completeTransaction(Number(request.linkedOrderId), payload));
+  };
 
 
 
@@ -170,9 +188,12 @@ export function SupplyRequestDetailPage() {
         onReject={onReject}
         onCancel={onCancel}
         onFileReturn={handleFileReturn}
+        onConfirmArrival={handleConfirmArrival}
+        onCompleteTransaction={handleCompleteTransaction}
+        allItemsChecked={localItems.every(i => i.isBranchChecked)}
       />
 
-      {isInProgress && (
+      {isInProgress && !isBranch && (
         <Box 
           sx={{ 
             mb: 3, 
@@ -197,14 +218,6 @@ export function SupplyRequestDetailPage() {
               </Typography>
             </Box>
           </Box>
-          <Button 
-            variant="outlined" 
-            size="small" 
-            onClick={() => navigate({ to: '/orders' })}
-            sx={{ borderColor: '#C9A84C', color: '#6B4C2A', '&:hover': { bgcolor: 'rgba(201,168,77,0.1)', borderColor: '#6B4C2A' } }}
-          >
-            View Order Processing
-          </Button>
         </Box>
       )}
 

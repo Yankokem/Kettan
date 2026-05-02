@@ -28,6 +28,9 @@ export interface SupplyRequestDetailHeaderProps {
   onReject?: () => void;
   onCancel?: () => void;
   onFileReturn?: () => void;
+  onConfirmArrival?: () => void;
+  onCompleteTransaction?: () => void;
+  allItemsChecked?: boolean;
 }
 
 export function SupplyRequestDetailHeader({
@@ -42,6 +45,9 @@ export function SupplyRequestDetailHeader({
   onReject,
   onCancel,
   onFileReturn,
+  onConfirmArrival,
+  onCompleteTransaction,
+  allItemsChecked,
 }: SupplyRequestDetailHeaderProps) {
   const navigate = useNavigate();
   const statusColor = SUPPLY_REQUEST_STATUS_COLORS[status] || { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };
@@ -124,10 +130,24 @@ export function SupplyRequestDetailHeader({
           </>
         )}
 
-        {/* Approved -> Move to Picking */}
-        {status !== 'PendingApproval' && status !== 'Draft' && status !== 'AutoDrafted' && status !== 'Cancelled' && status !== 'Rejected' && (
+        {/* Approved -> Move to Picking (HQ only) */}
+        {status !== 'PendingApproval' && status !== 'Draft' && status !== 'AutoDrafted' && status !== 'Cancelled' && status !== 'Rejected' && status !== 'Dispatched' && isHq && (
           <Button variant="outlined" startIcon={<TaskAltRoundedIcon />} onClick={() => navigate({ to: '/orders' })}>
             View Order Processing
+          </Button>
+        )}
+
+        {/* Package Arrived button for branch users when status is Dispatched */}
+        {status === 'Dispatched' && isBranch && (
+          <Button startIcon={<CheckCircleRoundedIcon />} onClick={onConfirmArrival} loading={isSubmitting} disabled={isSubmitting}>
+            Package Arrived
+          </Button>
+        )}
+
+        {/* Complete Transaction button for branch users when status is Arrived and all items checked */}
+        {status === 'Arrived' && isBranch && allItemsChecked && (
+          <Button startIcon={<CheckCircleRoundedIcon />} onClick={onCompleteTransaction} loading={isSubmitting} disabled={isSubmitting}>
+            Complete Transaction
           </Button>
         )}
 
