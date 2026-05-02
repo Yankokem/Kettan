@@ -143,7 +143,9 @@ export function SettingsPage() {
                     </span>
 
                     {active ? (
-                      <span
+                      <motion.div
+                        layoutId="settings-tab-indicator"
+                        transition={{ type: 'spring', stiffness: 460, damping: 38 }}
                         style={{
                           position: 'absolute',
                           top: 10,
@@ -153,7 +155,6 @@ export function SettingsPage() {
                           borderTopRightRadius: 999,
                           borderBottomRightRadius: 999,
                           backgroundColor: '#C9A84C',
-                          display: 'block',
                         }}
                       />
                     ) : null}
@@ -165,7 +166,7 @@ export function SettingsPage() {
         </div>
 
         <div>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
             <Box sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
             <Box sx={{ mb: 2.4, pb: 2, borderBottom: '1px dashed', borderColor: 'divider' }}>
               <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.01em' }}>

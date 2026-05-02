@@ -3,6 +3,7 @@ export interface CompanyProfile {
   legalName: string;
   organizationId: string;
   planName: string;
+  logoUrl: string | null;
   headquartersCity: string;
   headquartersAddress: string;
   billingEmail: string;
@@ -15,12 +16,12 @@ export interface CompanyProfile {
   activeStaff: number;
   staffLimit: number;
   contractRenewalDate: string;
-  logoUrl?: string | null;
 }
 
 export interface CompanyProfileFormData {
   name: string;
   legalName: string;
+  logoUrl: string | null;
   headquartersCity: string;
   headquartersAddress: string;
   billingEmail: string;
@@ -28,8 +29,6 @@ export interface CompanyProfileFormData {
   phoneContact: string;
   website: string;
   taxId: string;
-  logoUrl?: string | null;
-  logoFile?: File | null;
 }
 
 export type CompanyProfileFormErrors = Partial<Record<keyof CompanyProfileFormData, string>>;
@@ -38,6 +37,7 @@ export function toCompanyProfileFormData(profile: CompanyProfile): CompanyProfil
   return {
     name: profile.name,
     legalName: profile.legalName,
+    logoUrl: profile.logoUrl,
     headquartersCity: profile.headquartersCity,
     headquartersAddress: profile.headquartersAddress,
     billingEmail: profile.billingEmail,
@@ -45,7 +45,5 @@ export function toCompanyProfileFormData(profile: CompanyProfile): CompanyProfil
     phoneContact: profile.phoneContact,
     website: profile.website,
     taxId: profile.taxId,
-    logoUrl: profile.logoUrl,
-    logoFile: null,
   };
 }
