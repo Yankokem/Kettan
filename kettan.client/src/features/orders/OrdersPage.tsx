@@ -221,10 +221,10 @@ export function OrdersPage() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const [ordersRows, requestsRows] = await Promise.all([
           fetchOrders(),
-          fetchSupplyRequests() 
+          fetchSupplyRequests()
         ]);
 
         const mappedOrders = ordersRows.map((row: BranchOrder) => ({
@@ -244,7 +244,7 @@ export function OrdersPage() {
         );
 
         const mappedRequests = requestsRows
-          .filter(row => !row.orderId && !existingOrderRequestIds.has(row.requestId)) 
+          .filter(row => !row.orderId && !existingOrderRequestIds.has(row.requestId))
           .map((row: SupplyRequest) => ({
             id: `SR-${row.requestId}`,
             requestId: row.requestId,
@@ -287,16 +287,16 @@ export function OrdersPage() {
       order.branch.toLowerCase().includes(query) ||
       (order.actionedBy || '').toLowerCase().includes(query);
     const matchesStatus = (
-      !activeStatusTab || 
-      order.status === activeStatusTab || 
+      !activeStatusTab ||
+      order.status === activeStatusTab ||
       (activeStatusTab === 'Approved' && order.status === 'PartiallyApproved') ||
       (activeStatusTab === 'Picking' && (order.status === 'Allocated' || order.status === 'Packing')) ||
       (activeStatusTab === 'Shipping' && (order.status === 'Dispatched' || order.status === 'InTransit' || order.status === 'InFulfillment' || order.status === 'Arrived'))
     );
-    
+
     const orderDateOnly = order.date ? order.date.slice(0, 10) : '';
     const inRange = orderDateOnly >= startDate && orderDateOnly <= endDate;
-    
+
     return matchesQuery && matchesStatus && inRange;
   });
 
@@ -418,8 +418,8 @@ export function OrdersPage() {
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search order ID, branch, or actor..."
-          sx={{ 
-            minWidth: { xs: '100%', sm: 240, md: 280 }, 
+          sx={{
+            minWidth: { xs: '100%', sm: 240, md: 280 },
             maxWidth: { sm: 360 },
             flexShrink: 1,
           }}
@@ -452,11 +452,11 @@ export function OrdersPage() {
           options={statusOptions}
         />
 
-        <Box 
-          sx={{ 
-            ml: { xs: 0, lg: 'auto' }, 
-            display: 'flex', 
-            alignItems: 'center', 
+        <Box
+          sx={{
+            ml: { xs: 0, lg: 'auto' },
+            display: 'flex',
+            alignItems: 'center',
             gap: 1.2,
           }}
         >

@@ -6,6 +6,7 @@
 ---
 
 ## Tech Stack Context
+
 - **Backend**: ASP.NET 10 Web API, SQL Server, Entity Framework Core
 - **Frontend**: React 19 + TypeScript + Vite, MUI v6, TanStack Router, Zustand
 - **Design System**: Kettan coffee-themed palette (`#6B4C2A` brown, `#C9A84C` gold, `#FAF5EF` cream)
@@ -19,7 +20,7 @@
 
 **Current State**: In `roleHelpers.ts` line 69, `'menu': ['TenantAdmin', 'HqManager']` — this is **already correct**. No change needed.
 
-### ❌ NO FILES TO MODIFY — Current permissions are correct as-is.
+### ❌ NO FILES TO MODIFY — Current permissions are correct as-is
 
 The `menu` module stays accessible to `TenantAdmin` and `HqManager` only. Branch users (`BranchOwner`, `BranchManager`) will see menu items **only** through the read-only Branch Profile Menu tab (Change 2), not through the sidebar.
 
@@ -34,22 +35,26 @@ The `menu` module stays accessible to `TenantAdmin` and `HqManager` only. Branch
 #### [MODIFY] [branchProfileData.ts](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/branches/branchProfileData.ts)
 
 **Line 6 area** — Add import:
+
 ```typescript
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 ```
 
 **Line 53** — Add `menu` entry to `BRANCH_PROFILE_TABS` array (after `inventory`):
+
 ```typescript
 { key: 'menu', label: 'Menu', icon: LocalCafeRoundedIcon },
 ```
 
 **types.ts line 56** — Update `BranchProfileTabKey` union:
+
 ```diff
 -export type BranchProfileTabKey = 'details' | 'staff' | 'activity' | 'transactions' | 'inventory';
 +export type BranchProfileTabKey = 'details' | 'staff' | 'activity' | 'transactions' | 'inventory' | 'menu';
 ```
 
 Add a `buildMenuKpis` function (similar pattern to `buildStaffKpis` at line 222):
+
 ```typescript
 const buildMenuKpis = ({ menuItems }: BranchKpiContext): BranchProfileKpi[] => {
   const active = menuItems.filter(m => m.status === 'Active').length;
@@ -65,6 +70,7 @@ const buildMenuKpis = ({ menuItems }: BranchKpiContext): BranchProfileKpi[] => {
 ```
 
 Update `BranchKpiContext` interface (line 40) to include `menuItems`:
+
 ```typescript
 interface BranchKpiContext {
   branch: Branch;
@@ -77,7 +83,6 @@ interface BranchKpiContext {
 ```
 
 Update `getKpisForTab` switch (line 386) to add `case 'menu': return buildMenuKpis(context);`.
-
 
 #### [NEW] [BranchMenuTab.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/branches/components/profile/BranchMenuTab.tsx)
 
@@ -94,6 +99,7 @@ Create a **read-only** table displaying **HQ-created** menu items. Pattern: foll
 
 **Ingredient Availability Logic** (the key feature):
 For each menu item, cross-reference the item's recipe ingredients against the branch's inventory:
+
 1. Get all `variants[].ingredients[].itemId` from the menu item's recipe
 2. Check if each `itemId` exists in the branch's inventory items (passed via props from `BranchProfilePage`)
 3. If ALL ingredients are in stock → show ✅ "Available" chip (green)
@@ -106,6 +112,7 @@ This gives branch managers instant visibility into what they can actually serve 
 #### [MODIFY] [BranchProfilePage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/branches/BranchProfilePage.tsx)
 
 **Imports** — Add:
+
 ```typescript
 import { BranchMenuTab } from './components/profile/BranchMenuTab';
 import { fetchMenuItems } from '../menu/menuItemsApi';
@@ -113,11 +120,13 @@ import type { MenuItemDto } from '../menu/menuItemsApi';
 ```
 
 **State** — Add:
+
 ```typescript
 const [menuItems, setMenuItems] = useState<MenuItemDto[]>([]);
 ```
 
 **loadTabContent** (line 102) — Add case:
+
 ```typescript
 case 'menu':
   const menuDto = await fetchMenuItems();
@@ -130,6 +139,7 @@ case 'menu':
 **kpis context** — Add `menuItems: menuItems.map(m => ({ status: m.status }))` to the context object.
 
 **Render section** (after line 344) — Add:
+
 ```tsx
 {activeTab === 'menu' ? <BranchMenuTab menuItems={menuItems} branchInventoryItems={inventoryItems} /> : null}
 ```
@@ -161,7 +171,9 @@ case 'menu':
 **Problem**: The current `BranchProfilePage.tsx` is the TenantAdmin's detailed view (tabs, edit modal, KPIs). Branch users need a simpler, **read-only** profile page — just the branch info, like the Company Profile page layout.
 
 ### Design Reference
+
 Follow the **CompanyProfilePage** pattern at `kettan.client/src/features/company/CompanyProfilePage.tsx`:
+
 - Banner gradient header with branch image/avatar
 - Branch name overlaid on banner
 - Below banner: info chips (location, status, branch code)
@@ -175,6 +187,7 @@ Follow the **CompanyProfilePage** pattern at `kettan.client/src/features/company
 #### [NEW] [BranchInfoPage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/branches/BranchInfoPage.tsx)
 
 This is the **branch-user-facing** profile page. Key details:
+
 - Fetch branch data using `fetchBranch(branchId)` from `branchesApi.ts` where `branchId` comes from the logged-in user's `user.branchId` (from `useAuthStore`)
 - Use `mapBranch()` from `branchProfileData.ts` to transform DTO
 - Layout mimics CompanyProfilePage:
@@ -186,7 +199,9 @@ This is the **branch-user-facing** profile page. Key details:
 - **No edit functionality** — read-only display
 
 #### [MODIFY] [router.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/app/router.tsx)
+
 Add route:
+
 ```typescript
 import { BranchInfoPage } from '../features/branches/BranchInfoPage';
 
@@ -196,16 +211,21 @@ const branchInfoRoute = createRoute({
   component: BranchInfoPage,
 });
 ```
+
 Add `branchInfoRoute` to the `layoutRoute.addChildren([...])` array.
 
 #### [MODIFY] [roleHelpers.ts](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/utils/roleHelpers.ts)
+
 Add permission:
+
 ```typescript
 'branch-profile': ['BranchOwner', 'BranchManager'],
 ```
 
 #### [MODIFY] [Sidebar.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/components/Layout/Sidebar.tsx)
+
 Add nav item to `MAIN_NAV` array (around line 60, before or after "Branch and Inventory"):
+
 ```typescript
 { text: 'Branch Profile', icon: <StoreRoundedIcon />, path: '/branch-profile', module: 'branch-profile' },
 ```
@@ -217,6 +237,7 @@ Add nav item to `MAIN_NAV` array (around line 60, before or after "Branch and In
 **Problem**: Branch users need their own inventory page. User wants to **reuse the same InventoryPage** component but with branch-scoped data.
 
 ### Architecture Discovery
+
 - `Batch.BranchId` (nullable) already separates HQ (`null`) vs branch inventory. ✅
 - `ItemsController.GetItems()` already accepts `?branchId=X` and filters batches. ✅
 - `hqInventoryApi.ts` `fetchInventoryItems()` currently passes NO branchId — returns all stock combined. ❌
@@ -225,7 +246,9 @@ Add nav item to `MAIN_NAV` array (around line 60, before or after "Branch and In
 ### Backend Changes
 
 #### [MODIFY] [ItemsController.cs](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/Kettan.Server/Controllers/ItemsController.cs)
+
 **Line 33-37** — Add `hqOnly` parameter:
+
 ```csharp
 public async Task<ActionResult<List<ItemDto>>> GetItems(
     [FromQuery] int? inventoryCategoryId = null,
@@ -236,6 +259,7 @@ public async Task<ActionResult<List<ItemDto>>> GetItems(
 ```
 
 **Line 70-75** — Update batch query logic:
+
 ```csharp
 var batchQuery = _context.Batches.Where(b => itemIds.Contains(b.ItemId));
 
@@ -252,7 +276,9 @@ else if (branchId.HasValue)
 ### Frontend Changes
 
 #### [MODIFY] [hqInventoryApi.ts](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/hq-inventory/hqInventoryApi.ts)
+
 **Line 297-303** — Add optional params:
+
 ```typescript
 export async function fetchInventoryItems(
   search?: string,
@@ -270,11 +296,13 @@ export async function fetchInventoryItems(
 
 > [!WARNING]
 > This changes the function signature. All existing callers must be checked. Current callers:
+>
 > - `InventoryPage.tsx` line 29: `fetchInventoryItems()` — no change needed (no params = full catalog)
 > - `SupplyRequestCreatePage.tsx` line 59: `fetchInventoryItems()` — will be updated in Change 6
 > - `InventoryItemProfilePage.tsx` — uses `fetchInventoryItemDetail()` not affected
 
 #### [MODIFY] [InventoryPage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/hq-inventory/InventoryPage.tsx)
+
 Make this page work for both HQ users and branch users. Read `user.branchId` from auth store:
 
 ```typescript
@@ -286,6 +314,7 @@ const branchId = user?.branchId ?? undefined;
 ```
 
 When loading inventory (line 29):
+
 ```typescript
 const liveItems = await fetchInventoryItems(undefined, 
   isBranchUser ? { branchId } : undefined
@@ -295,22 +324,28 @@ const liveItems = await fetchInventoryItems(undefined,
 Conditionally hide HQ-only toolbar actions (Categories, Vehicles, New Transaction buttons in `InventoryTable.tsx`) when `isBranchUser` is true. Pass a prop like `readOnly` or `isBranchView` to `InventoryTable`.
 
 #### [MODIFY] [InventoryTable.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/hq-inventory/components/InventoryTable.tsx)
+
 **Add prop** `isBranchView?: boolean` to `InventoryTableProps` interface.
 
 When `isBranchView` is true:
+
 - Hide "Item Categories", "Vehicles", "New Transaction" buttons (lines 417-436)
 - Change page title context if needed
 - Row clicks can still navigate to item detail
 
 #### [MODIFY] [roleHelpers.ts](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/utils/roleHelpers.ts)
+
 The user said to reuse the same page and call it just "Inventory". So update the existing `hq-inventory` module permission to include branch roles:
+
 ```diff
 -    'hq-inventory': ['TenantAdmin', 'HqManager', 'HqStaff'],
 +    'hq-inventory': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
 ```
 
 #### [MODIFY] [Sidebar.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/components/Layout/Sidebar.tsx)
+
 **Line 62** — Change the label conditionally or just rename:
+
 ```diff
 -  { text: 'HQ Inventory', icon: <Inventory2RoundedIcon />, path: '/hq-inventory', module: 'hq-inventory' },
 +  { text: 'Inventory', icon: <Inventory2RoundedIcon />, path: '/hq-inventory', module: 'hq-inventory' },
@@ -323,7 +358,9 @@ The user said to reuse the same page and call it just "Inventory". So update the
 **Problem**: Supply request creation page loads ALL inventory (HQ + branches combined). It should show only HQ warehouse stock so branch managers know what's available to request.
 
 #### [MODIFY] [SupplyRequestCreatePage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/supply-requests/SupplyRequestCreatePage.tsx)
+
 **Line 59** — Pass `hqOnly`:
+
 ```diff
 -        const rows = await fetchInventoryItems();
 +        const rows = await fetchInventoryItems(undefined, { hqOnly: true });
@@ -374,12 +411,14 @@ This ensures the stock numbers shown in the inventory selection modal reflect HQ
 ## Verification Plan
 
 ### Build Check
+
 ```bash
 cd kettan.client && npm run build   # Must produce zero TS errors
 cd Kettan.Server && dotnet build    # Must produce zero C# errors
 ```
 
 ### Manual Testing Matrix
+
 | Test | Login As | Expected Result |
 |------|----------|----------------|
 | Sidebar check | TenantAdmin | "Menu & Recipes" IS visible, "Inventory" visible |
@@ -407,12 +446,15 @@ cd Kettan.Server && dotnet build    # Must produce zero C# errors
 ### Proposed Fixes
 
 #### 1. [MODIFY] [LoginPage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/auth/LoginPage.tsx)
+
 - Add `branchId: number | null` to `AuthMeResponse.user`.
 - Map `branchId: me.user.branchId` in the `login()` call.
 
 #### 2. ~~[MODIFY] [BranchInfoPage.tsx](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/features/branches/BranchInfoPage.tsx)~~ ✅ DONE
+
 - **Strict Redesign**: Replaced with a single-page data view (NO TABS) matching `CompanyProfilePage.tsx`.
 - Includes white branch name inside banner, large avatar on seam, and grid-based detail sections.
 
 #### 3. ~~[VERIFY] [roleHelpers.ts](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan.client/src/utils/roleHelpers.ts)~~ ✅ DONE
+
 - Verified `TenantAdmin` has sidebar access to `menu` and `BranchManager` has access to `branch-profile`.
