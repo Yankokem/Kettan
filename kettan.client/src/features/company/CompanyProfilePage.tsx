@@ -15,6 +15,10 @@ import { Button } from '../../components/UI/Button';
 import { CompanyProfileEditModal } from './components/CompanyProfileEditModal';
 import type { CompanyProfile } from './types';
 import { toCompanyProfileFormData, type CompanyProfileFormData } from './types';
+import { api } from '../../utils/api';
+import { useAuthStore } from '../../store/useAuthStore';
+import { fetchCompanyProfile, updateCompanyProfile } from './companyProfileApi';
+
 
 const COMPANY_PROFILE_MOCK: CompanyProfile = {
   name: 'Philippine Roasters Corp.',
@@ -118,6 +122,12 @@ export function CompanyProfilePage() {
   const [editDraft, setEditDraft] = useState<CompanyProfileFormData>(toCompanyProfileFormData(COMPANY_PROFILE_MOCK));
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>('Standard');
+  const { user } = useAuthStore();
+  const sessionTenant = user?.tenant;
+
 
   useEffect(() => {
     if (!showSavedNotice) {
@@ -159,15 +169,12 @@ export function CompanyProfilePage() {
         const formData = new FormData();
         formData.append('file', nextData.logoFile);
         try {
-          const uploadRes = await api.post('/api/uploads/image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+          const uploadRes = await api.post('/api/uploads/image', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
           if (uploadRes.status >= 200 && uploadRes.status < 300) {
             const uploadData = uploadRes.data;
-            // Backend returns { Url, PublicId } (PascalCase)
             finalLogoUrl = uploadData.Url ?? uploadData.url ?? null;
-            console.log('[Upload] Logo URL:', finalLogoUrl);
-          } else {
-            const errData = uploadRes.data;
-            console.error('[Upload] Logo upload failed:', uploadRes.status, errData);
           }
         } catch (err) {
           console.error('Failed to upload company logo:', err);
@@ -180,18 +187,23 @@ export function CompanyProfilePage() {
       setProfile(refreshed.profile);
       setSubscriptionTier(refreshed.subscriptionTier);
       setEditDraft(toCompanyProfileFormData(refreshed.profile));
-      
-      // Update global auth store to reflect new logo
+
       if (sessionTenant) {
         useAuthStore.getState().updateTenant({
           ...sessionTenant,
           logoUrl: refreshed.profile.logoUrl ?? null,
-          name: refreshed.profile.name
+          name: refreshed.profile.name,
         });
       }
 
-    setIsEditModalOpen(false);
-    setShowSavedNotice(true);
+      setIsEditModalOpen(false);
+      setShowSavedNotice(true);
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+      setSaveError('Unable to save company profile right now.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (

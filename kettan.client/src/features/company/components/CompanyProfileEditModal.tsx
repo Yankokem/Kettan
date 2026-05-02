@@ -6,6 +6,7 @@ import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import AlternateEmailRoundedIcon from '@mui/icons-material/AlternateEmailRounded';
 import { Button } from '../../../components/UI/Button';
 import { TextField } from '../../../components/UI/TextField';
+import { ProfileImageUploader } from '../../../components/UI/ProfileImageUploader';
 import type { CompanyProfileFormData, CompanyProfileFormErrors } from '../types';
 
 interface CompanyProfileEditModalProps {

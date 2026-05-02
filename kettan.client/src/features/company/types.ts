@@ -29,6 +29,7 @@ export interface CompanyProfileFormData {
   phoneContact: string;
   website: string;
   taxId: string;
+  logoFile?: File | null;
 }
 
 export type CompanyProfileFormErrors = Partial<Record<keyof CompanyProfileFormData, string>>;
@@ -45,5 +46,6 @@ export function toCompanyProfileFormData(profile: CompanyProfile): CompanyProfil
     phoneContact: profile.phoneContact,
     website: profile.website,
     taxId: profile.taxId,
+    logoFile: null,
   };
 }
