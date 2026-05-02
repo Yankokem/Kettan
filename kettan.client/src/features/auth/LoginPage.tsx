@@ -112,9 +112,9 @@ export function LoginPage() {
       >
       {/* Left decorative panel */}
       <div
-        className="hidden lg:flex flex-col justify-between w-[70%] flex-shrink-0 p-10 relative overflow-hidden"
+        className="hidden lg:flex flex-col items-center justify-center w-[70%] flex-shrink-0 p-10 relative overflow-hidden"
         style={{
-          background: "linear-gradient(170deg, #3D2B16 0%, #251409 100%)",
+          background: "linear-gradient(170deg, #E8DCC4 0%, #D9C9A8 100%)",
         }}
       >
         {/* Subtle decorative elements */}
@@ -127,119 +127,37 @@ export function LoginPage() {
           style={{ background: "radial-gradient(circle, #93AF7E, transparent)" }}
         />
 
-        <div className="relative z-10">
-          <Link to="/market" className="flex items-center gap-3 mb-16">
-            <img src={logo} alt="Kettan" width="36" height="36" style={{ borderRadius: "50%" }} />
-            <div>
-              <div style={{ fontWeight: 800, fontSize: "16px", color: "#F5F0E8", letterSpacing: "0.15em" }}>KETTAN</div>
-              <div style={{ fontSize: "8px", color: "#A0845C", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
-            </div>
+        <div className="relative z-10 flex flex-col items-center text-center">
+          {/* Large centered logo */}
+          <Link to="/market" className="mb-12">
+            <img 
+              src={logo} 
+              alt="Kettan" 
+              width="280" 
+              height="280"
+            />
           </Link>
 
           <h2
             style={{
-              fontSize: "clamp(1.6rem, 2.8vw, 2.4rem)",
+              fontSize: "clamp(1.8rem, 3vw, 2.6rem)",
               fontWeight: 800,
-              color: "#F5F0E8",
+              color: "#2C1A0E",
               lineHeight: 1.3,
-              marginBottom: "18px",
+              marginBottom: "20px",
+              maxWidth: "600px",
             }}
           >
             Welcome back to your coffee chain command center
           </h2>
-          <p style={{ fontSize: "15px", color: "#C9A87D", lineHeight: 1.7, marginBottom: "32px" }}>
-            Streamline your multi-branch operations with real-time inventory tracking, supply chain management, and comprehensive analytics.
+          <p style={{ 
+            fontSize: "16px", 
+            color: "#6B4C2A", 
+            lineHeight: 1.7,
+            maxWidth: "500px",
+          }}>
+            Streamline your multi-branch operations with real-time inventory tracking and supply chain management.
           </p>
-
-          {/* Feature highlights */}
-          <div className="space-y-4 mb-8">
-            {[
-              {
-                icon: "📊",
-                title: "Real-time Analytics",
-                desc: "Monitor performance across all locations instantly"
-              },
-              {
-                icon: "📦",
-                title: "Smart Inventory",
-                desc: "Automated stock management and reorder alerts"
-              },
-              {
-                icon: "🚚",
-                title: "Supply Chain",
-                desc: "Streamlined ordering and delivery coordination"
-              }
-            ].map((feature, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: "rgba(201,168,125,0.15)" }}
-                >
-                  <span style={{ fontSize: "14px" }}>{feature.icon}</span>
-                </div>
-                <div>
-                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#F5F0E8", marginBottom: "2px" }}>
-                    {feature.title}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#A0845C", lineHeight: 1.5 }}>
-                    {feature.desc}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Enhanced stats section */}
-        <div className="relative z-10 space-y-4">
-          <div
-            className="grid grid-cols-2 gap-4 p-6"
-            style={{
-              borderRadius: "18px",
-              backgroundColor: "rgba(245,240,232,0.08)",
-              border: "1px solid rgba(201,168,125,0.12)",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            {[
-              { value: "2,500+", label: "Active Branches", sublabel: "Across 15 countries" },
-              { value: "1.2M+", label: "Monthly Orders", sublabel: "Growing 23% YoY" },
-              { value: "18", label: "Core Modules", sublabel: "Fully integrated" },
-              { value: "99.97%", label: "System Uptime", sublabel: "Enterprise grade" },
-            ].map(({ value, label, sublabel }) => (
-              <div key={label} className="text-center">
-                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#F5F0E8", marginBottom: "4px" }}>{value}</div>
-                <div style={{ fontSize: "11px", color: "#C9A87D", fontWeight: 600, marginBottom: "2px" }}>{label}</div>
-                <div style={{ fontSize: "9px", color: "#8C6B43", fontWeight: 500 }}>{sublabel}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Trust indicators */}
-          <div
-            className="flex items-center justify-center gap-6 py-4 px-6"
-            style={{
-              borderRadius: "14px",
-              backgroundColor: "rgba(245,240,232,0.06)",
-              border: "1px solid rgba(201,168,125,0.08)",
-            }}
-          >
-            <div className="text-center">
-              <div style={{ fontSize: "10px", color: "#8C6B43", fontWeight: 600, marginBottom: "2px" }}>TRUSTED BY</div>
-              <div style={{ fontSize: "12px", color: "#C9A87D", fontWeight: 700 }}>Fortune 500 Chains</div>
-            </div>
-            <div
-              style={{
-                width: "1px",
-                height: "24px",
-                backgroundColor: "rgba(201,168,125,0.2)",
-              }}
-            />
-            <div className="text-center">
-              <div style={{ fontSize: "10px", color: "#8C6B43", fontWeight: 600, marginBottom: "2px" }}>CERTIFIED</div>
-              <div style={{ fontSize: "12px", color: "#C9A87D", fontWeight: 700 }}>ISO 27001 Secure</div>
-            </div>
-          </div>
         </div>
       </div>
 

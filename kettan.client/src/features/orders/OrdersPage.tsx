@@ -67,7 +67,7 @@ type DatasetMode = 'active' | 'history';
 type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
 type ActiveStatusTab = 'Approved' | 'Processing' | 'Picking' | 'Packed';
 
-const ACTIVE_STATUSES: OrderActionStatus[] = ['Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Allocated', 'Packed'];
+const ACTIVE_STATUSES: OrderActionStatus[] = ['Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Allocated', 'Packing', 'Packed'];
 const HISTORY_STATUSES: OrderActionStatus[] = ['Dispatched', 'InTransit', 'Delivered', 'Rejected', 'Returned'];
 const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['Approved', 'Processing', 'Picking', 'Packed'];
 type OrdersListViewMode = 'card' | 'table';
@@ -316,7 +316,7 @@ export function OrdersPage() {
       ? (
           order.status === activeStatusTab || 
           (activeStatusTab === 'Approved' && order.status === 'PartiallyApproved') ||
-          (activeStatusTab === 'Picking' && order.status === 'Allocated')
+          (activeStatusTab === 'Picking' && (order.status === 'Allocated' || order.status === 'Packing'))
         )
       : !historyStatusFilter || order.status === historyStatusFilter;
     

@@ -14,6 +14,7 @@ public class BranchOrderDto
 
 public class OrderRequestItemDto
 {
+    public int RequestItemId { get; set; }
     public int ItemId { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public string ItemSku { get; set; } = string.Empty;

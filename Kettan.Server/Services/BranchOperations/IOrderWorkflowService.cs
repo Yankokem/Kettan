@@ -15,7 +15,7 @@ public interface IOrderWorkflowService
     Task<List<PickingSuggestionDto>> GetPickingSuggestionsAsync(int orderId);
     Task<OrderDetailDto?> SavePickingAsync(int orderId, PickingSubmitDto dto);
     Task<OrderDetailDto?> SavePackingAsync(int orderId, PackingSubmitDto dto);
-    Task<OrderDetailDto?> SubmitDispatchAsync(int orderId);
+    Task<OrderDetailDto?> SubmitDispatchAsync(int orderId, DispatchOrderDto dto);
     Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId);
     Task<OrderDetailDto?> CompleteTransactionAsync(int orderId, BranchCheckSubmitDto dto);
 }

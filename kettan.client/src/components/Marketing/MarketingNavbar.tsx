@@ -146,34 +146,6 @@ export function MarketingNavbar() {
 
 function KettanLogo() {
   return (
-    <div className="flex items-center gap-2">
-      <img src={logo} alt="Kettan" width="32" height="32" style={{ borderRadius: "50%" }} />
-      <div>
-        <div
-          className="tracking-wider uppercase"
-          style={{
-            fontFamily: '"Inter", sans-serif',
-            fontWeight: 800,
-            fontSize: "15px",
-            color: "#4A3418",
-            letterSpacing: "0.15em",
-          }}
-        >
-          KETTAN
-        </div>
-        <div
-          style={{
-            fontSize: "7px",
-            color: "#8C6B43",
-            letterSpacing: "0.08em",
-            fontWeight: 500,
-            textTransform: "uppercase",
-            marginTop: "-1px",
-          }}
-        >
-          Café Chain Operations
-        </div>
-      </div>
-    </div>
+    <img src={logo} alt="Kettan" width="170" height="170" />
   );
 }

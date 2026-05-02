@@ -97,6 +97,7 @@ export interface BranchOrder {
 }
 
 export interface OrderRequestItem {
+  requestItemId: number;
   itemId: number;
   itemName: string;
   itemSku: string;
@@ -465,8 +466,11 @@ export async function submitPacking(orderId: number, items: PackingItemPayload[]
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 
-export async function submitDispatch(orderId: number): Promise<OrderDetail> {
-  const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/dispatch`, {});
+export async function submitDispatch(
+  orderId: number, 
+  payload: { vehicleId: number; trackingNumber: string; estimatedArrival: string }
+): Promise<OrderDetail> {
+  const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/dispatch`, payload);
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 

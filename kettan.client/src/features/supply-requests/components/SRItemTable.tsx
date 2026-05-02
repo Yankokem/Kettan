@@ -32,36 +32,23 @@ interface SRItemTableProps {
 }
 
 export default function SRItemTable({ items, mode, suggestions = [], onItemsChange }: SRItemTableProps) {
-  const [localItems, setLocalItems] = useState<SupplyRequestDetailItem[]>(items);
-
   // Reject modal state
   const [rejectItem, setRejectItem] = useState<SupplyRequestDetailItem | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  // Sync with props when readonly or when items fundamentally change
-  useEffect(() => {
-    setLocalItems(items);
-  }, [items]);
-
-  // Push changes up
-  useEffect(() => {
-    if (onItemsChange && mode !== 'readonly') {
-      onItemsChange(localItems);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localItems, mode]);
-
   const toggleCheck = (id: string, field: 'isPicked' | 'isPacked' | 'isBranchChecked') => {
-    setLocalItems((prev) =>
-      prev.map((item) =>
+    if (!onItemsChange) return;
+    onItemsChange(
+      items.map((item) =>
         item.id === id ? { ...item, [field]: !item[field] } : item
       )
     );
   };
 
   const updateSendQty = (id: string, qty: number | null) => {
-    setLocalItems((prev) =>
-      prev.map((item) =>
+    if (!onItemsChange) return;
+    onItemsChange(
+      items.map((item) =>
         item.id === id ? { ...item, sendQuantity: qty } : item
       )
     );
@@ -74,9 +61,9 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
   };
 
   const handleConfirmReject = () => {
-    if (!rejectItem) return;
-    setLocalItems((prev) =>
-      prev.map((item) =>
+    if (!rejectItem || !onItemsChange) return;
+    onItemsChange(
+      items.map((item) =>
         item.id === rejectItem.id
           ? {
               ...item,
@@ -93,8 +80,9 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
 
   const handleUndoReject = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setLocalItems((prev) =>
-      prev.map((item) =>
+    if (!onItemsChange) return;
+    onItemsChange(
+      items.map((item) =>
         item.id === id
           ? {
               ...item,
@@ -107,7 +95,7 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
   };
 
   // Filter and sort items based on mode
-  let displayItems = [...localItems];
+  let displayItems = [...items];
 
   if (mode === 'packing') {
     // Put rejected items at the bottom
@@ -177,17 +165,18 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
           </Typography>
         </Box>
       ),
-      width: '35%',
+      width: '1fr',
     },
     {
       key: 'requested',
-      label: 'Requested',
+      label: 'Req',
       render: (row: SupplyRequestDetailItem) => (
         <Typography variant="body2" color={row.isRejectedDuringPicking ? 'text.secondary' : 'text.primary'}>
           {row.requestedQty}
         </Typography>
       ),
-      width: '10%',
+      width: 60,
+      align: 'center',
     }
   );
 
@@ -200,18 +189,20 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
           {row.approvedQty !== null ? row.approvedQty : '-'}
         </Typography>
       ),
-      width: '10%',
+      width: 60,
+      align: 'center',
     });
     
     columns.push({
       key: 'hqStock',
-      label: 'HQ Stock',
+      label: 'HQ',
       render: (row: SupplyRequestDetailItem) => (
         <Typography variant="body2" color={row.isRejectedDuringPicking ? 'text.secondary' : 'text.primary'}>
           {row.hqStock}
         </Typography>
       ),
-      width: '10%',
+      width: 60,
+      align: 'center',
     });
   }
 
@@ -221,7 +212,7 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
       key: 'suggested',
       label: 'Suggested',
       render: (row: SupplyRequestDetailItem) => {
-        const suggestion = suggestions.find((s) => s.itemId.toString() === row.id);
+        const suggestion = suggestions.find((s) => s.requestItemId.toString() === row.id);
         if (!suggestion) return <Typography variant="body2" color="text.secondary">-</Typography>;
         return (
           <Tooltip title={`Branch Stock: ${suggestion.branchCurrentStock} | Threshold: ${suggestion.branchThreshold}`}>
@@ -231,12 +222,13 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
               size="small" 
               color="primary" 
               variant="outlined" 
-              sx={{ borderRadius: 1 }}
+              sx={{ borderRadius: 1, height: 24, '& .MuiChip-label': { px: 0.8 } }}
             />
           </Tooltip>
         );
       },
-      width: '12%',
+      width: 90,
+      align: 'center',
     });
 
     columns.push({
@@ -257,11 +249,12 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
             }}
             disabled={row.isRejectedDuringPicking}
             onClick={(e) => e.stopPropagation()}
-            sx={{ width: 80, '& .MuiInputBase-root': { height: 32 } }}
+            sx={{ width: 70, '& .MuiInputBase-root': { height: 32, fontSize: 13 } }}
           />
         );
       },
-      width: '12%',
+      width: 85,
+      align: 'center',
     });
 
     columns.push({
@@ -270,13 +263,13 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
       render: (row: SupplyRequestDetailItem) => {
         if (row.isRejectedDuringPicking) {
           return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                <Tooltip title={`Rejected: ${row.pickingRejectionReason}`}>
-                  <CommentRoundedIcon color="error" fontSize="small" />
+                  <CommentRoundedIcon color="error" sx={{ fontSize: 18 }} />
                </Tooltip>
                <Tooltip title="Undo Reject">
-                  <IconButton size="small" onClick={(e) => handleUndoReject(e, row.id)}>
-                    <UndoRoundedIcon fontSize="small" />
+                  <IconButton size="small" onClick={(e) => handleUndoReject(e, row.id)} sx={{ color: 'text.secondary' }}>
+                    <UndoRoundedIcon sx={{ fontSize: 18 }} />
                   </IconButton>
                </Tooltip>
             </Box>
@@ -284,13 +277,13 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
         }
         return (
           <Tooltip title="Reject Item">
-            <IconButton size="small" color="error" onClick={(e) => handleOpenReject(e, row)}>
-              <CloseRoundedIcon fontSize="small" />
+            <IconButton size="small" color="error" onClick={(e) => handleOpenReject(e, row)} sx={{ bgcolor: alpha('#f44336', 0.04) }}>
+              <CloseRoundedIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
         );
       },
-      width: '10%',
+      width: 80,
       align: 'right',
     });
   } else if (mode === 'packing' || mode === 'branch-check') {
@@ -346,9 +339,10 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
     const sx: any = {};
     
     if (row.isRejectedDuringPicking) {
-      sx.opacity = mode === 'packing' ? 0.6 : 1;
-      sx.bgcolor = alpha('#f44336', 0.05);
-      sx.borderLeft = `3px solid #f44336`;
+      sx.opacity = mode === 'packing' ? 0.7 : 1;
+      sx.bgcolor = alpha('#f44336', 0.04);
+      sx.outline = `1px solid ${alpha('#f44336', 0.5)}`;
+      sx.outlineOffset = '-1px';
       return sx;
     }
     

@@ -13,6 +13,7 @@ export type OrderActionStatus =
   | 'Processing'
   | 'Picking'
   | 'Allocated'
+  | 'Packing'
   | 'Packed'
   | 'Dispatched'
   | 'InTransit'

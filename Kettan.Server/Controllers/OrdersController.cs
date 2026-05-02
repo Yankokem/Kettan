@@ -169,11 +169,11 @@ public class OrdersController : ControllerBase
 
     [HttpPut("{id:int}/workflow/dispatch")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<OrderDetailDto>> SubmitDispatch(int id)
+    public async Task<ActionResult<OrderDetailDto>> SubmitDispatch(int id, [FromBody] DispatchOrderDto dto)
     {
         try
         {
-            var result = await _service.SubmitDispatchAsync(id);
+            var result = await _service.SubmitDispatchAsync(id, dto);
             if (result == null) return NotFound();
             return Ok(result);
         }

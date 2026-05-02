@@ -14,17 +14,20 @@ public class OrderWorkflowService : IOrderWorkflowService
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notificationService;
     private readonly IInventoryService _inventoryService;
+    private readonly ILogger<OrderWorkflowService> _logger;
 
     public OrderWorkflowService(
         ApplicationDbContext context,
         ICurrentUserService currentUser,
         INotificationService notificationService,
-        IInventoryService inventoryService)
+        IInventoryService inventoryService,
+        ILogger<OrderWorkflowService> logger)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationService = notificationService;
         _inventoryService = inventoryService;
+        _logger = logger;
     }
 
     public async Task<List<BranchOrderDto>> ListBranchOrdersAsync(string? status = null, int? branchId = null)
@@ -132,13 +135,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         await _context.SaveChangesAsync();
         await tx.CommitAsync();
 
-        var created = await GetOrderDetailAsync(order.OrderId);
-        if (created == null)
-        {
-            throw new InvalidOperationException("Unable to load created order.");
-        }
-
-        return created;
+        return await MapToOrderDetailDto(order, null);
     }
 
     public async Task<OrderDetailDto?> GetOrderDetailAsync(int orderId)
@@ -170,7 +167,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         var shipment = await _context.Shipments
             .FirstOrDefaultAsync(s => s.OrderId == orderId);
 
-        return MapToOrderDetailDto(order, shipment);
+        return await MapToOrderDetailDto(order, shipment);
     }
 
     public async Task<List<OrderStatusHistoryDto>> GetOrderHistoryAsync(int orderId)
@@ -319,7 +316,9 @@ public class OrderWorkflowService : IOrderWorkflowService
             OrderId = order.OrderId,
             Status = OrderStatus.Dispatched,
             ChangedBy_UserId = _currentUser.UserId.Value,
-            Remarks = NormalizeOptional(dto.Remarks),
+            Remarks = dto.VehicleId.HasValue 
+                ? $"Vehicle assigned and dispatched. {dto.Remarks}".Trim() 
+                : NormalizeOptional(dto.Remarks),
             Timestamp = now
         });
 
@@ -345,7 +344,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             _context.Shipments.Add(shipment);
         }
 
-
+        shipment.VehicleId = dto.VehicleId;
         shipment.TrackingNumber = NormalizeOptional(dto.TrackingNumber);
         shipment.DispatchDate = now;
         shipment.EstimatedArrival = dto.EstimatedArrival;
@@ -539,14 +538,14 @@ public class OrderWorkflowService : IOrderWorkflowService
         };
     }
 
-    private static OrderDetailDto MapToOrderDetailDto(Order order, Shipment? shipment)
+    private async Task<OrderDetailDto> MapToOrderDetailDto(Order order, Shipment? shipment)
     {
         var request = order.SupplyRequest;
         var requestedByName = request?.RequestedBy_User == null
             ? string.Empty
             : $"{request.RequestedBy_User.FirstName} {request.RequestedBy_User.LastName}".Trim();
 
-        return new OrderDetailDto
+        var dto = new OrderDetailDto
         {
             OrderId = order.OrderId,
             RequestId = order.RequestId,
@@ -572,24 +571,32 @@ public class OrderWorkflowService : IOrderWorkflowService
             CompletedByName = order.CompletedByUser != null 
                 ? $"{order.CompletedByUser.FirstName} {order.CompletedByUser.LastName}".Trim() 
                 : null,
-            RequestedItems = (request?.Items ?? [])
-                .Select(i => new OrderRequestItemDto
-                {
-                    ItemId = i.ItemId,
-                    ItemName = i.Item?.Name ?? string.Empty,
-                    ItemSku = i.Item?.SKU ?? string.Empty,
-                    QuantityRequested = i.QuantityRequested,
-                    QuantityApproved = i.QuantityApproved,
-                    UnitCost = i.Item?.UnitCost ?? 0,
-                    IsPicked = i.IsPicked,
-                    SendQuantity = i.SendQuantity,
-                    IsRejectedDuringPicking = i.IsRejectedDuringPicking,
-                    PickingRejectionReason = i.PickingRejectionReason,
-                    IsPacked = i.IsPacked,
-                    IsBranchChecked = i.IsBranchChecked,
-                })
-                .ToList(),
-            Allocations = (order.Allocations ?? [])
+            RequestedItems = new List<OrderRequestItemDto>()
+        };
+
+        foreach (var i in (request?.Items ?? []))
+        {
+            var hqStock = await _inventoryService.GetStockLevelAsync(i.ItemId, null);
+            dto.RequestedItems.Add(new OrderRequestItemDto
+            {
+                RequestItemId = i.RequestItemId,
+                ItemId = i.ItemId,
+                ItemName = i.Item?.Name ?? string.Empty,
+                ItemSku = i.Item?.SKU ?? string.Empty,
+                QuantityRequested = i.QuantityRequested,
+                QuantityApproved = i.QuantityApproved,
+                UnitCost = i.Item?.UnitCost ?? 0,
+                IsPicked = i.IsPicked,
+                SendQuantity = i.SendQuantity,
+                IsRejectedDuringPicking = i.IsRejectedDuringPicking,
+                PickingRejectionReason = i.PickingRejectionReason,
+                IsPacked = i.IsPacked,
+                IsBranchChecked = i.IsBranchChecked,
+                HqStock = hqStock
+            });
+        }
+
+        dto.Allocations = (order.Allocations ?? [])
                 .Select(a => new OrderAllocationDto
                 {
                     AllocationId = a.AllocationId,
@@ -599,8 +606,9 @@ public class OrderWorkflowService : IOrderWorkflowService
                     ItemName = a.Batch?.Item?.Name ?? string.Empty,
                     QuantityPicked = a.QuantityPicked,
                     RemainingBatchQuantity = a.Batch?.CurrentQuantity ?? 0
-                }).ToList()
-        };
+                }).ToList();
+
+        return dto;
     }
 
     private static string? NormalizeOptional(string? value)
@@ -680,16 +688,16 @@ public class OrderWorkflowService : IOrderWorkflowService
             }
         }
 
-        order.Status = OrderStatus.Picking;
+        order.Status = OrderStatus.Packing;
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
             TenantId = order.TenantId,
             OrderId = order.OrderId,
-            Status = OrderStatus.Picking,
+            Status = OrderStatus.Packing,
             ChangedBy_UserId = _currentUser.UserId,
             Timestamp = now,
-            Remarks = "Picking in progress."
+            Remarks = "Picking confirmed. Moved to packing checklist."
         });
 
         await _context.SaveChangesAsync();
@@ -707,46 +715,82 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         var now = DateTime.UtcNow;
 
+        int updatedCount = 0;
         foreach (var item in dto.Items)
         {
             var reqItem = order.SupplyRequest.Items.FirstOrDefault(i => i.RequestItemId == item.RequestItemId);
             if (reqItem != null && !reqItem.IsRejectedDuringPicking)
             {
                 reqItem.IsPacked = item.IsPacked;
+                updatedCount++;
             }
         }
+        _logger.LogInformation("SavePacking: Updated {Count} items out of {Total} in payload for Order {OrderId}", 
+            updatedCount, dto.Items.Count, orderId);
+        var allPacked = order.SupplyRequest.Items
+            .Where(i => !i.IsRejectedDuringPicking)
+            .All(i => i.IsPacked);
 
-        order.Status = OrderStatus.Packing;
+        var nextStatus = allPacked ? OrderStatus.Packed : OrderStatus.Packing;
+        order.Status = nextStatus;
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
             TenantId = order.TenantId,
             OrderId = order.OrderId,
-            Status = OrderStatus.Packing,
+            Status = nextStatus,
             ChangedBy_UserId = _currentUser.UserId,
             Timestamp = now,
-            Remarks = "Packing in progress."
+            Remarks = allPacked ? "All items packed. Ready for dispatch." : "Packing in progress."
         });
 
         await _context.SaveChangesAsync();
         return await GetOrderDetailAsync(orderId);
     }
 
-    public async Task<OrderDetailDto?> SubmitDispatchAsync(int orderId)
+    public async Task<OrderDetailDto?> SubmitDispatchAsync(int orderId, DispatchOrderDto dto)
     {
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
             .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
-        if (order?.SupplyRequest == null) return null;
+        _logger.LogInformation("Dispatching Order {OrderId}. Payload: Vehicle={VehicleId}, Tracking={Tracking}, Arrival={Arrival}", 
+            orderId, dto.VehicleId, dto.TrackingNumber, dto.EstimatedArrival);
+
+        if (order?.SupplyRequest == null) 
+        {
+            _logger.LogWarning("Dispatch failed: Order {OrderId} or SupplyRequest is null.", orderId);
+            return null;
+        }
 
         var now = DateTime.UtcNow;
 
-        if (order.SupplyRequest.Items.Where(i => !i.IsRejectedDuringPicking).Any(i => !i.IsPacked))
+        var unpackedItems = order.SupplyRequest.Items
+            .Where(i => !i.IsRejectedDuringPicking && !i.IsPacked)
+            .ToList();
+
+        _logger.LogInformation("SubmitDispatch: Order {OrderId} has {UnpackedCount} unpacked items.", orderId, unpackedItems.Count);
+
+        if (unpackedItems.Any())
         {
-            throw new InvalidOperationException("Cannot dispatch until all non-rejected items are packed.");
+            if (order.Status == OrderStatus.Packed)
+            {
+                _logger.LogWarning("Order {OrderId} is in Packed status but has {Count} unpacked items. Auto-packing them now.", orderId, unpackedItems.Count);
+                foreach (var item in unpackedItems)
+                {
+                    item.IsPacked = true;
+                }
+            }
+            else
+            {
+                var itemDetails = string.Join(", ", unpackedItems.Select(i => $"ItemID:{i.ItemId}"));
+                _logger.LogWarning("Dispatch failed for Order {OrderId}: Items not packed: {Items}", orderId, itemDetails);
+                throw new InvalidOperationException($"Cannot dispatch until all items are packed. Unpacked: {itemDetails}");
+            }
         }
+
+        _logger.LogInformation("Order {OrderId} validation successful. Moving to Dispatched status.", orderId);
 
         order.Status = OrderStatus.Dispatched;
         
@@ -757,8 +801,38 @@ public class OrderWorkflowService : IOrderWorkflowService
             Status = OrderStatus.Dispatched,
             ChangedBy_UserId = _currentUser.UserId,
             Timestamp = now,
-            Remarks = "Order dispatched."
+            Remarks = dto.VehicleId.HasValue 
+                ? $"Vehicle assigned and dispatched. {dto.Remarks}".Trim() 
+                : NormalizeOptional(dto.Remarks) ?? "Order dispatched."
         });
+
+        // Also add InTransit history since it moves directly
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = order.TenantId,
+            OrderId = order.OrderId,
+            Status = OrderStatus.InTransit,
+            ChangedBy_UserId = _currentUser.UserId,
+            Remarks = "System auto-transition after dispatch.",
+            Timestamp = now
+        });
+
+        // Update/Create Shipment
+        var shipment = await _context.Shipments.FirstOrDefaultAsync(s => s.OrderId == order.OrderId);
+        if (shipment == null)
+        {
+            shipment = new Shipment
+            {
+                TenantId = order.TenantId,
+                OrderId = order.OrderId
+            };
+            _context.Shipments.Add(shipment);
+        }
+
+        shipment.VehicleId = dto.VehicleId;
+        shipment.TrackingNumber = NormalizeOptional(dto.TrackingNumber);
+        shipment.DispatchDate = now;
+        shipment.EstimatedArrival = dto.EstimatedArrival;
 
         await _context.SaveChangesAsync();
         return await GetOrderDetailAsync(orderId);
