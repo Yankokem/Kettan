@@ -10,5 +10,7 @@ public enum SupplyRequestStatus : byte
     Cancelled = 5,
     AutoDrafted = 6,
     Fulfilled = 7,
-    Pending = 8 // For backward compatibility/migration purposes if needed
+    Pending = 8, // For backward compatibility/migration purposes if needed
+    InFulfillment = 9, // Order is being processed (Picking → Dispatched)
+    Arrived = 10 // Package arrived at branch, awaiting branch check
 }

@@ -11,6 +11,7 @@ export type SupplyRequestLifecycleStatus =
   | 'Packed'
   | 'Dispatched'
   | 'InTransit'
+  | 'InFulfillment'
   | 'Delivered'
   | 'Arrived'
   | 'Completed'

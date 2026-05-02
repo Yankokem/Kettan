@@ -84,13 +84,14 @@ public class ItemsController : ControllerBase
         var itemIds = items.Select(i => i.ItemId).ToList();
         var batchQuery = _context.Batches.Where(b => itemIds.Contains(b.ItemId));
 
-        if (effectiveHqOnly)
-        {
-            batchQuery = batchQuery.Where(b => b.BranchId == null);
-        }
-        else if (effectiveBranchId.HasValue)
+        if (effectiveBranchId.HasValue)
         {
             batchQuery = batchQuery.Where(b => b.BranchId == effectiveBranchId.Value);
+        }
+        else
+        {
+            // Default to HQ only if no branch is specified
+            batchQuery = batchQuery.Where(b => b.BranchId == null);
         }
 
         var stockByItem = await batchQuery
@@ -381,12 +382,24 @@ public class ItemsController : ControllerBase
             return null;
         }
 
-        var totalStock = await _inventoryService.GetStockLevelAsync(item.ItemId);
+        var totalStock = await _inventoryService.GetStockLevelAsync(item.ItemId, _currentUser.BranchId);
 
-        var batches = await _context.Batches
+        var batchesQuery = _context.Batches
             .Include(b => b.Item)
             .Include(b => b.Branch)
-            .Where(b => b.ItemId == item.ItemId)
+            .Where(b => b.ItemId == item.ItemId);
+
+        // Standardize detail view to match the stock level of the current branch/HQ context
+        if (_currentUser.BranchId.HasValue)
+        {
+            batchesQuery = batchesQuery.Where(b => b.BranchId == _currentUser.BranchId.Value);
+        }
+        else
+        {
+            batchesQuery = batchesQuery.Where(b => b.BranchId == null);
+        }
+
+        var batches = await batchesQuery
             .OrderBy(b => b.ExpiryDate)
             .ThenBy(b => b.CreatedAt)
             .ToListAsync();

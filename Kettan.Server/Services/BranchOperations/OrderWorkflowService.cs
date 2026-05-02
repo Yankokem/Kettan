@@ -226,7 +226,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         }
 
         var requestItems = await _context.SupplyRequestItems
-            .Where(i => i.RequestId == order.RequestId && (i.QuantityApproved ?? 0) > 0)
+            .Where(i => i.RequestId == order.RequestId && !i.IsRejectedDuringPicking)
             .ToListAsync();
 
         var now = DateTime.UtcNow;
@@ -236,7 +236,9 @@ public class OrderWorkflowService : IOrderWorkflowService
         {
             foreach (var item in requestItems)
             {
-                var qtyToDeduct = item.QuantityApproved!.Value;
+                var qtyToDeduct = item.SendQuantity ?? item.QuantityApproved ?? item.QuantityRequested;
+                if (qtyToDeduct <= 0) continue;
+
                 var deductions = await _inventoryService.DeductFifoAsync(
                     item.ItemId,
                     branchId: null, // HQ stock
@@ -733,6 +735,40 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         var nextStatus = allPacked ? OrderStatus.Packed : OrderStatus.Packing;
         order.Status = nextStatus;
+
+        // When all items are packed, deduct HQ inventory and create allocations
+        if (allPacked)
+        {
+            var packedItems = order.SupplyRequest.Items
+                .Where(i => !i.IsRejectedDuringPicking)
+                .ToList();
+
+            foreach (var item in packedItems)
+            {
+                var qtyToDeduct = item.SendQuantity ?? item.QuantityApproved ?? item.QuantityRequested;
+                if (qtyToDeduct <= 0) continue;
+
+                var deductions = await _inventoryService.DeductFifoAsync(
+                    item.ItemId,
+                    branchId: null, // HQ stock
+                    quantity: qtyToDeduct,
+                    transactionType: TransactionType.OrderFulfillment,
+                    remarks: $"Packed for order {order.OrderId}",
+                    referenceType: ReferenceType.Order,
+                    referenceId: order.OrderId);
+
+                foreach (var deduction in deductions)
+                {
+                    _context.OrderAllocations.Add(new OrderAllocation
+                    {
+                        TenantId = order.TenantId,
+                        OrderId = order.OrderId,
+                        BatchId = deduction.BatchId,
+                        QuantityPicked = deduction.QuantityDeducted
+                    });
+                }
+            }
+        }
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -793,6 +829,13 @@ public class OrderWorkflowService : IOrderWorkflowService
         _logger.LogInformation("Order {OrderId} validation successful. Moving to Dispatched status.", orderId);
 
         order.Status = OrderStatus.Dispatched;
+
+        // Sync SupplyRequest status so HQ/Branch see the dispatch
+        if (order.SupplyRequest != null)
+        {
+            order.SupplyRequest.Status = SupplyRequestStatus.InFulfillment;
+            order.SupplyRequest.UpdatedAt = now;
+        }
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -840,7 +883,9 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId)
     {
-        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
+        var order = await _context.Orders
+            .Include(o => o.SupplyRequest)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
         if (order == null) return null;
 
@@ -849,6 +894,13 @@ public class OrderWorkflowService : IOrderWorkflowService
         order.Status = OrderStatus.Arrived;
         order.ArrivedAt = now;
         order.ArrivedConfirmedByUserId = _currentUser.UserId;
+
+        // Sync SupplyRequest status so HQ sees the update
+        if (order.SupplyRequest != null)
+        {
+            order.SupplyRequest.Status = SupplyRequestStatus.Arrived;
+            order.SupplyRequest.UpdatedAt = now;
+        }
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -873,6 +925,11 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         if (order?.SupplyRequest == null) return null;
 
+        if (order.Status == OrderStatus.Completed)
+        {
+            throw new InvalidOperationException("Order is already completed.");
+        }
+
         var now = DateTime.UtcNow;
 
         foreach (var item in dto.Items)
@@ -884,16 +941,90 @@ public class OrderWorkflowService : IOrderWorkflowService
             }
         }
 
-        if (order.SupplyRequest.Items.Where(i => !i.IsRejectedDuringPicking).Any(i => !i.IsBranchChecked))
+        var allocations = await _context.OrderAllocations
+            .Include(a => a.Batch)
+            .Where(a => a.OrderId == orderId)
+            .ToListAsync();
+
+        var allocationsByItem = allocations
+            .Where(a => a.Batch != null)
+            .GroupBy(a => a.Batch!.ItemId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var tenantId = order.TenantId;
+        var userId = _currentUser.UserId!.Value;
+        var branchId = order.SupplyRequest.BranchId;
+
+        foreach (var reqItem in order.SupplyRequest.Items.Where(i => !i.IsRejectedDuringPicking))
         {
-             throw new InvalidOperationException("Cannot complete until all valid items are checked.");
+            if (allocationsByItem.TryGetValue(reqItem.ItemId, out var itemAllocations))
+            {
+                foreach (var alloc in itemAllocations)
+                {
+                    var sourceBatch = alloc.Batch!;
+                    
+                    var targetBatch = await _context.Batches
+                        .FirstOrDefaultAsync(b =>
+                            b.ItemId == sourceBatch.ItemId &&
+                            b.BranchId == branchId &&
+                            b.BatchNumber == sourceBatch.BatchNumber &&
+                            b.ExpiryDate == sourceBatch.ExpiryDate);
+
+                    if (targetBatch == null)
+                    {
+                        targetBatch = new Batch
+                        {
+                            TenantId = tenantId,
+                            ItemId = sourceBatch.ItemId,
+                            BranchId = branchId,
+                            BatchNumber = sourceBatch.BatchNumber,
+                            ExpiryDate = sourceBatch.ExpiryDate,
+                            CurrentQuantity = 0,
+                            CreatedAt = now
+                        };
+                        _context.Batches.Add(targetBatch);
+                    }
+
+                    targetBatch.CurrentQuantity += alloc.QuantityPicked;
+
+                    _context.InventoryTransactions.Add(new InventoryTransaction
+                    {
+                        TenantId = tenantId,
+                        Batch = targetBatch,
+                        UserId = userId,
+                        QuantityChange = alloc.QuantityPicked,
+                        TransactionType = TransactionType.StockIn,
+                        ReferenceType = ReferenceType.Order,
+                        ReferenceId = order.OrderId,
+                        Remarks = $"Received from HQ order #{order.OrderId}.",
+                        Timestamp = now
+                    });
+
+                    if (!reqItem.IsBranchChecked)
+                    {
+                        targetBatch.CurrentQuantity -= alloc.QuantityPicked;
+
+                        _context.InventoryTransactions.Add(new InventoryTransaction
+                        {
+                            TenantId = tenantId,
+                            Batch = targetBatch,
+                            UserId = userId,
+                            QuantityChange = -alloc.QuantityPicked,
+                            TransactionType = TransactionType.Adjustment,
+                            ReferenceType = ReferenceType.Order,
+                            ReferenceId = order.OrderId,
+                            Remarks = "Item not checked upon arrival, marked as lost in transit.",
+                            Timestamp = now
+                        });
+                    }
+                }
+            }
         }
 
         order.Status = OrderStatus.Completed;
         order.CompletedAt = now;
         order.CompletedByUserId = _currentUser.UserId;
 
-        // Update the parent SupplyRequest to Fulfilled
         order.SupplyRequest.Status = SupplyRequestStatus.Fulfilled;
         order.SupplyRequest.UpdatedAt = now;
         

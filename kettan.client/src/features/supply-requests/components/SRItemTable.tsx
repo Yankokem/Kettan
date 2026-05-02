@@ -22,7 +22,7 @@ import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import type { SupplyRequestDetailItem } from './SupplyRequestDetail.types';
 import { type PickingSuggestion } from '../../branch-operations/api';
 
-export type SRTableMode = 'readonly' | 'picking' | 'packing' | 'branch-check';
+export type SRTableMode = 'readonly' | 'picking' | 'packing' | 'branch-check' | 'readonly-packed';
 
 interface SRItemTableProps {
   items: SupplyRequestDetailItem[];
@@ -104,7 +104,7 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
       if (!a.isRejectedDuringPicking && b.isRejectedDuringPicking) return -1;
       return 0;
     });
-  } else if (mode === 'branch-check') {
+  } else if (mode === 'branch-check' || mode === 'readonly-packed') {
     // Hide rejected items completely
     displayItems = displayItems.filter((i) => !i.isRejectedDuringPicking);
   }
@@ -112,8 +112,8 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
   // Define columns
   const columns: ColumnDef<SupplyRequestDetailItem>[] = [];
 
-  // Checkbox column
-  if (mode !== 'readonly') {
+  // Checkbox column (not for readonly or readonly-packed)
+  if (mode !== 'readonly' && mode !== 'readonly-packed') {
     columns.push({
       key: 'checkbox',
       label: '',
@@ -286,7 +286,7 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
       width: 80,
       align: 'right',
     });
-  } else if (mode === 'packing' || mode === 'branch-check') {
+  } else if (mode === 'packing' || mode === 'branch-check' || mode === 'readonly-packed') {
      columns.push({
       key: 'sendQtyStatic',
       label: 'Send Qty',

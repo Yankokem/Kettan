@@ -8,6 +8,11 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRounded';
 import { useNavigate } from '@tanstack/react-router';
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
+import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
+import Tooltip from '@mui/material/Tooltip';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { Button } from '../../components/UI/Button';
@@ -18,7 +23,11 @@ import { StatCard } from '../../components/UI/StatCard';
 import { useAuthStore } from '../../store/useAuthStore';
 import { fetchSupplyRequests, type SupplyRequest } from '../branch-operations/api';
 
+type DatasetMode = 'active' | 'history';
 type SortOption = 'newest' | 'oldest' | 'branch-asc' | 'branch-desc';
+
+const ACTIVE_STATUSES = ['Draft', 'AutoDrafted', 'PendingApproval', 'Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Packing', 'Allocated', 'Dispatched', 'InTransit', 'InFulfillment', 'Arrived'];
+const HISTORY_STATUSES = ['Completed', 'Delivered', 'Rejected', 'Cancelled', 'Returned', 'Fulfilled'];
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
@@ -90,6 +99,7 @@ export function SupplyRequestsPage() {
   const canCreateRequests = isBranch; // HQ shouldn't usually "request" from themselves via this UI
 
   const [rows, setRows] = useState<SupplyRequest[]>([]);
+  const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -124,6 +134,11 @@ export function SupplyRequestsPage() {
     const query = search.trim().toLowerCase();
 
     return safeRows.filter((row) => {
+      // 1. Filter by dataset mode (Active vs History)
+      const isHistorical = HISTORY_STATUSES.includes(row.status);
+      if (datasetMode === 'active' && isHistorical) return false;
+      if (datasetMode === 'history' && !isHistorical) return false;
+
       const occurredDate = new Date(row.updatedAt);
       const fromDate = new Date(`${startDate}T00:00:00`);
       const toDate = new Date(`${endDate}T23:59:59`);
@@ -139,12 +154,15 @@ export function SupplyRequestsPage() {
         requestedBy.includes(query) ||
         status.includes(query);
 
-      const matchesStatus = !statusFilter || row.status === statusFilter;
+      const matchesStatus = !statusFilter || 
+        row.status === statusFilter || 
+        (statusFilter === 'Completed' && row.status === 'Fulfilled') ||
+        (statusFilter === 'Fulfilled' && row.status === 'Completed');
       const matchesDateRange = occurredDate >= fromDate && occurredDate <= toDate;
 
       return matchesQuery && matchesStatus && matchesDateRange;
     });
-  }, [endDate, safeRows, search, startDate, statusFilter]);
+  }, [endDate, safeRows, search, startDate, statusFilter, datasetMode]);
 
   const sortedRows = useMemo(() => {
     const copy = [...filteredRows];
@@ -370,7 +388,8 @@ export function SupplyRequestsPage() {
           value={statusFilter}
           onChange={setStatusFilter}
           minWidth={170}
-          options={[
+          options={datasetMode === 'active' ? [
+            { value: '', label: 'All Statuses' },
             { value: 'Draft', label: 'Draft' },
             { value: 'AutoDrafted', label: 'Auto-Drafted' },
             { value: 'PendingApproval', label: 'Awaiting HQ' },
@@ -379,19 +398,59 @@ export function SupplyRequestsPage() {
             { value: 'Packing', label: 'Packing' },
             { value: 'Dispatched', label: 'In Transit' },
             { value: 'Arrived', label: 'Arrived' },
+          ] : [
+            { value: '', label: 'All Statuses' },
             { value: 'Completed', label: 'Completed' },
             { value: 'Rejected', label: 'Rejected' },
+            { value: 'Cancelled', label: 'Cancelled' },
+            { value: 'Returned', label: 'Returned' },
           ]}
         />
 
-        <Button
-          startIcon={<AddShoppingCartRoundedIcon />}
-          sx={{ ml: { xs: 0, lg: 'auto' }, whiteSpace: 'nowrap' }}
-          onClick={() => navigate({ to: '/supply-requests/new' })}
-          disabled={!canCreateRequests}
-        >
-          Request Supply
-        </Button>
+        <Box sx={{ ml: { xs: 0, lg: 'auto' }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Tooltip title={datasetMode === 'active' ? "Active Requests" : "History"}>
+            <ToggleButtonGroup
+              value={datasetMode}
+              exclusive
+              onChange={(_event, value: DatasetMode | null) => {
+                if (value) {
+                  setDatasetMode(value);
+                  setStatusFilter('');
+                }
+              }}
+              size="small"
+              sx={{
+                height: 40,
+                borderRadius: 2,
+                '& .MuiToggleButton-root': {
+                  px: 1.4,
+                  color: '#6B4C2A',
+                  borderColor: 'rgba(107, 76, 42, 0.3)',
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(107, 76, 42, 0.12)',
+                    color: '#4A3424',
+                  },
+                },
+              }}
+            >
+              <ToggleButton value="active" aria-label="Active">
+                <ListAltRoundedIcon sx={{ fontSize: 16 }} />
+              </ToggleButton>
+              <ToggleButton value="history" aria-label="History">
+                <HistoryRoundedIcon sx={{ fontSize: 16 }} />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Tooltip>
+
+          <Button
+            startIcon={<AddShoppingCartRoundedIcon />}
+            sx={{ whiteSpace: 'nowrap' }}
+            onClick={() => navigate({ to: '/supply-requests/new' })}
+            disabled={!canCreateRequests}
+          >
+            Request Supply
+          </Button>
+        </Box>
       </Box>
 
       {error ? (

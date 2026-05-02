@@ -21,7 +21,7 @@ export function SupplyRequestStatusTimeline({ entries }: SupplyRequestStatusTime
 
       <Box sx={{ p: 2.5 }}>
         {entries.map((entry, index) => {
-          const statusColor = SUPPLY_REQUEST_STATUS_COLORS[entry.status];
+          const statusColor = SUPPLY_REQUEST_STATUS_COLORS[entry.status] || { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };
           const isLast = index === entries.length - 1;
 
           return (

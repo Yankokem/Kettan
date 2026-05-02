@@ -13,6 +13,7 @@ export const SUPPLY_REQUEST_STATUS_COLORS: Record<SupplyRequestLifecycleStatus, 
   Packed: { color: '#0891B2', bg: 'rgba(8,145,178,0.12)' },
   Dispatched: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
   InTransit: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
+  InFulfillment: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
   Delivered: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
   Arrived: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
   Completed: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
@@ -28,6 +29,7 @@ export function getSupplyRequestStatusLabel(status: SupplyRequestLifecycleStatus
     PendingApproval: 'Pending Approval',
     PartiallyApproved: 'Partially Approved',
     InTransit: 'In Transit',
+    InFulfillment: 'In Fulfillment',
   };
 
   return labels[status] || status;

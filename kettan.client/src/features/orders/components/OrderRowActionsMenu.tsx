@@ -17,6 +17,9 @@ export type OrderActionStatus =
   | 'Packed'
   | 'Dispatched'
   | 'InTransit'
+  | 'InFulfillment'
+  | 'Arrived'
+  | 'Completed'
   | 'Delivered'
   | 'Rejected'
   | 'Returned';

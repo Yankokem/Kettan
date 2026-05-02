@@ -144,8 +144,8 @@ export function SupplyRequestDetailHeader({
           </Button>
         )}
 
-        {/* Complete Transaction button for branch users when status is Arrived and all items checked */}
-        {status === 'Arrived' && isBranch && allItemsChecked && (
+        {/* Complete Transaction button for branch users when status is Arrived */}
+        {status === 'Arrived' && isBranch && (
           <Button startIcon={<CheckCircleRoundedIcon />} onClick={onCompleteTransaction} loading={isSubmitting} disabled={isSubmitting}>
             Complete Transaction
           </Button>
