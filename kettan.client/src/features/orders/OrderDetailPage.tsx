@@ -3,10 +3,8 @@ import { useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
 import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
 import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 
 import { useAuthStore } from '../../store/useAuthStore';
 

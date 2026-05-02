@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -9,10 +9,6 @@ import {
   Box, 
   MenuItem, 
   CircularProgress,
-  IconButton,
-  Tooltip,
-  Paper,
-  Divider,
   alpha,
   useTheme
 } from '@mui/material';
@@ -20,9 +16,7 @@ import {
   LocalShipping as TruckIcon, 
   DirectionsCar as VanIcon, 
   TwoWheeler as BikeIcon,
-  Refresh as RefreshIcon,
   LocalPostOffice as TrackingIcon,
-  Event as DateIcon,
   CheckCircleOutline as DispatchIcon
 } from '@mui/icons-material';
 import { listVehicles } from '../../hq-inventory/vehicleApi';

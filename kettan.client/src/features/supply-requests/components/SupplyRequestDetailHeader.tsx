@@ -30,7 +30,6 @@ export interface SupplyRequestDetailHeaderProps {
   onFileReturn?: () => void;
   onConfirmArrival?: () => void;
   onCompleteTransaction?: () => void;
-  allItemsChecked?: boolean;
 }
 
 export function SupplyRequestDetailHeader({
@@ -47,7 +46,6 @@ export function SupplyRequestDetailHeader({
   onFileReturn,
   onConfirmArrival,
   onCompleteTransaction,
-  allItemsChecked,
 }: SupplyRequestDetailHeaderProps) {
   const navigate = useNavigate();
   const statusColor = SUPPLY_REQUEST_STATUS_COLORS[status] || { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };

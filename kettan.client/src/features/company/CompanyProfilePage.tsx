@@ -353,6 +353,20 @@ export function CompanyProfilePage() {
               />
             </Box>
           ) : null}
+
+          {saveError ? (
+            <Box sx={{ mt: 2.2 }}>
+              <Chip
+                label={saveError}
+                sx={{
+                  borderRadius: 999,
+                  bgcolor: 'error.light',
+                  color: 'error.dark',
+                  fontWeight: 700,
+                }}
+              />
+            </Box>
+          ) : null}
         </Box>
       </Paper>
 
@@ -426,6 +440,12 @@ export function CompanyProfilePage() {
         onClose={handleCloseEditModal}
         onSave={handleSaveProfile}
       />
+
+      {isSaving && (
+        <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(255,255,255,0.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Typography variant="h6">Saving...</Typography>
+        </Box>
+      )}
     </Box>
   );
 }

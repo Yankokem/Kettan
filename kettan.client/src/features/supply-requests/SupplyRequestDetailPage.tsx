@@ -214,7 +214,6 @@ export function SupplyRequestDetailPage() {
         onFileReturn={handleFileReturn}
         onConfirmArrival={handleConfirmArrival}
         onCompleteTransaction={handleOpenSummaryModal}
-        allItemsChecked={localItems.filter(i => !i.isRejectedDuringPicking).some(i => i.isBranchChecked)}
       />
 
       {isInProgress && !isBranch && (

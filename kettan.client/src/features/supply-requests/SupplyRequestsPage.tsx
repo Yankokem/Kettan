@@ -26,7 +26,6 @@ import { fetchSupplyRequests, type SupplyRequest } from '../branch-operations/ap
 type DatasetMode = 'active' | 'history';
 type SortOption = 'newest' | 'oldest' | 'branch-asc' | 'branch-desc';
 
-const ACTIVE_STATUSES = ['Draft', 'AutoDrafted', 'PendingApproval', 'Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Packing', 'Allocated', 'Dispatched', 'InTransit', 'InFulfillment', 'Arrived'];
 const HISTORY_STATUSES = ['Completed', 'Delivered', 'Rejected', 'Cancelled', 'Returned', 'Fulfilled'];
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [

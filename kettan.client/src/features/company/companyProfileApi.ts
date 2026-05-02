@@ -195,7 +195,7 @@ function toCompanyProfile(tenant: TenantDto, activeBranches: number, activeStaff
     activeStaff,
     staffLimit: limits.staffLimit,
     contractRenewalDate: toRenewalDate(tenant),
-    logoUrl: tenant.logoUrl,
+    logoUrl: tenant.logoUrl ?? null,
   };
 }
 

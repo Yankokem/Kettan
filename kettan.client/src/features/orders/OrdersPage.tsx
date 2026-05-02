@@ -1,7 +1,6 @@
 import { Box, Grid, Typography, Chip } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useAuthStore } from '../../store/useAuthStore';
 
 import LocalMallRoundedIcon from '@mui/icons-material/LocalMallRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
@@ -203,7 +202,6 @@ function getColumns(
 
 export function OrdersPage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
 
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());

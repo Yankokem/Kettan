@@ -143,9 +143,7 @@ export function SettingsPage() {
                     </span>
 
                     {active ? (
-                      <motion.div
-                        layoutId="settings-tab-indicator"
-                        transition={{ type: 'spring', stiffness: 460, damping: 38 }}
+                      <div
                         style={{
                           position: 'absolute',
                           top: 10,
