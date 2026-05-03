@@ -21,6 +21,7 @@ import { SupplyRequestDetailHeader } from './components/SupplyRequestDetailHeade
 import { SupplyRequestDetailsPanel } from './components/SupplyRequestDetailsPanel';
 import SRItemTable, { type SRTableMode } from './components/SRItemTable';
 import { SupplyRequestStatusTimeline } from './components/SupplyRequestStatusTimeline';
+import { OrderMessagesModal } from '../orders/components/OrderMessagesModal';
 import type { SupplyRequestDetailViewModel, SupplyRequestDetailItem } from './components/SupplyRequestDetail.types';
 
 function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewModel {
@@ -83,6 +84,7 @@ export function SupplyRequestDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!requestId) return;
@@ -214,6 +216,8 @@ export function SupplyRequestDetailPage() {
         onFileReturn={handleFileReturn}
         onConfirmArrival={handleConfirmArrival}
         onCompleteTransaction={handleOpenSummaryModal}
+        onMessagesClick={() => setChatOpen(true)}
+        hasLinkedOrder={!!request.linkedOrderId}
       />
 
       {isInProgress && !isBranch && (
@@ -330,6 +334,13 @@ export function SupplyRequestDetailPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Messages Modal */}
+      <OrderMessagesModal 
+        open={chatOpen} 
+        onClose={() => setChatOpen(false)} 
+        orderId={request.linkedOrderId ? Number(request.linkedOrderId) : null} 
+      />
     </Box>
   );
 }

@@ -1042,6 +1042,135 @@ public class OrderWorkflowService : IOrderWorkflowService
         return await GetOrderDetailAsync(orderId);
     }
 
+    public async Task<OrderDetailDto?> CancelOrderAsync(int orderId, CancelOrderDto dto)
+    {
+        if (!IsHqRole())
+            throw new UnauthorizedAccessException("Only HQ users can cancel orders.");
+
+        var order = await _context.Orders
+            .Include(o => o.SupplyRequest)
+            .Include(o => o.Allocations)
+                .ThenInclude(a => a.Batch)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+        if (order == null) return null;
+
+        var cancellableStatuses = new[] { OrderStatus.Processing, OrderStatus.Picking, OrderStatus.Packing, OrderStatus.Packed };
+        if (!cancellableStatuses.Contains(order.Status))
+        {
+            throw new InvalidOperationException($"Order cannot be cancelled in {order.Status} status.");
+        }
+
+        var now = DateTime.UtcNow;
+
+        // Revert inventory allocations
+        if (order.Allocations.Any())
+        {
+            var tenantId = order.TenantId;
+            var userId = _currentUser.UserId!.Value;
+
+            foreach (var alloc in order.Allocations)
+            {
+                if (alloc.Batch != null)
+                {
+                    alloc.Batch.CurrentQuantity += alloc.QuantityPicked;
+
+                    _context.InventoryTransactions.Add(new InventoryTransaction
+                    {
+                        TenantId = tenantId,
+                        Batch = alloc.Batch,
+                        UserId = userId,
+                        QuantityChange = alloc.QuantityPicked,
+                        TransactionType = TransactionType.Adjustment,
+                        ReferenceType = ReferenceType.Order,
+                        ReferenceId = order.OrderId,
+                        Remarks = $"Order #{order.OrderId} cancelled. Restoring stock.",
+                        Timestamp = now
+                    });
+                }
+            }
+        }
+
+        order.Status = OrderStatus.Cancelled;
+        
+        if (order.SupplyRequest != null)
+        {
+            order.SupplyRequest.Status = SupplyRequestStatus.Cancelled;
+            order.SupplyRequest.UpdatedAt = now;
+            var reasonSuffix = string.IsNullOrWhiteSpace(dto.Reason) ? "" : $"\nReason: {dto.Reason}";
+            order.SupplyRequest.Notes = (order.SupplyRequest.Notes + $"\nCancelled by HQ.{reasonSuffix}").Trim();
+        }
+
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = order.TenantId,
+            OrderId = order.OrderId,
+            Status = OrderStatus.Cancelled,
+            ChangedBy_UserId = _currentUser.UserId,
+            Remarks = string.IsNullOrWhiteSpace(dto.Reason) ? "Order cancelled by HQ." : $"Cancelled: {dto.Reason}",
+            Timestamp = now
+        });
+
+        await _context.SaveChangesAsync();
+        return await GetOrderDetailAsync(orderId);
+    }
+
+    public async Task<List<OrderMessageDto>> GetMessagesAsync(int orderId)
+    {
+        var messages = await _context.OrderMessages
+            .Include(m => m.SenderUser)
+            .Where(m => m.OrderId == orderId)
+            .OrderBy(m => m.SentAt)
+            .ToListAsync();
+
+        return messages.Select(m => new OrderMessageDto
+        {
+            MessageId = m.MessageId,
+            OrderId = m.OrderId,
+            SenderUserId = m.SenderUserId,
+            SenderName = m.SenderUser != null ? $"{m.SenderUser.FirstName} {m.SenderUser.LastName}".Trim() : string.Empty,
+            SenderRole = m.SenderUser?.Role.ToString() ?? string.Empty,
+            Content = m.Content,
+            SentAt = m.SentAt
+        }).ToList();
+    }
+
+    public async Task<OrderMessageDto?> SendMessageAsync(int orderId, SendMessageDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Content))
+            throw new InvalidOperationException("Message content cannot be empty.");
+
+        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
+        if (order == null) return null;
+
+        var message = new OrderMessage
+        {
+            TenantId = order.TenantId,
+            OrderId = orderId,
+            SenderUserId = _currentUser.UserId!.Value,
+            Content = dto.Content.Trim(),
+            SentAt = DateTime.UtcNow
+        };
+
+        _context.OrderMessages.Add(message);
+        await _context.SaveChangesAsync();
+
+        var sentMessage = await _context.OrderMessages
+            .Include(m => m.SenderUser)
+            .FirstOrDefaultAsync(m => m.MessageId == message.MessageId);
+
+        return new OrderMessageDto
+        {
+            MessageId = sentMessage!.MessageId,
+            OrderId = sentMessage.OrderId,
+            SenderUserId = sentMessage.SenderUserId,
+            SenderName = sentMessage.SenderUser != null ? $"{sentMessage.SenderUser.FirstName} {sentMessage.SenderUser.LastName}".Trim() : string.Empty,
+            SenderRole = sentMessage.SenderUser?.Role.ToString() ?? string.Empty,
+            Content = sentMessage.Content,
+            SentAt = sentMessage.SentAt
+        };
+    }
+
     private async Task ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items)
     {
         var rows = items.ToList();

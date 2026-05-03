@@ -56,3 +56,28 @@ public class BranchCheckSubmitDto
 {
     public List<BranchCheckItemDto> Items { get; set; } = [];
 }
+
+// ── Cancel Order ──
+
+public class CancelOrderDto
+{
+    public string? Reason { get; set; }
+}
+
+// ── Order Messaging ──
+
+public class OrderMessageDto
+{
+    public int MessageId { get; set; }
+    public int OrderId { get; set; }
+    public int SenderUserId { get; set; }
+    public string SenderName { get; set; } = string.Empty;
+    public string SenderRole { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public DateTime SentAt { get; set; }
+}
+
+public class SendMessageDto
+{
+    public string Content { get; set; } = string.Empty;
+}

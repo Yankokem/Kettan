@@ -18,4 +18,7 @@ public interface IOrderWorkflowService
     Task<OrderDetailDto?> SubmitDispatchAsync(int orderId, DispatchOrderDto dto);
     Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId);
     Task<OrderDetailDto?> CompleteTransactionAsync(int orderId, BranchCheckSubmitDto dto);
+    Task<OrderDetailDto?> CancelOrderAsync(int orderId, CancelOrderDto dto);
+    Task<List<OrderMessageDto>> GetMessagesAsync(int orderId);
+    Task<OrderMessageDto?> SendMessageAsync(int orderId, SendMessageDto dto);
 }

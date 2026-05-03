@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography, Divider } from '@mui/material';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
+import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
+import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FormTextField } from '../../components/Form/FormTextField';
@@ -473,7 +476,7 @@ export default function InventoryTransactionPage() {
       </Box>
 
       {(loadError || saveError) && (
-        <Typography sx={{ fontSize: 13, color: 'error.main', mb: 2 }}>
+        <Typography sx={{ fontSize: 13, color: 'error.main', mb: 2, p: 1.5, bgcolor: 'error.lighter', borderRadius: 2 }}>
           {saveError || loadError}
         </Typography>
       )}
@@ -487,71 +490,86 @@ export default function InventoryTransactionPage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
-            p: 3.5,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 0,
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
           }}
         >
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
-            Transaction Details
-          </Typography>
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <FormDropdown
-              label="Transaction Type"
-              value={transactionType}
-              onChange={(event) => handleTypeChange(String(event.target.value) as InventoryTransactionKind)}
-              options={TRANSACTION_TYPE_OPTIONS}
-              fullWidth
-            />
-
-            {transactionType === 'Stock-In' && (
-              <FormTextField
-                label="Reference / Invoice Number"
-                value={referenceNumber}
-                placeholder="INV-2026-001"
-                onChange={(event) => setReferenceNumber(event.target.value)}
-              />
-            )}
-
-            <FormTextField
-              label={transactionType === 'Stock-In' ? 'Remarks (Optional)' : 'Remarks / Reason'}
-              value={remarks}
-              onChange={(event) => setRemarks(event.target.value)}
-              multiline
-              rows={4}
-              placeholder="Add context for this transaction"
-            />
+          {/* Transaction Details Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <ReceiptLongRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Transaction Details</Typography>
           </Box>
 
-          <Box
-            sx={{
-              mt: 3,
-              p: 2.5,
-              borderRadius: 3,
-              bgcolor: 'background.default',
-              border: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.primary', mb: 1.75 }}>
-              Transaction Snapshot
-            </Typography>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 1.25, columnGap: 1.5 }}>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Lines Added</Typography>
-              <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: 'right' }}>{items.length}</Typography>
-
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Total Quantity</Typography>
-              <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: 'right' }}>{totalQuantity}</Typography>
-
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Estimated Value</Typography>
-              <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: 'right' }}>
-                ₱{estimatedValue.toFixed(2)}
-              </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mb: 3 }}>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                <InventoryRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Transaction Type
+                </Typography>
+              </Box>
+              <FormDropdown
+                value={transactionType}
+                onChange={(event) => handleTypeChange(String(event.target.value) as InventoryTransactionKind)}
+                options={TRANSACTION_TYPE_OPTIONS}
+                fullWidth
+              />
             </Box>
+
+            {transactionType === 'Stock-In' && (
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <ReceiptLongRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Reference / Invoice Number
+                  </Typography>
+                </Box>
+                <FormTextField
+                  value={referenceNumber}
+                  placeholder="INV-2026-001"
+                  onChange={(event) => setReferenceNumber(event.target.value)}
+                  fullWidth
+                />
+              </Box>
+            )}
+
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                <DescriptionRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {transactionType === 'Stock-In' ? 'Remarks (Optional)' : 'Remarks / Reason'}
+                </Typography>
+              </Box>
+              <FormTextField
+                value={remarks}
+                onChange={(event) => setRemarks(event.target.value)}
+                multiline
+                rows={4}
+                placeholder="Add context for this transaction"
+                fullWidth
+              />
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Transaction Snapshot Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <AssessmentRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Transaction Snapshot</Typography>
+          </Box>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', rowGap: 1.5, columnGap: 2 }}>
+            <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Lines Added</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{items.length}</Typography>
+
+            <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Total Quantity</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{totalQuantity}</Typography>
+
+            <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Estimated Value</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>
+              ₱{estimatedValue.toFixed(2)}
+            </Typography>
           </Box>
         </Paper>
 
@@ -562,8 +580,8 @@ export default function InventoryTransactionPage() {
             flex: 1,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
-            p: 3.5,
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
             display: 'flex',
             flexDirection: 'column',
             gap: 3,

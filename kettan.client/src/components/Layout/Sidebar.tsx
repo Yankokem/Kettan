@@ -20,7 +20,6 @@ import PeopleRoundedIcon            from '@mui/icons-material/PeopleRounded';
 import AssignmentReturnRoundedIcon  from '@mui/icons-material/AssignmentReturnRounded';
 import CategoryRoundedIcon          from '@mui/icons-material/CategoryRounded';
 import BarChartRoundedIcon          from '@mui/icons-material/BarChartRounded';
-import ManageAccountsRoundedIcon    from '@mui/icons-material/ManageAccountsRounded';
 import BadgeRoundedIcon             from '@mui/icons-material/BadgeRounded';
 import ExpandMoreRoundedIcon        from '@mui/icons-material/ExpandMoreRounded';
 import ExpandLessRoundedIcon        from '@mui/icons-material/ExpandLessRounded';
@@ -64,7 +63,6 @@ const MAIN_NAV: NavItem[] = [
   { text: 'Menu & Recipes',     icon: <LocalCafeRoundedIcon />,        path: '/menu', module: 'menu' },
   { text: 'Consumption',        icon: <ScaleRoundedIcon />,            path: '/consumption', module: 'consumption' },
   { text: 'Staff Directory',    icon: <BadgeRoundedIcon />,            path: '/staff', module: 'staff' },
-  { text: 'Settings',           icon: <ManageAccountsRoundedIcon />,   path: '/settings', module: 'settings' },
   { text: 'Finance & Reports',  icon: <BarChartRoundedIcon />,         path: '/reports', module: 'reports' },
 ];
 

@@ -9,7 +9,7 @@ export interface FormTextFieldProps extends Omit<TextFieldProps, 'variant'> {
 export function FormTextField({ label, ...props }: FormTextFieldProps) {
   return (
     <Box>
-      <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mb: 1, ml: 0.5 }}>
+      <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary', mb: 1, ml: 0.5 }}>
         {label}
       </Typography>
       <TextField fullWidth {...props} />

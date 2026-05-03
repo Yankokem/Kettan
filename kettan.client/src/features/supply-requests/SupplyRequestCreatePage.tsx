@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Divider, Grid, Paper, Typography } from '@mui/material';
 import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import TagRoundedIcon from '@mui/icons-material/TagRounded';
+import PriorityHighRoundedIcon from '@mui/icons-material/PriorityHighRounded';
+import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
+import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import type { AxiosError } from 'axios';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -11,7 +16,7 @@ import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { Dropdown } from '../../components/UI/Dropdown';
 import { TextField } from '../../components/UI/TextField';
 import { useAuthStore } from '../../store/useAuthStore';
-import { createSupplyRequest, submitSupplyRequest } from '../branch-operations/api';
+import { createSupplyRequest, submitSupplyRequest, fetchSupplyRequests } from '../branch-operations/api';
 import { InventorySelectionModal } from '../orders/components/InventorySelectionModal';
 import type { InventoryItem } from '../orders/components/InventoryItemCard';
 import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
@@ -41,11 +46,10 @@ export function SupplyRequestCreatePage() {
   const canAccessPage = role === 'BranchManager' || role === 'BranchOwner';
   const canCreateRequests = role === 'BranchManager' || role === 'BranchOwner';
 
+  const [nextRequestId, setNextRequestId] = useState<number | null>(null);
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [requestLines, setRequestLines] = useState<RequestLineItem[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [referenceNumber, setReferenceNumber] = useState('');
-  const [requestType, setRequestType] = useState('manual');
   const [priority, setPriority] = useState('normal');
   const [dispatchDate, setDispatchDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -72,15 +76,29 @@ export function SupplyRequestCreatePage() {
       }
     };
 
+    const loadNextRequestId = async () => {
+      try {
+        const requests = await fetchSupplyRequests();
+        if (requests.length > 0) {
+          const maxId = Math.max(...requests.map(r => r.requestId));
+          setNextRequestId(maxId + 1);
+        } else {
+          setNextRequestId(1);
+        }
+      } catch {
+        // If we can't fetch, just don't show the ID
+        setNextRequestId(null);
+      }
+    };
+
     void loadInventory();
+    void loadNextRequestId();
   }, []);
 
   const resetForm = () => {
     setRequestLines([]);
-    setReferenceNumber('');
     setDispatchDate('');
     setNotes('');
-    setRequestType('manual');
     setPriority('normal');
     setError(null);
   };
@@ -106,8 +124,7 @@ export function SupplyRequestCreatePage() {
 
       const created = await createSupplyRequest({
         branchId: user?.branchId ?? undefined,
-        referenceNumber: referenceNumber.trim() || undefined,
-        requestType,
+        requestType: 'manual',
         priority,
         dispatchWindow: 'scheduled',
         dispatchDate: dispatchDate || undefined,
@@ -253,72 +270,126 @@ export function SupplyRequestCreatePage() {
         <Paper
           elevation={0}
           sx={{
-            width: { xs: '100%', md: '38%' },
+            width: { xs: '100%', md: '42%' },
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
             borderRadius: '14px',
-            p: 3.5,
+            p: { xs: 3, md: 4 },
             display: 'flex',
             flexDirection: 'column',
             gap: 0,
           }}
         >
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
-            Request Details
-          </Typography>
-
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gap: 1.25,
-              mb: 1.25,
-            }}
-          >
-            <TextField
-              label="Reference Number"
-              value={referenceNumber}
-              placeholder="e.g., SR-2026-001"
-              onChange={(event) => setReferenceNumber(event.target.value)}
-            />
-            <Dropdown
-              value={requestType}
-              onChange={(event) => setRequestType(String(event.target.value))}
-              options={[
-                { value: 'manual', label: 'Manual Request' },
-                { value: 'auto', label: 'Auto Triggered' },
-              ]}
-            />
-            <Dropdown
-              value={priority}
-              onChange={(event) => setPriority(String(event.target.value))}
-              options={[
-                { value: 'low', label: 'Low Priority' },
-                { value: 'normal', label: 'Normal Priority' },
-                { value: 'high', label: 'High Priority' },
-              ]}
-            />
-            <TextField
-              label="Dispatch Date"
-              type="date"
-              value={dispatchDate}
-              onChange={(event) => setDispatchDate(event.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
+          {/* Reference Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <TagRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Request Reference</Typography>
           </Box>
 
-          <TextField
-            label="Notes"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            multiline
-            rows={3}
-            sx={{ mt: 1.2 }}
-          />
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.45 }}>
+                  Request ID
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: nextRequestId ? 'rgba(201,168,76,0.08)' : 'rgba(107,76,42,0.05)',
+                    border: '1px solid',
+                    borderColor: nextRequestId ? 'rgba(201,168,76,0.2)' : 'rgba(107,76,42,0.15)',
+                  }}
+                >
+                  <TagRoundedIcon sx={{ fontSize: 16, color: nextRequestId ? '#6B4C2A' : 'text.secondary' }} />
+                  {nextRequestId ? (
+                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#6B4C2A' }}>
+                      SR-{nextRequestId.toString().padStart(5, '0')}
+                    </Typography>
+                  ) : (
+                    <Typography sx={{ fontSize: 12.5, fontStyle: 'italic', color: 'text.secondary' }}>
+                      Loading...
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Request Configuration */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <PriorityHighRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Request Configuration</Typography>
+          </Box>
+
+          <Grid container spacing={2.5}>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <PriorityHighRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Priority Level
+                  </Typography>
+                </Box>
+                <Dropdown
+                  value={priority}
+                  onChange={(event) => setPriority(String(event.target.value))}
+                  options={[
+                    { value: 'low', label: 'Low Priority' },
+                    { value: 'normal', label: 'Normal Priority' },
+                    { value: 'high', label: 'High Priority' },
+                  ]}
+                />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <CalendarTodayRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Preferred Delivery Date
+                  </Typography>
+                </Box>
+                <TextField
+                  type="date"
+                  value={dispatchDate}
+                  onChange={(event) => setDispatchDate(event.target.value)}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  placeholder="mm/dd/yyyy"
+                />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <NotesRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Additional Notes
+                  </Typography>
+                </Box>
+                <TextField
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  multiline
+                  rows={3}
+                  placeholder="Add any special instructions or notes..."
+                />
+              </Box>
+            </Grid>
+          </Grid>
 
           {error ? (
-            <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 1.2 }}>{error}</Typography>
+            <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 2, p: 1.5, bgcolor: 'error.lighter', borderRadius: 2 }}>
+              {error}
+            </Typography>
           ) : null}
         </Paper>
 
@@ -330,16 +401,17 @@ export function SupplyRequestCreatePage() {
             border: '1px solid',
             borderColor: 'divider',
             borderRadius: '14px',
-            p: 3.5,
+            p: { xs: 3, md: 4 },
             display: 'flex',
             flexDirection: 'column',
             gap: 3,
           }}
         >
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 2 }}>
-              Item Composer
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+              <InventoryRoundedIcon sx={{ fontSize: 18 }} />
+              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Item Composer</Typography>
+            </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
               <Button

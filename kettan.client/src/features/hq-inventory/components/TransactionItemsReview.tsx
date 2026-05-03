@@ -1,9 +1,10 @@
-import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
+import { Box, Chip, IconButton, Typography } from '@mui/material';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import PlaylistAddCheckRoundedIcon from '@mui/icons-material/PlaylistAddCheckRounded';
 import type { InventoryTransactionKind, TransactionLineItem } from './transactionModels';
 
 interface TransactionItemsReviewProps {
@@ -49,9 +50,10 @@ export function TransactionItemsReview({ items, transactionType, onEdit, onRemov
   }, 0);
 
   return (
-    <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3.5 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, mb: 2.5 }}>
-        <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'text.primary' }}>
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+        <PlaylistAddCheckRoundedIcon sx={{ fontSize: 18 }} />
+        <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
           Transaction Items ({items.length})
         </Typography>
         <Chip
@@ -65,6 +67,7 @@ export function TransactionItemsReview({ items, transactionType, onEdit, onRemov
             color: typeChip.color,
             bgcolor: typeChip.bg,
             '& .MuiChip-icon': { color: typeChip.color },
+            ml: 'auto',
           }}
         />
       </Box>
@@ -80,8 +83,8 @@ export function TransactionItemsReview({ items, transactionType, onEdit, onRemov
             color: 'text.secondary',
           }}
         >
-          <Typography sx={{ fontSize: 13.5, fontWeight: 600 }}>No items yet</Typography>
-          <Typography sx={{ fontSize: 12.5, mt: 0.5 }}>Use the form above to add transaction lines.</Typography>
+          <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: 'text.secondary' }}>No items yet</Typography>
+          <Typography sx={{ fontSize: 12.5, mt: 0.5, color: 'text.secondary' }}>Use the form above to add transaction lines.</Typography>
         </Box>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
@@ -166,10 +169,10 @@ export function TransactionItemsReview({ items, transactionType, onEdit, onRemov
 
       <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between' }}>
         <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Estimated total value</Typography>
-        <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>
+        <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#6B4C2A' }}>
           ₱{estimatedValue.toFixed(2)}
         </Typography>
       </Box>
-    </Paper>
+    </Box>
   );
 }

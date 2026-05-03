@@ -207,4 +207,42 @@ public class OrdersController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPost("{id:int}/workflow/cancel")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<OrderDetailDto>> CancelOrder(int id, [FromBody] CancelOrderDto dto)
+    {
+        try
+        {
+            var result = await _service.CancelOrderAsync(id, dto);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("{id:int}/messages")]
+    public async Task<ActionResult<IEnumerable<OrderMessageDto>>> GetMessages(int id)
+    {
+        var messages = await _service.GetMessagesAsync(id);
+        return Ok(messages);
+    }
+
+    [HttpPost("{id:int}/messages")]
+    public async Task<ActionResult<OrderMessageDto>> SendMessage(int id, [FromBody] SendMessageDto dto)
+    {
+        try
+        {
+            var result = await _service.SendMessageAsync(id, dto);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

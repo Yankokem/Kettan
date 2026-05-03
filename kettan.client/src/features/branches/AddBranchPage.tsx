@@ -4,6 +4,14 @@ import { api } from '../../utils/api';
 import { useNavigate } from '@tanstack/react-router';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
+import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
+import LocationCityRoundedIcon from '@mui/icons-material/LocationCityRounded';
+import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
+import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
+import ToggleOnRoundedIcon from '@mui/icons-material/ToggleOnRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
@@ -184,63 +192,70 @@ export function AddBranchPage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
-            p: 4,
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
           }}
         >
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
-              Basic Information
+          {/* Branch Picture Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <ImageRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Picture</Typography>
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1.5 }}>
+              Branch Image (Optional)
             </Typography>
+            <Box sx={{ maxWidth: 250 }}>
+              <ProfileImageUploader
+                imageFile={imageFile ?? undefined}
+                label="Upload Branch Picture"
+                subLabel="PNG or JPG up to 5MB"
+                onFileChange={(file) => setImageFile(file)}
+              />
+            </Box>
+          </Box>
 
-            <Box sx={{ mb: 3 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 700,
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  fontSize: 11,
-                  letterSpacing: '0.5px',
-                  display: 'block',
-                  mb: 1.5,
-                }}
-              >
-                <ImageRoundedIcon sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
-                Branch Picture
+          <Divider sx={{ my: 3 }} />
+
+          {/* Basic Information Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <BusinessRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Basic Information</Typography>
+          </Box>
+
+          <Box sx={{ mb: 2.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              <BusinessRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Branch Name
               </Typography>
-
-              <Box sx={{ maxWidth: 250 }}>
-                <ProfileImageUploader
-                  imageFile={imageFile ?? undefined}
-                  label="Upload Branch Picture"
-                  subLabel="PNG or JPG up to 5MB"
-                  onFileChange={(file) => setImageFile(file)}
-                />
-              </Box>
             </Box>
+            <FormTextField
+              placeholder="e.g. BGC Reserve"
+              value={formData.name}
+              onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
+              fullWidth
+            />
+          </Box>
 
-            <Box sx={{ mb: 2.5 }}>
-              <FormTextField
-                label="Branch Name"
-                placeholder="e.g. BGC Reserve"
-                value={formData.name}
-                onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
-                fullWidth
-              />
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              <ToggleOnRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Status
+              </Typography>
             </Box>
-
-            <Box>
-              <FormDropdown
-                label="Status"
-                value={formData.status}
-                options={STATUS_OPTIONS}
-                onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, status: event.target.value as BranchStatus }))
-                }
-                fullWidth
-              />
-            </Box>
-          </Paper>
+            <FormDropdown
+              value={formData.status}
+              options={STATUS_OPTIONS}
+              onChange={(event) =>
+                setFormData((prev) => ({ ...prev, status: event.target.value as BranchStatus }))
+              }
+              fullWidth
+            />
+          </Box>
+        </Paper>
 
         {/* Right Panel */}
         <Paper
@@ -249,128 +264,176 @@ export function AddBranchPage() {
             flex: 1,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
-            p: 4,
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
           }}
         >
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
-              Branch Details
-            </Typography>
-            <Typography variant="body2" sx={{ fontSize: 13, color: 'text.secondary', mb: 3 }}>
-              Set branch profile details, operating hours, and leadership assignments.
-            </Typography>
+          {/* Branch Details Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <LocationOnRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Details</Typography>
+          </Box>
 
-            <Box sx={{ mb: 2.5 }}>
-              <FormTextField
-                label="Address"
-                placeholder="e.g. 5th Avenue, Bonifacio Global City"
-                value={formData.address}
-                onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
-                multiline
-                rows={3}
-                fullWidth
-              />
-            </Box>
+          <Typography variant="body2" sx={{ fontSize: 13, color: 'text.secondary', mb: 3 }}>
+            Set branch profile details, operating hours, and leadership assignments.
+          </Typography>
 
-            <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <FormTextField
-                  label="City"
-                  placeholder="e.g. Taguig City"
-                  value={formData.city}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, city: event.target.value }))}
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <FormTextField
-                  label="Contact Number"
-                  placeholder="e.g. +63 917 123 4567"
-                  value={formData.contactNumber}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, contactNumber: event.target.value }))}
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
-
-            <Box sx={{ mb: 2.5 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mb: 1, ml: 0.5 }}>
-                Operating Hours
+          <Box sx={{ mb: 2.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              <LocationOnRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Address
               </Typography>
-              <Grid container spacing={2.5}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'text.secondary', mb: 0.75, ml: 0.5 }}>
-                    Open Time
-                  </Typography>
-                  <TimePicker
-                    value={formData.openTime}
-                    onChange={(event) => setFormData((prev) => ({ ...prev, openTime: event.target.value }))}
-                    size="small"
-                    fullWidth
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'text.secondary', mb: 0.75, ml: 0.5 }}>
-                    Close Time
-                  </Typography>
-                  <TimePicker
-                    value={formData.closeTime}
-                    onChange={(event) => setFormData((prev) => ({ ...prev, closeTime: event.target.value }))}
-                    size="small"
-                    fullWidth
-                  />
-                </Grid>
-              </Grid>
             </Box>
+            <FormTextField
+              placeholder="e.g. 5th Avenue, Bonifacio Global City"
+              value={formData.address}
+              onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
+              multiline
+              rows={3}
+              fullWidth
+            />
+          </Box>
 
-            <Box sx={{ mb: 2.5 }}>
-              <FormDropdown
-                label="Assigned Owner"
-                value={formData.ownerUserId}
-                options={ownerOptions}
-                onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, ownerUserId: String(event.target.value) }))
-                }
-                fullWidth
-              />
-            </Box>
-
-            <Box sx={{ mb: 3 }}>
-              <FormDropdown
-                label="Assigned Manager"
-                value={formData.managerUserId}
-                options={managerOptions}
-                onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, managerUserId: String(event.target.value) }))
-                }
-                fullWidth
-              />
-            </Box>
-
-            <Divider sx={{ my: 3 }} />
-
-            <Box>
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                <LocationCityRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  City
+                </Typography>
+              </Box>
               <FormTextField
-                label="Operations Notes (Optional)"
-                placeholder="Share setup reminders, handoff notes, or launch details for this branch..."
-                value={formData.notes || ''}
-                onChange={(event) => setFormData((prev) => ({ ...prev, notes: event.target.value }))}
-                multiline
-                rows={4}
+                placeholder="e.g. Taguig City"
+                value={formData.city}
+                onChange={(event) => setFormData((prev) => ({ ...prev, city: event.target.value }))}
                 fullWidth
               />
-            </Box>
-
-            <Box sx={{ pt: 3, mt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
-              <FormActions
-                cancelTo="/branches"
-                saveText={isSubmitting ? 'Registering...' : 'Register Branch'}
-                saveIcon={<BusinessRoundedIcon />}
-                onSave={() => { void handleSubmit(); }}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                <PhoneRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Contact Number
+                </Typography>
+              </Box>
+              <FormTextField
+                placeholder="e.g. +63 917 123 4567"
+                value={formData.contactNumber}
+                onChange={(event) => setFormData((prev) => ({ ...prev, contactNumber: event.target.value }))}
+                fullWidth
               />
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Operating Hours Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <AccessTimeRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Operating Hours</Typography>
+          </Box>
+
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                <AccessTimeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Open Time
+                </Typography>
+              </Box>
+              <TimePicker
+                value={formData.openTime}
+                onChange={(event) => setFormData((prev) => ({ ...prev, openTime: event.target.value }))}
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                <AccessTimeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Close Time
+                </Typography>
+              </Box>
+              <TimePicker
+                value={formData.closeTime}
+                onChange={(event) => setFormData((prev) => ({ ...prev, closeTime: event.target.value }))}
+                fullWidth
+              />
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Leadership Assignments Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <BadgeRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Leadership Assignments</Typography>
+          </Box>
+
+          <Box sx={{ mb: 2.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              <PersonRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Assigned Owner
+              </Typography>
             </Box>
-          </Paper>
-        </Box>
+            <FormDropdown
+              value={formData.ownerUserId}
+              options={ownerOptions}
+              onChange={(event) =>
+                setFormData((prev) => ({ ...prev, ownerUserId: String(event.target.value) }))
+              }
+              fullWidth
+            />
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              <BadgeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Assigned Manager
+              </Typography>
+            </Box>
+            <FormDropdown
+              value={formData.managerUserId}
+              options={managerOptions}
+              onChange={(event) =>
+                setFormData((prev) => ({ ...prev, managerUserId: String(event.target.value) }))
+              }
+              fullWidth
+            />
+          </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Operations Notes Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <NotesRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Operations Notes</Typography>
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <FormTextField
+              placeholder="Share setup reminders, handoff notes, or launch details for this branch..."
+              value={formData.notes || ''}
+              onChange={(event) => setFormData((prev) => ({ ...prev, notes: event.target.value }))}
+              multiline
+              rows={4}
+              fullWidth
+            />
+          </Box>
+
+          <Box sx={{ pt: 3, mt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+            <FormActions
+              cancelTo="/branches"
+              saveText={isSubmitting ? 'Registering...' : 'Register Branch'}
+              saveIcon={<BusinessRoundedIcon />}
+              onSave={() => { void handleSubmit(); }}
+            />
+          </Box>
+        </Paper>
+      </Box>
     </Box>
   );
 }
