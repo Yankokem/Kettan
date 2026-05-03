@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Box, Typography, Alert, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Divider } from '@mui/material';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import { 
   fetchSupplyRequestById, 
   submitSupplyRequest,
@@ -23,6 +24,9 @@ import SRItemTable, { type SRTableMode } from './components/SRItemTable';
 import { SupplyRequestStatusTimeline } from './components/SupplyRequestStatusTimeline';
 import { OrderMessagesModal } from '../orders/components/OrderMessagesModal';
 import type { SupplyRequestDetailViewModel, SupplyRequestDetailItem } from './components/SupplyRequestDetail.types';
+
+// Poll interval for real-time status updates (ms)
+const POLL_INTERVAL_MS = 10_000;
 
 function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewModel {
   const requestNumber = request.referenceNumber || `SR-${String(request.requestId).padStart(5, '0')}`;
@@ -49,7 +53,6 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
       approvedQty: item.quantityApproved != null ? Number(item.quantityApproved) : null,
       hqStock: item.hqStock ?? 0,
       availability: (item.hqStock ?? 0) > 0 ? 'Available' : 'Out of Stock',
-      
       isPicked: item.isPicked,
       sendQuantity: item.sendQuantity,
       isRejectedDuringPicking: item.isRejectedDuringPicking,
@@ -86,41 +89,62 @@ export function SupplyRequestDetailPage() {
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
 
-  const loadData = useCallback(async () => {
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const loadData = useCallback(async (silent = false) => {
     if (!requestId) return;
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const row = await fetchSupplyRequestById(Number(requestId));
       const vm = toDetailViewModel(row);
       setRequest(vm);
       setLocalItems(vm.items);
 
-      // If in picking stage, fetch suggestions
+      // Fetch picking suggestions when order is in picking stage
       if (vm.status === 'Picking' && vm.linkedOrderId) {
-        const sugs = await getPickingSuggestions(Number(vm.linkedOrderId));
-        setSuggestions(sugs);
+        try {
+          const sugs = await getPickingSuggestions(Number(vm.linkedOrderId));
+          setSuggestions(sugs);
+        } catch {
+          // non-critical
+        }
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to load details.');
+      if (!silent) {
+        setError(err.message || 'Failed to load details.');
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [requestId]);
 
   useEffect(() => {
-    void loadData();
+    void loadData(false);
   }, [loadData]);
 
-  // Actions
+  // Real-time polling
+  useEffect(() => {
+    pollTimerRef.current = setInterval(() => {
+      void loadData(true);
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
+  }, [loadData]);
+
+  // ── Actions ──
   const handleAction = async (action: () => Promise<any>) => {
     try {
       setActionLoading(true);
       setError(null);
       await action();
-      await loadData();
+      await loadData(false);
     } catch (err: any) {
-      setError(err.message || 'Action failed.');
+      setError(err.response?.data?.message || err.message || 'Action failed.');
     } finally {
       setActionLoading(false);
     }
@@ -155,16 +179,12 @@ export function SupplyRequestDetailPage() {
       }));
       await completeTransaction(Number(request.linkedOrderId), payload);
       setIsSummaryModalOpen(false);
-      await loadData();
+      await loadData(false);
     } catch (err: any) {
-      setError(err.message || 'Failed to complete transaction.');
+      setError(err.response?.data?.message || err.message || 'Failed to complete transaction.');
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const handleOpenSummaryModal = () => {
-    setIsSummaryModalOpen(true);
   };
 
   if (loading && !request) {
@@ -184,19 +204,27 @@ export function SupplyRequestDetailPage() {
   const showStepper = request.status !== 'Draft' && request.status !== 'AutoDrafted' && request.status !== 'Rejected';
   const isInProgress = ['Approved', 'Processing', 'Picking', 'Packed', 'InFulfillment'].includes(request.status);
   
-  // Determine table mode
   const isBranch = user?.role === 'BranchManager' || user?.role === 'BranchOwner';
-  
+
+  // ── Table mode ──
   let tableMode: SRTableMode = 'readonly';
   if (request.status === 'Arrived' && isBranch) {
-    // Branch users get the interactive checkboard when order has arrived
     tableMode = 'branch-check';
   } else if (['Packed', 'Dispatched', 'InFulfillment', 'Completed', 'Fulfilled', 'Arrived'].includes(request.status)) {
-    // Read-only packed view for everyone else
     tableMode = 'readonly-packed';
   }
 
+  // Items for the completion summary
   const checkedItems = localItems.filter(i => i.isBranchChecked);
+  const rejectedItems = localItems.filter(i => i.isRejectedDuringPicking);
+  const uncheckedNonRejected = localItems.filter(i => !i.isBranchChecked && !i.isRejectedDuringPicking);
+
+  // The messages button should only be shown when an order is linked.
+  // IMPORTANT: We pass the orderId to the modal, not the requestId.
+  // This avoids the 403 that happens when branch tries to open messages
+  // right after approval (before the order record is fully propagated) —
+  // the modal handles a null orderId gracefully by showing empty state.
+  const linkedOrderIdNum = request.linkedOrderId ? Number(request.linkedOrderId) : null;
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -215,7 +243,7 @@ export function SupplyRequestDetailPage() {
         onCancel={onCancel}
         onFileReturn={handleFileReturn}
         onConfirmArrival={handleConfirmArrival}
-        onCompleteTransaction={handleOpenSummaryModal}
+        onCompleteTransaction={() => setIsSummaryModalOpen(true)}
         onMessagesClick={() => setChatOpen(true)}
         hasLinkedOrder={!!request.linkedOrderId}
       />
@@ -231,7 +259,6 @@ export function SupplyRequestDetailPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            animation: 'fadeIn 0.5s ease-out'
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -260,32 +287,32 @@ export function SupplyRequestDetailPage() {
             <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="subtitle2" fontWeight={700}>Requested Items</Typography>
               {tableMode === 'branch-check' && (
-                 <Typography variant="caption" color="text.secondary">
-                    {localItems.filter(i => i.isBranchChecked).length} / {localItems.filter(i => !i.isRejectedDuringPicking).length} Checked
-                 </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {localItems.filter(i => i.isBranchChecked).length} / {localItems.filter(i => !i.isRejectedDuringPicking).length} Checked
+                </Typography>
               )}
             </Box>
             <SRItemTable 
               items={localItems} 
               mode={tableMode} 
               suggestions={suggestions}
-              onItemsChange={setLocalItems}
+              onItemsChange={tableMode === 'branch-check' ? setLocalItems : undefined}
             />
           </Box>
           <SupplyRequestStatusTimeline entries={request.timeline} />
         </Box>
       </Box>
 
-      {/* Completion Summary Modal */}
+      {/* ── Completion Summary Modal ── */}
       <Dialog open={isSummaryModalOpen} onClose={() => !actionLoading && setIsSummaryModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>Complete Transaction</DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Review the summary before completing this transaction. Unchecked items will be marked as not received.
+            Review the summary before completing this transaction.
           </Typography>
 
           <Typography variant="overline" sx={{ fontWeight: 600, color: 'text.secondary' }}>Request Details</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 4, mt: 1 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 3, mt: 1 }}>
             <Typography variant="body2" color="text.secondary">Request Number:</Typography>
             <Typography variant="body2" fontWeight={600} align="right">{request.requestNumber}</Typography>
 
@@ -293,23 +320,40 @@ export function SupplyRequestDetailPage() {
             <Typography variant="body2" fontWeight={600} align="right">{request.branchName}</Typography>
 
             <Typography variant="body2" color="text.secondary">Date Arrived:</Typography>
-            <Typography variant="body2" fontWeight={600} align="right">{request.arrivedAt ? new Date(request.arrivedAt).toLocaleString() : '-'}</Typography>
+            <Typography variant="body2" fontWeight={600} align="right">
+              {request.arrivedAt ? new Date(request.arrivedAt).toLocaleString() : '-'}
+            </Typography>
 
             <Typography variant="body2" color="text.secondary">Confirmed By:</Typography>
-            <Typography variant="body2" fontWeight={600} align="right">{request.arrivedConfirmedByName || '-'}</Typography>
+            <Typography variant="body2" fontWeight={600} align="right">
+              {request.arrivedConfirmedByName || '-'}
+            </Typography>
           </Box>
 
           <Divider sx={{ my: 2 }} />
 
-          <Typography variant="overline" sx={{ fontWeight: 600, color: 'text.secondary' }}>Items Received ({checkedItems.length})</Typography>
-          <Box sx={{ mt: 1 }}>
+          {/* Items Received */}
+          <Typography variant="overline" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+            Items Received ({checkedItems.length})
+          </Typography>
+          <Box sx={{ mt: 1, mb: 2 }}>
             {checkedItems.length === 0 ? (
               <Typography variant="body2" color="error.main" sx={{ fontStyle: 'italic', mt: 1 }}>
-                No items were checked. This entire shipment will be marked as lost.
+                No items were checked. This shipment will be marked as not received.
               </Typography>
             ) : (
               checkedItems.map(item => (
-                <Box key={item.id} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.75, borderBottom: '1px solid', borderColor: 'divider', '&:last-child': { borderBottom: 'none' } }}>
+                <Box
+                  key={item.id}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    py: 0.75,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    '&:last-child': { borderBottom: 'none' },
+                  }}
+                >
                   <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <CheckCircleRoundedIcon sx={{ fontSize: 16, color: 'success.main' }} />
                     {item.name} ({item.sku})
@@ -321,6 +365,81 @@ export function SupplyRequestDetailPage() {
               ))
             )}
           </Box>
+
+          {/* Items Not Checked (not received) */}
+          {uncheckedNonRejected.length > 0 && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="overline" sx={{ fontWeight: 600, color: 'warning.main' }}>
+                Not Checked — Marked Lost ({uncheckedNonRejected.length})
+              </Typography>
+              <Box sx={{ mt: 1, mb: 2 }}>
+                {uncheckedNonRejected.map(item => (
+                  <Box
+                    key={item.id}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      py: 0.75,
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      '&:last-child': { borderBottom: 'none' },
+                      opacity: 0.75,
+                    }}
+                  >
+                    <Typography variant="body2" color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {item.name} ({item.sku})
+                    </Typography>
+                    <Typography variant="body2" color="warning.main" fontWeight={600}>
+                      Qty: {item.sendQuantity ?? item.approvedQty ?? item.requestedQty}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </>
+          )}
+
+          {/* Items Rejected During Picking */}
+          {rejectedItems.length > 0 && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="overline" sx={{ fontWeight: 600, color: 'error.main' }}>
+                Rejected by HQ During Picking ({rejectedItems.length})
+              </Typography>
+              <Box sx={{ mt: 1 }}>
+                {rejectedItems.map(item => (
+                  <Box
+                    key={item.id}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      py: 0.75,
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      '&:last-child': { borderBottom: 'none' },
+                      opacity: 0.75,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }} color="error.main">
+                        <CancelRoundedIcon sx={{ fontSize: 16 }} />
+                        {item.name} ({item.sku})
+                      </Typography>
+                      {item.pickingRejectionReason && (
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 3 }}>
+                          Reason: {item.pickingRejectionReason}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                      Not sent
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </>
+          )}
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 1.5 }}>
           <Button variant="outlined" onClick={() => setIsSummaryModalOpen(false)} disabled={actionLoading}>
@@ -330,16 +449,20 @@ export function SupplyRequestDetailPage() {
             onClick={() => void handleCompleteTransaction()} 
             loading={actionLoading}
           >
-            Confirm & Complete
+            Confirm &amp; Complete
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Messages Modal */}
+      {/* ── Messages Modal ──
+          NOTE: We guard with linkedOrderIdNum. When a branch user opens this page
+          immediately after approval (before the order is fully propagated), linkedOrderId
+          may momentarily cause a 403 — passing null lets the modal show empty state
+          instead of throwing an error at the page level. */}
       <OrderMessagesModal 
         open={chatOpen} 
         onClose={() => setChatOpen(false)} 
-        orderId={request.linkedOrderId ? Number(request.linkedOrderId) : null} 
+        orderId={linkedOrderIdNum}
       />
     </Box>
   );

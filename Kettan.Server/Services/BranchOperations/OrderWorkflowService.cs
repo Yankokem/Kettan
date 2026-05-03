@@ -672,11 +672,37 @@ public class OrderWorkflowService : IOrderWorkflowService
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
+                    .ThenInclude(i => i.Item)
             .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
         if (order?.SupplyRequest == null) return null;
 
         var now = DateTime.UtcNow;
+
+        // ── Threshold / Stock Validation ──
+        // Ensure no item's send quantity exceeds available HQ stock.
+        // This is the authoritative server-side check (frontend also warns).
+        var stockErrors = new List<string>();
+        foreach (var item in dto.Items.Where(i => i.IsPicked && !i.IsRejected))
+        {
+            var reqItem = order.SupplyRequest.Items.FirstOrDefault(i => i.RequestItemId == item.RequestItemId);
+            if (reqItem == null) continue;
+
+            var sendQty = item.SendQuantity ?? reqItem.QuantityApproved ?? reqItem.QuantityRequested;
+            var hqStock = await _inventoryService.GetStockLevelAsync(reqItem.ItemId, branchId: null);
+
+            if (sendQty > hqStock)
+            {
+                stockErrors.Add(
+                    $"'{reqItem.Item?.Name ?? $"Item {reqItem.ItemId}"}': send qty {sendQty} exceeds HQ stock {hqStock}");
+            }
+        }
+
+        if (stockErrors.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Cannot confirm picking — insufficient HQ stock: {string.Join("; ", stockErrors)}.");
+        }
 
         foreach (var item in dto.Items)
         {
