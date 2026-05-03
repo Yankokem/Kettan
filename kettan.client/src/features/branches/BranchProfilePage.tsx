@@ -209,7 +209,7 @@ export function BranchProfilePage() {
           sx={{
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 4,
             maxWidth: 520,
             width: '100%',
@@ -321,7 +321,7 @@ export function BranchProfilePage() {
         loading={branchLoading}
       />
 
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
+      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
         <BranchProfileTabHeader
           tabs={BRANCH_PROFILE_TABS}
           activeTab={activeTab}

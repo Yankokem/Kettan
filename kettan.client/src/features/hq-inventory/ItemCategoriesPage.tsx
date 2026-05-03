@@ -9,7 +9,7 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 
-import { BackButton } from '../../components/UI/BackButton';
+import { PageHeader } from '../../components/UI/PageHeader';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
@@ -234,17 +234,11 @@ export function ItemCategoriesPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ mb: 3.5, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/hq-inventory" />
-        <Box>
-          <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            Item Category Management
-          </Typography>
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.3 }}>
-            Add or edit inventory categories on the left. Click cards on the right to modify them.
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader
+        title="Item Category Management"
+        description="Add or edit inventory categories on the left. Click cards on the right to modify them."
+        backTo="/hq-inventory"
+      />
 
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
         <Paper
@@ -254,7 +248,7 @@ export function ItemCategoriesPage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 3,
           }}
         >
@@ -333,44 +327,46 @@ export function ItemCategoriesPage() {
               flex: 1,
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               p: 3,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap', mb: 2.2 }}>
-              <SearchInput
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search item categories..."
-                sx={{ minWidth: 250, maxWidth: 340 }}
-              />
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.2, mb: 2.2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flex: 1 }}>
+                <SearchInput
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search item categories..."
+                  sx={{ maxWidth: 420, flex: 1 }}
+                />
 
-              <FilterDropdown
-                label="Sort"
-                icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-                value={sortFilter}
-                onChange={(value) => setSortFilter(value as SortFilter)}
-                minWidth={150}
-                options={[
-                  { value: 'order-asc', label: 'Order Low-High' },
-                  { value: 'order-desc', label: 'Order High-Low' },
-                  { value: 'name-asc', label: 'Name A-Z' },
-                  { value: 'name-desc', label: 'Name Z-A' },
-                ]}
-              />
+                <FilterDropdown
+                  label="Sort"
+                  icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+                  value={sortFilter}
+                  onChange={(value) => setSortFilter(value as SortFilter)}
+                  minWidth={150}
+                  options={[
+                    { value: 'order-asc', label: 'Order Low-High' },
+                    { value: 'order-desc', label: 'Order High-Low' },
+                    { value: 'name-asc', label: 'Name A-Z' },
+                    { value: 'name-desc', label: 'Name Z-A' },
+                  ]}
+                />
 
-              <FilterDropdown
-                label="Status"
-                icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-                value={statusFilter}
-                onChange={(value) => setStatusFilter(value as StatusFilter)}
-                minWidth={150}
-                options={[
-                  { value: 'all', label: 'All Statuses' },
-                  { value: 'active', label: 'Active' },
-                  { value: 'inactive', label: 'Inactive' },
-                ]}
-              />
+                <FilterDropdown
+                  label="Status"
+                  icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+                  value={statusFilter}
+                  onChange={(value) => setStatusFilter(value as StatusFilter)}
+                  minWidth={150}
+                  options={[
+                    { value: 'all', label: 'All Statuses' },
+                    { value: 'active', label: 'Active' },
+                    { value: 'inactive', label: 'Inactive' },
+                  ]}
+                />
+              </Box>
 
               <ViewToggle
                 value={viewMode}
@@ -396,6 +392,7 @@ export function ItemCategoriesPage() {
                     maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
                     overflowY: { xs: 'visible', lg: 'auto' },
                     pr: { xs: 0, lg: 0.8 },
+                    pt: 1, // Prevent clipping on hover
                   }}
                 >
                   <Grid container spacing={1.8} sx={{ overflow: 'visible' }}>

@@ -73,7 +73,7 @@ export function RegisterPage() {
           p: { xs: 3, sm: 5 },
           maxWidth: 500,
           width: "100%",
-          borderRadius: 4,
+          borderRadius: '14px',
           border: "1px solid",
           borderColor: "divider",
         }}

@@ -16,13 +16,17 @@ export function BackButton({ to }: BackButtonProps) {
         width: 40, 
         height: 40,
         border: '1px solid',
-        borderColor: 'divider',
-        color: 'text.secondary',
-        bgcolor: 'background.paper',
-        '&:hover': { bgcolor: 'action.hover' }
+        borderColor: 'rgba(201, 168, 77, 0.3)',
+        color: '#6B4C2A',
+        bgcolor: 'rgba(201, 168, 77, 0.12)',
+        '&:hover': { 
+          bgcolor: 'rgba(201, 168, 77, 0.2)',
+          borderColor: 'rgba(201, 168, 77, 0.45)',
+        },
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      <ArrowBackRoundedIcon fontSize="small" />
+      <ArrowBackRoundedIcon sx={{ fontSize: 18 }} />
     </IconButton>
   );
 }

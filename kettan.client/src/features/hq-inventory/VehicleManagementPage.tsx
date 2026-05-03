@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Grid, IconButton, Paper, Typography } from '@mui/material';
+import { Box, Chip, Grid, IconButton, Paper, Typography, Card } from '@mui/material';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
@@ -255,14 +255,14 @@ export function VehicleManagementPage() {
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
-        <Paper
+        <Card
           elevation={0}
           sx={{
-            width: { xs: '100%', lg: '38%' },
+            width: { xs: '100%', lg: 380 },
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 3,
           }}
         >
@@ -327,52 +327,54 @@ export function VehicleManagementPage() {
                 Reset
               </Button>
             </Box>
-          </Paper>
+          </Card>
 
-          <Paper
+          <Card
             elevation={0}
             sx={{
               flex: 1,
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               p: 3,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap', mb: 2.2 }}>
-              <SearchInput
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search plate, type..."
-                sx={{ minWidth: 250, maxWidth: 340 }}
-              />
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.2, mb: 2.2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flex: 1 }}>
+                <SearchInput
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search plate, type..."
+                  sx={{ maxWidth: 420, flex: 1 }}
+                />
 
-              <FilterDropdown
-                label="Sort"
-                icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-                value={sortFilter}
-                onChange={(value) => setSortFilter(value as SortFilter)}
-                minWidth={160}
-                options={[
-                  { value: 'plate-asc', label: 'Plate A-Z' },
-                  { value: 'plate-desc', label: 'Plate Z-A' },
-                  { value: 'type-asc', label: 'Type A-Z' },
-                  { value: 'type-desc', label: 'Type Z-A' },
-                ]}
-              />
+                <FilterDropdown
+                  label="Sort"
+                  icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+                  value={sortFilter}
+                  onChange={(value) => setSortFilter(value as SortFilter)}
+                  minWidth={160}
+                  options={[
+                    { value: 'plate-asc', label: 'Plate A-Z' },
+                    { value: 'plate-desc', label: 'Plate Z-A' },
+                    { value: 'type-asc', label: 'Type A-Z' },
+                    { value: 'type-desc', label: 'Type Z-A' },
+                  ]}
+                />
 
-              <FilterDropdown
-                label="Status"
-                icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-                value={statusFilter}
-                onChange={(value) => setStatusFilter(value as StatusFilter)}
-                minWidth={150}
-                options={[
-                  { value: 'all', label: 'All Statuses' },
-                  { value: 'active', label: 'Active' },
-                  { value: 'inactive', label: 'Inactive' },
-                ]}
-              />
+                <FilterDropdown
+                  label="Status"
+                  icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+                  value={statusFilter}
+                  onChange={(value) => setStatusFilter(value as StatusFilter)}
+                  minWidth={150}
+                  options={[
+                    { value: 'all', label: 'All Statuses' },
+                    { value: 'active', label: 'Active' },
+                    { value: 'inactive', label: 'Inactive' },
+                  ]}
+                />
+              </Box>
 
               <ViewToggle value={viewMode} options={VIEW_OPTIONS} onChange={(value) => setViewMode(value as VehicleViewMode)} />
             </Box>
@@ -391,6 +393,7 @@ export function VehicleManagementPage() {
                     maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
                     overflowY: { xs: 'visible', lg: 'auto' },
                     pr: { xs: 0, lg: 0.8 },
+                    pt: 1, // Prevent clipping on hover
                   }}
                 >
                   <Grid container spacing={1.8} sx={{ overflow: 'visible' }}>
@@ -418,7 +421,7 @@ export function VehicleManagementPage() {
                 />
               )}
             </DataStateWrapper>
-          </Paper>
+          </Card>
         </Box>
 
       <ConfirmDialog

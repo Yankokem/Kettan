@@ -64,7 +64,7 @@ function SummaryMeter({
       };
 
   return (
-    <Box sx={{ p: 1.75, borderRadius: 2.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+    <Box sx={{ p: 1.75, borderRadius: '14px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box sx={{ color: toneStyles.chipColor }}>{icon}</Box>
@@ -138,7 +138,7 @@ export function BranchInfoPage() {
           sx={{
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 4,
             maxWidth: 520,
             width: '100%',
@@ -164,7 +164,7 @@ export function BranchInfoPage() {
         sx={{
           border: '1px solid',
           borderColor: 'divider',
-          borderRadius: 4,
+          borderRadius: '14px',
           overflow: 'hidden',
           mb: 3,
         }}
@@ -225,7 +225,7 @@ export function BranchInfoPage() {
               sx={{
                 width: 132,
                 height: 132,
-                borderRadius: 4,
+                borderRadius: '14px',
                 bgcolor: '#FAF5EF',
                 border: '5px solid',
                 borderColor: 'background.paper',
@@ -312,7 +312,7 @@ export function BranchInfoPage() {
       {/* ── Main Content Grid ── */}
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 8 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: { xs: 2.5, sm: 3 } }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
               <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
               <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Information</Typography>
@@ -345,7 +345,7 @@ export function BranchInfoPage() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: { xs: 2.5, sm: 3 } }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
               <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
               <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Overview</Typography>

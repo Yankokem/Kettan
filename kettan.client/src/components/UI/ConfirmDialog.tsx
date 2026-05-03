@@ -28,7 +28,7 @@ export function ConfirmDialog({
       maxWidth="xs" 
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 3, border: '1px solid', borderColor: 'divider' },
+        sx: { borderRadius: '14px', border: '1px solid', borderColor: 'divider' },
         elevation: 0
       }}
     >

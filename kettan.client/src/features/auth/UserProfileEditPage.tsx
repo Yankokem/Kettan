@@ -237,7 +237,7 @@ export function UserProfileEditPage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 4,
           }}
         >
@@ -311,7 +311,7 @@ export function UserProfileEditPage() {
             flex: 1,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 4,
           }}
         >

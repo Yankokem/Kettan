@@ -178,7 +178,7 @@ export function SuperAdminDashboard() {
       {/* ── Charts Row ── */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, mb: 3.5 }}>
         {/* Plan Distribution Donut */}
-        <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, width: { xs: '100%', lg: 380 }, flexShrink: 0 }}>
+        <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', width: { xs: '100%', lg: 380 }, flexShrink: 0 }}>
           <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 1 }}>Plan Distribution</Typography>
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 2 }}>Subscribers per plan tier</Typography>
           {pieData.length > 0 ? (
@@ -219,7 +219,7 @@ export function SuperAdminDashboard() {
         </Card>
 
         {/* Revenue per Plan Breakdown */}
-        <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, flex: 1 }}>
+        <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', flex: 1 }}>
           <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 1 }}>Revenue by Plan</Typography>
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 3 }}>Monthly recurring revenue per subscription tier</Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Box, Paper, Typography, Divider } from '@mui/material';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded';
-import { BackButton } from '../../components/UI/BackButton';
+import { PageHeader } from '../../components/UI/PageHeader';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormActions } from '../../components/Form/FormActions';
@@ -459,19 +459,13 @@ export default function InventoryTransactionPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/hq-inventory" />
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            New Inventory Transaction
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-            {isLoadingCatalog
-              ? 'Fetching latest catalog data in background...'
-              : 'Record stock movement with a single, unified flow for existing and quick-created items.'}
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader
+        title="New Inventory Transaction"
+        description={isLoadingCatalog
+          ? 'Fetching latest catalog data in background...'
+          : 'Record stock movement with a single, unified flow for existing and quick-created items.'}
+        backTo="/hq-inventory"
+      />
 
       {(loadError || saveError) && (
         <Typography sx={{ fontSize: 13, color: 'error.main', mb: 2, p: 1.5, bgcolor: 'error.lighter', borderRadius: 2 }}>

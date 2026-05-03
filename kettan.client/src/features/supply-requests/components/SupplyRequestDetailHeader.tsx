@@ -64,7 +64,7 @@ export function SupplyRequestDetailHeader({
         <BackButton to="/supply-requests" />
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-            <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}>
               {requestNumber}
             </Typography>
             <Chip
@@ -88,7 +88,7 @@ export function SupplyRequestDetailHeader({
               }}
             />
           </Box>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
+          <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.3 }}>
             Requested by <strong>{branchName}</strong>
           </Typography>
         </Box>

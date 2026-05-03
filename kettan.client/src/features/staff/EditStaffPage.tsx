@@ -6,7 +6,7 @@ import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
-import { BackButton } from '../../components/UI/BackButton';
+import { PageHeader } from '../../components/UI/PageHeader';
 import { FormActions } from '../../components/Form/FormActions';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { fetchBranches, type BranchDto } from '../branches/branchesApi';
@@ -240,17 +240,11 @@ export function EditStaffPage() {
   return (
     <Box sx={{ pb: 3 }}>
       {/* Header section */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to={`/staff/${staffId}`} />
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            Edit Staff Member
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-            Update staff member information and access permissions.
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader
+        title="Edit Staff Member"
+        description="Update staff member information and access permissions."
+        backTo={`/staff/${staffId}`}
+      />
 
       {/* Form Content */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
@@ -262,7 +256,7 @@ export function EditStaffPage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 4,
           }}
         >
@@ -310,7 +304,7 @@ export function EditStaffPage() {
             flex: 1,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 4,
           }}
         >

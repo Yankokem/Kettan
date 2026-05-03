@@ -20,7 +20,7 @@ export function HelpPage() {
     <Box sx={{ pb: 3 }}>
       {/* ── Header ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-        <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: 'rgba(107,76,42,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ width: 48, height: 48, borderRadius: '14px', bgcolor: 'rgba(107,76,42,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <SupportAgentRoundedIcon sx={{ color: '#6B4C2A', fontSize: 24 }} />
         </Box>
         <Box>
@@ -38,7 +38,7 @@ export function HelpPage() {
         {/* ── FAQs ── */}
         <Box sx={{ flex: 1 }}>
           <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>Frequently Asked Questions</Typography>
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
             {FAQS.map((faq, idx) => (
               <Accordion key={idx} elevation={0} disableGutters sx={{ '&:not(:last-child)': { borderBottom: '1px solid', borderColor: 'divider' }, '&:before': { display: 'none' } }}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />} sx={{ bgcolor: '#f8fafc', '&:hover': { bgcolor: '#f1f5f9' } }}>
@@ -54,7 +54,7 @@ export function HelpPage() {
 
         {/* ── Contact Form ── */}
         <Box sx={{ width: { xs: '100%', md: 400 }, flexShrink: 0 }}>
-          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
+          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px' }}>
             <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 1 }}>Contact Support</Typography>
             <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 3 }}>
               Can't find what you're looking for? Send us a message and we'll get back to you within 24 hours.

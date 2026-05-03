@@ -255,7 +255,7 @@ export function MenuItemProfilePage() {
     return (
       <Box sx={{ pb: 3 }}>
         {header}
-        <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, minHeight: 300, display: 'grid', placeItems: 'center' }}>
+        <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', minHeight: 300, display: 'grid', placeItems: 'center' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
             <CircularProgress size={32} thickness={4} sx={{ color: '#6B4C2A' }} />
             <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>
@@ -271,7 +271,7 @@ export function MenuItemProfilePage() {
     return (
       <Box sx={{ pb: 3 }}>
         {header}
-        <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: 3 }}>
+        <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
             <Typography sx={{ color: 'error.main', fontSize: 13 }}>
               {error?.message || 'Menu item data is unavailable.'}
@@ -298,7 +298,7 @@ export function MenuItemProfilePage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 3.5,
             display: 'flex',
             flexDirection: 'column',
@@ -317,7 +317,7 @@ export function MenuItemProfilePage() {
               ) : (
                 <Box
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: '14px',
                     border: '1px solid',
                     borderColor: 'divider',
                     overflow: 'hidden',
@@ -426,7 +426,7 @@ export function MenuItemProfilePage() {
 
               {/* Description */}
               {formData.description?.trim() && (
-                <Box sx={{ mb: 2.5, p: 2, borderRadius: 2, bgcolor: 'background.default' }}>
+                <Box sx={{ mb: 2.5, p: 2, borderRadius: '14px', bgcolor: 'background.default' }}>
                   <Typography sx={{ fontSize: 13, color: 'text.secondary', lineHeight: 1.6 }}>
                     {formData.description}
                   </Typography>
@@ -448,7 +448,7 @@ export function MenuItemProfilePage() {
                 sx={{
                   mt: 'auto',
                   p: 2.5,
-                  borderRadius: 3,
+                  borderRadius: '14px',
                   bgcolor: 'background.default',
                   border: '1px solid',
                   borderColor: 'divider',
@@ -484,7 +484,7 @@ export function MenuItemProfilePage() {
             flex: 1,
             border: '2px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 3.5,
             display: 'flex',
             flexDirection: 'column',

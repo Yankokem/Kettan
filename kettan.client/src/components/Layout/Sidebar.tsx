@@ -16,14 +16,14 @@ import icon from '../../assets/icon.png';
 import DashboardRoundedIcon         from '@mui/icons-material/DashboardRounded';
 import Inventory2RoundedIcon        from '@mui/icons-material/Inventory2Rounded';
 import StoreRoundedIcon             from '@mui/icons-material/StoreRounded';
-import PeopleRoundedIcon            from '@mui/icons-material/PeopleRounded';
+
 import AssignmentReturnRoundedIcon  from '@mui/icons-material/AssignmentReturnRounded';
 import CategoryRoundedIcon          from '@mui/icons-material/CategoryRounded';
 import BarChartRoundedIcon          from '@mui/icons-material/BarChartRounded';
 import BadgeRoundedIcon             from '@mui/icons-material/BadgeRounded';
 import ExpandMoreRoundedIcon        from '@mui/icons-material/ExpandMoreRounded';
 import ExpandLessRoundedIcon        from '@mui/icons-material/ExpandLessRounded';
-import LogoutRoundedIcon            from '@mui/icons-material/LogoutRounded';
+
 import ShoppingCartRoundedIcon      from '@mui/icons-material/ShoppingCartRounded';
 import ScaleRoundedIcon             from '@mui/icons-material/ScaleRounded';
 import AnalyticsRoundedIcon         from '@mui/icons-material/AnalyticsRounded';
@@ -56,7 +56,7 @@ const MAIN_NAV: NavItem[] = [
   { text: 'Supply Requests',    icon: <ShoppingCartRoundedIcon />,       path: '/supply-requests', module: 'supply-requests' },
   { text: 'Order Processing',   icon: <CategoryRoundedIcon />,            path: '/orders', module: 'order-processing' },
   { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', module: 'returns' },
-  { text: 'Branch and Inventory', icon: <StoreRoundedIcon />,            path: '/branches', module: 'branches' },
+  { text: 'Branches',           icon: <StoreRoundedIcon />,            path: '/branches', module: 'branches' },
   { text: 'Company Profile',    icon: <StoreRoundedIcon />,            path: '/company-profile', module: 'company-profile' },
   { text: 'Branch Profile',     icon: <StoreRoundedIcon />,            path: '/branch-profile', module: 'branch-profile' },
   { text: 'Inventory',          icon: <Inventory2RoundedIcon />,       path: '/hq-inventory', module: 'hq-inventory' },
@@ -191,10 +191,7 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
-    navigate({ to: '/login' });
-  };
+
 
   // Filter menu items using canAccessModule() from roleHelpers
   const navFilter = (item: NavItem) => {
@@ -278,12 +275,12 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
         </List>
       </Box>
 
-      {/* ── Footer ── */}
+      {/* ── Footer (Company Info) ── */}
       {!collapsed && (
         <Box
           onClick={(e) => {
             e.stopPropagation();
-            navigate({ to: '/profile' });
+            navigate({ to: '/company-profile' });
           }}
           sx={{
             px: 2,
@@ -301,97 +298,116 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
             },
           }}
         >
-          <Box
-            sx={{
-              width: 30,
-              height: 30,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6B4C2A, #C9A84C)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <PeopleRoundedIcon sx={{ fontSize: 15, color: '#FAF5EF' }} />
-          </Box>
-          <Box sx={{ flex: 1, overflow: 'hidden' }}>
-            <Typography noWrap sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.primary', lineHeight: 1.2 }}>
-              {user?.name || 'Super Admin'}
-            </Typography>
-            <Typography noWrap sx={{ fontSize: 10.5, color: 'text.disabled', letterSpacing: '0.04em' }}>
-              {user?.role || 'admin'}
-            </Typography>
-          </Box>
-          <Tooltip title="Logout" placement="top">
-            <IconButton 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                handleLogout(); 
-              }} 
-              size="small" 
-              sx={{ 
-                color: 'text.secondary', 
-                cursor: 'pointer',
-                '&:hover': {
-                  background: 'rgba(201,168,77,0.15)',
-                  color: '#B91C1C',
-                },
+          {user?.tenant?.logoUrl ? (
+            <Box
+              component="img"
+              src={user.tenant.logoUrl}
+              alt="Company Logo"
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: '10px',
+                objectFit: 'cover',
+                flexShrink: 0,
+                border: '1px solid rgba(201,168,77,0.2)',
+              }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #6B4C2A, #C9A84C)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                border: '1px solid rgba(201,168,77,0.2)',
               }}
             >
-              <LogoutRoundedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+              <StoreRoundedIcon sx={{ fontSize: 18, color: '#FAF5EF' }} />
+            </Box>
+          )}
+          <Box 
+            sx={{ 
+              flex: 1, 
+              overflow: 'hidden', 
+              ml: 0.8,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              pt: 0.2 // Slightly "lower" the whole block
+            }}
+          >
+            <Typography 
+              noWrap 
+              sx={{ 
+                fontSize: 13.5, 
+                fontWeight: 700, 
+                color: 'text.primary', 
+                lineHeight: 1,
+                letterSpacing: '-0.02em',
+                display: 'block',
+                mb: 0.2 // Minimal gap
+              }}
+            >
+              {user?.tenant?.name || 'Kettan'}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                fontSize: 10.5, 
+                color: 'text.secondary', 
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                opacity: 0.8,
+                lineHeight: 1
+              }}
+            >
+              Company
+            </Typography>
+          </Box>
         </Box>
       )}
       {collapsed && (
         <Box 
           sx={{ 
-            p: 1, 
+            p: 1.5, 
             borderTop: 1, 
             borderColor: 'divider', 
             display: 'flex', 
-            flexDirection: 'column',
-            gap: 0.5,
-            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          <Tooltip title="View Profile" placement="right">
-            <IconButton 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                navigate({ to: '/profile' }); 
-              }} 
-              size="small" 
-              sx={{ 
-                color: 'text.secondary', 
-                cursor: 'pointer',
-                '&:hover': {
-                  background: 'rgba(201,168,77,0.15)',
-                },
-              }}
-            >
-              <PeopleRoundedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Logout" placement="right">
-            <IconButton 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                handleLogout(); 
-              }} 
-              size="small" 
-              sx={{ 
-                color: 'text.secondary', 
-                cursor: 'pointer',
-                '&:hover': {
-                  background: 'rgba(201,168,77,0.15)',
-                  color: '#B91C1C',
-                },
-              }}
-            >
-              <LogoutRoundedIcon fontSize="small" />
-            </IconButton>
+          <Tooltip title={user?.tenant?.name || 'Company'} placement="right">
+            {user?.tenant?.logoUrl ? (
+              <Box
+                component="img"
+                src={user.tenant.logoUrl}
+                alt="Company Logo"
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '6px',
+                  objectFit: 'cover',
+                  cursor: 'pointer',
+                  border: '1px solid rgba(201,168,77,0.2)',
+                }}
+                onClick={() => navigate({ to: '/company-profile' })}
+              />
+            ) : (
+              <IconButton 
+                size="small" 
+                onClick={() => navigate({ to: '/company-profile' })}
+                sx={{ 
+                  color: 'text.secondary',
+                  '&:hover': { background: 'rgba(201,168,77,0.15)' }
+                }}
+              >
+                <StoreRoundedIcon fontSize="small" />
+              </IconButton>
+            )}
           </Tooltip>
         </Box>
       )}

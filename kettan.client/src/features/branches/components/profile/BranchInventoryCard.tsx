@@ -26,7 +26,7 @@ export function BranchInventoryCard({ item }: BranchInventoryCardProps) {
     <Paper
       elevation={0}
       sx={{
-        borderRadius: 4,
+        borderRadius: '14px',
         overflow: 'hidden',
         border: '1px solid',
         borderColor: isOutOfStock
@@ -57,7 +57,7 @@ export function BranchInventoryCard({ item }: BranchInventoryCardProps) {
             width: '100%',
             paddingTop: '100%',
             bgcolor: '#FAF5EF',
-            borderRadius: 3,
+            borderRadius: '14px',
             overflow: 'hidden',
             display: 'flex',
             alignItems: 'center',

@@ -313,8 +313,7 @@ export function OrderDetailPage() {
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Typography
-                variant="h5"
-                sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}
+                sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}
               >
                 ORD-{order.orderId}
               </Typography>
@@ -351,7 +350,7 @@ export function OrderDetailPage() {
                 }}
               />
             </Box>
-            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
+            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.3 }}>
               Requested by <strong>{order.branchName}</strong> on{' '}
               {new Date(order.pushedToFulfillmentAt).toLocaleDateString('en-US', {
                 month: 'short',

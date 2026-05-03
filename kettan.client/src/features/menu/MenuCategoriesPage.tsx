@@ -230,7 +230,7 @@ export function MenuCategoriesPage() {
         </Box>
       </Box>
 
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}>
+      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
           <Box
             sx={{

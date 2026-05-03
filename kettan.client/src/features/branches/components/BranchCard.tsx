@@ -58,7 +58,7 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
         border: '1px solid',
         borderColor: 'divider',
         bgcolor: 'background.paper',
-        borderRadius: 4,
+        borderRadius: '14px',
         display: 'flex',
         flexDirection: 'column',
         transition: 'all 0.2s ease-in-out',
@@ -78,7 +78,7 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
               sx={{
                 width: 72,
                 height: 72,
-                borderRadius: 2,
+                borderRadius: '14px',
                 overflow: 'hidden',
                 border: '1px solid',
                 borderColor: 'divider',

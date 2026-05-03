@@ -31,7 +31,7 @@ function SnapshotCard({ label, value, hint, tone, icon }: SnapshotCardProps) {
       sx={{
         border: '1px solid',
         borderColor,
-        borderRadius: 3,
+        borderRadius: '14px',
         px: 2,
         py: 1.75,
       }}

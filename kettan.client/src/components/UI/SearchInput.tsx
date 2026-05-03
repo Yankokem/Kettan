@@ -13,7 +13,7 @@ export function SearchInput({ sx, ...props }: InputBaseProps) {
         height: 40, // Uniform height constraint
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 3,
+        borderRadius: '14px',
         bgcolor: 'background.paper',
         boxShadow: 'none',
         flex: 1,

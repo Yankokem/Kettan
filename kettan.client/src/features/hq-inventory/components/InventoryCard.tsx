@@ -23,7 +23,7 @@ export function InventoryCard({ item }: InventoryCardProps) {
         border: '1px solid',
         borderColor: isLowStock ? 'rgba(220, 38, 38, 0.2)' : 'divider',
         bgcolor: isLowStock ? 'rgba(220, 38, 38, 0.02)' : 'background.paper',
-        borderRadius: 4,
+        borderRadius: '14px',
         display: 'flex',
         flexDirection: 'column',
         transition: 'all 0.2s ease-in-out',
@@ -40,7 +40,7 @@ export function InventoryCard({ item }: InventoryCardProps) {
             sx={{ 
               width: 52, 
               height: 52, 
-              borderRadius: 2.5, 
+              borderRadius: '14px', 
               bgcolor: isLowStock ? 'rgba(220, 38, 38, 0.06)' : 'rgba(107,76,42,0.06)', 
               display: 'flex', 
               alignItems: 'center', 

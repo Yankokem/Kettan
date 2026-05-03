@@ -7,7 +7,7 @@ import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { Button } from '../../components/UI/Button';
-import { BackButton } from '../../components/UI/BackButton';
+import { PageHeader } from '../../components/UI/PageHeader';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BatchList } from './components/BatchList';
@@ -253,56 +253,36 @@ export function InventoryItemProfilePage() {
   return (
     <Box sx={{ pb: 5 }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <BackButton to="/hq-inventory" />
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>Item Profile</Typography>
-              {isLowStock && (
-                <Chip
-                  icon={<WarningRoundedIcon sx={{ fontSize: 16 }} />}
-                  label="Low Stock"
-                  size="small"
-                  sx={{
-                    bgcolor: 'error.main',
-                    color: 'white',
-                    fontWeight: 700,
-                    height: 24,
-                    '& .MuiChip-icon': { color: 'white' },
-                  }}
-                />
-              )}
-            </Box>
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.5 }}>
-              Manage item details and history
-            </Typography>
-          </Box>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Button
-            variant="outlined"
-            startIcon={<CallReceivedRoundedIcon />}
-            onClick={() => navigate({ to: '/hq-inventory/transaction', search: { itemId: item?.id || '' } })}
-          >
-            New Transaction
-          </Button>
-          {!isEditing ? (
-            <Button startIcon={<EditRoundedIcon />} onClick={() => setIsEditing(true)}>
-              Edit Item
+      <PageHeader
+        title="Item Profile"
+        description="Manage item details and history"
+        backTo="/hq-inventory"
+        action={
+          <>
+            <Button
+              variant="outlined"
+              startIcon={<CallReceivedRoundedIcon />}
+              onClick={() => navigate({ to: '/hq-inventory/transaction', search: { itemId: item?.id || '' } })}
+            >
+              New Transaction
             </Button>
-          ) : (
-            <>
-              <Button variant="outlined" onClick={handleCancelEdit}>
-                Cancel
+            {!isEditing ? (
+              <Button startIcon={<EditRoundedIcon />} onClick={() => setIsEditing(true)}>
+                Edit Item
               </Button>
-              <Button onClick={handleSaveChanges} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </>
-          )}
-        </Box>
-      </Box>
+            ) : (
+              <>
+                <Button variant="outlined" onClick={handleCancelEdit}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveChanges} disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </>
+            )}
+          </>
+        }
+      />
 
       {saveError && (
         <Typography sx={{ fontSize: 13, color: 'error.main', mb: 2 }}>

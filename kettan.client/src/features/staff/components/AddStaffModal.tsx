@@ -163,7 +163,7 @@ export function AddStaffModal({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 3,
+          borderRadius: '14px',
         },
       }}
     >

@@ -39,7 +39,7 @@ export function BranchProfileHero({
       sx={{
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 4,
+        borderRadius: '14px',
         overflow: 'hidden',
         mb: 3,
       }}
@@ -98,7 +98,7 @@ export function BranchProfileHero({
               sx={{
                 width: 116,
                 height: 116,
-                borderRadius: 3,
+                borderRadius: '14px',
                 bgcolor: '#2E1F14',
                 border: '4px solid #FFFFFF',
                 fontWeight: 800,
@@ -225,7 +225,7 @@ export function BranchProfileHero({
                     elevation={0}
                     sx={{
                       p: 1.8,
-                      borderRadius: 2.5,
+                      borderRadius: '14px',
                       border: '1px solid',
                       borderColor: 'divider',
                       bgcolor: '#FAFAFA',

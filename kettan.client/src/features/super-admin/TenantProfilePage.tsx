@@ -146,7 +146,7 @@ export function TenantProfilePage() {
               <StatCard label="Active Branches" value={branches.filter(b => b.isActive).length} icon={<StorefrontRoundedIcon />} accentClass="stat-accent-brown" iconBg="none" />
               <StatCard label="Total Users" value={userCount} icon={<GroupRoundedIcon />} accentClass="stat-accent-sage" iconBg="none" />
             </Box>
-            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 3 }}>
+            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3 }}>
               <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 2 }}>Company Information</Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box>
@@ -171,7 +171,7 @@ export function TenantProfilePage() {
             </Card>
           </Box>
           <Box>
-            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 3, bgcolor: '#f8fafc' }}>
+            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3, bgcolor: '#f8fafc' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <PaymentRoundedIcon sx={{ color: 'text.secondary' }} />
                 <Typography sx={{ fontSize: 16, fontWeight: 700 }}>Subscription</Typography>
@@ -202,7 +202,7 @@ export function TenantProfilePage() {
       {activeTab === 'subscription' && (
         <Box>
           {subscription && (
-            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 3, mb: 3 }}>
+            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3, mb: 3 }}>
               <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 2 }}>Subscription Details</Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
                 <Box>
@@ -241,7 +241,7 @@ export function TenantProfilePage() {
       )}
 
       {activeTab === 'actions' && (
-        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 3, maxWidth: 500 }}>
+        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3, maxWidth: 500 }}>
           <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 1 }}>Tenant Status Control</Typography>
           <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 3 }}>
             {isActive

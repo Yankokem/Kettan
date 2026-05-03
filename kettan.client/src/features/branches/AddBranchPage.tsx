@@ -10,7 +10,7 @@ import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
-import { BackButton } from '../../components/UI/BackButton';
+import { PageHeader } from '../../components/UI/PageHeader';
 import { FormActions } from '../../components/Form/FormActions';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { TimePicker } from '../../components/UI/TimePicker';
@@ -166,17 +166,11 @@ export function AddBranchPage() {
   return (
     <Box sx={{ pb: 3 }}>
       {/* Header section */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/branches" />
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            Register New Branch
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-            Establish a new storefront or operations center in the system.
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader
+        title="Register New Branch"
+        description="Establish a new storefront or operations center in the system."
+        backTo="/branches"
+      />
 
       {/* Form Content */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>

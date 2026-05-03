@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import { Box, Typography, Grid } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
+import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
-import { Dropdown } from '../../components/UI/Dropdown';
+import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { BranchCard } from './components/BranchCard';
@@ -23,6 +25,7 @@ export function BranchesPage() {
   const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => {
     setLoading(true);
@@ -42,6 +45,14 @@ export function BranchesPage() {
       (statusFilter === 'active' && b.isActive) ||
       (statusFilter === 'setup' && !b.isActive);
     return matchSearch && matchStatus;
+  });
+
+  const sortedBranches = [...filteredBranches].sort((a, b) => {
+    if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+    if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
+    if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    return 0;
   });
 
   return (
@@ -96,22 +107,20 @@ export function BranchesPage() {
         </Grid>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, gap: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: 17, minWidth: 'max-content' }}>
-          Branch and Inventory ({filteredBranches.length})
-        </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, justifyContent: 'flex-end' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3.5, gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
           <SearchInput
             placeholder="Find a specific branch..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ maxWidth: 300, flex: 'none' }}
+            sx={{ maxWidth: 420, flex: 1 }}
           />
 
-          <Dropdown
+          <FilterDropdown
+            label="Status"
+            icon={<TuneRoundedIcon sx={{ fontSize: 18, color: '#8C6B43' }} />}
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as string)}
+            onChange={setStatusFilter}
             options={[
               { value: 'all', label: 'All Status' },
               { value: 'active', label: 'Active Branches' },
@@ -119,16 +128,29 @@ export function BranchesPage() {
             ]}
           />
 
-          <Button startIcon={<AddRoundedIcon />} onClick={() => navigate({ to: '/branches/add' })}>
-            Add Branch
-          </Button>
+          <FilterDropdown
+            label="Sort"
+            icon={<SortRoundedIcon sx={{ fontSize: 18, color: '#8C6B43' }} />}
+            value={sortBy}
+            onChange={setSortBy}
+            options={[
+              { value: 'newest', label: 'Newest First' },
+              { value: 'name-asc', label: 'Name (A-Z)' },
+              { value: 'name-desc', label: 'Name (Z-A)' },
+              { value: 'oldest', label: 'Oldest First' },
+            ]}
+          />
         </Box>
+
+        <Button startIcon={<AddRoundedIcon />} onClick={() => navigate({ to: '/branches/add' })} sx={{ px: 3 }}>
+          Add Branch
+        </Button>
       </Box>
 
       <DataStateWrapper
         loading={loading}
         error={error}
-        isEmpty={filteredBranches.length === 0}
+        isEmpty={sortedBranches.length === 0}
         emptyTitle={searchTerm ? 'No matches found' : 'No branches yet'}
         emptyMessage={searchTerm ? 'We couldn\'t find any branches matching your search criteria.' : 'Start expanding your network by adding your first branch location.'}
         emptyIcon={<StoreRoundedIcon />}
@@ -140,7 +162,7 @@ export function BranchesPage() {
             gap: 3,
           }}
         >
-          {filteredBranches.map((branchDto) => {
+          {sortedBranches.map((branchDto) => {
             const branch = mapBranch(branchDto);
             return (
               <BranchCard

@@ -136,7 +136,7 @@ export function UserProfilePage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 4,
             display: 'flex',
             flexDirection: 'column',
@@ -156,7 +156,7 @@ export function UserProfilePage() {
               fontWeight: 700,
               border: '4px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               mb: 3,
               boxShadow: '0 8px 24px rgba(107, 76, 42, 0.15)',
             }}
@@ -260,7 +260,7 @@ export function UserProfilePage() {
             sx={{
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               p: 3.5,
             }}
           >
@@ -347,7 +347,7 @@ export function UserProfilePage() {
             sx={{
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               p: 3.5,
             }}
           >
@@ -427,7 +427,7 @@ export function UserProfilePage() {
               sx={{
                 border: '1px solid',
                 borderColor: 'divider',
-                borderRadius: 4,
+                borderRadius: '14px',
                 p: 3.5,
               }}
             >

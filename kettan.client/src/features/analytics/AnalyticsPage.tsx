@@ -147,7 +147,7 @@ export function AnalyticsPage() {
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* Revenue Trend */}
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, height: 400 }}>
+          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', height: 400 }}>
             <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 3 }}>Revenue Trend (Last 6 Months)</Typography>
             <ResponsiveContainer width="100%" height="85%">
               <AreaChart data={revenueChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -160,7 +160,7 @@ export function AnalyticsPage() {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dx={-10} />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <RechartsTooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                <RechartsTooltip contentStyle={{ borderRadius: '14px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                 <Area type="monotone" dataKey="revenue" stroke="#6B4C2A" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
               </AreaChart>
             </ResponsiveContainer>
@@ -169,7 +169,7 @@ export function AnalyticsPage() {
 
         {/* Plan Distribution */}
         <Grid size={{ xs: 12, lg: 4 }}>
-          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, height: 400 }}>
+          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', height: 400 }}>
             <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 3 }}>Plan Distribution</Typography>
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height="85%">
@@ -194,7 +194,7 @@ export function AnalyticsPage() {
       <Grid container spacing={3}>
         {/* Growth Chart */}
         <Grid size={{ xs: 12, lg: 5 }}>
-          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, height: 380 }}>
+          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', height: 380 }}>
             <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 3 }}>New Signups Per Month</Typography>
             <ResponsiveContainer width="100%" height="85%">
               <BarChart data={growthChartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>

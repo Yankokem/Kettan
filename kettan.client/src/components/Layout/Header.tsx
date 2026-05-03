@@ -1,11 +1,15 @@
-import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip, Typography, InputBase } from '@mui/material';
+import { useState } from 'react';
+import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip, Typography, InputBase, Menu, MenuItem } from '@mui/material';
 import MenuIcon          from '@mui/icons-material/Menu';
 import DarkModeRoundedIcon   from '@mui/icons-material/DarkModeRounded';
 import LightModeRoundedIcon  from '@mui/icons-material/LightModeRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
+import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
 import { useThemeStore } from '../../store/useThemeStore';
-import { useLocation } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { NotificationBell } from '../UI/NotificationBell';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -20,7 +24,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/consumption': 'Consumption Logs',
   '/orders':    'Order Processing',
   '/returns':   'Returns Management',
-  '/branches':  'Branch and Inventory',
+  '/branches':  'Branches',
   '/branches/add': 'Add New Branch',
   '/company-profile': 'Company Profile',
   '/hq-inventory': 'HQ Inventory & Stock',
@@ -42,7 +46,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/':          'Kettan · Café Chain Operations',
   '/supply-requests': 'Create and submit branch replenishment requests to HQ.',
   '/consumption': 'Track branch stock consumption from direct use and sales.',
-  '/branches':  'Manage branch operations, network details, and track branch inventory.',
+  '/branches':  'Manage branch operations, network details, and network growth.',
   '/branches/add': 'Register a new branch within the tenant network.',
   '/company-profile': 'Manage your company profile and billing.',
   '/hq-inventory': 'Track warehouse stock, raw ingredients, and reorder levels globally.',
@@ -62,8 +66,32 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
 
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   const user = useAuthStore((state) => state.user);
+  const { logout } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(anchorEl);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    handleMenuClose();
+    logout();
+    navigate({ to: '/login' });
+  };
+
+  const handleProfile = () => {
+    handleMenuClose();
+    navigate({ to: '/profile' });
+  };
 
 
   const getParentResource = (path: string) => {
@@ -218,63 +246,155 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
           {/* Divider */}
           <Box sx={{ width: '1px', height: 24, background: 'rgba(201,168,77,0.15)', mx: 1 }} />
 
-          {/* Company info */}
+          {/* Account Group */}
           <Box 
+            onClick={handleMenuOpen}
             sx={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: 1.5,
+              gap: 1.2,
               pl: 1,
               py: 0.5,
+              cursor: 'pointer',
+              transition: 'all 200ms ease',
             }}
           >
-            <Typography 
-              variant="body2" 
+            <Box 
               sx={{ 
-                display: { xs: 'none', md: '-webkit-box' },
-                fontSize: 13, 
-                fontWeight: 700, 
-                color: '#2E1F0C',
-                lineHeight: 1.2,
-                textAlign: 'right',
-                maxWidth: 140,
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                '.dark &': { color: '#E8D3A9' },
+                display: { xs: 'none', md: 'flex' }, 
+                flexDirection: 'column', 
+                alignItems: 'flex-end',
+                mr: 0.2
               }}
             >
-              {user?.tenant?.name || 'Kettan'}
-            </Typography>
-
-            {user?.tenant?.logoUrl ? (
-              <Avatar
-                alt={user.tenant.name || 'Company'}
-                src={user.tenant.logoUrl}
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '8px',
-                  border: '1px solid rgba(201,168,77,0.2)',
-                }}
-              />
-            ) : (
-              <Box
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #6B4C2A 0%, #C9A84C 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid rgba(201,168,77,0.2)',
+              <Typography 
+                sx={{ 
+                  fontSize: 13.5, 
+                  fontWeight: 700, 
+                  color: '#2E1F0C',
+                  letterSpacing: '-0.01em',
+                  lineHeight: 1.2,
+                  '.dark &': { color: '#E8D3A9' }
                 }}
               >
-                <BusinessRoundedIcon sx={{ fontSize: 18, color: '#FAF5EF' }} />
-              </Box>
-            )}
+                {user?.name || 'Super Admin'}
+              </Typography>
+              <Typography 
+                sx={{ 
+                  fontSize: 10.5, 
+                  color: '#8C6B43',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  opacity: 0.8,
+                  '.dark &': { color: 'rgba(201,168,77,0.7)' }
+                }}
+              >
+                {user?.role || 'admin'}
+              </Typography>
+            </Box>
+            
+            <Avatar
+              alt={user?.name || 'User'}
+              src={user?.imageUrl ?? undefined}
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: '10px',
+                border: '1px solid rgba(201,168,77,0.2)',
+                background: 'linear-gradient(135deg, #6B4C2A 0%, #C9A84C 100%)',
+              }}
+            >
+              {!user?.imageUrl && <AccountCircleRoundedIcon sx={{ fontSize: 20 }} />}
+            </Avatar>
+            
+            <ExpandMoreRoundedIcon 
+              sx={{ 
+                fontSize: 20,
+                color: '#8C6B43',
+                transform: menuOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 240ms cubic-bezier(0.4, 0, 0.2, 1)',
+              }} 
+            />
           </Box>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={menuOpen}
+            onClose={handleMenuClose}
+            onClick={handleMenuClose}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            transitionDuration={200}
+            autoFocus={false}
+            PaperProps={{
+              elevation: 0,
+              sx: {
+                mt: 1.5,
+                minWidth: 180,
+                borderRadius: '12px',
+                border: '1px solid',
+                borderColor: 'rgba(201,168,77,0.12)',
+                boxShadow: '0 8px 24px rgba(46, 31, 12, 0.1)',
+                background: mode === 'dark' ? '#2E1F14' : '#FAF5EF',
+                backdropFilter: 'blur(8px)',
+                overflow: 'visible',
+                '&::before': {
+                  content: '""',
+                  display: 'block',
+                  position: 'absolute',
+                  top: 0,
+                  right: 24,
+                  width: 10,
+                  height: 10,
+                  bgcolor: mode === 'dark' ? '#2E1F14' : '#FAF5EF',
+                  transform: 'translateY(-50%) rotate(45deg)',
+                  zIndex: 0,
+                  borderLeft: '1px solid',
+                  borderTop: '1px solid',
+                  borderColor: 'rgba(201,168,77,0.12)',
+                },
+              },
+            }}
+          >
+            <MenuItem 
+              onClick={handleProfile} 
+              sx={{ 
+                fontSize: 13, 
+                fontWeight: 600, 
+                py: 1.2, 
+                px: 2,
+                gap: 1.2,
+                transition: 'all 160ms',
+                '&:hover': {
+                  bgcolor: 'transparent !important',
+                  color: '#6B4C2A',
+                }
+              }}
+            >
+              <AccountCircleRoundedIcon sx={{ fontSize: 18, color: '#8C6B43' }} />
+              My Profile
+            </MenuItem>
+            <Box sx={{ my: 0.5, borderTop: '1px solid', borderColor: 'rgba(201,168,77,0.06)' }} />
+            <MenuItem 
+              onClick={handleLogout} 
+              sx={{ 
+                fontSize: 13, 
+                fontWeight: 600, 
+                py: 1.2, 
+                px: 2,
+                gap: 1.2,
+                color: '#B91C1C',
+                transition: 'all 160ms',
+                '&:hover': {
+                  bgcolor: 'transparent !important',
+                  color: '#B91C1C',
+                }
+              }}
+            >
+              <LogoutRoundedIcon sx={{ fontSize: 18 }} />
+              Logout
+            </MenuItem>
+          </Menu>
         </Box>
       </Toolbar>
     </AppBar>

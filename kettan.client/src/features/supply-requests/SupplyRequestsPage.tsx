@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Chip, Typography, Card } from '@mui/material';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
@@ -10,6 +10,7 @@ import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRound
 import { useNavigate } from '@tanstack/react-router';
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import Tooltip from '@mui/material/Tooltip';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
@@ -284,20 +285,12 @@ export function SupplyRequestsPage() {
   if (!canAccessPage) {
     return (
       <Box sx={{ pb: 3 }}>
-        <Box
-          sx={{
-            p: 3,
-            borderRadius: 3,
-            border: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
-          }}
-        >
+        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3 }}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Supply Requests</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
             This module is available for Branch Manager and Branch Owner only.
           </Typography>
-        </Box>
+        </Card>
       </Box>
     );
   }
@@ -407,6 +400,16 @@ export function SupplyRequestsPage() {
         />
 
         <Box sx={{ ml: { xs: 0, lg: 'auto' }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          {isHq && (
+            <Button
+              variant="outlined"
+              startIcon={<LocalShippingRoundedIcon />}
+              onClick={() => navigate({ to: '/hq-inventory/vehicles' })}
+            >
+              Vehicles
+            </Button>
+          )}
+
           <Tooltip title={datasetMode === 'active' ? "Active Requests" : "History"}>
             <ToggleButtonGroup
               value={datasetMode}
@@ -420,7 +423,7 @@ export function SupplyRequestsPage() {
               size="small"
               sx={{
                 height: 40,
-                borderRadius: 2,
+                borderRadius: '14px',
                 '& .MuiToggleButton-root': {
                   px: 1.4,
                   color: '#6B4C2A',

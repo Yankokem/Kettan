@@ -49,7 +49,7 @@ export function BranchPerformance() {
         height: '100%',
         border: '1px solid',
         borderColor: 'divider',
-        bgcolor: 'background.paper',
+        borderRadius: '14px',
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5, gap: 1 }}>
@@ -82,11 +82,11 @@ export function BranchPerformance() {
               value={branch.score}
               sx={{
                 height: 6,
-                borderRadius: 3,
+                borderRadius: '14px',
                 bgcolor: 'divider',
                 '& .MuiLinearProgress-bar': {
                   bgcolor: index === 0 ? '#16A34A' : branch.score < 80 ? '#DC2626' : '#6B4C2A',
-                  borderRadius: 3,
+                  borderRadius: '14px',
                 },
               }}
             />

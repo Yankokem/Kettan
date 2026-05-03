@@ -23,7 +23,7 @@ export function RegisterSuccessPage() {
           elevation={0}
           sx={{
             p: { xs: 4, sm: 6 },
-            borderRadius: 4,
+            borderRadius: '14px',
             border: "1px solid",
             borderColor: "divider",
             textAlign: "center",
@@ -58,7 +58,7 @@ export function RegisterSuccessPage() {
             sx={{
               p: 3,
               mb: 4,
-              borderRadius: 3,
+              borderRadius: '14px',
               bgcolor: "rgba(107, 76, 42, 0.05)",
               border: "1px solid rgba(107, 76, 42, 0.1)",
             }}

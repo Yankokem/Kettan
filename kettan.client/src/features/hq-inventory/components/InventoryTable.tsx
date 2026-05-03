@@ -12,7 +12,6 @@ import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
@@ -267,11 +266,11 @@ export function InventoryTable({ items, transactions = [], onRowClick, isBranchV
               value={pct}
               sx={{
                 height: 5,
-                borderRadius: 3,
+                borderRadius: '14px',
                 bgcolor: 'action.hover',
                 '& .MuiLinearProgress-bar': {
                   bgcolor: isLow ? 'error.main' : '#6B9B5A',
-                  borderRadius: 3,
+                  borderRadius: '14px',
                 },
               }}
             />
@@ -423,13 +422,6 @@ export function InventoryTable({ items, transactions = [], onRowClick, isBranchV
               onClick={() => navigate({ to: '/hq-inventory/categories' })}
             >
               Item Categories
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<LocalShippingRoundedIcon />}
-              onClick={() => navigate({ to: '/hq-inventory/vehicles' })}
-            >
-              Vehicles
             </Button>
             <Button
               startIcon={<CallReceivedRoundedIcon />}

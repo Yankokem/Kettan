@@ -9,7 +9,7 @@ import LockRoundedIcon from '@mui/icons-material/LockRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
-import { BackButton } from '../../components/UI/BackButton';
+import { PageHeader } from '../../components/UI/PageHeader';
 import { FormActions } from '../../components/Form/FormActions';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { fetchBranches, type BranchDto } from '../branches/branchesApi';
@@ -181,17 +181,11 @@ export function AddStaffPage() {
   return (
     <Box sx={{ pb: 3 }}>
       {/* Header section */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/staff" />
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            Add Staff Member
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-            Create a new staff account with role and access permissions.
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader
+        title="Add Staff Member"
+        description="Create a new staff account with role and access permissions."
+        backTo="/staff"
+      />
 
       {/* Form Content */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>

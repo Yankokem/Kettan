@@ -89,7 +89,7 @@ function UtilizationMeter({
         };
 
   return (
-    <Box sx={{ p: 1.75, borderRadius: 2.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+    <Box sx={{ p: 1.75, borderRadius: '14px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{label}</Typography>
         <Chip
@@ -213,7 +213,7 @@ export function CompanyProfilePage() {
         sx={{
           border: '1px solid',
           borderColor: 'divider',
-          borderRadius: 4,
+          borderRadius: '14px',
           overflow: 'hidden',
           mb: 3,
         }}
@@ -243,7 +243,7 @@ export function CompanyProfilePage() {
               sx={{
                 width: 108,
                 height: 108,
-                borderRadius: 3,
+                borderRadius: '14px',
                 bgcolor: '#2E1F14',
                 border: '4px solid #FFFFFF',
                 color: '#FAF5EF',
@@ -372,7 +372,7 @@ export function CompanyProfilePage() {
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 8 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: { xs: 2.5, sm: 3 } }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
               <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
               <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Organization Details</Typography>
@@ -405,7 +405,7 @@ export function CompanyProfilePage() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: { xs: 2.5, sm: 3 } }}>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
               <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
               <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Plan Utilization</Typography>

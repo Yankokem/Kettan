@@ -64,7 +64,7 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
       maxWidth="xs"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 3, border: '1px solid', borderColor: 'divider' },
+        sx: { borderRadius: '14px', border: '1px solid', borderColor: 'divider' },
         elevation: 0,
       }}
     >
@@ -73,7 +73,7 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
           <Box sx={{
             width: 40,
             height: 40,
-            borderRadius: 2,
+            borderRadius: '14px',
             bgcolor: 'warning.light',
             display: 'flex',
             alignItems: 'center',
@@ -98,7 +98,7 @@ export function AdjustmentModal({ open, onClose, onConfirm, batch, item }: Adjus
       <DialogContent sx={{ pt: 2.5 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           {/* Item & Batch Info */}
-          <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2 }}>
+          <Box sx={{ bgcolor: 'action.hover', borderRadius: '14px', p: 2 }}>
             <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{item.name}</Typography>
             <Typography sx={{ fontSize: 12, color: 'text.secondary', fontFamily: 'monospace', mt: 0.5 }}>
               Batch: {batch.batchNumber}

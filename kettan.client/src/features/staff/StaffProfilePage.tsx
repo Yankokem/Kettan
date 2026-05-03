@@ -114,7 +114,7 @@ export function StaffProfilePage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
+            borderRadius: '14px',
             p: 4,
             display: 'flex',
             flexDirection: 'column',
@@ -134,7 +134,7 @@ export function StaffProfilePage() {
               fontWeight: 700,
               border: '4px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               mb: 3,
               boxShadow: '0 8px 24px rgba(107, 76, 42, 0.15)',
             }}
@@ -240,7 +240,7 @@ export function StaffProfilePage() {
             sx={{
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               p: 3.5,
             }}
           >
@@ -326,7 +326,7 @@ export function StaffProfilePage() {
             sx={{
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 4,
+              borderRadius: '14px',
               p: 3.5,
             }}
           >
