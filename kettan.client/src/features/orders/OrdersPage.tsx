@@ -1,6 +1,7 @@
-import { Box, Grid, Typography, Chip } from '@mui/material';
+import { Box, Grid, ToggleButton, ToggleButtonGroup, Tooltip, Typography, Chip } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useAuthStore } from '../../store/useAuthStore';
 
 import LocalMallRoundedIcon from '@mui/icons-material/LocalMallRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
@@ -8,6 +9,8 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
+import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
@@ -55,19 +58,18 @@ const STATUS_MAP: Record<string, { color: string; bg: string }> = {
   Packed: { color: '#0891B2', bg: 'rgba(8,145,178,0.12)' },
   Dispatched: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
   InTransit: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
-  InFulfillment: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
-  Arrived: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
-  Completed: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
   Delivered: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
   Rejected: { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
   Returned: { color: '#9333EA', bg: 'rgba(147,51,234,0.10)' },
 };
 
+type DatasetMode = 'active' | 'history';
 type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
-type ActiveStatusTab = 'Approved' | 'Processing' | 'Picking' | 'Packed' | 'Shipping' | '';
+type ActiveStatusTab = 'Approved' | 'Processing' | 'Picking' | 'Packed';
 
-const ACTIVE_STATUSES: OrderActionStatus[] = ['Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Allocated', 'Packing', 'Packed', 'Dispatched', 'InTransit', 'InFulfillment', 'Arrived'];
-const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['Approved', 'Processing', 'Picking', 'Packed', 'Shipping'];
+const ACTIVE_STATUSES: OrderActionStatus[] = ['Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Allocated', 'Packing', 'Packed'];
+const HISTORY_STATUSES: OrderActionStatus[] = ['Dispatched', 'InTransit', 'Delivered', 'Rejected', 'Returned'];
+const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['Approved', 'Processing', 'Picking', 'Packed'];
 type OrdersListViewMode = 'card' | 'table';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
@@ -79,7 +81,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'items-low', label: 'Least Items' },
 ];
 
-function getStatusDisplayLabel(status: OrderActionStatus | ActiveStatusTab): string {
+function getStatusDisplayLabel(status: OrderActionStatus): string {
   if (status === 'PendingApproval') {
     return 'Pending Approval';
   }
@@ -88,14 +90,19 @@ function getStatusDisplayLabel(status: OrderActionStatus | ActiveStatusTab): str
     return 'In Transit';
   }
 
-  if (status === 'Shipping') {
-    return 'In-Transit / Arrived';
+  return status;
+}
+
+function getDefaultActiveStatusByRole(role?: string): ActiveStatusTab {
+  if (role === 'HqManager' || role === 'TenantAdmin' || role === 'HqStaff') {
+    return 'Picking';
   }
 
-  return status || 'Show All';
+  return 'Approved';
 }
 
 function getColumns(
+  mode: DatasetMode,
   onViewDetails: (orderId: string) => void,
   onApprove: (orderId: string) => void,
   onProceed: (orderId: string) => void,
@@ -168,17 +175,29 @@ function getColumns(
     },
   ];
 
-  const modeColumn: ColumnDef<OrderItem> = {
-    key: 'date',
-    label: 'Date Requested',
-    width: 140,
-    sortable: true,
-    render: (row) => (
-      <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-        {new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-      </Typography>
-    ),
-  };
+  const modeColumn: ColumnDef<OrderItem> =
+    mode === 'history'
+      ? {
+          key: 'actionedBy',
+          label: 'Actioned By',
+          width: 150,
+          render: (row) => (
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
+              {row.actionedBy || '--'}
+            </Typography>
+          ),
+        }
+      : {
+          key: 'date',
+          label: 'Date Requested',
+          width: 140,
+          sortable: true,
+          render: (row) => (
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+              {new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Typography>
+          ),
+        };
 
   const actionsColumn: ColumnDef<OrderItem> = {
     key: 'actions',
@@ -202,13 +221,16 @@ function getColumns(
 
 export function OrdersPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
+  const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
   const [viewMode, setViewMode] = useState<OrdersListViewMode>('card');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [activeStatusTab, setActiveStatusTab] = useState<ActiveStatusTab>('');
+  const [activeStatusTab, setActiveStatusTab] = useState<ActiveStatusTab>(() => getDefaultActiveStatusByRole(user?.role));
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<OrderActionStatus | ''>('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -219,10 +241,10 @@ export function OrdersPage() {
       try {
         setIsLoading(true);
         setError(null);
-
+        
         const [ordersRows, requestsRows] = await Promise.all([
           fetchOrders(),
-          fetchSupplyRequests()
+          fetchSupplyRequests() 
         ]);
 
         const mappedOrders = ordersRows.map((row: BranchOrder) => ({
@@ -235,6 +257,10 @@ export function OrdersPage() {
           requestId: row.requestId,
         }));
 
+        // SIMPLE FILTER: Show everything EXCEPT Pending, Draft, and AutoDrafted
+        const excludedStatuses = ['PendingApproval', 'Draft', 'AutoDrafted'];
+
+        // Get IDs of requests that already have a corresponding Order record
         const existingOrderRequestIds = new Set(
           ordersRows
             .map((o: any) => o.requestId)
@@ -242,7 +268,7 @@ export function OrdersPage() {
         );
 
         const mappedRequests = requestsRows
-          .filter(row => !row.orderId && !existingOrderRequestIds.has(row.requestId))
+          .filter(row => !existingOrderRequestIds.has(row.requestId) && !excludedStatuses.includes(row.status)) 
           .map((row: SupplyRequest) => ({
             id: `SR-${row.requestId}`,
             requestId: row.requestId,
@@ -266,6 +292,7 @@ export function OrdersPage() {
 
     void loadOrders();
 
+    // ── Real-Time Polling (30 seconds) ──
     const interval = setInterval(() => {
       void loadOrders();
     }, 30000);
@@ -274,7 +301,8 @@ export function OrdersPage() {
   }, []);
 
   const source = orders.filter((order) => {
-    return ACTIVE_STATUSES.includes(order.status);
+    const statuses = datasetMode === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES;
+    return statuses.includes(order.status);
   });
 
   const filtered = source.filter((order) => {
@@ -284,17 +312,18 @@ export function OrdersPage() {
       order.id.toLowerCase().includes(query) ||
       order.branch.toLowerCase().includes(query) ||
       (order.actionedBy || '').toLowerCase().includes(query);
-    const matchesStatus = (
-      !activeStatusTab ||
-      order.status === activeStatusTab ||
-      (activeStatusTab === 'Approved' && order.status === 'PartiallyApproved') ||
-      (activeStatusTab === 'Picking' && (order.status === 'Allocated' || order.status === 'Packing')) ||
-      (activeStatusTab === 'Shipping' && (order.status === 'Dispatched' || order.status === 'InTransit' || order.status === 'InFulfillment' || order.status === 'Arrived'))
-    );
-
+    const matchesStatus = datasetMode === 'active'
+      ? (
+          order.status === activeStatusTab || 
+          (activeStatusTab === 'Approved' && order.status === 'PartiallyApproved') ||
+          (activeStatusTab === 'Picking' && (order.status === 'Allocated' || order.status === 'Packing'))
+        )
+      : !historyStatusFilter || order.status === historyStatusFilter;
+    
+    // Check date filtering
     const orderDateOnly = order.date ? order.date.slice(0, 10) : '';
     const inRange = orderDateOnly >= startDate && orderDateOnly <= endDate;
-
+    
     return matchesQuery && matchesStatus && inRange;
   });
 
@@ -316,14 +345,10 @@ export function OrdersPage() {
     }
   });
 
-  // Status filter options
-  const statusOptions = [
-    { value: '', label: 'All Statuses' },
-    ...ACTIVE_STATUS_TABS.map((status) => ({
-      value: status,
-      label: getStatusDisplayLabel(status),
-    })),
-  ];
+  const historyStatusOptions = HISTORY_STATUSES.map((status) => ({
+    value: status,
+    label: getStatusDisplayLabel(status),
+  }));
 
   const openDetails = (id: string) => {
     if (id.startsWith('SR-')) {
@@ -346,7 +371,15 @@ export function OrdersPage() {
     openDetails(id);
   };
 
-  const columns = getColumns(openDetails, handleApprove, handleProceed, handleReject);
+  const handleDatasetModeChange = (nextMode: DatasetMode) => {
+    setDatasetMode(nextMode);
+    if (nextMode === 'history') {
+      setHistoryStatusFilter('');
+      setViewMode('table');
+    }
+  };
+
+  const columns = getColumns(datasetMode, openDetails, handleApprove, handleProceed, handleReject);
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -416,8 +449,8 @@ export function OrdersPage() {
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search order ID, branch, or actor..."
-          sx={{
-            minWidth: { xs: '100%', sm: 240, md: 280 },
+          sx={{ 
+            minWidth: { xs: '100%', sm: 240, md: 280 }, 
             maxWidth: { sm: 360 },
             flexShrink: 1,
           }}
@@ -441,30 +474,75 @@ export function OrdersPage() {
           options={SORT_OPTIONS}
         />
 
-        <FilterDropdown
-          label="Status"
-          icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-          value={activeStatusTab}
-          onChange={(value) => setActiveStatusTab(value as ActiveStatusTab)}
-          minWidth={160}
-          options={statusOptions}
-        />
+        {datasetMode === 'active' ? (
+          <FilterDropdown
+            label="Status"
+            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+            value={activeStatusTab}
+            onChange={(value) => setActiveStatusTab(value as ActiveStatusTab)}
+            minWidth={160}
+            options={ACTIVE_STATUS_TABS.map((status) => ({
+              value: status,
+              label: getStatusDisplayLabel(status),
+            }))}
+          />
+        ) : (
+          <FilterDropdown
+            label="Status"
+            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+            value={historyStatusFilter}
+            onChange={(value) => setHistoryStatusFilter(value as OrderActionStatus | '')}
+            minWidth={120}
+            options={historyStatusOptions}
+          />
+        )}
 
-        <Box
-          sx={{
-            ml: { xs: 0, lg: 'auto' },
-            display: 'flex',
-            alignItems: 'center',
+        <Box 
+          sx={{ 
+            ml: { xs: 0, lg: 'auto' }, 
+            display: 'flex', 
+            alignItems: 'center', 
             gap: 1.2,
           }}
         >
-          {/* Tab Switcher Removed */}
+          <Tooltip title="Active Orders">
+            <ToggleButtonGroup
+              value={datasetMode}
+              exclusive
+              onChange={(_event, value: DatasetMode | null) => {
+                if (value) {
+                  handleDatasetModeChange(value);
+                }
+              }}
+              size="small"
+              sx={{
+                height: 40,
+                borderRadius: 2,
+                '& .MuiToggleButton-root': {
+                  px: 1.4,
+                  color: '#6B4C2A',
+                  borderColor: 'rgba(107, 76, 42, 0.3)',
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(107, 76, 42, 0.12)',
+                    color: '#4A3424',
+                  },
+                },
+              }}
+            >
+              <ToggleButton value="active" aria-label="Active Orders">
+                <PendingActionsRoundedIcon sx={{ fontSize: 16 }} />
+              </ToggleButton>
+              <ToggleButton value="history" aria-label="History">
+                <HistoryRoundedIcon sx={{ fontSize: 16 }} />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Tooltip>
 
           <ViewToggle
             value={viewMode}
             onChange={setViewMode}
             options={[
-              { value: 'card' as const, label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> },
+              ...(datasetMode === 'active' ? [{ value: 'card' as const, label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> }] : []),
               { value: 'table' as const, label: '', icon: <TableRowsRoundedIcon sx={{ fontSize: 16 }} /> },
             ]}
           />
@@ -508,7 +586,7 @@ export function OrdersPage() {
               <OrderListCard
                 key={order.id}
                 order={order}
-                datasetMode="active"
+                datasetMode={datasetMode}
                 onOpen={openDetails}
                 onApprove={handleApprove}
                 onProceed={handleProceed}

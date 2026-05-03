@@ -3,8 +3,10 @@ import { useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
 import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
 import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -19,6 +21,8 @@ import {
   submitPicking,
   submitPacking,
   submitDispatch,
+  confirmArrival,
+  completeTransaction,
   type OrderDetail,
 } from '../branch-operations/api';
 import SRItemTable, { type SRTableMode } from '../supply-requests/components/SRItemTable';
@@ -142,12 +146,45 @@ export function OrderDetailPage() {
     }
   };
 
+  const handleConfirmArrival = async () => {
+    if (!orderId) return;
 
+    try {
+      setIsSaving(true);
+      setError(null);
+      await confirmArrival(Number(orderId));
+      await loadOrder();
+    } catch (err: any) {
+      setError(err.message || 'Failed to confirm arrival.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCompleteTransaction = async () => {
+    if (!orderId) return;
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      const payload = localItems.map(i => ({
+        requestItemId: Number(i.id),
+        isChecked: i.isBranchChecked ?? false
+      }));
+      await completeTransaction(Number(orderId), payload);
+      await loadOrder();
+    } catch (err: any) {
+      setError(err.message || 'Failed to complete transaction.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   let tableMode: SRTableMode = 'readonly';
   if (orderStatus === 'Processing' || orderStatus === 'Allocated') tableMode = 'picking';
   else if (orderStatus === 'Picking' || orderStatus === 'Packing') tableMode = 'packing';
-  // Packed, Dispatched, Arrived, Completed are all read-only for HQ
+  else if (orderStatus === 'Packed' || orderStatus === 'Dispatched') tableMode = 'packing'; // keep them checked
+  else if (orderStatus === 'Arrived') tableMode = 'branch-check';
 
   if (error) {
     return (
@@ -234,7 +271,29 @@ export function OrderDetailPage() {
             <Chip label="Awaiting Branch Delivery Confirmation" variant="outlined" sx={{ fontWeight: 600, color: 'text.secondary' }} />
           )}
 
+          {/* Package Arrived button for branch users when status is Dispatched */}
+          {orderStatus === 'Dispatched' && (user?.role === 'BranchManager' || user?.role === 'BranchOwner') && (
+            <Button 
+              startIcon={<CheckCircleRoundedIcon />} 
+              onClick={() => void handleConfirmArrival()} 
+              loading={isSaving}
+              disabled={isSaving}
+            >
+              Package Arrived
+            </Button>
+          )}
 
+          {/* Complete Transaction button for branch users when status is Arrived and all items checked */}
+          {orderStatus === 'Arrived' && (user?.role === 'BranchManager' || user?.role === 'BranchOwner') && localItems.every(i => i.isBranchChecked) && (
+            <Button 
+              startIcon={<CheckCircleRoundedIcon />} 
+              onClick={() => void handleCompleteTransaction()} 
+              loading={isSaving}
+              disabled={isSaving}
+            >
+              Complete Transaction
+            </Button>
+          )}
 
           {orderStatus === 'Delivered' && (
             <Button variant="outlined" startIcon={<AssignmentReturnRoundedIcon />} sx={{ color: '#B45309', borderColor: '#B45309' }}>
@@ -284,8 +343,6 @@ export function OrderDetailPage() {
           </Box>
         </Grid>
       </Grid>
-
-
     </Box>
   );
 }
