@@ -64,11 +64,27 @@ export interface ConsumptionLog {
   createdAt: string;
 }
 
-export interface ReturnItem {
+// ── RETURNS TYPES ──
+
+export interface ReturnItemDto {
+  returnItemId: number;
   itemId: number;
   itemName: string;
+  itemSku: string;
   quantityReturned: number;
-  reason: string;
+  quantityInspected: number | null;
+  reasonCode: string;
+  disposition: string;
+  restockBatchId: number | null;
+  inspectionRemarks: string | null;
+}
+
+export interface ReturnScheduleConflict {
+  returnId: number;
+  branchId: number;
+  branchName: string;
+  status: string;
+  pickupScheduledAt: string;
 }
 
 export interface ReturnRecord {
@@ -76,14 +92,198 @@ export interface ReturnRecord {
   orderId: number;
   branchId: number;
   branchName: string;
-  reason: string;
+  status: string;
   resolution: string;
+  reason: string | null;
+  rejectionReason: string | null;
   photoUrls: string | null;
   creditAmount: number | null;
   loggedAt: string;
+  submittedAt: string | null;
+  acknowledgedAt: string | null;
+  dispatchedAt: string | null;
+  arrivedAt: string | null;
+  inspectingAt: string | null;
+  completedAt: string | null;
+  rejectedAt: string | null;
   resolvedAt: string | null;
-  items: ReturnItem[];
+  pickupVehicleId: number | null;
+  pickupVehiclePlateNumber: string | null;
+  pickupScheduledAt: string | null;
+  pickupLastUpdatedAt: string | null;
+  hasVehicleScheduleConflict: boolean;
+  vehicleScheduleConflicts: ReturnScheduleConflict[];
+  items: ReturnItemDto[];
 }
+
+// Legacy alias kept so existing usages don't break
+export type ReturnItem = ReturnItemDto;
+
+export interface ReturnEligibleOrderItem {
+  itemId: number;
+  itemName: string;
+  itemSku: string;
+  quantityDelivered: number;
+}
+
+export interface ReturnEligibleOrder {
+  orderId: number;
+  branchId: number;
+  branchName: string;
+  referenceNumber: string | null;
+  deliveredAt: string;
+  items: ReturnEligibleOrderItem[];
+}
+
+export interface ReturnMessage {
+  messageId: number;
+  returnId: number;
+  senderUserId: number;
+  senderName: string;
+  senderRole: string;
+  content: string;
+  sentAt: string;
+}
+
+// ── RETURNS API ──
+
+export async function fetchReturns(params?: { status?: string; resolution?: string }): Promise<ReturnRecord[]> {
+  const response = await api.get<ReturnRecord[]>('/api/Returns', { params });
+  const payload = response.data as unknown;
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
+    return (payload as { items: ReturnRecord[] }).items;
+  }
+  return [];
+}
+
+export async function fetchReturnById(returnId: number): Promise<ReturnRecord> {
+  const response = await api.get<ReturnRecord>(`/api/Returns/${returnId}`);
+  return response.data;
+}
+
+export async function fetchEligibleOrders(): Promise<ReturnEligibleOrder[]> {
+  const response = await api.get<ReturnEligibleOrder[]>('/api/Returns/eligible-orders');
+  return response.data;
+}
+
+export async function fetchEligibleOrderDetail(orderId: number): Promise<ReturnEligibleOrder> {
+  const response = await api.get<ReturnEligibleOrder>(`/api/Returns/eligible-orders/${orderId}`);
+  return response.data;
+}
+
+export async function createReturnDraft(payload: {
+  orderId: number;
+  resolution: string;
+  reason?: string;
+  photoUrls?: string;
+  items: Array<{ itemId: number; quantityReturned: number; reasonCode: string }>;
+}): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>('/api/Returns/drafts', payload);
+  return response.data;
+}
+
+export async function updateReturnDraft(
+  returnId: number,
+  payload: {
+    resolution: string;
+    reason?: string;
+    photoUrls?: string;
+    items: Array<{ itemId: number; quantityReturned: number; reasonCode: string }>;
+  },
+): Promise<ReturnRecord> {
+  const response = await api.put<ReturnRecord>(`/api/Returns/${returnId}/draft`, payload);
+  return response.data;
+}
+
+export async function submitReturn(returnId: number, note?: string): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>(`/api/Returns/${returnId}/submit`, { note });
+  return response.data;
+}
+
+export async function acknowledgeReturn(
+  returnId: number,
+  payload: {
+    resolution?: string;
+    vehicleId: number;
+    pickupScheduledAt: string;
+    allowConflicts?: boolean;
+    note?: string;
+  },
+): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>(`/api/Returns/${returnId}/acknowledge`, {
+    allowConflicts: true,
+    ...payload,
+  });
+  return response.data;
+}
+
+export async function rejectReturn(returnId: number, reason: string): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>(`/api/Returns/${returnId}/reject`, { reason });
+  return response.data;
+}
+
+export async function rescheduleReturnPickup(
+  returnId: number,
+  payload: {
+    vehicleId: number;
+    pickupScheduledAt: string;
+    note: string;
+    allowConflicts?: boolean;
+  },
+): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>(`/api/Returns/${returnId}/reschedule`, {
+    allowConflicts: true,
+    ...payload,
+  });
+  return response.data;
+}
+
+export async function confirmReturnDispatch(returnId: number, remarks?: string): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>(`/api/Returns/${returnId}/dispatch`, { remarks });
+  return response.data;
+}
+
+export async function confirmReturnArrival(returnId: number, remarks?: string): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>(`/api/Returns/${returnId}/arrive`, { remarks });
+  return response.data;
+}
+
+export async function startReturnInspection(returnId: number, remarks?: string): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>(`/api/Returns/${returnId}/inspect/start`, { remarks });
+  return response.data;
+}
+
+export async function saveReturnInspection(
+  returnId: number,
+  items: Array<{
+    returnItemId: number;
+    disposition: string;
+    quantityInspected?: number;
+    restockBatchId?: number;
+    inspectionRemarks?: string;
+  }>,
+): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>(`/api/Returns/${returnId}/inspect`, { items });
+  return response.data;
+}
+
+export async function completeReturn(returnId: number, remarks?: string): Promise<ReturnRecord> {
+  const response = await api.post<ReturnRecord>(`/api/Returns/${returnId}/complete`, { remarks });
+  return response.data;
+}
+
+export async function fetchReturnMessages(returnId: number): Promise<ReturnMessage[]> {
+  const response = await api.get<ReturnMessage[]>(`/api/Returns/${returnId}/messages`);
+  return response.data;
+}
+
+export async function sendReturnMessage(returnId: number, content: string): Promise<ReturnMessage> {
+  const response = await api.post<ReturnMessage>(`/api/Returns/${returnId}/messages`, { content });
+  return response.data;
+}
+
+// ── BRANCH ORDERS ──
 
 export interface BranchOrder {
   orderId: number;
@@ -129,16 +329,13 @@ export interface OrderDetail extends BranchOrder {
   requestedByName: string;
   notes: string | null;
   trackingNumber: string | null;
-
   vehicleId: number | null;
   dispatchDate: string | null;
   estimatedArrival: string | null;
-
   arrivedAt: string | null;
   arrivedConfirmedByName: string | null;
   completedAt: string | null;
   completedByName: string | null;
-
   requestedItems: OrderRequestItem[];
   allocations: OrderAllocation[];
 }
@@ -157,18 +354,12 @@ export interface CreateOrderPayload {
 }
 
 function normalizeSupplyRequestStatus(status: string): string {
-  if (status === 'Auto_Drafted') {
-    return 'AutoDrafted';
-  }
-
+  if (status === 'Auto_Drafted') return 'AutoDrafted';
   return status;
 }
 
 function normalizeOrderStatus(status: string): string {
-  if (status === 'DeliveredWithVariance') {
-    return 'Delivered';
-  }
-
+  if (status === 'DeliveredWithVariance') return 'Delivered';
   return status;
 }
 
@@ -176,7 +367,6 @@ export async function fetchSupplyRequests(status?: string): Promise<SupplyReques
   const response = await api.get<SupplyRequest[]>('/api/SupplyRequests', {
     params: status ? { status } : undefined,
   });
-  
   const payload = response.data as unknown;
   if (Array.isArray(payload)) {
     return payload.map((row) => ({
@@ -227,11 +417,8 @@ export async function fetchConsumptionLogs(params?: {
   method?: string;
 }): Promise<ConsumptionLog[]> {
   const response = await api.get<ConsumptionLog[]>('/api/Consumption', { params });
-  
   const payload = response.data as unknown;
-  if (Array.isArray(payload)) {
-    return payload;
-  }
+  if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
     return (payload as { items: ConsumptionLog[] }).items;
   }
@@ -258,61 +445,13 @@ export async function logSalesConsumption(payload: {
   return response.data;
 }
 
-export async function fetchReturns(resolution?: string): Promise<ReturnRecord[]> {
-  const response = await api.get<ReturnRecord[]>('/api/Returns', {
-    params: resolution ? { resolution } : undefined,
-  });
-
-  const payload = response.data as unknown;
-
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (
-    payload &&
-    typeof payload === 'object' &&
-    Array.isArray((payload as { items?: unknown }).items)
-  ) {
-    return (payload as { items: ReturnRecord[] }).items;
-  }
-
-  return [];
-}
-
-export async function fetchReturnById(returnId: number): Promise<ReturnRecord> {
-  const response = await api.get<ReturnRecord>(`/api/Returns/${returnId}`);
-  return response.data;
-}
-
-export async function createReturn(payload: {
-  orderId: number;
-  reason: string;
-  photoUrls?: string;
-  items: Array<{ itemId: number; quantityReturned: number; reason: string }>;
-}): Promise<ReturnRecord> {
-  const response = await api.post<ReturnRecord>('/api/Returns', payload);
-  return response.data;
-}
-
-export async function resolveReturn(
-  returnId: number,
-  payload: { resolution: string; creditAmount?: number; remarks?: string },
-): Promise<void> {
-  await api.post(`/api/Returns/${returnId}/resolve`, payload);
-}
-
 export async function fetchBranchOrders(status?: string): Promise<BranchOrder[]> {
   const response = await api.get<BranchOrder[]>('/api/BranchOrders', {
     params: status ? { status } : undefined,
   });
-  
   const payload = response.data as unknown;
   if (Array.isArray(payload)) {
-    return payload.map((row) => ({
-      ...row,
-      status: normalizeOrderStatus(row.status),
-    }));
+    return payload.map((row) => ({ ...row, status: normalizeOrderStatus(row.status) }));
   }
   if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
     return (payload as { items: BranchOrder[] }).items.map((row) => ({
@@ -327,13 +466,9 @@ export async function fetchOrders(status?: string): Promise<BranchOrder[]> {
   const response = await api.get<BranchOrder[]>('/api/Orders', {
     params: status ? { status } : undefined,
   });
-
   const payload = response.data as unknown;
   if (Array.isArray(payload)) {
-    return payload.map((row) => ({
-      ...row,
-      status: normalizeOrderStatus(row.status),
-    }));
+    return payload.map((row) => ({ ...row, status: normalizeOrderStatus(row.status) }));
   }
   if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
     return (payload as { items: BranchOrder[] }).items.map((row) => ({
@@ -346,18 +481,12 @@ export async function fetchOrders(status?: string): Promise<BranchOrder[]> {
 
 export async function fetchOrderById(orderId: number): Promise<OrderDetail> {
   const response = await api.get<OrderDetail>(`/api/Orders/${orderId}`);
-  return {
-    ...response.data,
-    status: normalizeOrderStatus(response.data.status),
-  };
+  return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 
 export async function createOrder(payload: CreateOrderPayload): Promise<OrderDetail> {
   const response = await api.post<OrderDetail>('/api/Orders', payload);
-  return {
-    ...response.data,
-    status: normalizeOrderStatus(response.data.status),
-  };
+  return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 
 export async function pickOrder(orderId: number, remarks?: string): Promise<void> {
@@ -368,54 +497,45 @@ export async function packOrder(orderId: number, remarks?: string): Promise<void
   await api.put(`/api/Orders/${orderId}/pack`, { remarks });
 }
 
-export async function dispatchOrder(orderId: number, payload: {
-
-  vehicleId?: number;
-  trackingNumber?: string;
-  estimatedArrival?: string;
-  remarks?: string;
-}): Promise<void> {
+export async function dispatchOrder(
+  orderId: number,
+  payload: { vehicleId?: number; trackingNumber?: string; estimatedArrival?: string; remarks?: string },
+): Promise<void> {
   await api.put(`/api/Orders/${orderId}/dispatch`, payload);
 }
 
-export async function approveSupplyRequest(requestId: number, payload: {
-  notes?: string;
-  items: Array<{ requestItemId: number; quantityApproved: number }>;
-}): Promise<SupplyRequest> {
+export async function approveSupplyRequest(
+  requestId: number,
+  payload: { notes?: string; items: Array<{ requestItemId: number; quantityApproved: number }> },
+): Promise<SupplyRequest> {
   const response = await api.put<SupplyRequest>(`/api/SupplyRequests/${requestId}/approve`, payload);
-  return {
-    ...response.data,
-    status: normalizeSupplyRequestStatus(response.data.status),
-  };
+  return { ...response.data, status: normalizeSupplyRequestStatus(response.data.status) };
 }
 
-export async function rejectSupplyRequest(requestId: number, payload: {
-  reason?: string;
-  notes?: string;
-}): Promise<SupplyRequest> {
+export async function rejectSupplyRequest(
+  requestId: number,
+  payload: { reason?: string; notes?: string },
+): Promise<SupplyRequest> {
   const response = await api.put<SupplyRequest>(`/api/SupplyRequests/${requestId}/reject`, payload);
-  return {
-    ...response.data,
-    status: normalizeSupplyRequestStatus(response.data.status),
-  };
+  return { ...response.data, status: normalizeSupplyRequestStatus(response.data.status) };
 }
 
-export async function cancelSupplyRequest(requestId: number, payload: {
-  reason?: string;
-  notes?: string;
-}): Promise<SupplyRequest> {
+export async function cancelSupplyRequest(
+  requestId: number,
+  payload: { reason?: string; notes?: string },
+): Promise<SupplyRequest> {
   const response = await api.post<SupplyRequest>(`/api/SupplyRequests/${requestId}/cancel`, payload);
-  return {
-    ...response.data,
-    status: normalizeSupplyRequestStatus(response.data.status),
-  };
+  return { ...response.data, status: normalizeSupplyRequestStatus(response.data.status) };
 }
 
-export async function confirmDelivery(orderId: number, payload: {
-  receivedInFull: boolean;
-  remarks?: string;
-  lines: Array<{ itemId: number; quantityReceived: number }>;
-}): Promise<void> {
+export async function confirmDelivery(
+  orderId: number,
+  payload: {
+    receivedInFull: boolean;
+    remarks?: string;
+    lines: Array<{ itemId: number; quantityReceived: number }>;
+  },
+): Promise<void> {
   await api.post(`/api/BranchOrders/${orderId}/confirm-delivery`, payload);
 }
 
@@ -467,8 +587,8 @@ export async function submitPacking(orderId: number, items: PackingItemPayload[]
 }
 
 export async function submitDispatch(
-  orderId: number, 
-  payload: { vehicleId: number; trackingNumber: string; estimatedArrival: string }
+  orderId: number,
+  payload: { vehicleId: number; trackingNumber: string; estimatedArrival: string },
 ): Promise<OrderDetail> {
   const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/dispatch`, payload);
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
@@ -489,7 +609,7 @@ export async function cancelOrder(orderId: number, payload: { reason?: string })
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 
-// ── MESSAGING APIs ──
+// ── ORDER MESSAGING APIs ──
 
 export interface OrderMessage {
   messageId: number;

@@ -58,6 +58,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<RegistrationVerificationSession> RegistrationVerificationSessions { get; set; } = null!;
     public DbSet<AuditLog> AuditLogs { get; set; } = null!;
     public DbSet<OrderMessage> OrderMessages { get; set; } = null!;
+    public DbSet<ReturnMessage> ReturnMessages { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -143,6 +144,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<ConsumptionLog>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
         modelBuilder.Entity<Notification>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
         modelBuilder.Entity<OrderMessage>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<ReturnMessage>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
 
         // Models with IsDeleted but NO ITenantEntity
         modelBuilder.Entity<Tenant>().HasQueryFilter(e => !e.IsDeleted);
@@ -211,6 +213,18 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Return>()
             .Property(e => e.Resolution)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<Return>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<ReturnItem>()
+            .Property(e => e.ReasonCode)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<ReturnItem>()
+            .Property(e => e.Disposition)
             .HasConversion<byte>();
 
         modelBuilder.Entity<InventoryTransaction>()

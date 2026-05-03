@@ -8,7 +8,9 @@ public enum TransactionType : byte
     Adjustment = 2,
     PhysicalCount = 2,      // Alias for Adjustment
     Spoilage = 3,
+    WriteOff = 3,           // Alias for Spoilage
     Transfer = 4,
+    ReturnDispatch = 4,     // Alias for Transfer
     Return = 5,
     SalesAuto = 1,          // Alias for StockOut
     Consumption = 1,        // Alias for StockOut

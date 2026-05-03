@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -26,6 +27,20 @@ public class ReturnItem : ITenantEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal QuantityReturned { get; set; }
 
-    [MaxLength(100)]
-    public string? Reason { get; set; }
+    [Required]
+    public ReturnItemReason ReasonCode { get; set; } = ReturnItemReason.Damaged;
+
+    [Required]
+    public ReturnItemDisposition Disposition { get; set; } = ReturnItemDisposition.Pending;
+
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal? QuantityInspected { get; set; }
+
+    public int? RestockBatchId { get; set; }
+
+    [ForeignKey(nameof(RestockBatchId))]
+    public Batch? RestockBatch { get; set; }
+
+    [MaxLength(500)]
+    public string? InspectionRemarks { get; set; }
 }
