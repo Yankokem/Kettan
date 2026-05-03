@@ -60,6 +60,8 @@ export interface BranchActivityLog {
   branchId: number;
   event: string;
   actor: string;
+  role: string;
+  action: string;
   happenedAt: string;
   category: 'staff' | 'inventory' | 'operations' | 'orders';
   outcome: 'successful' | 'pending' | 'flagged';

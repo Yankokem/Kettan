@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Box, Paper, Typography, Divider } from '@mui/material';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
-import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
 import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded';
-import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import { BackButton } from '../../components/UI/BackButton';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FormTextField } from '../../components/Form/FormTextField';
@@ -502,13 +500,8 @@ export default function InventoryTransactionPage() {
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mb: 3 }}>
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                <InventoryRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Transaction Type
-                </Typography>
-              </Box>
               <FormDropdown
+                label="Transaction Type"
                 value={transactionType}
                 onChange={(event) => handleTypeChange(String(event.target.value) as InventoryTransactionKind)}
                 options={TRANSACTION_TYPE_OPTIONS}
@@ -518,13 +511,8 @@ export default function InventoryTransactionPage() {
 
             {transactionType === 'Stock-In' && (
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <ReceiptLongRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Reference / Invoice Number
-                  </Typography>
-                </Box>
                 <FormTextField
+                  label="Reference / Invoice Number"
                   value={referenceNumber}
                   placeholder="INV-2026-001"
                   onChange={(event) => setReferenceNumber(event.target.value)}
@@ -534,13 +522,8 @@ export default function InventoryTransactionPage() {
             )}
 
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                <DescriptionRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {transactionType === 'Stock-In' ? 'Remarks (Optional)' : 'Remarks / Reason'}
-                </Typography>
-              </Box>
               <FormTextField
+                label={transactionType === 'Stock-In' ? 'Remarks (Optional)' : 'Remarks / Reason'}
                 value={remarks}
                 onChange={(event) => setRemarks(event.target.value)}
                 multiline

@@ -8,9 +8,6 @@ import { useEffect, useState } from 'react';
 import { api } from '../../utils/api';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
-import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
-import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
-import ToggleOnRoundedIcon from '@mui/icons-material/ToggleOnRounded';
 import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
 import { useNavigate } from '@tanstack/react-router';
 import { FormTextField } from '../../components/Form/FormTextField';
@@ -213,13 +210,8 @@ export function AddMenuItemPage() {
 
           {/* Name */}
           <Box sx={{ mb: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-              <LocalCafeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Menu Item Name
-              </Typography>
-            </Box>
             <FormTextField 
+              label="Menu Item Name"
               placeholder="e.g. Iced Americano"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -229,13 +221,8 @@ export function AddMenuItemPage() {
 
           {/* Category */}
           <Box sx={{ mb: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-              <CategoryRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Category
-              </Typography>
-            </Box>
             <FormDropdown
+              label="Category"
               value={formData.category}
               displayEmpty
               options={[
@@ -249,13 +236,8 @@ export function AddMenuItemPage() {
 
           {/* Description */}
           <Box sx={{ mb: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-              <DescriptionRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Description (Optional)
-              </Typography>
-            </Box>
             <FormTextField 
+              label="Description (Optional)"
               placeholder="Describe your menu item..."
               value={formData.description || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -267,13 +249,8 @@ export function AddMenuItemPage() {
 
           {/* Status */}
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-              <ToggleOnRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Status
-              </Typography>
-            </Box>
             <FormDropdown
+              label="Status"
               value={formData.status}
               options={STATUS_OPTIONS}
               onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'Active' | 'Inactive' }))}

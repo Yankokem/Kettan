@@ -40,7 +40,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@m
 const POLL_INTERVAL_MS = 10_000;
 
 // Statuses where HQ action buttons should be completely locked (order is done or in branch hands)
-const LOCKED_STATUSES = ['Packed', 'Dispatched', 'InTransit', 'Arrived', 'Completed', 'Cancelled', 'Delivered'];
+
 
 function mapOrderItemsToViewModel(requestedItems: OrderDetail['requestedItems']): SupplyRequestDetailItem[] {
   return (requestedItems || []).map((i) => ({

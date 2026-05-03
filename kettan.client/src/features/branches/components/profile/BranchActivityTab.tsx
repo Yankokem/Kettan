@@ -79,12 +79,45 @@ export function BranchActivityTab({ logs }: BranchActivityTabProps) {
   const columns = useMemo<ColumnDef<BranchActivityLog>[]>(
     () => [
       {
+        key: 'happenedAt',
+        label: 'Timestamp',
+        width: '1.5fr',
+        render: (log) => (
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
+            {formatDateTime(log.happenedAt)}
+          </Typography>
+        ),
+      },
+      {
+        key: 'action',
+        label: 'Action',
+        width: '1fr',
+        render: (log) => {
+          const action = log.action || 'Updated';
+          return (
+            <Chip
+              label={action}
+              size="small"
+              sx={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                bgcolor: action === 'Created' ? 'rgba(4,120,87,0.08)' : action === 'Deleted' ? 'rgba(185,28,28,0.08)' : 'rgba(37,99,235,0.08)',
+                color: action === 'Created' ? '#047857' : action === 'Deleted' ? '#B91C1C' : '#2563EB',
+                borderRadius: 1,
+                height: 22,
+                px: 0.5
+              }}
+            />
+          );
+        },
+      },
+      {
         key: 'event',
         label: 'Event',
-        width: '45%',
+        width: '3.5fr',
         render: (log) => (
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{log.event}</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', letterSpacing: '0.01em' }}>{log.event}</Typography>
             <Typography sx={{ fontSize: 11.5, color: 'text.secondary', textTransform: 'capitalize' }}>
               {log.category}
             </Typography>
@@ -93,22 +126,28 @@ export function BranchActivityTab({ logs }: BranchActivityTabProps) {
       },
       {
         key: 'actor',
-        label: 'Actor',
-        width: '20%',
-        render: (log) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{log.actor}</Typography>,
+        label: 'User',
+        width: '2fr',
+        render: (log) => (
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A' }}>
+            {log.actor}
+          </Typography>
+        ),
       },
       {
-        key: 'happenedAt',
-        label: 'Timestamp',
-        width: '22%',
+        key: 'role',
+        label: 'Role',
+        width: '1.2fr',
         render: (log) => (
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{formatDateTime(log.happenedAt)}</Typography>
+          <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
+            {log.role || 'Staff'}
+          </Typography>
         ),
       },
       {
         key: 'outcome',
         label: 'Outcome',
-        width: '13%',
+        width: '1fr',
         align: 'center',
         render: (log) => (
           <Chip
@@ -120,18 +159,19 @@ export function BranchActivityTab({ logs }: BranchActivityTabProps) {
               borderRadius: 1.5,
               bgcolor:
                 log.outcome === 'successful'
-                  ? 'success.light'
+                  ? 'rgba(16, 185, 129, 0.08)'
                   : log.outcome === 'pending'
-                    ? 'warning.light'
-                    : 'error.light',
+                    ? 'rgba(245, 158, 11, 0.08)'
+                    : 'rgba(239, 68, 68, 0.08)',
               color:
                 log.outcome === 'successful'
-                  ? 'success.dark'
+                  ? '#10B981'
                   : log.outcome === 'pending'
-                    ? 'warning.dark'
-                    : 'error.dark',
-              fontSize: 11,
+                    ? '#F59E0B'
+                    : '#EF4444',
+              fontSize: 10.5,
               fontWeight: 700,
+              minWidth: 80
             }}
           />
         ),

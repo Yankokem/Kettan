@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   Box,
   Typography,
   Paper,
@@ -118,10 +117,8 @@ export function VariantModal({
           <Box sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1.5fr 1fr' }, gap: 2 }}>
               <Box>
-                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1 }}>
-                  Variant Name
-                </Typography>
                 <FormTextField
+                  label="Variant Name"
                   placeholder="e.g., Small, Medium, Large"
                   value={variantName}
                   onChange={(e) => setVariantName(e.target.value)}
@@ -129,10 +126,8 @@ export function VariantModal({
                 />
               </Box>
               <Box>
-                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1 }}>
-                  Variant Price
-                </Typography>
                 <FormTextField
+                  label="Variant Price"
                   type="number"
                   placeholder="e.g. 70.00"
                   inputProps={{ step: '0.01', min: '0' }}
@@ -197,6 +192,7 @@ export function VariantModal({
                             </TableCell>
                             <TableCell>
                               <FormTextField
+                                label="Qty"
                                 type="number"
                                 inputProps={{ step: '0.001', min: '0' }}
                                 value={ingredient.qtyPerUnit}

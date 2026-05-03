@@ -6,8 +6,6 @@ import {
   Box,
   Typography,
   Chip,
-  Paper,
-  Divider,
   IconButton,
   TextField,
 } from '@mui/material';

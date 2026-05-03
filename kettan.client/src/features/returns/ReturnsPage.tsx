@@ -4,7 +4,6 @@ import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRou
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
-import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import type { AxiosError } from 'axios';
@@ -73,7 +72,7 @@ function defaultEndDate() {
 
 // Active = in-flight (not terminal)
 const ACTIVE_STATUSES = new Set(['Submitted', 'Acknowledged', 'Dispatched', 'Arrived', 'Inspecting']);
-const TERMINAL_STATUSES = new Set(['Completed', 'Rejected']);
+
 
 export function ReturnsPage() {
   const navigate = useNavigate();

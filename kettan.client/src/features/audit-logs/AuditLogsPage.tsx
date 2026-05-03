@@ -143,12 +143,12 @@ export function AuditLogsPage() {
   const columns: ColumnDef<AuditLogEntry>[] = [
     {
       key: 'occurredAt',
-      label: 'Time',
-      width: 170,
+      label: 'Timestamp',
+      width: '1.5fr',
       sortable: true,
       sortAccessor: (row) => new Date(row.occurredAt).getTime(),
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
           {new Date(row.occurredAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
         </Typography>
       ),
@@ -156,7 +156,7 @@ export function AuditLogsPage() {
     {
       key: 'action',
       label: 'Action',
-      width: 140,
+      width: '1fr',
       sortable: true,
       render: (row) => {
         const style = actionStyle(row.action);
@@ -165,11 +165,14 @@ export function AuditLogsPage() {
             label={row.action}
             size="small"
             sx={{
-              fontSize: 11.5,
+              fontSize: 10.5,
               fontWeight: 700,
               bgcolor: style.bg,
               color: style.color,
               border: `1px solid ${style.color}2b`,
+              borderRadius: 1,
+              height: 24,
+              px: 0.5
             }}
           />
         );
@@ -177,31 +180,67 @@ export function AuditLogsPage() {
     },
     {
       key: 'entityName',
-      label: 'Entity',
-      width: 160,
+      label: 'Event',
+      width: '3.5fr',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13.5, fontWeight: 600 }}>{`${row.entityName}${row.entityId ? ` #${row.entityId}` : ''}`}</Typography>
+        <Box>
+          <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.primary', letterSpacing: '0.01em' }}>
+            {row.entityName}
+          </Typography>
+          {row.entityId && (
+            <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.2 }}>
+              ID: #{row.entityId}
+            </Typography>
+          )}
+        </Box>
       ),
     },
     {
       key: 'actorName',
-      label: 'Actor',
-      width: 160,
+      label: 'User',
+      width: '2fr',
       sortable: true,
-      render: (row) => <Typography sx={{ fontSize: 13 }}>{row.actorName}</Typography>,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#6B4C2A' }}>
+          {row.actorName}
+        </Typography>
+      ),
     },
     {
       key: 'actorRole',
       label: 'Role',
-      width: 140,
+      width: '1.2fr',
       sortable: true,
-      render: (row) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.actorRole}</Typography>,
+      render: (row) => (
+        <Chip 
+          label={row.actorRole} 
+          size="small" 
+          variant="outlined"
+          sx={{ fontSize: 10.5, fontWeight: 600, color: 'text.secondary', height: 22, borderStyle: 'dashed' }}
+        />
+      ),
     },
     {
-      key: 'tenantName',
-      label: 'Tenant',
-      render: (row) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.tenantName || 'Platform'}</Typography>,
+      key: 'id',
+      label: 'Outcome',
+      width: '1fr',
+      align: 'center',
+      render: (row) => (
+        <Chip
+          label={row.action === 'Deleted' ? 'Flagged' : 'Successful'}
+          size="small"
+          sx={{
+            height: 24,
+            fontSize: 10.5,
+            fontWeight: 700,
+            borderRadius: 1.5,
+            bgcolor: row.action === 'Deleted' ? 'rgba(220, 38, 38, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+            color: row.action === 'Deleted' ? '#DC2626' : '#10B981',
+            minWidth: 90
+          }}
+        />
+      ),
     },
   ];
 
@@ -210,8 +249,8 @@ export function AuditLogsPage() {
   const deletedEvents = rows.filter((row) => row.action === 'Deleted').length;
 
   return (
-    <Box sx={{ pb: 3 }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, gap: 2.5, mb: 4 }}>
+    <Box sx={{ px: { xs: 2, md: 3 }, pb: 5 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, gap: 2.5, mb: 4, px: { md: 1 } }}>
         <StatCard
           label="Total Events"
           value={totalCount}

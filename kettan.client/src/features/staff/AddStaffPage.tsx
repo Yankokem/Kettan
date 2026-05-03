@@ -5,12 +5,8 @@ import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
-import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
-import CakeRoundedIcon from '@mui/icons-material/CakeRounded';
-import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
-import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
@@ -251,13 +247,8 @@ export function AddStaffPage() {
           <Grid container spacing={2.5}>
             <Grid size={{ xs: 12 }}>
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <PersonRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    First Name
-                  </Typography>
-                </Box>
                 <FormTextField
+                  label="First Name"
                   placeholder="e.g. Juan"
                   value={formData.firstName}
                   onChange={(event) => setFormData((prev) => ({ ...prev, firstName: event.target.value }))}
@@ -267,13 +258,8 @@ export function AddStaffPage() {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <PersonRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Last Name
-                  </Typography>
-                </Box>
                 <FormTextField
+                  label="Last Name"
                   placeholder="e.g. Dela Cruz"
                   value={formData.lastName}
                   onChange={(event) => setFormData((prev) => ({ ...prev, lastName: event.target.value }))}
@@ -284,13 +270,8 @@ export function AddStaffPage() {
 
             <Grid size={{ xs: 12 }}>
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <CakeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Birthday
-                  </Typography>
-                </Box>
                 <FormTextField
+                  label="Birthday"
                   type="date"
                   value={formData.birthday}
                   onChange={(event) => setFormData((prev) => ({ ...prev, birthday: event.target.value }))}
@@ -301,13 +282,8 @@ export function AddStaffPage() {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <PhoneRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Contact Number
-                  </Typography>
-                </Box>
                 <FormTextField
+                  label="Contact Number"
                   placeholder="e.g. +63 917 123 4567"
                   value={formData.contactNo}
                   onChange={(event) => setFormData((prev) => ({ ...prev, contactNo: event.target.value }))}
@@ -338,13 +314,8 @@ export function AddStaffPage() {
           <Grid container spacing={2.5} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12 }}>
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <EmailRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Email Address
-                  </Typography>
-                </Box>
                 <FormTextField
+                  label="Email Address"
                   placeholder="juan@kettan.co"
                   type="email"
                   value={formData.email}
@@ -357,13 +328,8 @@ export function AddStaffPage() {
 
             <Grid size={{ xs: 12, sm: 6 }}>
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <LockRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Password
-                  </Typography>
-                </Box>
                 <FormTextField
+                  label="Password"
                   type="password"
                   placeholder="Minimum 8 characters"
                   value={formData.password}
@@ -378,13 +344,8 @@ export function AddStaffPage() {
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <LockRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Confirm Password
-                  </Typography>
-                </Box>
                 <FormTextField
+                  label="Confirm Password"
                   type="password"
                   placeholder="Confirm password"
                   value={formData.confirmPassword}
@@ -407,13 +368,8 @@ export function AddStaffPage() {
           <Grid container spacing={2.5}>
             <Grid size={{ xs: 12 }}>
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <BadgeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Role
-                  </Typography>
-                </Box>
                 <FormDropdown
+                  label="Role"
                   value={formData.role}
                   options={ROLE_OPTIONS}
                   onChange={(event) => {
@@ -434,13 +390,8 @@ export function AddStaffPage() {
             {formData.role && (formData.role === 'BranchOwner' || formData.role === 'BranchManager' || formData.role === 'StoreStaff') && (
               <Grid size={{ xs: 12 }}>
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                    <StoreRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                    <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                      Branch Assignment
-                    </Typography>
-                  </Box>
                   <FormDropdown
+                    label="Branch Assignment"
                     value={formData.branchId}
                     options={[
                       { value: '', label: 'Select a branch...' },

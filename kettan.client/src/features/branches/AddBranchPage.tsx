@@ -5,13 +5,9 @@ import { useNavigate } from '@tanstack/react-router';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
-import LocationCityRoundedIcon from '@mui/icons-material/LocationCityRounded';
-import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
-import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
-import ToggleOnRoundedIcon from '@mui/icons-material/ToggleOnRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
@@ -225,13 +221,8 @@ export function AddBranchPage() {
           </Box>
 
           <Box sx={{ mb: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-              <BusinessRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Branch Name
-              </Typography>
-            </Box>
             <FormTextField
+              label="Branch Name"
               placeholder="e.g. BGC Reserve"
               value={formData.name}
               onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
@@ -240,13 +231,8 @@ export function AddBranchPage() {
           </Box>
 
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-              <ToggleOnRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Status
-              </Typography>
-            </Box>
             <FormDropdown
+              label="Status"
               value={formData.status}
               options={STATUS_OPTIONS}
               onChange={(event) =>
@@ -279,13 +265,8 @@ export function AddBranchPage() {
           </Typography>
 
           <Box sx={{ mb: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-              <LocationOnRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Address
-              </Typography>
-            </Box>
             <FormTextField
+              label="Address"
               placeholder="e.g. 5th Avenue, Bonifacio Global City"
               value={formData.address}
               onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
@@ -297,13 +278,8 @@ export function AddBranchPage() {
 
           <Grid container spacing={2.5} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                <LocationCityRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  City
-                </Typography>
-              </Box>
               <FormTextField
+                label="City"
                 placeholder="e.g. Taguig City"
                 value={formData.city}
                 onChange={(event) => setFormData((prev) => ({ ...prev, city: event.target.value }))}
@@ -311,13 +287,8 @@ export function AddBranchPage() {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                <PhoneRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Contact Number
-                </Typography>
-              </Box>
               <FormTextField
+                label="Contact Number"
                 placeholder="e.g. +63 917 123 4567"
                 value={formData.contactNumber}
                 onChange={(event) => setFormData((prev) => ({ ...prev, contactNumber: event.target.value }))}
@@ -372,13 +343,8 @@ export function AddBranchPage() {
           </Box>
 
           <Box sx={{ mb: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-              <PersonRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Assigned Owner
-              </Typography>
-            </Box>
             <FormDropdown
+              label="Assigned Owner"
               value={formData.ownerUserId}
               options={ownerOptions}
               onChange={(event) =>
@@ -389,13 +355,8 @@ export function AddBranchPage() {
           </Box>
 
           <Box sx={{ mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-              <BadgeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Assigned Manager
-              </Typography>
-            </Box>
             <FormDropdown
+              label="Assigned Manager"
               value={formData.managerUserId}
               options={managerOptions}
               onChange={(event) =>
@@ -415,6 +376,7 @@ export function AddBranchPage() {
 
           <Box sx={{ mb: 3 }}>
             <FormTextField
+              label="Operations Notes"
               placeholder="Share setup reminders, handoff notes, or launch details for this branch..."
               value={formData.notes || ''}
               onChange={(event) => setFormData((prev) => ({ ...prev, notes: event.target.value }))}

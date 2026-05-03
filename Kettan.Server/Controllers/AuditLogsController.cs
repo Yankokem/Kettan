@@ -34,25 +34,56 @@ public class AuditLogsController : ControllerBase
         [FromQuery] int? branchId = null,
         CancellationToken ct = default)
     {
-        var isSuperAdmin = _currentUserService.Role == UserRole.SuperAdmin.ToString();
+        var userRole = _currentUserService.Role;
+        var userBranchId = _currentUserService.BranchId;
+        var isSuperAdmin = userRole == UserRole.SuperAdmin.ToString();
         var tenantId = _currentUserService.TenantId;
 
-        // SuperAdmin sees everything, TenantAdmin sees only their tenant
-        if (!isSuperAdmin && _currentUserService.Role != UserRole.TenantAdmin.ToString())
+        // 1. Authorization
+        var allowedRoles = new[] { 
+            UserRole.SuperAdmin.ToString(), 
+            UserRole.TenantAdmin.ToString(),
+            UserRole.HqManager.ToString(),
+            UserRole.BranchOwner.ToString(),
+            UserRole.BranchManager.ToString() 
+        };
+
+        if (!allowedRoles.Contains(userRole))
         {
             return Forbid();
         }
 
         var query = _context.AuditLogs.AsQueryable();
 
+        // 2. Tenant isolation
         if (!isSuperAdmin && tenantId.HasValue)
         {
             query = query.Where(a => a.TenantId == tenantId.Value);
         }
 
-        // Branch filter
-        if (branchId.HasValue)
+        // 3. Branch-level isolation and defaulting
+        if (userBranchId.HasValue)
         {
+            // Branch user: strictly their own branch
+            query = query.Where(a => a.User != null && a.User.BranchId == userBranchId.Value);
+        }
+        else if (!isSuperAdmin) 
+        {
+            // HQ user (TenantAdmin or HqManager):
+            if (branchId.HasValue)
+            {
+                // Explicitly filtering for a branch (e.g. from branch profile view)
+                query = query.Where(a => a.User != null && a.User.BranchId == branchId.Value);
+            }
+            else 
+            {
+                // Sidebar default: HQ logs ONLY (where user has no branchId or is null/system)
+                query = query.Where(a => a.User == null || a.User.BranchId == null);
+            }
+        }
+        else if (branchId.HasValue)
+        {
+            // SuperAdmin with explicit branch filter
             query = query.Where(a => a.User != null && a.User.BranchId == branchId.Value);
         }
 

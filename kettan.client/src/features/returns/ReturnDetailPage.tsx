@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  Divider,
   MenuItem,
   Paper,
   Select,
@@ -85,7 +84,7 @@ function StatusChip({ status }: { status: string }) {
 }
 
 // ── Timeline ──
-const STATUS_SEQUENCE = ['Draft', 'Submitted', 'Acknowledged', 'Dispatched', 'Arrived', 'Inspecting', 'Completed'];
+
 
 function TimelinePanel({ row }: { row: ReturnRecord }) {
   const events: Array<{ label: string; time: string | null; actor?: string }> = [
@@ -653,7 +652,7 @@ export function ReturnDetailPage() {
     );
   }
 
-  const s = statusStyle(row.status);
+
 
   return (
     <Box sx={{ pb: 3, display: 'grid', gap: 2.2 }}>

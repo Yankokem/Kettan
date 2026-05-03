@@ -63,6 +63,7 @@ const MAIN_NAV: NavItem[] = [
   { text: 'Menu & Recipes',     icon: <LocalCafeRoundedIcon />,        path: '/menu', module: 'menu' },
   { text: 'Consumption',        icon: <ScaleRoundedIcon />,            path: '/consumption', module: 'consumption' },
   { text: 'Staff Directory',    icon: <BadgeRoundedIcon />,            path: '/staff', module: 'staff' },
+  { text: 'Audit Logs',         icon: <FeedRoundedIcon />,               path: '/audit-logs', module: 'audit-logs' },
   { text: 'Finance & Reports',  icon: <BarChartRoundedIcon />,         path: '/reports', module: 'reports' },
 ];
 
@@ -71,7 +72,6 @@ const SUPER_ADMIN_NAV: NavItem[] = [
   { text: 'Tenant Management',  icon: <StoreRoundedIcon />,              path: '/tenants' },
   { text: 'Platform Analytics', icon: <AnalyticsRoundedIcon />,          path: '/analytics' },
   { text: 'Help & Support',    icon: <BadgeRoundedIcon />,               path: '/help' },
-  { text: 'Audit Logs',         icon: <FeedRoundedIcon />,               path: '/audit-logs' },
 ];
 
 function NavLink({

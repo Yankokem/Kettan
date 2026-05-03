@@ -93,8 +93,10 @@ export const mapBranch = (dto: any): Branch => ({
 export const mapActivityLog = (dto: any): BranchActivityLog => ({
   id: String(dto.id),
   branchId: dto.branchId || 0,
-  event: `${dto.action} ${dto.entityName}${dto.entityId ? ` #${dto.entityId}` : ''}`,
+  event: `${dto.entityName}${dto.entityId ? ` #${dto.entityId}` : ''}`,
   actor: dto.actorName || 'System',
+  role: dto.actorRole || 'System',
+  action: dto.action,
   happenedAt: dto.occurredAt,
   category: (dto.eventCategory?.toLowerCase() as any) || 'operations',
   outcome: dto.action === 'Deleted' ? 'flagged' : 'successful',

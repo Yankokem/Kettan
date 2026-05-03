@@ -43,6 +43,7 @@ import { RegisterOnboardingPage } from '../features/marketing/RegisterOnboarding
 import { RegisterSuccessPage } from '../features/marketing/RegisterSuccessPage';
 import { AuditLogsPage } from '../features/audit-logs/AuditLogsPage';
 import { useAuthStore } from '../store/useAuthStore';
+import { canAccessModule } from '../utils/roleHelpers';
 import { TenantsPage } from '../features/super-admin/TenantsPage';
 import { TenantProfilePage } from '../features/super-admin/TenantProfilePage';
 import { AnalyticsPage } from '../features/analytics/AnalyticsPage';
@@ -302,6 +303,12 @@ const auditLogsRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/audit-logs',
   component: AuditLogsPage,
+  beforeLoad: () => {
+    const role = useAuthStore.getState().user?.role;
+    if (!role || !canAccessModule(role, 'audit-logs')) {
+      throw redirect({ to: '/' });
+    }
+  },
 });
 
 const menuRoute = createRoute({

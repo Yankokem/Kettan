@@ -5,7 +5,6 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  FormControlLabel,
   MenuItem,
   Paper,
   Select,

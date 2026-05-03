@@ -9,7 +9,8 @@ export type UserRole =
   | 'HqManager'
   | 'HqStaff'
   | 'BranchOwner'
-  | 'BranchManager';
+  | 'BranchManager'
+  | 'StoreStaff';
 
 /**
  * Convert role string to human-readable display name
@@ -23,6 +24,7 @@ export const getRoleDisplayName = (role: string): string => {
     HqStaff: 'HQ Staff',
     BranchOwner: 'Branch Owner',
     BranchManager: 'Branch Manager',
+    StoreStaff: 'Store Staff',
   };
   return roleMap[role] || role;
 };
@@ -32,13 +34,14 @@ export const getRoleDisplayName = (role: string): string => {
  * @example getRoleBadgeColor('TenantAdmin') => 'primary'
  */
 export const getRoleBadgeColor = (role: string): 'error' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'default' => {
-  const colorMap: Record<string, 'error' | 'primary' | 'secondary' | 'info' | 'success' | 'warning'> = {
+  const colorMap: Record<string, 'error' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'default'> = {
     SuperAdmin: 'error',
     TenantAdmin: 'primary',
     HqManager: 'secondary',
     HqStaff: 'info',
     BranchOwner: 'success',
     BranchManager: 'warning',
+    StoreStaff: 'default',
   };
   return colorMap[role] || 'default';
 };
@@ -76,6 +79,7 @@ export const canAccessModule = (userRole: string, module: string): boolean => {
     'settings': ['TenantAdmin'],
     'company-profile': ['TenantAdmin'],
     'branch-profile': ['BranchOwner', 'BranchManager'],
+    'audit-logs': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager'],
   };
   
   return permissions[module]?.includes(userRole) ?? false;
