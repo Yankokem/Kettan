@@ -57,6 +57,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<RegistrationOtp> RegistrationOtps { get; set; } = null!;
     public DbSet<RegistrationVerificationSession> RegistrationVerificationSessions { get; set; } = null!;
     public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+    public DbSet<OrderMessage> OrderMessages { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -141,6 +142,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<InventoryTransaction>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
         modelBuilder.Entity<ConsumptionLog>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
         modelBuilder.Entity<Notification>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<OrderMessage>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
 
         // Models with IsDeleted but NO ITenantEntity
         modelBuilder.Entity<Tenant>().HasQueryFilter(e => !e.IsDeleted);

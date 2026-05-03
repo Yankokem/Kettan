@@ -483,3 +483,30 @@ export async function completeTransaction(orderId: number, items: BranchCheckIte
   const response = await api.post<OrderDetail>(`/api/Orders/${orderId}/workflow/complete`, { items });
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
+
+export async function cancelOrder(orderId: number, payload: { reason?: string }): Promise<OrderDetail> {
+  const response = await api.post<OrderDetail>(`/api/Orders/${orderId}/workflow/cancel`, payload);
+  return { ...response.data, status: normalizeOrderStatus(response.data.status) };
+}
+
+// ── MESSAGING APIs ──
+
+export interface OrderMessage {
+  messageId: number;
+  orderId: number;
+  senderUserId: number;
+  senderName: string;
+  senderRole: string;
+  content: string;
+  sentAt: string;
+}
+
+export async function fetchOrderMessages(orderId: number): Promise<OrderMessage[]> {
+  const response = await api.get<OrderMessage[]>(`/api/Orders/${orderId}/messages`);
+  return response.data;
+}
+
+export async function sendOrderMessage(orderId: number, payload: { content: string }): Promise<OrderMessage> {
+  const response = await api.post<OrderMessage>(`/api/Orders/${orderId}/messages`, payload);
+  return response.data;
+}

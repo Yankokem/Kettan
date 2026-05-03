@@ -19,10 +19,15 @@ import {
   submitPicking,
   submitPacking,
   submitDispatch,
+  cancelOrder,
   type OrderDetail,
 } from '../branch-operations/api';
 import SRItemTable, { type SRTableMode } from '../supply-requests/components/SRItemTable';
 import type { SupplyRequestDetailItem } from '../supply-requests/components/SupplyRequestDetail.types';
+import { OrderMessagesModal } from './components/OrderMessagesModal';
+import QuestionAnswerRoundedIcon from '@mui/icons-material/QuestionAnswerRounded';
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 
 
 
@@ -35,6 +40,14 @@ export function OrderDetailPage() {
   const [localItems, setLocalItems] = useState<SupplyRequestDetailItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+
+  const [pickingModalOpen, setPickingModalOpen] = useState(false);
+  const [packingModalOpen, setPackingModalOpen] = useState(false);
 
   const loadOrder = async () => {
     if (!orderId) {
@@ -135,8 +148,27 @@ export function OrderDetailPage() {
           isBranchChecked: i.isBranchChecked
       }));
       setLocalItems(items);
+      
+      if (action === 'save-pick') setPickingModalOpen(false);
+      if (action === 'save-pack') setPackingModalOpen(false);
+
     } catch (err: any) {
       setError(err.message || 'Failed to update order workflow.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!orderId || !cancelReason.trim()) return;
+    try {
+      setIsSaving(true);
+      setError(null);
+      await cancelOrder(Number(orderId), { reason: cancelReason });
+      setCancelModalOpen(false);
+      await loadOrder();
+    } catch (err: any) {
+      setError(err.message || 'Failed to cancel order.');
     } finally {
       setIsSaving(false);
     }
@@ -197,16 +229,38 @@ export function OrderDetailPage() {
         {/* Header Actions (Dynamic based on status and role) */}
         <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center' }}>
           
+          {/* Chat Button */}
+          <Button
+            variant="outlined"
+            startIcon={<QuestionAnswerRoundedIcon />}
+            onClick={() => setChatOpen(true)}
+            sx={{ bgcolor: 'white' }}
+          >
+            Messages
+          </Button>
+
+          {/* Cancel Order (HQ only, up to Packed) */}
+          {['Processing', 'Picking', 'Packing', 'Packed'].includes(orderStatus) && (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<CancelRoundedIcon />}
+              onClick={() => setCancelModalOpen(true)}
+              sx={{ bgcolor: 'white' }}
+            >
+              Cancel Order
+            </Button>
+          )}
+
           {(orderStatus === 'Processing' || orderStatus === 'Picking' || orderStatus === 'Allocated') && (
             <Tooltip title={!localItems.some(i => i.isPicked || i.isRejectedDuringPicking) ? "Pick or reject at least one item to save progress" : ""}>
               <span>
                 <Button 
                   startIcon={<InventoryRoundedIcon />} 
-                  onClick={() => void handleWorkflowAction('save-pick')} 
-                  loading={isSaving}
+                  onClick={() => setPickingModalOpen(true)} 
                   disabled={isSaving || !localItems.some(i => i.isPicked || i.isRejectedDuringPicking)}
                 >
-                  {orderStatus === 'Processing' ? 'Start Picking' : 'Update Picking'}
+                  {orderStatus === 'Processing' ? 'Confirm Picking' : 'Update Picking'}
                 </Button>
               </span>
             </Tooltip>
@@ -217,8 +271,7 @@ export function OrderDetailPage() {
               <span>
                 <Button 
                   startIcon={<BackpackRoundedIcon />} 
-                  onClick={() => void handleWorkflowAction('save-pack')} 
-                  loading={isSaving}
+                  onClick={() => setPackingModalOpen(true)} 
                   disabled={isSaving || localItems.filter(i => !i.isRejectedDuringPicking).some(i => !i.isPacked) || localItems.length === 0}
                 >
                   Confirm Items Packed
@@ -286,6 +339,68 @@ export function OrderDetailPage() {
       </Grid>
 
 
+      {/* Cancel Order Modal */}
+      <Dialog open={cancelModalOpen} onClose={() => setCancelModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, color: 'error.main' }}>Cancel Order</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Are you sure you want to cancel this order? All allocated inventory will be returned to HQ stock.
+            The branch will be notified.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Cancellation Reason (Required)"
+            multiline
+            rows={3}
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setCancelModalOpen(false)} color="inherit" disabled={isSaving}>Close</Button>
+          <Button onClick={handleCancelOrder} color="error" variant="contained" disabled={!cancelReason.trim() || isSaving} loading={isSaving}>Confirm Cancel</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Picking Confirm Modal */}
+      <Dialog open={pickingModalOpen} onClose={() => setPickingModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Confirm Picking Progress</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            You have marked <strong>{localItems.filter(i => i.isPicked).length}</strong> item(s) as picked, and <strong>{localItems.filter(i => i.isRejectedDuringPicking).length}</strong> item(s) as rejected.
+          </Typography>
+          {localItems.filter(i => i.isRejectedDuringPicking).length > 0 && (
+            <Box sx={{ bgcolor: 'rgba(244, 67, 54, 0.05)', p: 2, borderRadius: 2, mb: 2 }}>
+              <Typography variant="body2" fontWeight={600} color="error.main" sx={{ mb: 1 }}>Rejected Items:</Typography>
+              {localItems.filter(i => i.isRejectedDuringPicking).map(i => (
+                <Typography key={i.id} variant="caption" display="block" color="text.secondary">• {i.name} ({i.pickingRejectionReason})</Typography>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setPickingModalOpen(false)} color="inherit" disabled={isSaving}>Close</Button>
+          <Button onClick={() => void handleWorkflowAction('save-pick')} variant="contained" loading={isSaving}>Confirm & Save</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Packing Confirm Modal */}
+      <Dialog open={packingModalOpen} onClose={() => setPackingModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Confirm Packing Complete</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            You have marked all <strong>{localItems.filter(i => i.isPacked).length}</strong> valid item(s) as packed and ready for dispatch.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setPackingModalOpen(false)} color="inherit" disabled={isSaving}>Close</Button>
+          <Button onClick={() => void handleWorkflowAction('save-pack')} variant="contained" loading={isSaving}>Confirm Packed</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Order Messages Modal */}
+      <OrderMessagesModal open={chatOpen} onClose={() => setChatOpen(false)} orderId={Number(orderId)} />
     </Box>
   );
 }

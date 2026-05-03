@@ -1,9 +1,16 @@
-import { Box, Typography, Paper, Grid, Alert } from '@mui/material';
+import { Box, Typography, Paper, Grid, Alert, Divider } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
 import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
+import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
+import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
+import LockRoundedIcon from '@mui/icons-material/LockRounded';
+import CakeRoundedIcon from '@mui/icons-material/CakeRounded';
+import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
+import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { BackButton } from '../../components/UI/BackButton';
@@ -192,7 +199,7 @@ export function AddStaffPage() {
 
       {/* Form Content */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
-        {/* Left Panel - Profile Picture */}
+        {/* Left Panel - Personal Information */}
         <Paper
           elevation={0}
           sx={{
@@ -200,185 +207,258 @@ export function AddStaffPage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
-            p: 4,
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
           }}
         >
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
-            Profile Picture
-          </Typography>
-
-          <Box sx={{ mb: 3 }}>
-            <Typography
-              variant="caption"
-              sx={{
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-                fontSize: 11,
-                letterSpacing: '0.5px',
-                display: 'block',
-                mb: 1.5,
-              }}
-            >
-              <ImageRoundedIcon sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
-              Profile Image (Optional)
-            </Typography>
-
-            <Box sx={{ maxWidth: 250 }}>
-              <ProfileImageUploader
-                imageFile={imageFile ?? undefined}
-                imageUrl={imagePreviewUrl}
-                label="Upload Profile Picture"
-                subLabel="PNG or JPG up to 5MB"
-                onFileChange={handleImageChange}
-              />
-            </Box>
+          {/* Profile Picture Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <ImageRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Profile Picture</Typography>
           </Box>
 
-          <Typography variant="body2" sx={{ fontSize: 13, color: 'text.secondary', mt: 3 }}>
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1.5 }}>
+                  Profile Image (Optional)
+                </Typography>
+                <Box sx={{ maxWidth: 250 }}>
+                  <ProfileImageUploader
+                    imageFile={imageFile ?? undefined}
+                    imageUrl={imagePreviewUrl}
+                    label="Upload Profile Picture"
+                    subLabel="PNG or JPG up to 5MB"
+                    onFileChange={handleImageChange}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 3, lineHeight: 1.6 }}>
             Upload an optional profile picture for this staff member. This will be displayed in the staff directory and throughout the system.
           </Typography>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Personal Information Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <PersonRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Personal Information</Typography>
+          </Box>
+
+          <Grid container spacing={2.5}>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <PersonRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    First Name
+                  </Typography>
+                </Box>
+                <FormTextField
+                  placeholder="e.g. Juan"
+                  value={formData.firstName}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, firstName: event.target.value }))}
+                  fullWidth
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <PersonRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Last Name
+                  </Typography>
+                </Box>
+                <FormTextField
+                  placeholder="e.g. Dela Cruz"
+                  value={formData.lastName}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, lastName: event.target.value }))}
+                  fullWidth
+                />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <CakeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Birthday
+                  </Typography>
+                </Box>
+                <FormTextField
+                  type="date"
+                  value={formData.birthday}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, birthday: event.target.value }))}
+                  InputLabelProps={{ shrink: true }}
+                  fullWidth
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <PhoneRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Contact Number
+                  </Typography>
+                </Box>
+                <FormTextField
+                  placeholder="e.g. +63 917 123 4567"
+                  value={formData.contactNo}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, contactNo: event.target.value }))}
+                  fullWidth
+                />
+              </Box>
+            </Grid>
+          </Grid>
         </Paper>
 
-        {/* Right Panel - Staff Details */}
+        {/* Right Panel - Account Details */}
         <Paper
           elevation={0}
           sx={{
             flex: 1,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
-            p: 4,
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
           }}
         >
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
-            Staff Details
-          </Typography>
-          <Typography variant="body2" sx={{ fontSize: 13, color: 'text.secondary', mb: 3 }}>
-            Enter the staff member's personal information and account credentials.
-          </Typography>
-
-          <Grid container spacing={2.5} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <FormTextField
-                label="First Name"
-                placeholder="e.g. Juan"
-                value={formData.firstName}
-                onChange={(event) => setFormData((prev) => ({ ...prev, firstName: event.target.value }))}
-                fullWidth
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <FormTextField
-                label="Last Name"
-                placeholder="e.g. Dela Cruz"
-                value={formData.lastName}
-                onChange={(event) => setFormData((prev) => ({ ...prev, lastName: event.target.value }))}
-                fullWidth
-              />
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mb: 2.5 }}>
-            <FormTextField
-              label="Email Address"
-              placeholder="juan@kettan.co"
-              type="email"
-              value={formData.email}
-              onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))}
-              fullWidth
-            />
+          {/* Account Credentials Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <LockRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Account Credentials</Typography>
           </Box>
 
           <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <EmailRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Email Address
+                  </Typography>
+                </Box>
+                <FormTextField
+                  placeholder="juan@kettan.co"
+                  type="email"
+                  value={formData.email}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))}
+                  fullWidth
+                  autoComplete="off"
+                />
+              </Box>
+            </Grid>
+
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormTextField
-                label="Password"
-                type="password"
-                placeholder="Minimum 8 characters"
-                value={formData.password}
-                onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
-                fullWidth
-              />
-              <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
-                Must be at least 8 characters with uppercase, number, and special character.
-              </Typography>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <LockRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Password
+                  </Typography>
+                </Box>
+                <FormTextField
+                  type="password"
+                  placeholder="Minimum 8 characters"
+                  value={formData.password}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
+                  fullWidth
+                  autoComplete="new-password"
+                />
+                <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
+                  Must be at least 8 characters with uppercase, number, and special character.
+                </Typography>
+              </Box>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormTextField
-                label="Confirm Password"
-                type="password"
-                placeholder="Confirm password"
-                value={formData.confirmPassword}
-                onChange={(event) => setFormData((prev) => ({ ...prev, confirmPassword: event.target.value }))}
-                fullWidth
-              />
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <LockRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Confirm Password
+                  </Typography>
+                </Box>
+                <FormTextField
+                  type="password"
+                  placeholder="Confirm password"
+                  value={formData.confirmPassword}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                  fullWidth
+                  autoComplete="new-password"
+                />
+              </Box>
             </Grid>
           </Grid>
 
-          <Grid container spacing={2.5} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <FormTextField
-                label="Birthday (Optional)"
-                type="date"
-                value={formData.birthday}
-                onChange={(event) => setFormData((prev) => ({ ...prev, birthday: event.target.value }))}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <FormTextField
-                label="Contact Number (Optional)"
-                placeholder="e.g. +63 917 123 4567"
-                value={formData.contactNo}
-                onChange={(event) => setFormData((prev) => ({ ...prev, contactNo: event.target.value }))}
-                fullWidth
-              />
-            </Grid>
-          </Grid>
+          <Divider sx={{ my: 3 }} />
 
-          <Box sx={{ mb: 2.5 }}>
-            <FormDropdown
-              label="Role"
-              value={formData.role}
-              options={ROLE_OPTIONS}
-              onChange={(event) => {
-                const newRole = event.target.value as StaffFormData['role'];
-                const isHq = newRole === 'HqManager' || newRole === 'HqStaff';
-                setFormData((prev) => ({
-                  ...prev,
-                  role: newRole,
-                  // Auto-clear branch if switching to HQ role to prevent data bugs
-                  branchId: isHq ? '' : prev.branchId,
-                }));
-              }}
-              fullWidth
-            />
+          {/* Role and Assignment Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <BadgeRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Role and Assignment</Typography>
           </Box>
 
-          {/* Only show Branch selection for Branch-specific roles */}
-          {formData.role && (formData.role === 'BranchOwner' || formData.role === 'BranchManager' || formData.role === 'StoreStaff') && (
-            <Box sx={{ mb: 3 }}>
-              <FormDropdown
-                label="Branch (Optional)"
-                value={formData.branchId}
-                options={[
-                  { value: '', label: 'Select a branch...' },
-                  ...branches.map((b) => ({ value: String(b.branchId), label: b.name })),
-                ]}
-                onChange={(event) => setFormData((prev) => ({ ...prev, branchId: event.target.value as string }))}
-                fullWidth
-              />
-              <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
-                Assign this staff member to a specific branch. Leave blank for HQ staff.
-              </Typography>
-            </Box>
-          )}
+          <Grid container spacing={2.5}>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <BadgeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Role
+                  </Typography>
+                </Box>
+                <FormDropdown
+                  value={formData.role}
+                  options={ROLE_OPTIONS}
+                  onChange={(event) => {
+                    const newRole = event.target.value as StaffFormData['role'];
+                    const isHq = newRole === 'HqManager' || newRole === 'HqStaff';
+                    setFormData((prev) => ({
+                      ...prev,
+                      role: newRole,
+                      branchId: isHq ? '' : prev.branchId,
+                    }));
+                  }}
+                  fullWidth
+                />
+              </Box>
+            </Grid>
+
+            {/* Only show Branch selection for Branch-specific roles */}
+            {formData.role && (formData.role === 'BranchOwner' || formData.role === 'BranchManager' || formData.role === 'StoreStaff') && (
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                    <StoreRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                    <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Branch Assignment
+                    </Typography>
+                  </Box>
+                  <FormDropdown
+                    value={formData.branchId}
+                    options={[
+                      { value: '', label: 'Select a branch...' },
+                      ...branches.map((b) => ({ value: String(b.branchId), label: b.name })),
+                    ]}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, branchId: event.target.value as string }))}
+                    fullWidth
+                  />
+                  <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
+                    Assign this staff member to a specific branch. Leave blank for HQ staff.
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
+          </Grid>
           
           {showPendingWarning && (
-            <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+            <Alert severity="warning" sx={{ mt: 2.5, borderRadius: 2 }}>
               The account's status will be Pending and cannot log in until assigned to a branch.
             </Alert>
           )}

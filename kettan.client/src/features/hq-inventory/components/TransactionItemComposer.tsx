@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
-import { Box, Paper, Typography, Chip, Alert } from '@mui/material';
+import { Box, Typography, Chip, Alert } from '@mui/material';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import ReceiptRoundedIcon from '@mui/icons-material/ReceiptRounded';
 import { SearchInput } from '../../../components/UI/SearchInput';
 import { FormDropdown } from '../../../components/Form/FormDropdown';
 import { FormTextField } from '../../../components/Form/FormTextField';
@@ -84,23 +86,14 @@ export function TransactionItemComposer({
   ];
 
   return (
-    <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3.5 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 2.5 }}>
-        <Box>
-          <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'text.primary' }}>
-            Item Entry
-          </Typography>
-          <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.5 }}>
-            {allowQuickCreate
-              ? 'Pick an existing catalog item or quick-create a new one inline.'
-              : 'Select an existing inventory item and enter transaction details.'}
-          </Typography>
-        </Box>
-
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+        <InventoryRoundedIcon sx={{ fontSize: 18 }} />
+        <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Item Entry</Typography>
         {editingIndex !== null && (
           <Chip
             icon={<EditRoundedIcon sx={{ fontSize: 14 }} />}
-            label="Editing item"
+            label="Editing"
             size="small"
             sx={{
               height: 24,
@@ -108,10 +101,17 @@ export function TransactionItemComposer({
               fontWeight: 600,
               bgcolor: 'rgba(201, 168, 76, 0.12)',
               color: '#6B4C2A',
+              ml: 'auto',
             }}
           />
         )}
       </Box>
+
+      <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
+        {allowQuickCreate
+          ? 'Pick an existing catalog item or quick-create a new one inline.'
+          : 'Select an existing inventory item and enter transaction details.'}
+      </Typography>
 
       {allowQuickCreate ? (
         <Box sx={{ display: 'flex', gap: 1, p: 0.5, mb: 2.5, bgcolor: 'action.hover', borderRadius: 2 }}>
@@ -134,11 +134,7 @@ export function TransactionItemComposer({
             Quick Create
           </Button>
         </Box>
-      ) : (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 2.5 }}>
-          Stock-Out and Adjustment only allow existing catalog items.
-        </Typography>
-      )}
+      ) : null}
 
       {draft.mode === 'existing' ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -213,8 +209,12 @@ export function TransactionItemComposer({
         </Box>
       )}
 
-      <Box sx={{ mt: 3 }}>
-        <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'text.primary', mb: 2 }}>Transaction Fields</Typography>
+      <Box sx={{ mt: 3, mb: 2.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+          <ReceiptRoundedIcon sx={{ fontSize: 18 }} />
+          <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Transaction Fields</Typography>
+        </Box>
+
         <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
           <FormTextField
             label={quantityLabel}
@@ -270,6 +270,6 @@ export function TransactionItemComposer({
           {editingIndex !== null ? 'Update Item' : 'Add Item'}
         </Button>
       </Box>
-    </Paper>
+    </Box>
   );
 }

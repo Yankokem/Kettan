@@ -3,11 +3,15 @@ import { listMenuCategories, type MenuCategory } from './menuCategoryApi';
 import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 import type { InventoryItemOption, MenuItemFormData, MenuVariant } from './types';
 
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper, Divider } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { api } from '../../utils/api';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
+import ToggleOnRoundedIcon from '@mui/icons-material/ToggleOnRounded';
+import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
 import { useNavigate } from '@tanstack/react-router';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
@@ -176,129 +180,146 @@ export function AddMenuItemPage() {
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 4,
-            p: 4,
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
           }}
         >
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 3 }}>
-              Basic Information
+          {/* Menu Item Image Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <ImageRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Menu Item Image</Typography>
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1.5 }}>
+              Product Image (Optional)
             </Typography>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    fontWeight: 700, 
-                    color: '#6B4C2A', 
-                    textTransform: 'uppercase', 
-                    fontSize: 11, 
-                    letterSpacing: '0.5px',
-                    display: 'block',
-                    mb: 1.5
-                  }}
-                >
-                  <ImageRoundedIcon sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
-                  Menu Item Image
-                </Typography>
-                
-                <Box sx={{ maxWidth: 280 }}>
-                  <ProfileImageUploader
-                    imageFile={formData.imageFile ?? undefined}
-                    imageUrl={formData.imagePreviewUrl}
-                    onFileChange={handleImageChange}
-                  />
-                </Box>
-              </Box>
-
-              {/* Name */}
-              <Box sx={{ mb: 2.5 }}>
-                <FormTextField 
-                  label="Menu Item Name" 
-                  placeholder="e.g. Iced Americano"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  fullWidth
-                />
-              </Box>
-
-              {/* Category */}
-              <Box sx={{ mb: 2.5 }}>
-                <FormDropdown
-                  label="Category"
-                  value={formData.category}
-                  displayEmpty
-                  options={[
-                    { value: '', label: 'Select a category' },
-                    ...categories.map(c => ({ value: String(c.categoryId), label: c.name })),
-                  ]}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as string }))}
-                  fullWidth
-                />
-              </Box>
-
-              {/* Description */}
-              <Box sx={{ mb: 2.5 }}>
-                <FormTextField 
-                  label="Description (Optional)" 
-                  placeholder="Describe your menu item..."
-                  value={formData.description || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  multiline
-                  rows={3}
-                  fullWidth
-                />
-              </Box>
-
-              {/* Status */}
-              <Box>
-                <FormDropdown
-                  label="Status"
-                  value={formData.status}
-                  options={STATUS_OPTIONS}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'Active' | 'Inactive' }))}
-                  fullWidth
-                />
-            </Box>
-          </Paper>
-
-          {/* RIGHT SECTION: Variants & Pricing */}
-          <Paper
-            elevation={0}
-            sx={{
-              flex: 1,
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 4,
-              p: 4,
-            }}
-          >
-            {/* Variants Section */}
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
-                  Variants & Ingredients
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: 13, mb: 3 }}>
-                  Add size or type variants with their own ingredient quantities and prices.
-                </Typography>
-                
-                <VariantsBuilder
-                  variants={formData.variants}
-                  onVariantsChange={handleVariantChange}
-                  inventoryOptions={inventoryItems}
-                />
-              </Box>
-
-            <Box sx={{ pt: 3, mt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
-              <FormActions 
-                cancelTo="/menu" 
-                saveText={isSubmitting ? 'Saving...' : 'Save Menu Item'} 
-                saveIcon={<LocalCafeRoundedIcon />}
-                onSave={handleSubmit}
-                saveDisabled={isSubmitting}
+            <Box sx={{ maxWidth: 250 }}>
+              <ProfileImageUploader
+                imageFile={formData.imageFile ?? undefined}
+                imageUrl={formData.imagePreviewUrl}
+                onFileChange={handleImageChange}
               />
             </Box>
-          </Paper>
-        </Box>
+          </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Basic Information Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <LocalCafeRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Basic Information</Typography>
+          </Box>
+
+          {/* Name */}
+          <Box sx={{ mb: 2.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              <LocalCafeRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Menu Item Name
+              </Typography>
+            </Box>
+            <FormTextField 
+              placeholder="e.g. Iced Americano"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              fullWidth
+            />
+          </Box>
+
+          {/* Category */}
+          <Box sx={{ mb: 2.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              <CategoryRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Category
+              </Typography>
+            </Box>
+            <FormDropdown
+              value={formData.category}
+              displayEmpty
+              options={[
+                { value: '', label: 'Select a category' },
+                ...categories.map(c => ({ value: String(c.categoryId), label: c.name })),
+              ]}
+              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as string }))}
+              fullWidth
+            />
+          </Box>
+
+          {/* Description */}
+          <Box sx={{ mb: 2.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              <DescriptionRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Description (Optional)
+              </Typography>
+            </Box>
+            <FormTextField 
+              placeholder="Describe your menu item..."
+              value={formData.description || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              multiline
+              rows={3}
+              fullWidth
+            />
+          </Box>
+
+          {/* Status */}
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+              <ToggleOnRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Status
+              </Typography>
+            </Box>
+            <FormDropdown
+              value={formData.status}
+              options={STATUS_OPTIONS}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'Active' | 'Inactive' }))}
+              fullWidth
+            />
+          </Box>
+        </Paper>
+
+        {/* RIGHT SECTION: Variants & Pricing */}
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
+          }}
+        >
+          {/* Variants Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <RestaurantMenuRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Variants & Ingredients</Typography>
+          </Box>
+
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: 13, mb: 3 }}>
+            Add size or type variants with their own ingredient quantities and prices.
+          </Typography>
+          
+          <VariantsBuilder
+            variants={formData.variants}
+            onVariantsChange={handleVariantChange}
+            inventoryOptions={inventoryItems}
+          />
+
+          <Box sx={{ pt: 3, mt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+            <FormActions 
+              cancelTo="/menu" 
+              saveText={isSubmitting ? 'Saving...' : 'Save Menu Item'} 
+              saveIcon={<LocalCafeRoundedIcon />}
+              onSave={handleSubmit}
+              saveDisabled={isSubmitting}
+            />
+          </Box>
+        </Paper>
+      </Box>
     </Box>
   );
 }

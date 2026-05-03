@@ -1,10 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Card, Chip, Divider, Grid, InputAdornment, Stack, TextField as MuiTextField, Typography } from '@mui/material';
+import { Alert, Box, Card, Chip, Divider, Grid, InputAdornment, Paper, Stack, TextField as MuiTextField, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import ScheduleSendRoundedIcon from '@mui/icons-material/ScheduleSendRounded';
+import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import PriorityHighRoundedIcon from '@mui/icons-material/PriorityHighRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import AttachMoneyRoundedIcon from '@mui/icons-material/AttachMoneyRounded';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -16,7 +24,6 @@ import { createOrder } from '../branch-operations/api';
 
 import { SelectedItemsTable } from './components/SelectedItemsTable';
 import { InventorySelectionModal } from './components/InventorySelectionModal';
-import { RequestSnapshotCards } from './components/RequestSnapshotCards';
 import type { InventoryItem } from './components/InventoryItemCard';
 
 const BRANCHES = [{ value: '', label: 'Loading branches...' }];
@@ -190,130 +197,160 @@ export function NewOrderRequestPage() {
   };
 
   return (
-    <Box sx={{ pb: 4 }}>
-      <Stack spacing={2.2} sx={{ mb: 3.2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <BackButton to="/orders" />
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-                New HQ Supply Push
-              </Typography>
-              <Chip label="Draft" size="small" sx={{ fontWeight: 700, fontSize: 11 }} />
-              <Chip
-                label="HQ-Initiated Transfer"
-                size="small"
-                sx={{
-                  fontWeight: 700,
-                  fontSize: 11,
-                  bgcolor: 'rgba(107,76,42,0.12)',
-                  color: '#6B4C2A',
-                  border: '1px solid rgba(107,76,42,0.24)',
-                }}
-              />
-            </Box>
-            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-              Build an HQ-initiated supply shipment to a branch — for proactive loadouts, new branch setups, or seasonal restocking.
-            </Typography>
-          </Box>
+    <Box sx={{ pb: 3, display: 'grid', gap: 2.2 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+        <BackButton to="/orders" />
+        <Box>
+          <Typography sx={{ fontSize: 17, fontWeight: 800 }}>New HQ Supply Push</Typography>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+            Build an HQ-initiated supply shipment to a branch — for proactive loadouts, new branch setups, or seasonal restocking.
+          </Typography>
         </Box>
+      </Box>
 
-        <RequestSnapshotCards
-          totalLines={selectedItems.length}
-          totalUnits={totalUnits}
-          riskLines={atRiskLines}
-          estimatedCost={estimatedCost}
-        />
-      </Stack>
+      {/* Main Content - Left/Right Layout */}
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+        {/* Left Panel - Request Context & Summary */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', md: '42%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0,
+          }}
+        >
+          {/* Request Context Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <CategoryRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Request Context</Typography>
+          </Box>
 
-      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: { xs: 3, md: 4 } }}>
-        <form onSubmit={handleSubmit}>
-          <Box sx={{ mb: 4.5 }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', mb: 1.8 }}>
-              Request Context
-            </Typography>
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.7 }}>
-              Set where this loadout is going, how urgent it is, and which dispatch lane will carry it.
-            </Typography>
-
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.2, color: 'text.secondary' }}>Destination Branch</Typography>
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <StorefrontRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Destination Branch
+                  </Typography>
+                </Box>
                 <Dropdown
                   options={branchOptions}
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value as string)}
                   fullWidth
                 />
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.2, color: 'text.secondary' }}>Priority Level</Typography>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <PriorityHighRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Priority Level
+                  </Typography>
+                </Box>
                 <Dropdown
                   options={REQUEST_PRIORITIES}
                   value={selectedPriority}
                   onChange={(e) => setSelectedPriority(e.target.value as string)}
                   fullWidth
                 />
-              </Grid>
+              </Box>
+            </Grid>
 
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.2, color: 'text.secondary' }}>Request Type</Typography>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <CategoryRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Request Type
+                  </Typography>
+                </Box>
                 <Dropdown
                   options={REQUEST_TYPES}
                   value={requestType}
                   onChange={(e) => setRequestType(e.target.value as string)}
                   fullWidth
                 />
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.2, color: 'text.secondary' }}>Dispatch Window</Typography>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <ScheduleSendRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Dispatch Window
+                  </Typography>
+                </Box>
                 <Dropdown
                   options={DISPATCH_WINDOWS}
                   value={dispatchWindow}
                   onChange={(e) => setDispatchWindow(e.target.value as string)}
                   fullWidth
                 />
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.2, color: 'text.secondary' }}>Expected Dispatch Date</Typography>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <CalendarMonthRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Expected Dispatch Date
+                  </Typography>
+                </Box>
                 <MuiTextField
                   type="date"
                   fullWidth
                   size="small"
                   value={dispatchDate}
                   onChange={(event) => setDispatchDate(event.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <CalendarMonthRoundedIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  }}
                 />
-              </Grid>
+              </Box>
+            </Grid>
 
-              <Grid size={{ xs: 12 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.2, color: 'text.secondary' }}>Requesting Personnel</Typography>
-                <MuiTextField
-                  fullWidth
-                  disabled
-                  value={requesterLabel}
-                  size="small"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PersonOutlineIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  }}
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <PersonOutlineIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Requesting Personnel
+                  </Typography>
+                </Box>
+                <Box
                   sx={{
-                    '& .MuiOutlinedInput-root.Mui-disabled': { bgcolor: 'action.hover' },
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: 'action.hover',
+                    border: '1px solid',
+                    borderColor: 'divider',
                   }}
-                />
-              </Grid>
+                >
+                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
+                    {requesterLabel}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
 
-              <Grid size={{ xs: 12 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.2, color: 'text.secondary' }}>Operational Notes</Typography>
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <NotesRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Operational Notes
+                  </Typography>
+                </Box>
                 <MuiTextField
                   fullWidth
                   multiline
@@ -322,78 +359,117 @@ export function NewOrderRequestPage() {
                   value={requestNotes}
                   onChange={(event) => setRequestNotes(event.target.value)}
                 />
-              </Grid>
+              </Box>
             </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Request Summary Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+            <InventoryRoundedIcon sx={{ fontSize: 18 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Request Summary</Typography>
           </Box>
 
-          <Divider sx={{ mb: 3.5 }} />
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: 1.3, mb: 2.2 }}>
-            <Box>
-              <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>
-              Requested Items
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.25 }}>
-                Add inventory lines with requested quantities. Availability checks are shown before submission.
-              </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Line Items</Typography>
+              <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{selectedItems.length}</Typography>
             </Box>
-            <Button
-              onClick={(e) => { e.preventDefault(); setIsModalOpen(true); }}
-              variant="outlined"
-              startIcon={<AddCircleOutlineRoundedIcon />}
-              size="small"
-              sx={{ color: 'text.primary', borderColor: 'divider', '&:hover': { bgcolor: 'action.hover' } }}
-            >
-              Add Items
-            </Button>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Requested Units</Typography>
+              <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{totalUnits}</Typography>
+            </Box>
+
+            {atRiskLines > 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, color: '#F59E0B' }}>At-Risk Lines</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#F59E0B' }}>{atRiskLines}</Typography>
+              </Box>
+            )}
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Estimated Cost</Typography>
+              <Typography sx={{ fontSize: 15, fontWeight: 700 }}>₱{estimatedCost.toFixed(2)}</Typography>
+            </Box>
           </Box>
+        </Paper>
 
-          <Box sx={{ mb: 3.2 }}>
-            <SelectedItemsTable
-              items={selectedItems}
-              onRemoveItem={handleRemoveItem}
-              onUpdateQuantity={handleUpdateQuantity}
-            />
-          </Box>
+        {/* Right Panel - Requested Items */}
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '14px',
+            p: { xs: 3, md: 4 },
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+          }}
+        >
+          <form onSubmit={handleSubmit}>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+                <InventoryRoundedIcon sx={{ fontSize: 18 }} />
+                <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Requested Items</Typography>
+              </Box>
 
-          {atRiskLines > 0 ? (
-            <Alert severity="warning" sx={{ mb: 3 }} icon={<ScheduleSendRoundedIcon fontSize="inherit" />}>
-              {atRiskLines} line item(s) exceed available HQ stock. You can still submit this request, but fulfillment may be partial.
-            </Alert>
-          ) : null}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
+                <Button
+                  onClick={(e) => { e.preventDefault(); setIsModalOpen(true); }}
+                  variant="outlined"
+                  startIcon={<AddCircleOutlineRoundedIcon />}
+                >
+                  Add Items
+                </Button>
+              </Box>
 
-          {error ? (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          ) : null}
+              <SelectedItemsTable
+                items={selectedItems}
+                onRemoveItem={handleRemoveItem}
+                onUpdateQuantity={handleUpdateQuantity}
+              />
 
-          <Box sx={{ pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate({ to: '/orders' })}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={(event) => {
-                event.preventDefault();
-                setError('Draft save is not yet implemented in backend.');
-              }}
-            >
-              Save Draft
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={isSaving}
-            >
-              {isSaving ? 'Submitting...' : 'Submit Internal Request'}
-            </Button>
-          </Box>
-        </form>
-      </Card>
+              {atRiskLines > 0 && (
+                <Alert severity="warning" sx={{ mt: 3 }} icon={<ScheduleSendRoundedIcon fontSize="inherit" />}>
+                  {atRiskLines} line item(s) exceed available HQ stock. You can still submit this request, but fulfillment may be partial.
+                </Alert>
+              )}
+
+              {error && (
+                <Alert severity="error" sx={{ mt: 3 }}>
+                  {error}
+                </Alert>
+              )}
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, pt: 2 }}>
+              <Button variant="outlined" onClick={() => navigate({ to: '/orders' })}>
+                Cancel
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setError('Draft save is not yet implemented in backend.');
+                }}
+              >
+                Save Draft
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSaving}
+              >
+                {isSaving ? 'Submitting...' : 'Submit Internal Request'}
+              </Button>
+            </Box>
+          </form>
+        </Paper>
+      </Box>
 
       <InventorySelectionModal
         open={isModalOpen}

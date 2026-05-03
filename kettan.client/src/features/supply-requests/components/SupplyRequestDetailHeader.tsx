@@ -6,6 +6,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
+import QuestionAnswerRoundedIcon from '@mui/icons-material/QuestionAnswerRounded';
 import { useNavigate } from '@tanstack/react-router';
 
 import { BackButton } from '../../../components/UI/BackButton';
@@ -30,6 +31,8 @@ export interface SupplyRequestDetailHeaderProps {
   onFileReturn?: () => void;
   onConfirmArrival?: () => void;
   onCompleteTransaction?: () => void;
+  onMessagesClick?: () => void;
+  hasLinkedOrder?: boolean;
 }
 
 export function SupplyRequestDetailHeader({
@@ -46,6 +49,8 @@ export function SupplyRequestDetailHeader({
   onFileReturn,
   onConfirmArrival,
   onCompleteTransaction,
+  onMessagesClick,
+  hasLinkedOrder,
 }: SupplyRequestDetailHeaderProps) {
   const navigate = useNavigate();
   const statusColor = SUPPLY_REQUEST_STATUS_COLORS[status] || { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };
@@ -91,6 +96,18 @@ export function SupplyRequestDetailHeader({
 
       <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
         
+        {/* Messages Button (visible if there's a linked order) */}
+        {hasLinkedOrder && (
+          <Button
+            variant="outlined"
+            startIcon={<QuestionAnswerRoundedIcon />}
+            onClick={onMessagesClick}
+            sx={{ bgcolor: 'white' }}
+          >
+            Messages
+          </Button>
+        )}
+
         {/* Branch: Draft Actions */}
         {(status === 'Draft' || status === 'AutoDrafted') && isBranch && (
           <>

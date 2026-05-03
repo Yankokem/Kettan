@@ -67,7 +67,7 @@ export const canAccessModule = (userRole: string, module: string): boolean => {
     'order-processing': ['TenantAdmin', 'HqManager', 'HqStaff'],
     'hq-inventory': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
     'menu': ['TenantAdmin', 'HqManager'],
-    'consumption': ['HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
+    'consumption': ['BranchOwner', 'BranchManager'],
     'branches': ['TenantAdmin', 'HqManager', 'HqStaff'],
     'staff': ['TenantAdmin', 'HqManager', 'HqStaff'],
     'reports': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager'],
@@ -95,8 +95,8 @@ export const canPerformAction = (
   // Module-specific action permissions
   const actionPermissions: Record<string, Record<string, string[]>> = {
     'consumption': {
-      'view': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
-      'create': ['TenantAdmin', 'BranchManager'],
+      'view': ['BranchOwner', 'BranchManager'],
+      'create': ['BranchManager'],
       'edit': [],
       'delete': [],
     },

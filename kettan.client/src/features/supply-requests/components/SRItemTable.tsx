@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   Box,
   Typography,
-  Checkbox,
   IconButton,
   Tooltip,
   TextField,
@@ -14,6 +13,7 @@ import {
   Chip,
   alpha,
 } from '@mui/material';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import UndoRoundedIcon from '@mui/icons-material/UndoRounded';
 import LightbulbCircleRoundedIcon from '@mui/icons-material/LightbulbCircleRounded';
@@ -35,6 +35,9 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
   // Reject modal state
   const [rejectItem, setRejectItem] = useState<SupplyRequestDetailItem | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  // View rejection reason modal state
+  const [viewRejectItem, setViewRejectItem] = useState<SupplyRequestDetailItem | null>(null);
 
   const toggleCheck = (id: string, field: 'isPicked' | 'isPacked' | 'isBranchChecked') => {
     if (!onItemsChange) return;
@@ -112,45 +115,7 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
   // Define columns
   const columns: ColumnDef<SupplyRequestDetailItem>[] = [];
 
-  // Checkbox column (not for readonly or readonly-packed)
-  if (mode !== 'readonly' && mode !== 'readonly-packed') {
-    columns.push({
-      key: 'checkbox',
-      label: '',
-      render: (row: SupplyRequestDetailItem) => {
-        let checked = false;
-        let disabled = false;
-        
-        if (mode === 'picking') {
-          checked = row.isPicked || false;
-          disabled = row.isRejectedDuringPicking || false;
-        } else if (mode === 'packing') {
-          checked = row.isPacked || false;
-          disabled = row.isRejectedDuringPicking || false;
-        } else if (mode === 'branch-check') {
-          checked = row.isBranchChecked || false;
-        }
-
-        return (
-          <Box sx={{ width: 40, display: 'flex', justifyContent: 'center' }}>
-            <Checkbox
-              checked={checked}
-              disabled={disabled}
-              onClick={(e) => e.stopPropagation()} 
-              onChange={() => {
-                if (mode === 'picking') toggleCheck(row.id, 'isPicked');
-                if (mode === 'packing') toggleCheck(row.id, 'isPacked');
-                if (mode === 'branch-check') toggleCheck(row.id, 'isBranchChecked');
-              }}
-              sx={{ p: 0.5 }}
-            />
-          </Box>
-        );
-      },
-      width: 50,
-    });
-  }
-
+  // Item name column (always present)
   columns.push(
     {
       key: 'item',
@@ -257,15 +222,18 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
       align: 'center',
     });
 
+    // Picking action column — approve (check) + reject (X) on the right
     columns.push({
       key: 'actions',
       label: 'Actions',
       render: (row: SupplyRequestDetailItem) => {
         if (row.isRejectedDuringPicking) {
           return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-               <Tooltip title={`Rejected: ${row.pickingRejectionReason}`}>
-                  <CommentRoundedIcon color="error" sx={{ fontSize: 18 }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end' }}>
+               <Tooltip title={`Rejected: ${row.pickingRejectionReason || 'No reason provided'}`}>
+                  <IconButton size="small" onClick={(e) => { e.stopPropagation(); setViewRejectItem(row); }} sx={{ color: 'error.main' }}>
+                    <CommentRoundedIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
                </Tooltip>
                <Tooltip title="Undo Reject">
                   <IconButton size="small" onClick={(e) => handleUndoReject(e, row.id)} sx={{ color: 'text.secondary' }}>
@@ -276,14 +244,41 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
           );
         }
         return (
-          <Tooltip title="Reject Item">
-            <IconButton size="small" color="error" onClick={(e) => handleOpenReject(e, row)} sx={{ bgcolor: alpha('#f44336', 0.04) }}>
-              <CloseRoundedIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </Tooltip>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end' }}>
+            <Tooltip title={row.isPicked ? "Undo Approve" : "Approve Item"}>
+              <IconButton 
+                size="small" 
+                onClick={(e) => { e.stopPropagation(); toggleCheck(row.id, 'isPicked'); }}
+                sx={{ 
+                  color: row.isPicked ? '#fff' : '#16a34a',
+                  bgcolor: row.isPicked ? '#16a34a' : alpha('#16a34a', 0.06),
+                  border: `1px solid ${row.isPicked ? '#16a34a' : alpha('#16a34a', 0.3)}`,
+                  '&:hover': { bgcolor: row.isPicked ? '#15803d' : alpha('#16a34a', 0.14) },
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <CheckCircleRoundedIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Reject Item">
+              <IconButton 
+                size="small" 
+                onClick={(e) => handleOpenReject(e, row)}
+                sx={{ 
+                  color: '#dc2626',
+                  bgcolor: alpha('#dc2626', 0.06),
+                  border: `1px solid ${alpha('#dc2626', 0.3)}`,
+                  '&:hover': { bgcolor: alpha('#dc2626', 0.14) },
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <CloseRoundedIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
         );
       },
-      width: 80,
+      width: 110,
       align: 'right',
     });
   } else if (mode === 'packing' || mode === 'branch-check' || mode === 'readonly-packed') {
@@ -296,6 +291,55 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
         </Typography>
       ),
       width: '15%',
+    });
+  }
+
+  // Packing/branch-check action column with checkbox + rejection info
+  if (mode === 'packing' || mode === 'branch-check') {
+    columns.push({
+      key: 'actions',
+      label: 'Actions',
+      render: (row: SupplyRequestDetailItem) => {
+        if (row.isRejectedDuringPicking) {
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end' }}>
+              <Tooltip title={`Rejected: ${row.pickingRejectionReason || 'No reason provided'}`}>
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); setViewRejectItem(row); }} sx={{ color: 'error.main' }}>
+                  <CommentRoundedIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          );
+        }
+        
+        const checked = mode === 'packing' ? (row.isPacked || false) : (row.isBranchChecked || false);
+        
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end' }}>
+            <Tooltip title={checked ? "Undo" : (mode === 'packing' ? "Mark Packed" : "Mark Checked")}>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (mode === 'packing') toggleCheck(row.id, 'isPacked');
+                  if (mode === 'branch-check') toggleCheck(row.id, 'isBranchChecked');
+                }}
+                sx={{
+                  color: checked ? '#fff' : '#16a34a',
+                  bgcolor: checked ? '#16a34a' : alpha('#16a34a', 0.06),
+                  border: `1px solid ${checked ? '#16a34a' : alpha('#16a34a', 0.3)}`,
+                  '&:hover': { bgcolor: checked ? '#15803d' : alpha('#16a34a', 0.14) },
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <CheckCircleRoundedIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        );
+      },
+      width: 80,
+      align: 'right',
     });
   }
 
@@ -326,9 +370,37 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
     });
   }
 
+  // Readonly-packed and readonly: show rejection reason icon for branch users
+  if (mode === 'readonly-packed' || mode === 'readonly') {
+    // Only add rejection info column if any items are rejected
+    const hasRejectedItems = items.some(i => i.isRejectedDuringPicking);
+    if (hasRejectedItems) {
+      columns.push({
+        key: 'rejectionInfo',
+        label: '',
+        render: (row: SupplyRequestDetailItem) => {
+          if (!row.isRejectedDuringPicking || !row.pickingRejectionReason) return null;
+          return (
+            <Tooltip title={`Rejection Reason: ${row.pickingRejectionReason}`}>
+              <IconButton 
+                size="small" 
+                onClick={(e) => { e.stopPropagation(); setViewRejectItem(row); }} 
+                sx={{ color: 'error.main' }}
+              >
+                <CommentRoundedIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+          );
+        },
+        width: 50,
+        align: 'center',
+      });
+    }
+  }
+
   // Row click handler
   const handleRowClick = (row: SupplyRequestDetailItem) => {
-    if (mode === 'readonly') return;
+    if (mode === 'readonly' || mode === 'readonly-packed') return;
     if (mode === 'picking' && !row.isRejectedDuringPicking) toggleCheck(row.id, 'isPicked');
     if (mode === 'packing' && !row.isRejectedDuringPicking) toggleCheck(row.id, 'isPacked');
     if (mode === 'branch-check' && !row.isRejectedDuringPicking) toggleCheck(row.id, 'isBranchChecked');
@@ -355,7 +427,7 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
       sx.bgcolor = alpha('#4caf50', 0.05);
     }
 
-    if (mode !== 'readonly') {
+    if (mode !== 'readonly' && mode !== 'readonly-packed') {
       sx.cursor = 'pointer';
       sx['&:hover'] = { bgcolor: 'action.hover' };
     }
@@ -375,10 +447,10 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
 
       {/* Reject Modal */}
       <Dialog open={!!rejectItem} onClose={() => setRejectItem(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>Reject Item</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Reject Item</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Provide a reason for rejecting <strong>{rejectItem?.name}</strong>. This item will not be fulfilled.
+            Provide a reason for rejecting <strong>{rejectItem?.name}</strong>. This note will be visible to the branch as well.
           </Typography>
           <TextField
             autoFocus
@@ -402,6 +474,27 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
             disabled={!rejectReason.trim()}
           >
             Confirm Reject
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* View Rejection Reason Modal */}
+      <Dialog open={!!viewRejectItem} onClose={() => setViewRejectItem(null)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, color: 'error.main' }}>Rejection Details</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>Item</Typography>
+            <Typography variant="body1" fontWeight={600}>{viewRejectItem?.name}</Typography>
+            <Typography variant="caption" color="text.secondary">SKU: {viewRejectItem?.sku}</Typography>
+          </Box>
+          <Box sx={{ p: 2, bgcolor: alpha('#f44336', 0.04), borderRadius: 2, border: `1px solid ${alpha('#f44336', 0.2)}` }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 600 }}>Reason for Rejection</Typography>
+            <Typography variant="body2">{viewRejectItem?.pickingRejectionReason || 'No reason provided'}</Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 1 }}>
+          <Button onClick={() => setViewRejectItem(null)} color="inherit">
+            Close
           </Button>
         </DialogActions>
       </Dialog>

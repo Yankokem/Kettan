@@ -3,24 +3,23 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   Box,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
   Typography,
   Chip,
   Paper,
   Divider,
+  IconButton,
+  TextField,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import { Button } from '../../../components/UI/Button';
 import { SearchInput } from '../../../components/UI/SearchInput';
 import { FilterDropdown } from '../../../components/UI/FilterAndSort';
-import { FormTextField } from '../../../components/Form/FormTextField';
+import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import type { InventoryItemOption, RecipeIngredient } from '../types';
 
 interface InventorySelectionModalProps {
@@ -43,13 +42,15 @@ export function InventorySelectionModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('name-asc');
-  const [selectedItem, setSelectedItem] = useState<InventoryItemOption | null>(null);
-  const [quantity, setQuantity] = useState<number>(0);
+  const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());
 
   // Get unique categories
   const categories = useMemo(() => {
     const cats = new Set(inventoryOptions.map(opt => opt.category));
-    return Array.from(cats).map(cat => ({ value: cat, label: cat }));
+    return [
+      { value: '', label: 'All Categories' },
+      ...Array.from(cats).map(cat => ({ value: cat, label: cat }))
+    ];
   }, [inventoryOptions]);
 
   // Filter and sort inventory
@@ -89,36 +90,49 @@ export function InventorySelectionModal({
     return filtered;
   }, [inventoryOptions, searchQuery, categoryFilter, sortBy]);
 
-  const handleItemClick = (item: InventoryItemOption) => {
-    setSelectedItem(item);
-    setQuantity(0);
+  const handleQuantityChange = (itemId: string, quantity: number) => {
+    setSelectedItems(prev => {
+      const next = new Map(prev);
+      if (quantity > 0) {
+        next.set(itemId, quantity);
+      } else {
+        next.delete(itemId);
+      }
+      return next;
+    });
   };
 
   const handleConfirm = () => {
-    if (!selectedItem || quantity <= 0) {
-      alert('Please select an item and enter a valid quantity');
+    const items = Array.from(selectedItems.entries());
+    
+    if (items.length === 0) {
+      alert('Please add at least one ingredient with quantity');
       return;
     }
 
-    const ingredient: RecipeIngredient = {
-      id: `ingredient-${Date.now()}`,
-      itemId: selectedItem.id,
-      itemName: selectedItem.name,
-      qtyPerUnit: quantity,
-      uom: selectedItem.uom,
-      unitCost: selectedItem.unitCost,
-    };
-
-    onSelect(ingredient);
+    // Add each selected item
+    items.forEach(([itemId, quantity]) => {
+      const item = inventoryOptions.find(i => i.id === itemId);
+      if (item) {
+        const ingredient: RecipeIngredient = {
+          id: `ingredient-${Date.now()}-${Math.random()}`,
+          itemId: item.id,
+          itemName: item.name,
+          qtyPerUnit: quantity,
+          uom: item.uom,
+          unitCost: item.unitCost,
+        };
+        onSelect(ingredient);
+      }
+    });
     
-    // Reset for next selection
-    setSelectedItem(null);
-    setQuantity(0);
+    // Reset
+    setSelectedItems(new Map());
+    handleClose();
   };
 
   const handleClose = () => {
-    setSelectedItem(null);
-    setQuantity(0);
+    setSelectedItems(new Map());
     setSearchQuery('');
     setCategoryFilter('');
     onClose();
@@ -131,221 +145,218 @@ export function InventorySelectionModal({
     { value: 'stock', label: 'Stock Level' },
   ];
 
+  const columns: ColumnDef<InventoryItemOption>[] = [
+    {
+      key: 'name',
+      label: 'Item Name',
+      sortable: true,
+      render: (item) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: 'text.primary' }}>{item.name}</Typography>
+            <Typography sx={{ fontSize: 11.5, fontFamily: 'monospace', color: 'text.secondary' }}>{item.sku}</Typography>
+          </Box>
+          {selectedItemIds.includes(item.id) && (
+            <CheckCircleRoundedIcon sx={{ fontSize: 18, color: 'success.main' }} />
+          )}
+        </Box>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      width: 140,
+      render: (item) => (
+        <Chip label={item.category} size="small" sx={{ fontSize: 11, height: 22 }} />
+      ),
+    },
+    {
+      key: 'uom',
+      label: 'Unit',
+      width: 80,
+      align: 'center',
+      render: (item) => (
+        <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>{item.uom}</Typography>
+      ),
+    },
+    {
+      key: 'stockCount',
+      label: 'Stock',
+      width: 100,
+      align: 'right',
+      sortable: true,
+      render: (item) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: (item.stockCount || 0) === 0 ? 'error.main' : 'success.main' }}>
+          {item.stockCount || 0}
+        </Typography>
+      ),
+    },
+    {
+      key: 'quantity',
+      label: 'Quantity',
+      width: 100,
+      align: 'center',
+      render: (item) => (
+        <TextField
+          type="number"
+          size="small"
+          value={selectedItems.get(item.id) || ''}
+          onChange={(e) => handleQuantityChange(item.id, parseFloat(e.target.value) || 0)}
+          placeholder="0"
+          inputProps={{ min: 0, step: 0.001, style: { textAlign: 'center' } }}
+          sx={{ width: 70 }}
+        />
+      ),
+    },
+  ];
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ fontWeight: 700, fontSize: 18, pb: 2 }}>
-        Select Inventory Item
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth PaperProps={{ sx: { height: '70vh' } }}>
+      <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <InventoryRoundedIcon sx={{ color: '#6B4C2A', fontSize: 22 }} />
+          <Typography sx={{ fontSize: 17, fontWeight: 700 }}>Select Inventory Items</Typography>
+        </Box>
+        <IconButton onClick={handleClose} size="small"><CloseIcon /></IconButton>
       </DialogTitle>
       
-      <DialogContent sx={{ p: 0 }}>
-        {/* Search & Filter Bar */}
-        <Box sx={{ px: 3, py: 2, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      <DialogContent sx={{ p: 0, display: 'flex', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid', borderColor: 'divider' }}>
+          {/* Search & Filter Bar */}
+          <Box sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', gap: 1.5, flexShrink: 0 }}>
             <SearchInput
               placeholder="Search by name or SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ minWidth: 280, maxWidth: 420 }}
             />
             <FilterDropdown
               label="Category"
               value={categoryFilter}
               onChange={setCategoryFilter}
               options={categories}
-              icon={<CategoryRoundedIcon sx={{ fontSize: 18 }} />}
-              minWidth={160}
+              icon={<CategoryRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+              minWidth={165}
             />
             <FilterDropdown
               label="Sort"
               value={sortBy}
               onChange={(val) => setSortBy(val as SortOption)}
               options={sortOptions}
-              icon={<SortRoundedIcon sx={{ fontSize: 18 }} />}
-              minWidth={150}
+              icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+              minWidth={165}
+            />
+          </Box>
+
+          {/* Table */}
+          <Box sx={{ flex: 1, overflowY: 'auto', p: 2.5 }}>
+            <DataTable
+              data={filteredInventory}
+              columns={columns}
+              keyExtractor={(item) => item.id}
+              emptyMessage="No inventory items found"
+              emptyIcon={<InventoryRoundedIcon />}
+              defaultRowsPerPage={10}
+              pageSizes={[10, 25, 50]}
             />
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', height: 400 }}>
-          {/* Left: Inventory List */}
-          <Box sx={{ 
-            width: '60%', 
-            overflow: 'auto', 
-            borderRight: '1px solid', 
-            borderColor: 'divider',
-            bgcolor: 'background.paper'
-          }}>
-            {filteredInventory.length === 0 ? (
-              <Box sx={{ p: 4, textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary">
-                  No inventory items found
+        {/* Right side - Selected Items Summary */}
+        <Box sx={{ width: 320, display: 'flex', flexDirection: 'column', bgcolor: 'rgba(107,76,42,0.02)' }}>
+          <Box sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+            <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#6B4C2A' }}>
+              Selected Items ({selectedItems.size})
+            </Typography>
+          </Box>
+          
+          <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
+            {selectedItems.size === 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', p: 3 }}>
+                <InventoryRoundedIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                <Typography sx={{ fontSize: 13, color: 'text.secondary', textAlign: 'center' }}>
+                  No items selected yet. Enter quantities in the table to add items.
                 </Typography>
               </Box>
             ) : (
-              <List disablePadding>
-                {filteredInventory.map((item) => {
-                  const isSelected = selectedItem?.id === item.id;
-                  const isAlreadyAdded = selectedItemIds.includes(item.id);
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {Array.from(selectedItems.entries()).map(([itemId, quantity]) => {
+                  const item = inventoryOptions.find(i => i.id === itemId);
+                  if (!item) return null;
                   
                   return (
-                    <ListItem 
-                      key={item.id} 
-                      disablePadding
-                      sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
+                    <Box
+                      key={itemId}
+                      sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 1.5,
+                      }}
                     >
-                      <ListItemButton
-                        onClick={() => handleItemClick(item)}
-                        selected={isSelected}
-                        sx={{
-                          py: 1.5,
-                          px: 2,
-                          '&.Mui-selected': {
-                            bgcolor: 'rgba(107, 76, 42, 0.08)',
-                            borderLeft: '3px solid #6B4C2A',
-                          },
-                          '&.Mui-selected:hover': {
-                            bgcolor: 'rgba(107, 76, 42, 0.12)',
-                          }
-                        }}
-                      >
-                        <ListItemText
-                          primary={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
-                                {item.name}
-                              </Typography>
-                              {isAlreadyAdded && (
-                                <CheckCircleRoundedIcon 
-                                  sx={{ fontSize: 18, color: 'success.main' }} 
-                                />
-                              )}
-                            </Box>
-                          }
-                          secondary={
-                            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                              <Typography variant="caption" color="text.secondary">
-                                SKU: {item.sku}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                • {item.category}
-                              </Typography>
-                              {item.stockCount !== undefined && (
-                                <Typography variant="caption" color="text.secondary">
-                                  • Stock: {item.stockCount} {item.uom}
-                                </Typography>
-                              )}
-                            </Box>
-                          }
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary', mb: 0.25 }}>
+                          {item.name}
+                        </Typography>
+                        <Typography sx={{ fontSize: 11, fontFamily: 'monospace', color: 'text.secondary' }}>
+                          {item.sku}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip
+                          label={`${quantity} ${item.uom}`}
+                          size="small"
+                          sx={{
+                            height: 24,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            bgcolor: 'rgba(201,168,76,0.15)',
+                            color: '#6B4C2A',
+                          }}
                         />
-                      </ListItemButton>
-                    </ListItem>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleQuantityChange(itemId, 0)}
+                          sx={{ 
+                            width: 24, 
+                            height: 24,
+                            color: 'error.main',
+                            '&:hover': { bgcolor: 'error.lighter' }
+                          }}
+                        >
+                          <CloseIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Box>
+                    </Box>
                   );
                 })}
-              </List>
-            )}
-          </Box>
-
-          {/* Right: Quantity Input */}
-          <Box sx={{ 
-            width: '40%', 
-            p: 3, 
-            bgcolor: 'background.default',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            {selectedItem ? (
-              <>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
-                  Selected Item
-                </Typography>
-                
-                <Paper 
-                  elevation={0} 
-                  sx={{ 
-                    p: 2, 
-                    mb: 3, 
-                    border: '1px solid', 
-                    borderColor: 'divider',
-                    borderRadius: 2,
-                    bgcolor: 'background.paper'
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {selectedItem.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {selectedItem.sku} • {selectedItem.category}
-                  </Typography>
-                  <Divider sx={{ my: 1.5 }} />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Unit:
-                    </Typography>
-                    <Chip 
-                      label={selectedItem.uom} 
-                      size="small" 
-                      sx={{ 
-                        height: 20, 
-                        fontSize: 11, 
-                        fontWeight: 700,
-                        bgcolor: 'primary.main',
-                        color: 'white'
-                      }} 
-                    />
-                  </Box>
-                  {selectedItem.unitCost !== undefined && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Cost per {selectedItem.uom}:
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                        ₱{selectedItem.unitCost.toFixed(2)}
-                      </Typography>
-                    </Box>
-                  )}
-                </Paper>
-
-                <FormTextField
-                  label={`Quantity (${selectedItem.uom})`}
-                  type="number"
-                  inputProps={{ step: '0.001', min: '0' }}
-                  value={quantity || ''}
-                  onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
-                  placeholder="Enter quantity"
-                  fullWidth
-                />
-
-                <Box sx={{ mt: 'auto', pt: 2 }}>
-                  <Button 
-                    onClick={handleConfirm} 
-                    fullWidth
-                    disabled={quantity <= 0}
-                  >
-                    Confirm & Add
-                  </Button>
-                </Box>
-              </>
-            ) : (
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                height: '100%',
-                textAlign: 'center'
-              }}>
-                <Typography variant="body2" color="text.secondary">
-                  ← Select an item from the list to set quantity
-                </Typography>
               </Box>
             )}
           </Box>
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Button variant="outlined" onClick={handleClose}>
-          Close
-        </Button>
-      </DialogActions>
+      <Box sx={{ p: 2.5, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.secondary' }}>
+          {selectedItems.size} item(s) selected
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Button variant="outlined" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={selectedItems.size === 0}
+          >
+            Confirm & Add
+          </Button>
+        </Box>
+      </Box>
     </Dialog>
   );
 }
