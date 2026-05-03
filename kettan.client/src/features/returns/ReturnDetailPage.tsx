@@ -44,6 +44,7 @@ import {
   type ReturnMessage,
   type ReturnItemDto,
 } from '../branch-operations/api';
+import { listVehicles, type Vehicle } from '../hq-inventory/vehicleApi';
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string }>;
@@ -231,14 +232,15 @@ function MessagesPanel({ returnId, currentUserId }: { returnId: number; currentU
 
 // ── Acknowledge Dialog ──
 function AcknowledgeDialog({
-  open, isSaving, onClose, onSubmit,
+  open, isSaving, vehicles, onClose, onSubmit,
 }: {
   open: boolean;
   isSaving: boolean;
+  vehicles: Vehicle[];
   onClose: () => void;
   onSubmit: (payload: { vehicleId: number; pickupScheduledAt: string; resolution: string; note?: string }) => void;
 }) {
-  const [vehicleId, setVehicleId] = useState('');
+  const [vehicleId, setVehicleId] = useState<string | number>('');
   const [pickupDate, setPickupDate] = useState('');
   const [resolution, setResolution] = useState('Credited');
   const [note, setNote] = useState('');
@@ -260,7 +262,24 @@ function AcknowledgeDialog({
       <DialogContent>
         <Box sx={{ display: 'grid', gap: 1.4, mt: 0.4 }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2 }}>
-            <TextField label="Vehicle ID" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} size="small" />
+            <Box>
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Vehicle</Typography>
+              <Select
+                value={vehicleId}
+                onChange={(e) => setVehicleId(e.target.value)}
+                size="small"
+                fullWidth
+                displayEmpty
+                sx={{ fontSize: 13.5 }}
+              >
+                <MenuItem value="" disabled sx={{ fontSize: 13.5 }}>Select a vehicle</MenuItem>
+                {vehicles.filter(v => v.isActive).map((v) => (
+                  <MenuItem key={v.vehicleId} value={v.vehicleId} sx={{ fontSize: 13.5 }}>
+                    {v.plateNumber} ({v.vehicleType})
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
             <TextField label="Pickup Date & Time" type="datetime-local" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} size="small" InputLabelProps={{ shrink: true }} />
           </Box>
           <Box>
@@ -319,14 +338,15 @@ function RejectDialog({
 
 // ── Reschedule Dialog ──
 function RescheduleDialog({
-  open, isSaving, onClose, onSubmit,
+  open, isSaving, vehicles, onClose, onSubmit,
 }: {
   open: boolean;
   isSaving: boolean;
+  vehicles: Vehicle[];
   onClose: () => void;
   onSubmit: (payload: { vehicleId: number; pickupScheduledAt: string; note: string }) => void;
 }) {
-  const [vehicleId, setVehicleId] = useState('');
+  const [vehicleId, setVehicleId] = useState<string | number>('');
   const [pickupDate, setPickupDate] = useState('');
   const [note, setNote] = useState('');
   const [err, setErr] = useState<string | null>(null);
@@ -345,7 +365,24 @@ function RescheduleDialog({
       <DialogContent>
         <Box sx={{ display: 'grid', gap: 1.4, mt: 0.4 }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2 }}>
-            <TextField label="Vehicle ID" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} size="small" />
+            <Box>
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Vehicle</Typography>
+              <Select
+                value={vehicleId}
+                onChange={(e) => setVehicleId(e.target.value)}
+                size="small"
+                fullWidth
+                displayEmpty
+                sx={{ fontSize: 13.5 }}
+              >
+                <MenuItem value="" disabled sx={{ fontSize: 13.5 }}>Select a vehicle</MenuItem>
+                {vehicles.filter(v => v.isActive).map((v) => (
+                  <MenuItem key={v.vehicleId} value={v.vehicleId} sx={{ fontSize: 13.5 }}>
+                    {v.plateNumber} ({v.vehicleType})
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
             <TextField label="New Date & Time" type="datetime-local" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} size="small" InputLabelProps={{ shrink: true }} />
           </Box>
           <TextField label="Reschedule Note (required)" multiline minRows={2} value={note} onChange={(e) => setNote(e.target.value)} size="small" />
@@ -480,9 +517,9 @@ function InspectionPanel({
               <TableRow key={item.returnItemId}>
                 <TableCell>
                   <Typography sx={{ fontSize: 13.5, fontWeight: 600 }}>{item.itemName}</Typography>
-                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+                  <Box sx={{ fontSize: 11.5, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     {item.reasonCode} · <StatusChip status={item.disposition} />
-                  </Typography>
+                  </Box>
                 </TableCell>
                 <TableCell align="center">
                   <Typography sx={{ fontSize: 13 }}>{item.quantityReturned}</Typography>
@@ -553,6 +590,7 @@ export function ReturnDetailPage() {
   const [row, setRow] = useState<ReturnRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Dialog visibility
@@ -567,8 +605,12 @@ export function ReturnDetailPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const result = await fetchReturnById(numericReturnId);
+      const [result, vList] = await Promise.all([
+        fetchReturnById(numericReturnId),
+        listVehicles(),
+      ]);
       setRow(result);
+      setVehicles(vList);
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -799,6 +841,7 @@ export function ReturnDetailPage() {
       <AcknowledgeDialog
         open={dialog === 'acknowledge'}
         isSaving={isSaving}
+        vehicles={vehicles}
         onClose={() => setDialog(null)}
         onSubmit={(payload) => void withSave(() => acknowledgeReturn(row.returnId, payload).then(() => {}))}
       />
@@ -811,6 +854,7 @@ export function ReturnDetailPage() {
       <RescheduleDialog
         open={dialog === 'reschedule'}
         isSaving={isSaving}
+        vehicles={vehicles}
         onClose={() => setDialog(null)}
         onSubmit={(payload) => void withSave(() => rescheduleReturnPickup(row.returnId, payload).then(() => {}))}
       />

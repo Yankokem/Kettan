@@ -32,8 +32,25 @@ export function VehicleCard({ vehicle, selected, onSelect, onDelete }: VehicleCa
     >
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5 }}>
         <Box>
-          <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
+          <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', lineHeight: 1.2, display: 'flex', alignItems: 'center' }}>
             {vehicle.plateNumber}
+            <Box
+              component="span"
+              sx={{
+                fontSize: 10.5,
+                fontWeight: 600,
+                color: 'text.secondary',
+                ml: 1.2,
+                px: 0.8,
+                py: 0.2,
+                borderRadius: '4px',
+                bgcolor: 'action.hover',
+                fontFamily: 'monospace',
+                letterSpacing: '0.02em'
+              }}
+            >
+              #{vehicle.vehicleId}
+            </Box>
           </Typography>
 
         </Box>
