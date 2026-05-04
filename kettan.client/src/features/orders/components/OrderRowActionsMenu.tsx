@@ -3,8 +3,9 @@ import { IconButton, ListItemIcon, Menu, MenuItem, Typography } from '@mui/mater
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import DoDisturbOnRoundedIcon from '@mui/icons-material/DoDisturbOnRounded';
 
 export type OrderActionStatus =
   | 'PendingApproval'
@@ -26,8 +27,9 @@ interface OrderRowActionsMenuProps {
   status: OrderActionStatus;
   onViewDetails: (orderId: string) => void;
   onApprove: (orderId: string) => void;
-  onProceed: (orderId: string) => void;
   onReject: (orderId: string) => void;
+  onMessageBranch?: (orderId: string) => void;
+  onCancelOrder?: (orderId: string) => void;
 }
 
 export function OrderRowActionsMenu({
@@ -35,14 +37,15 @@ export function OrderRowActionsMenu({
   status,
   onViewDetails,
   onApprove,
-  onProceed,
   onReject,
+  onMessageBranch,
+  onCancelOrder,
 }: OrderRowActionsMenuProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
   const isPending = status === 'PendingApproval';
-  const canProceed = status === 'Approved' || status === 'PartiallyApproved' || status === 'Processing' || status === 'Picking' || status === 'Allocated' || status === 'Packed';
+  const canCancel = !['Delivered', 'Rejected', 'Returned', 'Dispatched', 'InTransit'].includes(status);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -112,14 +115,12 @@ export function OrderRowActionsMenu({
           </MenuItem>
         ) : null}
 
-        {canProceed ? (
-          <MenuItem onClick={(event) => runAction(event, () => onProceed(orderId))}>
-            <ListItemIcon>
-              <ArrowForwardRoundedIcon fontSize="small" sx={{ color: 'inherit' }} />
-            </ListItemIcon>
-            Proceed
-          </MenuItem>
-        ) : null}
+        <MenuItem onClick={(event) => runAction(event, () => onMessageBranch?.(orderId))}>
+          <ListItemIcon>
+            <ChatBubbleOutlineRoundedIcon fontSize="small" sx={{ color: 'inherit' }} />
+          </ListItemIcon>
+          Message Branch
+        </MenuItem>
 
         {isPending ? (
           <MenuItem onClick={(event) => runAction(event, () => onReject(orderId))}>
@@ -128,7 +129,16 @@ export function OrderRowActionsMenu({
             </ListItemIcon>
             <Typography sx={{ color: '#B91C1C', fontSize: 14, fontWeight: 500 }}>Reject</Typography>
           </MenuItem>
-        ) : null}
+        ) : (
+          canCancel && (
+            <MenuItem onClick={(event) => runAction(event, () => onCancelOrder?.(orderId))}>
+              <ListItemIcon>
+                <DoDisturbOnRoundedIcon fontSize="small" sx={{ color: '#B91C1C' }} />
+              </ListItemIcon>
+              <Typography sx={{ color: '#B91C1C', fontSize: 14, fontWeight: 500 }}>Cancel Order</Typography>
+            </MenuItem>
+          )
+        )}
       </Menu>
     </>
   );

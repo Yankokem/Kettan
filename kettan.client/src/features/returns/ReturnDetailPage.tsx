@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import * as signalR from '@microsoft/signalr';
+import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
 import {
   Alert,
   Box,
@@ -19,14 +21,30 @@ import {
   Typography,
 } from '@mui/material';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
-import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
-import SendRoundedIcon from '@mui/icons-material/SendRounded';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded';
+import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
+import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
+import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
+import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
+import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
+import EventRepeatRoundedIcon from '@mui/icons-material/EventRepeatRounded';
+import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import DownloadDoneRoundedIcon from '@mui/icons-material/DownloadDoneRounded';
+import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
+import ForwardToInboxRoundedIcon from '@mui/icons-material/ForwardToInboxRounded';
+
 import type { AxiosError } from 'axios';
 import { useParams } from '@tanstack/react-router';
-import * as signalR from '@microsoft/signalr';
 import { api } from '../../utils/api';
+
+import { ReturnTrackerStepper } from './components/ReturnTrackerStepper';
+import { ReturnFloatingChat } from './components/ReturnFloatingChat';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -88,375 +106,6 @@ function StatusChip({ status }: { status: string }) {
   );
 }
 
-// ── Timeline ──
-
-
-function TimelinePanel({ row }: { row: ReturnRecord }) {
-  const events: Array<{ label: string; time: string | null; actor?: string }> = [
-    { label: 'Draft', time: row.loggedAt, actor: row.branchName },
-    { label: 'Submitted', time: row.submittedAt },
-    { label: 'Acknowledged', time: row.acknowledgedAt },
-    { label: 'Dispatched', time: row.dispatchedAt },
-    { label: 'Arrived', time: row.arrivedAt },
-    { label: 'Inspecting', time: row.inspectingAt },
-  ];
-
-  if (row.status === 'Completed') {
-    events.push({ label: 'Completed', time: row.completedAt });
-  } else if (row.status === 'Rejected') {
-    events.push({ label: 'Rejected', time: row.rejectedAt });
-  }
-
-  const reached = events.filter((e) => e.time !== null);
-
-  return (
-    <Paper sx={{ p: 2.2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
-      <Typography sx={{ fontSize: 14, fontWeight: 800, mb: 1.5 }}>Status Timeline</Typography>
-      <Box sx={{ display: 'grid', gap: 0.8 }}>
-        {reached.map((e) => (
-          <Box key={e.label} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.9 }}>
-              <StatusChip status={e.label} />
-              {e.actor && (
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{e.actor}</Typography>
-              )}
-            </Box>
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-              {new Date(e.time!).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-
-      {row.status === 'Rejected' && row.rejectionReason && (
-        <Alert severity="error" sx={{ mt: 1.5, fontSize: 12.5 }}>
-          <strong>Rejection reason:</strong> {row.rejectionReason}
-        </Alert>
-      )}
-    </Paper>
-  );
-}
-function MessageContent({ content, onImageClick, isOwn }: { content: string; onImageClick: (url: string) => void; isOwn: boolean }) {
-  // Regex to find Markdown images: ![alt](url)
-  const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
-  const parts = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = imgRegex.exec(content)) !== null) {
-    // Add preceding text
-    if (match.index > lastIndex) {
-      parts.push({ type: 'text', value: content.substring(lastIndex, match.index) });
-    }
-    // Add image
-    parts.push({ type: 'image', alt: match[1], url: match[2] });
-    lastIndex = imgRegex.lastIndex;
-  }
-
-  // Add remaining text
-  if (lastIndex < content.length) {
-    parts.push({ type: 'text', value: content.substring(lastIndex) });
-  }
-
-  return (
-    <Box sx={{ display: 'grid', gap: 0.8 }}>
-      {parts.map((p, i) => {
-        if (p.type === 'text') {
-          return (
-            <Typography 
-              key={i} 
-              sx={{ 
-                fontSize: 13, 
-                whiteSpace: 'pre-wrap', 
-                wordBreak: 'break-word',
-                lineHeight: 1.5
-              }}
-            >
-              {p.value}
-            </Typography>
-          );
-        }
-        return (
-          <Box
-            key={i}
-            onClick={() => onImageClick(p.url!)}
-            sx={{
-              width: '100%',
-              maxWidth: 320,
-              aspectRatio: '16/10',
-              borderRadius: 2,
-              overflow: 'hidden',
-              cursor: 'pointer',
-              border: '2px solid',
-              borderColor: isOwn ? 'rgba(255,255,255,0.2)' : 'divider',
-              transition: 'transform 0.2s ease',
-              '&:hover': { transform: 'scale(1.02)' }
-            }}
-          >
-            <Box 
-              component="img" 
-              src={p.url} 
-              alt={p.alt}
-              sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-            />
-          </Box>
-        );
-      })}
-    </Box>
-  );
-}
-
-// ── Messages Panel ──
-function MessagesPanel({ returnId, currentUserId }: { returnId: number; currentUserId?: number }) {
-  const [messages, setMessages] = useState<ReturnMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [content, setContent] = useState('');
-  const [sending, setSending] = useState(false);
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [pendingImage, setPendingImage] = useState<File | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const loadMessages = async () => {
-    const msgs = await fetchReturnMessages(returnId);
-    setMessages(msgs);
-    setLoading(false);
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-  };
-
-  useEffect(() => { 
-    void loadMessages(); 
-    
-    // Setup SignalR connection
-    let url = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
-    if (url && !url.startsWith('http')) {
-        url = window.location.origin + url;
-    }
-    
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl(`${url}/hub/returns`, {
-            withCredentials: true,
-            accessTokenFactory: () => {
-                const state = useAuthStore.getState();
-                return state.token || '';
-            }
-        })
-        .withAutomaticReconnect()
-        .build();
-
-    connection.on('ReceiveMessage', (pReturnId: number, dto: ReturnMessage) => {
-        if (pReturnId === returnId) {
-            setMessages(prev => {
-                if (prev.some(m => m.messageId === dto.messageId)) return prev;
-                return [...prev, dto];
-            });
-            setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-        }
-    });
-
-    connection.start()
-        .then(() => {
-            return connection.invoke('JoinReturnGroup', returnId);
-        })
-        .catch(err => console.error('SignalR Connection Error: ', err));
-
-    return () => {
-        if (connection.state === signalR.HubConnectionState.Connected) {
-            connection.invoke('LeaveReturnGroup', returnId)
-                .finally(() => void connection.stop());
-        }
-    };
-  }, [returnId]);
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-        alert('Please select an image file.');
-        return;
-    }
-    
-    if (file.size > 10 * 1024 * 1024) {  // 10MB
-        alert('File size must be less than 10MB.');
-        return;
-    }
-
-    setPendingImage(file);
-    if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-    }
-  };
-
-  const handleSend = async () => {
-    if (!content.trim() && !pendingImage) return;
-    try {
-      setSending(true);
-      let finalContent = content.trim();
-
-      if (pendingImage) {
-          setUploadingImage(true);
-          const formData = new FormData();
-          formData.append('file', pendingImage);
-          formData.append('folder', `Returns/Messages/RET-${returnId.toString().padStart(5, '0')}`);
-          
-          try {
-              const uploadRes = await api.post('/api/uploads/image', formData, {
-                  headers: { 'Content-Type': 'multipart/form-data' }
-              });
-              
-              const imgUrl = uploadRes.data.url || uploadRes.data.Url;
-              if (imgUrl) {
-                  finalContent = finalContent + (finalContent ? '\n' : '') + `![${pendingImage.name}](${imgUrl})`;
-              }
-          } catch (err) {
-              console.error('Image upload failed', err);
-              alert('Failed to upload image. Sending text only if any.');
-          } finally {
-              setUploadingImage(false);
-          }
-      }
-
-      if (finalContent) {
-          await sendReturnMessage(returnId, finalContent);
-      }
-      setContent('');
-      setPendingImage(null);
-      // Note: SignalR will handle the incoming real-time update
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <Paper sx={{ p: 2.2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-        <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
-        <Typography sx={{ fontSize: 14, fontWeight: 800 }}>Messages</Typography>
-      </Box>
-
-      <Box sx={{ maxHeight: 300, overflowY: 'auto', display: 'grid', gap: 1, mb: 1.5, pr: 0.5 }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-            <CircularProgress size={20} />
-          </Box>
-        ) : messages.length === 0 ? (
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', textAlign: 'center', py: 1.5 }}>
-            No messages yet. Start the conversation.
-          </Typography>
-        ) : (
-          messages.map((m) => {
-            const isOwn = m.senderUserId === currentUserId;
-            return (
-              <Box
-                key={m.messageId}
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: isOwn ? 'flex-end' : 'flex-start',
-                }}
-              >
-                <Typography sx={{ fontSize: 11, color: 'text.secondary', mb: 0.3 }}>
-                  {m.senderName} · {m.senderRole} ·{' '}
-                  {new Date(m.sentAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                </Typography>
-                <Box
-                  sx={{
-                    maxWidth: '85%',
-                    px: 1.4,
-                    py: 0.9,
-                    borderRadius: isOwn ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
-                    bgcolor: isOwn ? '#6B4C2A' : 'action.hover',
-                    color: isOwn ? '#fff' : 'text.primary',
-                    boxShadow: isOwn ? '0 4px 12px rgba(107,76,42,0.15)' : 'none'
-                  }}
-                >
-                  <MessageContent 
-                    content={m.content} 
-                    onImageClick={(url) => setPreviewImageUrl(url)} 
-                    isOwn={isOwn}
-                  />
-                </Box>
-              </Box>
-            );
-          })
-        )}
-        <div ref={bottomRef} />
-      </Box>
-
-      {/* Message Image Lightbox */}
-      <Dialog 
-        open={Boolean(previewImageUrl)} 
-        onClose={() => setPreviewImageUrl(null)}
-        maxWidth="lg"
-        PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none', overflow: 'visible', m: 2 } }}
-      >
-        <Box sx={{ position: 'relative' }}>
-          <IconButton
-            onClick={() => setPreviewImageUrl(null)}
-            sx={{ position: 'absolute', right: -12, top: -12, bgcolor: '#fff', boxShadow: 3, '&:hover': { bgcolor: '#f5f5f5' }, zIndex: 1 }}
-          >
-            <CloseRoundedIcon />
-          </IconButton>
-          {previewImageUrl && (
-            <Box 
-              component="img" 
-              src={previewImageUrl} 
-              sx={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 3, boxShadow: 24, objectFit: 'contain' }} 
-            />
-          )}
-        </Box>
-      </Dialog>
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {pendingImage && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: 'action.hover', borderRadius: 2, alignSelf: 'flex-start' }}>
-                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                    [ ❌ [{pendingImage.name}] ]
-                </Typography>
-                <IconButton size="small" onClick={() => setPendingImage(null)} sx={{ p: 0.5 }}>
-                    <CloseRoundedIcon sx={{ fontSize: 14 }} />
-                </IconButton>
-            </Box>
-        )}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-            <input 
-              type="file" 
-              accept="image/*" 
-              hidden 
-              ref={fileInputRef} 
-              onChange={(e) => void handleImageUpload(e)}
-            />
-            <IconButton 
-              disabled={uploadingImage || sending}
-              onClick={() => fileInputRef.current?.click()}
-              sx={{ 
-                 bgcolor: 'action.hover', 
-                 borderRadius: '8px', 
-                 aspectRatio: '1',
-                 '&:hover': { bgcolor: 'action.selected' } 
-              }}
-            >
-              {uploadingImage ? <CircularProgress size={18} /> : <AttachFileRoundedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />}
-            </IconButton>
-            <TextField
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write a message..."
-              size="small"
-              fullWidth
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); } }}
-            />
-            <Button onClick={() => void handleSend()} disabled={sending || (!content.trim() && !pendingImage)} sx={{ minWidth: 44, px: 1.5 }}>
-              <SendRoundedIcon sx={{ fontSize: 17 }} />
-            </Button>
-        </Box>
-      </Box>
-    </Paper>
-  );
-}
-
 // ── Acknowledge Dialog ──
 function AcknowledgeDialog({
   open, isSaving, vehicles, onClose, onSubmit,
@@ -465,11 +114,10 @@ function AcknowledgeDialog({
   isSaving: boolean;
   vehicles: Vehicle[];
   onClose: () => void;
-  onSubmit: (payload: { vehicleId: number; pickupScheduledAt: string; resolution: string; note?: string }) => void;
+  onSubmit: (payload: { vehicleId: number; pickupScheduledAt: string; note?: string }) => void;
 }) {
   const [vehicleId, setVehicleId] = useState<string | number>('');
   const [pickupDate, setPickupDate] = useState('');
-  const [resolution, setResolution] = useState('Credited');
   const [note, setNote] = useState('');
   const [err, setErr] = useState<string | null>(null);
 
@@ -480,7 +128,7 @@ function AcknowledgeDialog({
     if (!Number.isInteger(vid) || vid <= 0) { setErr('Enter a valid Vehicle ID.'); return; }
     if (!pickupDate) { setErr('Select a pickup date/time.'); return; }
     setErr(null);
-    onSubmit({ vehicleId: vid, pickupScheduledAt: new Date(pickupDate).toISOString(), resolution, note: note.trim() || undefined });
+    onSubmit({ vehicleId: vid, pickupScheduledAt: new Date(pickupDate).toISOString(), note: note.trim() || undefined });
   };
 
   return (
@@ -491,34 +139,25 @@ function AcknowledgeDialog({
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2 }}>
             <Box>
               <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Vehicle</Typography>
-              <Select
-                value={vehicleId}
-                onChange={(e) => setVehicleId(e.target.value)}
-                size="small"
-                fullWidth
-                displayEmpty
-                sx={{ fontSize: 13.5 }}
-              >
-                <MenuItem value="" disabled sx={{ fontSize: 13.5 }}>Select a vehicle</MenuItem>
-                {vehicles.filter(v => v.isActive).map((v) => (
-                  <MenuItem key={v.vehicleId} value={v.vehicleId} sx={{ fontSize: 13.5 }}>
-                    {v.plateNumber} ({v.vehicleType})
+              <Select size="small" fullWidth value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} disabled={isSaving}>
+                {vehicles.map((v) => (
+                  <MenuItem key={v.vehicleId} value={v.vehicleId}>
+                    {v.plateNumber} ({v.vehicleType}) {!v.isActive ? '[Inactive]' : ''}
                   </MenuItem>
                 ))}
               </Select>
             </Box>
-            <TextField label="Pickup Date & Time" type="datetime-local" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} size="small" InputLabelProps={{ shrink: true }} />
+            <Box>
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Pickup Schedule</Typography>
+              <TextField type="datetime-local" size="small" fullWidth value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} disabled={isSaving} InputLabelProps={{ shrink: true }} />
+            </Box>
           </Box>
           <Box>
-            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Confirm Resolution</Typography>
-            <Select value={resolution} onChange={(e) => setResolution(e.target.value)} size="small" fullWidth sx={{ fontSize: 13.5 }}>
-              <MenuItem value="Credited">Credit</MenuItem>
-              <MenuItem value="Replaced">Replacement</MenuItem>
-            </Select>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Notes (Optional)</Typography>
+            <TextField size="small" fullWidth multiline rows={3} value={note} onChange={(e) => setNote(e.target.value)} disabled={isSaving} placeholder="Instructions for driver or branch..." />
           </Box>
-          <TextField label="Note (optional)" multiline minRows={2} value={note} onChange={(e) => setNote(e.target.value)} size="small" />
-          {err && <Typography sx={{ color: 'error.main', fontSize: 12.5 }}>{err}</Typography>}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 0.5 }}>
+          {err && <Alert severity="error" sx={{ fontSize: 12.5 }}>{err}</Alert>}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
             <Button variant="outlined" onClick={onClose} disabled={isSaving}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={isSaving}>{isSaving ? 'Saving...' : 'Acknowledge'}</Button>
           </Box>
@@ -539,23 +178,31 @@ function RejectDialog({
 }) {
   const [reason, setReason] = useState('');
   const [err, setErr] = useState<string | null>(null);
+
   useEffect(() => { if (!open) { setReason(''); setErr(null); } }, [open]);
+
+  const handleSubmit = () => {
+    if (!reason.trim()) { setErr('Providing a reason is required.'); return; }
+    setErr(null);
+    onSubmit(reason.trim());
+  };
+
   return (
-    <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, border: '1px solid', borderColor: 'divider' }, elevation: 0 }}>
-      <DialogTitle sx={{ fontWeight: 800, pb: 1, color: 'error.main' }}>Reject Return</DialogTitle>
+    <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, border: '1px solid', borderColor: 'error.main' }, elevation: 0 }}>
+      <DialogTitle sx={{ fontWeight: 800, color: 'error.main', pb: 1 }}>Reject Return</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'grid', gap: 1.4, mt: 0.4 }}>
-          <TextField label="Rejection Reason (required)" multiline minRows={3} value={reason} onChange={(e) => setReason(e.target.value)} size="small" />
-          {err && <Typography sx={{ color: 'error.main', fontSize: 12.5 }}>{err}</Typography>}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
+            Are you sure you want to reject this return? The branch will be notified.
+          </Typography>
+          <Box>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Rejection Reason</Typography>
+            <TextField size="small" fullWidth multiline rows={3} value={reason} onChange={(e) => setReason(e.target.value)} disabled={isSaving} placeholder="Explain why this return is rejected..." />
+          </Box>
+          {err && <Alert severity="error" sx={{ fontSize: 12.5 }}>{err}</Alert>}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
             <Button variant="outlined" onClick={onClose} disabled={isSaving}>Cancel</Button>
-            <Button
-              sx={{ bgcolor: 'error.main', '&:hover': { bgcolor: 'error.dark' } }}
-              onClick={() => { if (!reason.trim()) { setErr('Reason is required.'); return; } onSubmit(reason.trim()); }}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Rejecting...' : 'Reject Return'}
-            </Button>
+            <Button variant="outlined" sx={{ color: 'error.main', borderColor: 'error.main' }} onClick={handleSubmit} disabled={isSaving}>{isSaving ? 'Rejecting...' : 'Reject Return'}</Button>
           </Box>
         </Box>
       </DialogContent>
@@ -577,15 +224,17 @@ function RescheduleDialog({
   const [pickupDate, setPickupDate] = useState('');
   const [note, setNote] = useState('');
   const [err, setErr] = useState<string | null>(null);
+
   useEffect(() => { if (!open) { setVehicleId(''); setPickupDate(''); setNote(''); setErr(null); } }, [open]);
+
   const handleSubmit = () => {
     const vid = Number(vehicleId);
     if (!Number.isInteger(vid) || vid <= 0) { setErr('Enter a valid Vehicle ID.'); return; }
     if (!pickupDate) { setErr('Select a pickup date/time.'); return; }
-    if (!note.trim()) { setErr('A reschedule note is required.'); return; }
     setErr(null);
-    onSubmit({ vehicleId: vid, pickupScheduledAt: new Date(pickupDate).toISOString(), note: note.trim() });
+    onSubmit({ vehicleId: vid, pickupScheduledAt: new Date(pickupDate).toISOString(), note });
   };
+
   return (
     <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, border: '1px solid', borderColor: 'divider' }, elevation: 0 }}>
       <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>Reschedule Pickup</DialogTitle>
@@ -594,27 +243,25 @@ function RescheduleDialog({
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2 }}>
             <Box>
               <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Vehicle</Typography>
-              <Select
-                value={vehicleId}
-                onChange={(e) => setVehicleId(e.target.value)}
-                size="small"
-                fullWidth
-                displayEmpty
-                sx={{ fontSize: 13.5 }}
-              >
-                <MenuItem value="" disabled sx={{ fontSize: 13.5 }}>Select a vehicle</MenuItem>
-                {vehicles.filter(v => v.isActive).map((v) => (
-                  <MenuItem key={v.vehicleId} value={v.vehicleId} sx={{ fontSize: 13.5 }}>
-                    {v.plateNumber} ({v.vehicleType})
+              <Select size="small" fullWidth value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} disabled={isSaving}>
+                {vehicles.map((v) => (
+                  <MenuItem key={v.vehicleId} value={v.vehicleId}>
+                    {v.plateNumber} ({v.vehicleType}) {!v.isActive ? '[Inactive]' : ''}
                   </MenuItem>
                 ))}
               </Select>
             </Box>
-            <TextField label="New Date & Time" type="datetime-local" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} size="small" InputLabelProps={{ shrink: true }} />
+            <Box>
+              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>New Schedule</Typography>
+              <TextField type="datetime-local" size="small" fullWidth value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} disabled={isSaving} InputLabelProps={{ shrink: true }} />
+            </Box>
           </Box>
-          <TextField label="Reschedule Note (required)" multiline minRows={2} value={note} onChange={(e) => setNote(e.target.value)} size="small" />
-          {err && <Typography sx={{ color: 'error.main', fontSize: 12.5 }}>{err}</Typography>}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <Box>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Note</Typography>
+            <TextField size="small" fullWidth multiline rows={2} value={note} onChange={(e) => setNote(e.target.value)} disabled={isSaving} placeholder="Reason for rescheduling..." />
+          </Box>
+          {err && <Alert severity="error" sx={{ fontSize: 12.5 }}>{err}</Alert>}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
             <Button variant="outlined" onClick={onClose} disabled={isSaving}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={isSaving}>{isSaving ? 'Saving...' : 'Reschedule'}</Button>
           </Box>
@@ -624,35 +271,33 @@ function RescheduleDialog({
   );
 }
 
-// ── Remarks confirm dialog (generic) ──
+// ── Generic Remarks Confirm Dialog ──
 function RemarksConfirmDialog({
-  open, isSaving, title, ctaLabel, ctaColor, onClose, onSubmit,
+  open, isSaving, title, ctaLabel, onClose, onSubmit,
 }: {
   open: boolean;
   isSaving: boolean;
   title: string;
   ctaLabel: string;
-  ctaColor?: string;
   onClose: () => void;
   onSubmit: (remarks?: string) => void;
 }) {
   const [remarks, setRemarks] = useState('');
+
   useEffect(() => { if (!open) setRemarks(''); }, [open]);
+
   return (
     <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3, border: '1px solid', borderColor: 'divider' }, elevation: 0 }}>
       <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>{title}</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'grid', gap: 1.4, mt: 0.4 }}>
-          <TextField label="Remarks (optional)" multiline minRows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} size="small" />
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <Box>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Remarks (Optional)</Typography>
+            <TextField size="small" fullWidth multiline rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} disabled={isSaving} />
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
             <Button variant="outlined" onClick={onClose} disabled={isSaving}>Cancel</Button>
-            <Button
-              sx={ctaColor ? { bgcolor: ctaColor, '&:hover': { bgcolor: ctaColor } } : undefined}
-              onClick={() => onSubmit(remarks.trim() || undefined)}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving...' : ctaLabel}
-            </Button>
+            <Button onClick={() => onSubmit(remarks.trim() || undefined)} disabled={isSaving}>{isSaving ? 'Processing...' : ctaLabel}</Button>
           </Box>
         </Box>
       </DialogContent>
@@ -660,151 +305,101 @@ function RemarksConfirmDialog({
   );
 }
 
-// ── Inspection Panel ──
-const DISPOSITION_OPTIONS = [
-  { value: 'Pending', label: 'Pending' },
-  { value: 'Restock', label: 'Restock' },
-  { value: 'WriteOff', label: 'Write-Off' },
-];
-
-interface InspectionLine {
-  returnItemId: number;
-  disposition: string;
-  quantityInspected: string;
-  restockBatchId: string;
-  inspectionRemarks: string;
-}
-
-function InspectionPanel({
-  items,
-  returnId,
-  onSaved,
+// ── Return Item Table Row ──
+function ReturnItemTableRow({
+  item, returnId, isHq, isInspecting, onSaved
 }: {
-  items: ReturnItemDto[];
-  returnId: number;
-  onSaved: () => void;
+  item: ReturnItemDto; returnId: number; isHq: boolean; isInspecting: boolean; onSaved: () => void;
 }) {
-  const [lines, setLines] = useState<InspectionLine[]>(
-    items.map((i) => ({
-      returnItemId: i.returnItemId,
-      disposition: i.disposition,
-      quantityInspected: i.quantityInspected?.toString() ?? i.quantityReturned.toString(),
-      restockBatchId: i.restockBatchId?.toString() ?? '',
-      inspectionRemarks: i.inspectionRemarks ?? '',
-    })),
-  );
-  const [saving, setSaving] = useState(false);
+  const [qty, setQty] = useState<number>(item.quantityInspected ?? item.quantityReturned);
+  const isDamagedOrExpired = item.reasonCode === 'Damaged' || item.reasonCode === 'Expired';
+  const defaultDisp = isDamagedOrExpired ? 'WriteOff' : 'Restock';
+  const [disp, setDisp] = useState<string>(item.disposition === 'Pending' ? defaultDisp : item.disposition);
+  const [isSaving, setIsSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const updateLine = (id: number, field: keyof InspectionLine, value: string) => {
-    setLines((prev) => prev.map((l) => (l.returnItemId === id ? { ...l, [field]: value } : l)));
-  };
+  useEffect(() => {
+    setQty(item.quantityInspected ?? item.quantityReturned);
+    setDisp(item.disposition === 'Pending' ? defaultDisp : item.disposition);
+  }, [item, defaultDisp]);
 
   const handleSave = async () => {
+    if (qty < 0 || qty > item.quantityReturned) {
+      setErr(`Quantity must be between 0 and ${item.quantityReturned}`);
+      return;
+    }
     try {
-      setSaving(true);
+      setIsSaving(true);
       setErr(null);
-      await saveReturnInspection(
-        returnId,
-        lines.map((l) => ({
-          returnItemId: l.returnItemId,
-          disposition: l.disposition,
-          quantityInspected: Number(l.quantityInspected) || undefined,
-          restockBatchId: l.restockBatchId ? Number(l.restockBatchId) : undefined,
-          inspectionRemarks: l.inspectionRemarks.trim() || undefined,
-        })),
-      );
+      await saveReturnInspection(returnId, [{
+        returnItemId: item.returnItemId,
+        quantityInspected: qty,
+        disposition: disp,
+      }]);
       onSaved();
     } catch (e) {
       setErr(getErrorMessage(e));
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
+  const showEditControls = isHq && isInspecting;
+  const isDirty = (qty !== item.quantityInspected) || (disp !== item.disposition);
+
   return (
-    <Paper sx={{ p: 2.2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
-      <Typography sx={{ fontSize: 14, fontWeight: 800, mb: 1.5 }}>Inspection</Typography>
-      <Table size="small" sx={{ mb: 1.5 }}>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Item</TableCell>
-            <TableCell align="center" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', width: 100 }}>Returned</TableCell>
-            <TableCell align="center" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', width: 110 }}>Inspected Qty</TableCell>
-            <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', width: 130 }}>Disposition</TableCell>
-            <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', width: 100 }}>Restock Batch</TableCell>
-            <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Remarks</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {items.map((item, idx) => {
-            const line = lines[idx];
-            if (!line) return null;
-            return (
-              <TableRow key={item.returnItemId}>
-                <TableCell>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600 }}>{item.itemName}</Typography>
-                  <Box sx={{ fontSize: 11.5, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    {item.reasonCode} · <StatusChip status={item.disposition} />
-                  </Box>
-                </TableCell>
-                <TableCell align="center">
-                  <Typography sx={{ fontSize: 13 }}>{item.quantityReturned}</Typography>
-                </TableCell>
-                <TableCell align="center">
-                  <TextField
-                    type="number"
-                    size="small"
-                    value={line.quantityInspected}
-                    onChange={(e) => updateLine(item.returnItemId, 'quantityInspected', e.target.value)}
-                    inputProps={{ min: 0, step: 0.001 }}
-                    sx={{ width: 90 }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Select
-                    value={line.disposition}
-                    onChange={(e) => updateLine(item.returnItemId, 'disposition', e.target.value)}
-                    size="small"
-                    sx={{ fontSize: 13, width: '100%' }}
-                  >
-                    {DISPOSITION_OPTIONS.map((d) => (
-                      <MenuItem key={d.value} value={d.value} sx={{ fontSize: 13 }}>{d.label}</MenuItem>
-                    ))}
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    type="number"
-                    size="small"
-                    placeholder="Batch ID"
-                    value={line.restockBatchId}
-                    onChange={(e) => updateLine(item.returnItemId, 'restockBatchId', e.target.value)}
-                    disabled={line.disposition !== 'Restock'}
-                    sx={{ width: 90 }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    size="small"
-                    placeholder="Optional"
-                    value={line.inspectionRemarks}
-                    onChange={(e) => updateLine(item.returnItemId, 'inspectionRemarks', e.target.value)}
-                    sx={{ width: '100%' }}
-                  />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-      {err && <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1 }}>{err}</Typography>}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button onClick={() => void handleSave()} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Inspection'}
-        </Button>
-      </Box>
-    </Paper>
+    <>
+      <TableRow>
+        <TableCell sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+          <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{item.itemName}</Typography>
+          <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontFamily: 'monospace' }}>{item.itemSku}</Typography>
+        </TableCell>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+          <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{item.quantityReturned}</Typography>
+        </TableCell>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+          {showEditControls ? (
+            <TextField type="number" size="small" sx={{ width: 80 }} inputProps={{ style: { padding: '4px 8px' } }} value={qty} onChange={(e) => setQty(Number(e.target.value))} disabled={isSaving} />
+          ) : (
+            <Typography sx={{ fontSize: 13.5 }}>{item.quantityInspected ?? '—'}</Typography>
+          )}
+        </TableCell>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{item.reasonCode}</Typography>
+        </TableCell>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+          {showEditControls ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Select size="small" value={disp} onChange={(e) => setDisp(e.target.value)} disabled={isSaving} sx={{ fontSize: 12.5 }}>
+                <MenuItem value="Restock" sx={{ fontSize: 12.5 }}>Restock</MenuItem>
+                <MenuItem value="WriteOff" sx={{ fontSize: 12.5 }}>WriteOff</MenuItem>
+              </Select>
+              <Button variant="contained" size="small" onClick={handleSave} disabled={!isDirty || isSaving} sx={{ minWidth: 60, boxShadow: 'none' }}>
+                {isSaving ? 'Saving' : (isDirty ? 'Save' : 'Saved')}
+              </Button>
+            </Box>
+          ) : (
+            <StatusChip status={item.disposition} />
+          )}
+        </TableCell>
+      </TableRow>
+      {err && (
+        <TableRow>
+          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: 'divider' }}>
+            <Alert severity="error" sx={{ py: 0, px: 2, fontSize: 13, '& .MuiAlert-icon': { py: 0.5 } }}>{err}</Alert>
+          </TableCell>
+        </TableRow>
+      )}
+      {!err && isInspecting && isDamagedOrExpired && disp === 'Restock' && (
+        <TableRow>
+          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: 'divider' }}>
+            <Alert severity="warning" sx={{ py: 0, px: 2, fontSize: 13, '& .MuiAlert-icon': { py: 0.5 } }}>
+              Careful: This item was flagged as Damaged/Expired by the branch.
+            </Alert>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
   );
 }
 
@@ -847,6 +442,39 @@ export function ReturnDetailPage() {
 
   useEffect(() => { void loadReturn(); }, [numericReturnId]);
 
+  // Real-time Status Sync via SignalR
+  useEffect(() => {
+    let url = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
+    if (url && !url.startsWith('http')) {
+        url = window.location.origin + url;
+    }
+    
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${url}/hub/workflow`, {
+            withCredentials: true,
+            accessTokenFactory: () => useAuthStore.getState().token || ''
+        })
+        .withAutomaticReconnect()
+        .build();
+
+    // Listen for status changes
+    connection.on('ReceiveStatusUpdate', (pReturnId: number) => {
+        if (pReturnId === numericReturnId) {
+            void loadReturn();
+        }
+    });
+
+    connection.start()
+        .then(() => connection.invoke('JoinReturn', numericReturnId))
+        .catch(err => console.error('SignalR Status Sync Error: ', err));
+
+    return () => {
+        if (connection.state === signalR.HubConnectionState.Connected) {
+            connection.invoke('LeaveGroup', `Return_${numericReturnId}`).finally(() => void connection.stop());
+        }
+    };
+  }, [numericReturnId]);
+
   const withSave = async (fn: () => Promise<void>) => {
     try {
       setIsSaving(true);
@@ -861,14 +489,7 @@ export function ReturnDetailPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, py: 3 }}>
-        <CircularProgress size={18} />
-        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Loading return...</Typography>
-      </Box>
-    );
-  }
+  if (isLoading && !row) return <LoadingOverlay open={true} />;
 
   if (!row) {
     return (
@@ -880,34 +501,138 @@ export function ReturnDetailPage() {
     );
   }
 
-
+  const timelineEvents = [
+    { status: 'Draft', date: row.loggedAt, user: row.branchName },
+    { status: 'Submitted', date: row.submittedAt },
+    { status: 'Acknowledged', date: row.acknowledgedAt },
+    { status: 'Dispatched', date: row.dispatchedAt },
+    { status: 'Arrived', date: row.arrivedAt },
+    { status: 'Inspecting', date: row.inspectingAt },
+    ...(row.completedAt ? [{ status: 'Completed', date: row.completedAt }] : []),
+    ...(row.rejectedAt ? [{ status: 'Rejected', date: row.rejectedAt }] : []),
+  ].filter(e => e.date != null) as { status: string; date: string; user?: string }[];
 
   return (
-    <Box sx={{ pb: 3, display: 'grid', gap: 2.2 }}>
-      {/* Header */}
+    <>
+      <LoadingOverlay open={isLoading} />
+      <Box sx={{ pb: 3, display: 'grid', gap: 2.2 }}>
+      {/* Header Area */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
           <BackButton to="/returns" />
           <Box>
             <Typography sx={{ fontSize: 17, fontWeight: 800 }}>Return RT-{row.returnId}</Typography>
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-              Order #{row.orderId} · {row.branchName}
-            </Typography>
           </Box>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
           <StatusChip status={row.status} />
           <StatusChip status={row.resolution} />
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
+          {/* HQ: Submitted -> Acknowledge / Reject */}
+          {isHq && row.status === 'Submitted' && (
+            <>
+              <Button 
+                variant="outlined" 
+                sx={{ color: 'error.main', borderColor: 'error.main' }} 
+                onClick={() => setDialog('reject')}
+                startIcon={<CancelRoundedIcon />}
+              >
+                Reject
+              </Button>
+              <Button 
+                onClick={() => setDialog('acknowledge')}
+                startIcon={<AssignmentTurnedInRoundedIcon />}
+              >
+                Acknowledge
+              </Button>
+            </>
+          )}
+
+          {/* HQ: Acknowledged -> Reschedule */}
+          {isHq && row.status === 'Acknowledged' && (
+            <Button 
+              variant="outlined" 
+              onClick={() => setDialog('reschedule')}
+              startIcon={<EventRepeatRoundedIcon />}
+            >
+              Reschedule Pickup
+            </Button>
+          )}
+
+          {/* Branch: Acknowledged -> Confirm Dispatch */}
+          {isBranch && row.status === 'Acknowledged' && (
+            <Button 
+              onClick={() => setDialog('dispatch')}
+              startIcon={<LocalShippingRoundedIcon />}
+            >
+              Confirm Handoff
+            </Button>
+          )}
+
+          {/* HQ: Dispatched -> Confirm Arrival */}
+          {isHq && row.status === 'Dispatched' && (
+            <Button 
+              onClick={() => setDialog('arrival')}
+              startIcon={<DownloadDoneRoundedIcon />}
+            >
+              Confirm Arrival
+            </Button>
+          )}
+
+          {/* HQ: Arrived -> Start Inspection */}
+          {isHq && row.status === 'Arrived' && (
+            <Button 
+              onClick={() => setDialog('startInspect')}
+              startIcon={<FactCheckRoundedIcon />}
+            >
+              Start Inspection
+            </Button>
+          )}
+
+          {/* HQ: Inspecting -> Complete */}
+          {isHq && row.status === 'Inspecting' && (
+            <Button
+              disabled={row.items.some((i) => i.disposition === 'Pending')}
+              onClick={() => setDialog('complete')}
+              startIcon={<CheckCircleRoundedIcon />}
+            >
+              Complete Return
+            </Button>
+          )}
+
+          {/* Branch Status Messages */}
+          {isBranch && row.status === 'Submitted' && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.8, bgcolor: 'action.hover', borderRadius: 2 }}>
+              <HourglassEmptyRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>Awaiting HQ acknowledgement...</Typography>
+            </Box>
+          )}
+          {isBranch && (row.status === 'Dispatched' || row.status === 'Arrived') && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.8, bgcolor: 'action.hover', borderRadius: 2 }}>
+              <LocalShippingRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>Return in transit to HQ...</Typography>
+            </Box>
+          )}
+          {isBranch && row.status === 'Inspecting' && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.8, bgcolor: 'action.hover', borderRadius: 2 }}>
+              <FactCheckRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>HQ is currently inspecting items...</Typography>
+            </Box>
+          )}
+
+          {isHq && row.status === 'Inspecting' && row.items.some((i) => i.disposition === 'Pending') && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
+              <ForwardToInboxRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
+                All items must be dispositioned.
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
 
       {/* Vehicle conflict warning */}
       {row.hasVehicleScheduleConflict && (
-        <Alert
-          icon={<WarningAmberRoundedIcon fontSize="small" />}
-          severity="warning"
-          sx={{ fontSize: 12.5 }}
-        >
+        <Alert icon={<WarningAmberRoundedIcon fontSize="small" />} severity="warning" sx={{ fontSize: 12.5 }}>
           <strong>Vehicle schedule conflict:</strong> The assigned vehicle ({row.pickupVehiclePlateNumber}) has{' '}
           {row.vehicleScheduleConflicts.length} other pickup(s) on{' '}
           {row.pickupScheduledAt ? new Date(row.pickupScheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'that date'}.
@@ -916,153 +641,121 @@ export function ReturnDetailPage() {
 
       {/* Error */}
       {error && <Alert severity="error" sx={{ fontSize: 12.5 }}>{error}</Alert>}
-
-      {/* Meta card */}
-      <Paper sx={{ p: 2.2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 1.5 }}>
-          <Box>
-            <Typography sx={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'text.secondary', mb: 0.4 }}>Branch</Typography>
-            <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{row.branchName}</Typography>
-          </Box>
-          <Box>
-            <Typography sx={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'text.secondary', mb: 0.4 }}>Filed</Typography>
-            <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>
-              {new Date(row.loggedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </Typography>
-          </Box>
-          {row.pickupScheduledAt && (
-            <Box>
-              <Typography sx={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'text.secondary', mb: 0.4 }}>Pickup Scheduled</Typography>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>
-                {new Date(row.pickupScheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-              </Typography>
-              {row.pickupVehiclePlateNumber && (
-                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Vehicle: {row.pickupVehiclePlateNumber}</Typography>
-              )}
-            </Box>
-          )}
-          {row.creditAmount != null && (
-            <Box>
-              <Typography sx={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'text.secondary', mb: 0.4 }}>Credit Amount</Typography>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>
-                {row.creditAmount.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-
-        {row.reason && (
-          <Box sx={{ mt: 1.5 }}>
-            <Typography sx={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'text.secondary', mb: 0.4 }}>Notes</Typography>
-            <Typography sx={{ fontSize: 13.2 }}>{row.reason}</Typography>
-          </Box>
-        )}
-      </Paper>
-
-      {/* Action buttons */}
-      <Paper sx={{ p: 2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
-        <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 1.2, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 }}>
-          Actions
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {/* HQ: Submitted → Acknowledge / Reject */}
-          {isHq && row.status === 'Submitted' && (
-            <>
-              <Button onClick={() => setDialog('acknowledge')}>Acknowledge</Button>
-              <Button variant="outlined" sx={{ color: 'error.main', borderColor: 'error.main' }} onClick={() => setDialog('reject')}>Reject</Button>
-            </>
-          )}
-
-          {/* HQ: Acknowledged → Reschedule */}
-          {isHq && row.status === 'Acknowledged' && (
-            <Button variant="outlined" onClick={() => setDialog('reschedule')}>Reschedule Pickup</Button>
-          )}
-
-          {/* Branch: Acknowledged → Confirm Dispatch */}
-          {isBranch && row.status === 'Acknowledged' && (
-            <Button onClick={() => setDialog('dispatch')}>Confirm Handoff</Button>
-          )}
-
-          {/* HQ: Dispatched → Confirm Arrival */}
-          {isHq && row.status === 'Dispatched' && (
-            <Button onClick={() => setDialog('arrival')}>Confirm Arrival</Button>
-          )}
-
-          {/* HQ: Arrived → Start Inspection */}
-          {isHq && row.status === 'Arrived' && (
-            <Button onClick={() => setDialog('startInspect')}>Start Inspection</Button>
-          )}
-
-          {/* HQ: Inspecting → Complete */}
-          {isHq && row.status === 'Inspecting' && (
-            <Button
-              disabled={row.items.some((i) => i.disposition === 'Pending')}
-              onClick={() => setDialog('complete')}
-            >
-              Complete Return
-            </Button>
-          )}
-
-          {isHq && row.status === 'Inspecting' && row.items.some((i) => i.disposition === 'Pending') && (
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', alignSelf: 'center' }}>
-              All items must be dispositioned before completing.
-            </Typography>
-          )}
-
-          {['Completed', 'Rejected'].includes(row.status) && (
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-              This return has been {row.status.toLowerCase()}.
-            </Typography>
-          )}
-        </Box>
-      </Paper>
-
-      {/* Items table */}
-      <Paper sx={{ p: 2.2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
-        <Typography sx={{ fontSize: 14, fontWeight: 800, mb: 1.5 }}>Returned Items</Typography>
-        {row.items.length === 0 ? (
-          <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>No items on this return.</Typography>
-        ) : (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Item</TableCell>
-                <TableCell align="center" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', width: 100 }}>Returned</TableCell>
-                <TableCell align="center" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', width: 100 }}>Inspected</TableCell>
-                <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', width: 120 }}>Reason</TableCell>
-                <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', width: 130 }}>Disposition</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {row.items.map((item) => (
-                <TableRow key={item.returnItemId}>
-                  <TableCell>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600 }}>{item.itemName}</Typography>
-                    <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontFamily: 'monospace' }}>{item.itemSku}</Typography>
-                  </TableCell>
-                  <TableCell align="center"><Typography sx={{ fontSize: 13 }}>{item.quantityReturned}</Typography></TableCell>
-                  <TableCell align="center">
-                    <Typography sx={{ fontSize: 13 }}>{item.quantityInspected ?? '—'}</Typography>
-                  </TableCell>
-                  <TableCell><Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{item.reasonCode}</Typography></TableCell>
-                  <TableCell><StatusChip status={item.disposition} /></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Paper>
-
-      {/* Inspection panel (only while Inspecting, HQ only) */}
-      {isHq && row.status === 'Inspecting' && (
-        <InspectionPanel items={row.items} returnId={row.returnId} onSaved={() => void loadReturn()} />
+      
+      {/* Rejection Alert */}
+      {row.status === 'Rejected' && row.rejectionReason && (
+        <Alert severity="error" sx={{ fontSize: 12.5 }}>
+          <strong>Rejection reason:</strong> {row.rejectionReason}
+        </Alert>
       )}
 
-      {/* Timeline */}
-      <TimelinePanel row={row} />
+      {/* Tracker Stepper */}
+      <ReturnTrackerStepper status={row.status as any} timeline={timelineEvents} />
 
-      {/* Messages */}
-      <MessagesPanel returnId={row.returnId} currentUserId={user ? Number(user.id) : undefined} />
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '360px 1fr' }, gap: 2.2, alignItems: 'start' }}>
+        {/* Info Column */}
+        <Paper sx={{ p: 0, borderRadius: '14px', border: '1px solid', borderColor: 'divider', overflow: 'hidden' }} elevation={0}>
+          {/* Order/Branch Header */}
+          <Box sx={{ p: 2, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'text.secondary' }}>Return Details</Typography>
+              </Box>
+              <Typography sx={{ fontSize: 18, fontWeight: 800 }}>Order #{row.orderId}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, color: 'text.secondary', mt: 0.5 }}>
+                  <StorefrontRoundedIcon sx={{ fontSize: 15 }} />
+                  <Typography sx={{ fontSize: 13 }}>{row.branchName}</Typography>
+              </Box>
+          </Box>
+
+          <Box sx={{ p: 2, display: 'grid', gap: 2 }}>
+              {/* Timeline info */}
+              <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
+                      <EventAvailableRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                      <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Timeline</Typography>
+                  </Box>
+                  <Box sx={{ pl: 3 }}>
+                      <Typography sx={{ fontSize: 13, mb: 0.2 }}>
+                          <span style={{ color: '#757575', marginRight: 4 }}>Filed:</span> 
+                          {new Date(row.loggedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Typography>
+                      {row.pickupScheduledAt && (
+                          <Typography sx={{ fontSize: 13 }}>
+                              <span style={{ color: '#757575', marginRight: 4 }}>Pickup:</span> 
+                              {new Date(row.pickupScheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          </Typography>
+                      )}
+                      {row.pickupVehiclePlateNumber && (
+                          <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>
+                              Vehicle {row.pickupVehiclePlateNumber}
+                          </Typography>
+                      )}
+                  </Box>
+              </Box>
+
+              {row.creditAmount != null && (
+                  <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
+                          <ReceiptLongRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Credit Amount</Typography>
+                      </Box>
+                      <Typography sx={{ pl: 3, fontSize: 14, fontWeight: 700, color: 'success.main' }}>
+                          {row.creditAmount.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                      </Typography>
+                  </Box>
+              )}
+
+              {row.reason && (
+                  <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
+                          <NotesRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Additional Notes</Typography>
+                      </Box>
+                      <Typography sx={{ pl: 3, fontSize: 13, color: 'text.secondary', lineHeight: 1.5 }}>
+                          {row.reason}
+                      </Typography>
+                  </Box>
+              )}
+          </Box>
+        </Paper>
+
+        {/* Right Column (Items Table + Inspection) */}
+        <Box sx={{ display: 'grid', gap: 2.2 }}>
+          <Paper sx={{ p: 2.2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
+            <Typography sx={{ fontSize: 14, fontWeight: 800, mb: 1.5 }}>Returned Items</Typography>
+            {row.items.length === 0 ? (
+              <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>No items on this return.</Typography>
+            ) : (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Item</TableCell>
+                    <TableCell align="left" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Returned</TableCell>
+                    <TableCell align="left" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Inspected</TableCell>
+                    <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Reason</TableCell>
+                    <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Disposition</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {row.items.map((item) => (
+                    <ReturnItemTableRow
+                      key={item.returnItemId}
+                      item={item}
+                      returnId={row.returnId}
+                      isHq={isHq}
+                      isInspecting={row.status === 'Inspecting'}
+                      onSaved={() => void loadReturn()}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Paper>
+        </Box>
+      </Box>
+
+      {/* Floating Chat Widget */}
+      <ReturnFloatingChat returnId={row.returnId} currentUserId={user ? Number(user.id) : undefined} />
 
       {/* ── Dialogs ── */}
       <AcknowledgeDialog
@@ -1118,5 +811,6 @@ export function ReturnDetailPage() {
         onSubmit={(remarks) => void withSave(() => completeReturn(row.returnId, remarks).then(() => {}))}
       />
     </Box>
+    </>
   );
 }

@@ -9,7 +9,7 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
 
-import { BackButton } from '../../components/UI/BackButton';
+import { PageHeader } from '../../components/UI/PageHeader';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
@@ -218,17 +218,11 @@ export function MenuCategoriesPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ mb: 3.5, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/menu" />
-        <Box>
-          <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            Menu Category Management
-          </Typography>
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.3 }}>
-            Left panel is for add/edit. Click a category card on the right to edit it.
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader 
+        title="Menu Category Management" 
+        description="Left panel is for add/edit. Click a category card on the right to edit it."
+        backTo="/menu"
+      />
 
       <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>

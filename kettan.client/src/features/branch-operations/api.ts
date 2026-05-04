@@ -114,6 +114,7 @@ export interface ReturnRecord {
   hasVehicleScheduleConflict: boolean;
   vehicleScheduleConflicts: ReturnScheduleConflict[];
   items: ReturnItemDto[];
+  submittedByName?: string | null;
 }
 
 // Legacy alias kept so existing usages don't break
@@ -124,6 +125,7 @@ export interface ReturnEligibleOrderItem {
   itemName: string;
   itemSku: string;
   quantityDelivered: number;
+  branchStock: number;
 }
 
 export interface ReturnEligibleOrder {

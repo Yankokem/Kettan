@@ -28,6 +28,7 @@ import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
 import { TextField } from '../../components/UI/TextField';
+import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
 import {
   fetchEligibleOrders,
   fetchEligibleOrderDetail,
@@ -40,6 +41,7 @@ import {
 } from '../branch-operations/api';
 import { ReturnItemTable } from './components/ReturnItemTable';
 import { ReturnMediaUploader } from './components/ReturnMediaUploader';
+import { useAuthStore } from '../../store/useAuthStore';
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string }>;
@@ -63,6 +65,7 @@ interface ItemLine {
   itemName: string;
   itemSku: string;
   quantityDelivered: number;
+  branchStock: number;
   selected: boolean;
   quantityReturned: string;
   reasonCode: string;
@@ -71,7 +74,17 @@ interface ItemLine {
 export function ReturnCreatePage() {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isRestricted = user?.role === 'TenantAdmin' || user?.role === 'HqManager' || user?.role === 'HqStaff' || user?.role === 'HQ Staff';
+
+  useEffect(() => {
+    if (isRestricted) {
+      navigate({ to: '/returns' });
+    }
+  }, [isRestricted, navigate]);
+
   const search = useSearch({ strict: false }) as { orderId?: string };
+  if (isRestricted) return null;
   const preselectedOrderId = search.orderId ? Number(search.orderId) : null;
 
   // Step 1 — order selection
@@ -148,6 +161,7 @@ export function ReturnCreatePage() {
             itemName: i.itemName,
             itemSku: i.itemSku,
             quantityDelivered: i.quantityDelivered,
+            branchStock: i.branchStock,
             selected: false,
             quantityReturned: '',
             reasonCode: 'Damaged',
@@ -584,12 +598,13 @@ export function ReturnCreatePage() {
                   '&.Mui-disabled': { bgcolor: 'rgba(107,76,42,0.3)', color: 'rgba(255,255,255,0.7)' }
                 }}
               >
-                {isSubmitting ? 'Processing...' : 'Process Return'}
+                {isSaving ? 'Processing...' : 'Process Return'}
               </Button>
             </Box>
           </Paper>
         </Grid>
       </Grid>
+      <LoadingOverlay open={isSaving} />
     </Box>
   );
 }

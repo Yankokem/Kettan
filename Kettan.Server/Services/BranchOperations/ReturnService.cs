@@ -26,25 +26,29 @@ public class ReturnService : IReturnService
     private readonly INotificationService _notificationService;
     private readonly IInventoryService _inventoryService;
     private readonly IHubContext<ReturnHub> _hubContext;
+    private readonly IHubContext<WorkflowHub> _workflowHub;
 
     public ReturnService(
         ApplicationDbContext context,
         ICurrentUserService currentUser,
         INotificationService notificationService,
         IInventoryService inventoryService,
-        IHubContext<ReturnHub> hubContext)
+        IHubContext<ReturnHub> hubContext,
+        IHubContext<WorkflowHub> workflowHub)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationService = notificationService;
         _inventoryService = inventoryService;
         _hubContext = hubContext;
+        _workflowHub = workflowHub;
     }
 
     public async Task<List<ReturnDto>> ListAsync(string? status = null, string? resolution = null)
     {
         var query = _context.Returns
             .Include(r => r.Branch)
+            .Include(r => r.SubmittedBy_User)
             .Include(r => r.PickupVehicle)
             .Include(r => r.Items)
                 .ThenInclude(i => i.Item)
@@ -125,8 +129,21 @@ public class ReturnService : IReturnService
 
     public async Task<ReturnEligibleOrderDto?> GetEligibleOrderDetailAsync(int orderId)
     {
-        var orders = await GetEligibleOrdersAsync();
-        return orders.FirstOrDefault(o => o.OrderId == orderId);
+        var order = await LoadOrderForReturnAsync(orderId);
+        if (order == null) return null;
+
+        var dto = MapToEligibleOrderDto(order);
+        var branchId = order.SupplyRequest?.BranchId;
+
+        if (branchId.HasValue)
+        {
+            foreach (var item in dto.Items)
+            {
+                item.BranchStock = await _inventoryService.GetStockLevelAsync(item.ItemId, branchId.Value);
+            }
+        }
+
+        return dto;
     }
 
     public async Task<ReturnDto> CreateDraftAsync(CreateReturnDraftDto dto)
@@ -309,6 +326,7 @@ public class ReturnService : IReturnService
             referenceType: nameof(Return),
             referenceId: returnEntry.ReturnId);
 
+        await BroadcastReturnUpdateAsync(returnId);
         return await GetByIdAsync(returnId);
     }
 
@@ -394,6 +412,7 @@ public class ReturnService : IReturnService
 
         updated.HasVehicleScheduleConflict = conflicts.Count > 0;
         updated.VehicleScheduleConflicts = conflicts;
+        await BroadcastReturnUpdateAsync(returnId);
         return updated;
     }
 
@@ -446,6 +465,7 @@ public class ReturnService : IReturnService
             referenceType: nameof(Return),
             referenceId: returnEntry.ReturnId);
 
+        await BroadcastReturnUpdateAsync(returnId);
         return await GetByIdAsync(returnId);
     }
 
@@ -516,6 +536,7 @@ public class ReturnService : IReturnService
 
         updated.HasVehicleScheduleConflict = conflicts.Count > 0;
         updated.VehicleScheduleConflicts = conflicts;
+        await BroadcastReturnUpdateAsync(returnId);
         return updated;
     }
 
@@ -584,6 +605,7 @@ public class ReturnService : IReturnService
             referenceType: nameof(Return),
             referenceId: returnEntry.ReturnId);
 
+        await BroadcastReturnUpdateAsync(returnId);
         return await GetByIdAsync(returnId);
     }
 
@@ -621,6 +643,7 @@ public class ReturnService : IReturnService
         }
 
         await _context.SaveChangesAsync();
+        await BroadcastReturnUpdateAsync(returnId);
         return await GetByIdAsync(returnId);
     }
 
@@ -658,6 +681,7 @@ public class ReturnService : IReturnService
         }
 
         await _context.SaveChangesAsync();
+        await BroadcastReturnUpdateAsync(returnId);
         return await GetByIdAsync(returnId);
     }
 
@@ -702,11 +726,6 @@ public class ReturnService : IReturnService
                 throw new InvalidOperationException($"Inspected quantity must be greater than zero for return item {returnItem.ReturnItemId}.");
             }
 
-            if (returnItem.ReasonCode is ReturnItemReason.Damaged or ReturnItemReason.Expired &&
-                parsedDisposition != ReturnItemDisposition.WriteOff)
-            {
-                throw new InvalidOperationException("Damaged or expired lines must be dispositioned as WriteOff.");
-            }
 
             if (parsedDisposition == ReturnItemDisposition.Restock && payload.RestockBatchId.HasValue)
             {
@@ -730,6 +749,7 @@ public class ReturnService : IReturnService
         }
 
         await _context.SaveChangesAsync();
+        await BroadcastReturnUpdateAsync(returnId);
         return await GetByIdAsync(returnId);
     }
 
@@ -819,6 +839,7 @@ public class ReturnService : IReturnService
             referenceType: nameof(Return),
             referenceId: returnEntry.ReturnId);
 
+        await BroadcastReturnUpdateAsync(returnId);
         return await GetByIdAsync(returnId);
     }
 
@@ -1184,6 +1205,7 @@ public class ReturnService : IReturnService
             RejectionReason = row.RejectionReason,
             PhotoUrls = row.PhotoUrls,
             CreditAmount = row.CreditAmount,
+            SubmittedByName = row.SubmittedBy_User != null ? $"{row.SubmittedBy_User.FirstName} {row.SubmittedBy_User.LastName}".Trim() : null,
             LoggedAt = row.LoggedAt,
             SubmittedAt = row.SubmittedAt,
             AcknowledgedAt = row.AcknowledgedAt,
@@ -1279,5 +1301,14 @@ public class ReturnService : IReturnService
         }
 
         return value.Trim();
+    }
+
+    private async Task BroadcastReturnUpdateAsync(int returnId)
+    {
+        // Notify detail page
+        await _hubContext.Clients.Group($"Return_{returnId}").SendAsync("ReceiveStatusUpdate", returnId);
+        
+        // Notify list page
+        await _workflowHub.Clients.Group("Returns_All").SendAsync("ReceiveStatusUpdate", returnId);
     }
 }

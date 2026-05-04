@@ -161,6 +161,7 @@ app.UseMiddleware<SubscriptionCheckMiddleware>();
 
 app.MapControllers();
 app.MapHub<Kettan.Server.Hubs.ReturnHub>("/hub/returns");
+app.MapHub<Kettan.Server.Hubs.WorkflowHub>("/hub/workflow");
 
 using (var scope = app.Services.CreateScope())
 {

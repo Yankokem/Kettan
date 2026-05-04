@@ -9,7 +9,7 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 
-import { BackButton } from '../../components/UI/BackButton';
+import { PageHeader } from '../../components/UI/PageHeader';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
@@ -242,17 +242,11 @@ export function VehicleManagementPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ mb: 3.5, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/hq-inventory" />
-        <Box>
-          <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            Vehicle Management
-          </Typography>
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', mt: 0.3 }}>
-            Maintain delivery vehicles and updating status.
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader 
+        title="Vehicle Management" 
+        description="Maintain delivery vehicles and update fleet status."
+        backTo="/hq-inventory"
+      />
 
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
         <Card

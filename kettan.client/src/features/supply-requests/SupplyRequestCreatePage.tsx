@@ -44,6 +44,15 @@ export function SupplyRequestCreatePage() {
 
   const role = user?.role ?? '';
   const canAccessPage = role === 'BranchManager' || role === 'BranchOwner';
+
+  useEffect(() => {
+    if (!canAccessPage) {
+      navigate({ to: '/supply-requests' });
+    }
+  }, [canAccessPage, navigate]);
+
+  if (!canAccessPage) return null;
+
   const canCreateRequests = role === 'BranchManager' || role === 'BranchOwner';
 
   const [nextRequestId, setNextRequestId] = useState<number | null>(null);

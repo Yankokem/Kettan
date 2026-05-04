@@ -12,7 +12,7 @@ import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded
 import { useNavigate } from '@tanstack/react-router';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
-import { BackButton } from '../../components/UI/BackButton';
+import { PageHeader } from '../../components/UI/PageHeader';
 import { FormActions } from '../../components/Form/FormActions';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { VariantsBuilder } from './components/VariantsBuilder';
@@ -155,18 +155,11 @@ export function AddMenuItemPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/menu" />
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            Add Menu Item
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-            Create a new menu item with variant-specific pricing and ingredient usage.
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader 
+        title="Add Menu Item" 
+        description="Create a new menu item with variant-specific pricing and ingredient usage."
+        backTo="/menu"
+      />
 
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
         {/* LEFT SECTION: Image & Basic Info */}

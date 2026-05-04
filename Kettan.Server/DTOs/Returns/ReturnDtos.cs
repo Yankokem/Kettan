@@ -6,6 +6,7 @@ public class ReturnEligibleOrderItemDto
     public string ItemName { get; set; } = string.Empty;
     public string ItemSku { get; set; } = string.Empty;
     public decimal QuantityDelivered { get; set; }
+    public decimal BranchStock { get; set; }
 }
 
 public class ReturnEligibleOrderDto
@@ -78,6 +79,7 @@ public class ReturnDto
     public DateTime? PickupScheduledAt { get; set; }
     public DateTime? PickupLastUpdatedAt { get; set; }
     public bool HasVehicleScheduleConflict { get; set; }
+    public string? SubmittedByName { get; set; }
     public List<ReturnScheduleConflictDto> VehicleScheduleConflicts { get; set; } = [];
     public List<ReturnItemDto> Items { get; set; } = [];
 }

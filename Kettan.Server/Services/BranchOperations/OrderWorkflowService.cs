@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using Kettan.Server.Hubs;
 using Kettan.Server.Data;
 using Kettan.Server.DTOs.Orders;
 using Kettan.Server.Entities;
@@ -16,18 +18,22 @@ public class OrderWorkflowService : IOrderWorkflowService
     private readonly IInventoryService _inventoryService;
     private readonly ILogger<OrderWorkflowService> _logger;
 
+    private readonly IHubContext<WorkflowHub> _hubContext;
+
     public OrderWorkflowService(
         ApplicationDbContext context,
         ICurrentUserService currentUser,
         INotificationService notificationService,
         IInventoryService inventoryService,
-        ILogger<OrderWorkflowService> logger)
+        ILogger<OrderWorkflowService> logger,
+        IHubContext<WorkflowHub> hubContext)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationService = notificationService;
         _inventoryService = inventoryService;
         _logger = logger;
+        _hubContext = hubContext;
     }
 
     public async Task<List<BranchOrderDto>> ListBranchOrdersAsync(string? status = null, int? branchId = null)
@@ -135,6 +141,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         await _context.SaveChangesAsync();
         await tx.CommitAsync();
 
+        await BroadcastOrderUpdateAsync(order.OrderId);
         return await MapToOrderDetailDto(order, null);
     }
 
@@ -287,6 +294,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             $"Order #{order.OrderId} for {order.SupplyRequest?.Branch?.Name ?? "branch"} is now Packed.",
             "OrderPacked");
 
+        await BroadcastOrderUpdateAsync(order.OrderId);
         return true;
     }
 
@@ -357,8 +365,9 @@ public class OrderWorkflowService : IOrderWorkflowService
             order,
             "Order Dispatched",
             $"Order #{order.OrderId} for {order.SupplyRequest?.Branch?.Name ?? "branch"} has been dispatched.",
-            notificationType: "OrderDispatched");
+            "OrderDispatched");
 
+        await BroadcastOrderUpdateAsync(order.OrderId);
         return true;
     }
 
@@ -415,6 +424,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             referenceType: nameof(Order),
             referenceId: order.OrderId);
 
+        await BroadcastOrderUpdateAsync(order.OrderId);
         return true;
     }
 
@@ -462,6 +472,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             $"Order #{order.OrderId} for {order.SupplyRequest?.Branch?.Name ?? "branch"} is now {nextStatus}.",
             notificationType);
 
+        await BroadcastOrderUpdateAsync(order.OrderId);
         return true;
     }
 
@@ -729,6 +740,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         });
 
         await _context.SaveChangesAsync();
+        await BroadcastOrderUpdateAsync(orderId);
         return await GetOrderDetailAsync(orderId);
     }
 
@@ -807,6 +819,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         });
 
         await _context.SaveChangesAsync();
+        await BroadcastOrderUpdateAsync(orderId);
         return await GetOrderDetailAsync(orderId);
     }
 
@@ -1235,5 +1248,14 @@ public class OrderWorkflowService : IOrderWorkflowService
     private bool IsHqRole()
     {
         return _currentUser.Role is "TenantAdmin" or "HqManager" or "HqStaff";
+    }
+
+    private async Task BroadcastOrderUpdateAsync(int orderId)
+    {
+        // Specific order detail
+        await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+        
+        // Orders list
+        await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
     }
 }

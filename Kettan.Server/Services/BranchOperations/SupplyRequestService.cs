@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using Kettan.Server.Hubs;
 using Kettan.Server.Data;
 using Kettan.Server.DTOs.SupplyRequests;
 using Kettan.Server.Entities;
@@ -15,16 +17,20 @@ public class SupplyRequestService : ISupplyRequestService
     private readonly INotificationService _notificationService;
     private readonly IInventoryService _inventoryService;
 
+    private readonly IHubContext<WorkflowHub> _hubContext;
+
     public SupplyRequestService(
         ApplicationDbContext context,
         ICurrentUserService currentUser,
         INotificationService notificationService,
-        IInventoryService inventoryService)
+        IInventoryService inventoryService,
+        IHubContext<WorkflowHub> hubContext)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationService = notificationService;
         _inventoryService = inventoryService;
+        _hubContext = hubContext;
     }
 
     public async Task<List<SupplyRequestDto>> ListAsync(string? status = null)
@@ -368,6 +374,7 @@ public class SupplyRequestService : ISupplyRequestService
 
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
+        await BroadcastSupplyRequestUpdateAsync(request.RequestId);
 
         await _notificationService.CreateForUsersAsync(
             [request.RequestedBy_UserId],
@@ -499,6 +506,7 @@ public class SupplyRequestService : ISupplyRequestService
 
             existingDraft.UpdatedAt = now;
             await _context.SaveChangesAsync();
+            await BroadcastSupplyRequestUpdateAsync(existingDraft.RequestId);
 
             await _notificationService.CreateForRolesAsync(
                 ["BranchManager", "BranchOwner"],
@@ -534,6 +542,7 @@ public class SupplyRequestService : ISupplyRequestService
 
         _context.SupplyRequests.Add(newRequest);
         await _context.SaveChangesAsync();
+        await BroadcastSupplyRequestUpdateAsync(newRequest.RequestId);
 
         await _notificationService.CreateForRolesAsync(
             ["BranchManager", "BranchOwner"],
@@ -781,5 +790,14 @@ public class SupplyRequestService : ISupplyRequestService
         }
 
         return NormalizeOption(status, SupplyRequestStatuses.Draft);
+    }
+
+    private async Task BroadcastSupplyRequestUpdateAsync(int requestId)
+    {
+        // Detail
+        await _hubContext.Clients.Group($"SupplyRequest_{requestId}").SendAsync("ReceiveStatusUpdate", requestId);
+        
+        // List
+        await _hubContext.Clients.Group("SupplyRequests_All").SendAsync("ReceiveStatusUpdate", requestId);
     }
 }

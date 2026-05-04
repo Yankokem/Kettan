@@ -143,7 +143,7 @@ export function AuditLogsPage() {
   const columns: ColumnDef<AuditLogEntry>[] = [
     {
       key: 'occurredAt',
-      label: 'Timestamp',
+      label: 'DATE AND TIME',
       width: '1.5fr',
       sortable: true,
       sortAccessor: (row) => new Date(row.occurredAt).getTime(),

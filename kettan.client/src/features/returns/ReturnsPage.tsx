@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
+import * as signalR from '@microsoft/signalr';
 import { Box, Chip, Grid, Typography } from '@mui/material';
 import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import Divider from '@mui/material/Divider';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
+import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import type { AxiosError } from 'axios';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -16,6 +24,7 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { StatCard } from '../../components/UI/StatCard';
 import { fetchReturns, type ReturnRecord } from '../branch-operations/api';
+import { useAuthStore } from '../../store/useAuthStore';
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string }>;
@@ -42,22 +51,70 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'Rejected', label: 'Rejected' },
 ];
 
-type StatusStyle = { bg: string; color: string };
-function statusStyle(status: string): StatusStyle {
+function statusColor(status: string): string {
   switch (status) {
-    case 'Draft':        return { bg: '#F5F5F5', color: '#757575' };
-    case 'Submitted':    return { bg: '#FFF8E1', color: '#F57F17' };
-    case 'Acknowledged': return { bg: '#E3F2FD', color: '#1565C0' };
-    case 'Dispatched':   return { bg: '#E8F5E9', color: '#2E7D32' };
-    case 'Arrived':      return { bg: '#E0F7FA', color: '#00695C' };
-    case 'Inspecting':   return { bg: '#F3E5F5', color: '#6A1B9A' };
-    case 'Completed':    return { bg: '#E8F5E9', color: '#1B5E20' };
-    case 'Rejected':     return { bg: '#FFEBEE', color: '#B71C1C' };
-    case 'Credited':     return { bg: '#E8F5E9', color: '#2E7D32' };
-    case 'Replaced':     return { bg: '#E3F2FD', color: '#1565C0' };
-    case 'Pending':      return { bg: '#FFF8E1', color: '#F57F17' };
-    default:             return { bg: '#F5F5F5', color: '#616161' };
+    case 'Draft':        return '#757575';
+    case 'Submitted':    return '#D97706'; // Smooth Amber
+    case 'Acknowledged': return '#0288D1'; // Light Blue
+    case 'Dispatched':   return '#43A047'; // Green
+    case 'Arrived':      return '#8C6B43'; // Muted Brown
+    case 'Inspecting':   return '#AF52DE'; // Purple
+    case 'Completed':    return '#2E7D32'; // Deep Green
+    case 'Rejected':     return '#D32F2F'; // Red
+    default:             return '#6B7280';
   }
+}
+
+function ActionsMenu({ row }: { row: ReturnRecord }) {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+
+  return (
+    <>
+      <IconButton size="small" onClick={handleClick} sx={{ color: 'text.secondary' }}>
+        <MoreVertRoundedIcon fontSize="small" />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            mt: 0.5,
+            minWidth: 180,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+          }
+        }}
+      >
+        <MenuItem onClick={() => { handleClose(); navigate({ to: '/returns/$returnId', params: { returnId: String(row.returnId) } }); }}>
+          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); }}>
+          <ListItemIcon><OpenInNewRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="View Linked Order" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); }}>
+          <ListItemIcon><ChatBubbleOutlineRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="Quick Message" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <Divider sx={{ my: 1 }} />
+        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(`RT-${row.returnId}`); }}>
+          <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+      </Menu>
+    </>
+  );
 }
 
 function defaultStartDate() {
@@ -76,6 +133,8 @@ const ACTIVE_STATUSES = new Set(['Submitted', 'Acknowledged', 'Dispatched', 'Arr
 
 export function ReturnsPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const canFileReturn = user?.role !== 'TenantAdmin' && user?.role !== 'HqManager' && user?.role !== 'HqStaff' && user?.role !== 'HQ Staff';
 
   const [rows, setRows] = useState<ReturnRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,6 +159,37 @@ export function ReturnsPage() {
   };
 
   useEffect(() => { void loadRows(); }, [statusFilter]);
+
+  // Real-time Status Sync via SignalR
+  useEffect(() => {
+    let url = typeof useAuthStore.getState().token === 'string' ? '/api' : ''; // Fallback for testing
+    // Actually we should get it from a common place. In ReturnDetailPage it was hardcoded from api.defaults.baseURL
+    
+    // For now, let's use a similar pattern to ReturnDetailPage
+    const baseUrl = (window as any).API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5173/api' : '/api');
+    
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${baseUrl.replace('/api', '')}/hub/workflow`, {
+            withCredentials: true,
+            accessTokenFactory: () => useAuthStore.getState().token || ''
+        })
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on('ReceiveStatusUpdate', () => {
+        void loadRows();
+    });
+
+    connection.start()
+        .then(() => connection.invoke('JoinReturnsList'))
+        .catch(err => console.error('Returns Page SignalR Error: ', err));
+
+    return () => {
+        if (connection.state === signalR.HubConnectionState.Connected) {
+            connection.invoke('LeaveGroup', 'Returns_All').finally(() => void connection.stop());
+        }
+    };
+  }, []);
 
   const safeRows = useMemo(() => (Array.isArray(rows) ? rows : []), [rows]);
 
@@ -140,90 +230,83 @@ export function ReturnsPage() {
   const columns: ColumnDef<ReturnRecord>[] = [
     {
       key: 'returnId',
-      label: 'Return ID',
-      width: 120,
+      label: 'RETURN ID',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>
           RT-{row.returnId}
         </Typography>
       ),
     },
     {
-      key: 'branchName',
-      label: 'Branch',
+      key: 'orderId',
+      label: 'ORDER ID',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>
+          ORD-{row.orderId}
+        </Typography>
+      ),
+    },
+    {
+      key: 'branchName',
+      label: 'BRANCH',
+      sortable: true,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
           {row.branchName || `Branch ${row.branchId}`}
         </Typography>
       ),
     },
     {
-      key: 'items',
-      label: 'Items',
-      width: 80,
-      align: 'center',
-      sortable: true,
-      sortAccessor: (row) => row.items.length,
-      render: (row) => <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>{row.items.length}</Typography>,
-    },
-    {
-      key: 'orderId',
-      label: 'Order',
-      width: 100,
-      sortable: true,
-      render: (row) => <Typography sx={{ fontSize: 13, fontWeight: 600 }}>#{row.orderId}</Typography>,
-    },
-    {
       key: 'status',
-      label: 'Status',
-      width: 140,
+      label: 'STATUS',
       sortable: true,
-      render: (row) => {
-        const s = statusStyle(row.status);
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
-            <Chip
-              label={row.status}
-              size="small"
-              sx={{ fontSize: 11.5, fontWeight: 600, background: s.bg, color: s.color, border: `1px solid ${s.color}28`, width: 'fit-content' }}
-            />
-            {/* Show resolution context if not pending */}
-            {row.resolution !== 'Pending' && (
-              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{row.resolution}</Typography>
-            )}
-          </Box>
-        );
-      },
+      render: (row) => (
+        <Typography 
+          sx={{ 
+            fontSize: 13, 
+            fontWeight: 600, 
+            color: statusColor(row.status),
+            letterSpacing: '0.01em'
+          }}
+        >
+          {row.status}
+        </Typography>
+      ),
+    },
+    {
+      key: 'submittedBy',
+      label: 'FILED BY',
+      sortable: true,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
+          {row.submittedByName || '---'}
+        </Typography>
+      ),
     },
     {
       key: 'loggedAt',
-      label: 'Date Filed',
-      width: 140,
+      label: 'DATE AND TIME',
       sortable: true,
       sortAccessor: (row) => new Date(row.loggedAt).getTime(),
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-          {new Date(row.loggedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+          {new Date(row.loggedAt).toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          })}
         </Typography>
       ),
     },
     {
       key: 'actions',
-      label: '',
-      width: 110,
+      label: 'ACTIONS',
       align: 'right',
-      render: (row) => (
-        <Button
-          size="small"
-          variant="outlined"
-          sx={{ height: 32, px: 1.4 }}
-          onClick={() => navigate({ to: '/returns/$returnId', params: { returnId: String(row.returnId) } })}
-        >
-          Manage
-        </Button>
-      ),
+      render: (row) => <ActionsMenu row={row} />,
     },
   ];
 
@@ -310,13 +393,15 @@ export function ReturnsPage() {
           options={STATUS_FILTER_OPTIONS}
         />
 
-        <Button
-          startIcon={<AssignmentReturnRoundedIcon />}
-          onClick={() => navigate({ to: '/returns/new' })}
-          sx={{ ml: { xs: 0, lg: 'auto' }, whiteSpace: 'nowrap' }}
-        >
-          File Return
-        </Button>
+        {canFileReturn && (
+          <Button
+            startIcon={<AssignmentReturnRoundedIcon />}
+            onClick={() => navigate({ to: '/returns/new' })}
+            sx={{ ml: { xs: 0, lg: 'auto' }, whiteSpace: 'nowrap' }}
+          >
+            File Return
+          </Button>
+        )}
       </Box>
 
       {error && (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import * as signalR from '@microsoft/signalr';
 import { Box, Chip, Typography, Card } from '@mui/material';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
@@ -14,6 +15,18 @@ import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import Tooltip from '@mui/material/Tooltip';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { Button } from '../../components/UI/Button';
@@ -57,34 +70,66 @@ function formatStatusLabel(status: string) {
   }
 }
 
-function statusChip(status: string) {
+function statusColor(status: string): string {
   const normalized = status.toLowerCase();
+  if (normalized === 'draft' || normalized.includes('autodrafted')) return '#757575'; // Neutral
+  if (normalized === 'pendingapproval') return '#ED6C02'; // Pending
+  if (['approved', 'completed', 'delivered'].includes(normalized)) return '#2E7D32'; // Success
+  if (['picking', 'packing', 'processing', 'dispatched', 'intransit', 'arrived'].includes(normalized)) return '#0288D1'; // Info
+  if (normalized.includes('rejected') || normalized.includes('cancelled')) return '#D32F2F'; // Error
+  return '#6B7280';
+}
 
-  if (normalized === 'draft' || normalized.includes('autodrafted')) {
-    return { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };
-  }
+function ActionsMenu({ row }: { row: SupplyRequest }) {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
+  const open = Boolean(anchorEl);
 
-  if (normalized === 'pendingapproval') {
-    return { color: '#B45309', bg: 'rgba(180,83,9,0.12)' };
-  }
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
 
-  if (['approved', 'completed', 'delivered'].includes(normalized)) {
-    return { color: '#047857', bg: 'rgba(4,120,87,0.12)' };
-  }
-
-  if (['picking', 'packing', 'processing'].includes(normalized)) {
-    return { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' };
-  }
-
-  if (['dispatched', 'intransit', 'arrived'].includes(normalized)) {
-    return { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' };
-  }
-
-  if (normalized.includes('rejected') || normalized.includes('cancelled')) {
-    return { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' };
-  }
-
-  return { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
+  return (
+    <>
+      <IconButton size="small" onClick={handleClick} sx={{ color: 'text.secondary' }}>
+        <MoreVertRoundedIcon fontSize="small" />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            mt: 0.5,
+            minWidth: 180,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+          }
+        }}
+      >
+        <MenuItem onClick={() => { handleClose(); navigate({ to: '/supply-requests/$requestId', params: { requestId: String(row.requestId) } }); }}>
+          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); navigate({ to: '/branches/$branchId', params: { branchId: String(row.branchId) } }); }}>
+          <ListItemIcon><StoreRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="View Branch" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); }}>
+          <ListItemIcon><ChatBubbleOutlineRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="Quick Message" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <Divider sx={{ my: 1 }} />
+        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(`SR-${row.requestId}`); }}>
+          <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+      </Menu>
+    </>
+  );
 }
 
 export function SupplyRequestsPage() {
@@ -96,7 +141,7 @@ export function SupplyRequestsPage() {
   const isBranch = role === 'BranchManager' || role === 'BranchOwner';
 
   const canAccessPage = isHq || isBranch;
-  const canCreateRequests = isBranch; // HQ shouldn't usually "request" from themselves via this UI
+  const canCreateRequests = isBranch;
 
   const [rows, setRows] = useState<SupplyRequest[]>([]);
   const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
@@ -124,6 +169,32 @@ export function SupplyRequestsPage() {
 
   useEffect(() => {
     void loadRows();
+  }, []);
+
+  // Real-time Status Sync via SignalR
+  useEffect(() => {
+    const baseUrl = (window as any).API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5173/api' : '/api');
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${baseUrl.replace('/api', '')}/hub/workflow`, {
+            withCredentials: true,
+            accessTokenFactory: () => useAuthStore.getState().token || ''
+        })
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on('ReceiveStatusUpdate', () => {
+        void loadRows();
+    });
+
+    connection.start()
+        .then(() => connection.invoke('JoinSupplyRequestsList'))
+        .catch(err => console.error('Supply Requests Page SignalR Error: ', err));
+
+    return () => {
+        if (connection.state === signalR.HubConnectionState.Connected) {
+            connection.invoke('LeaveGroup', 'SupplyRequests_All').finally(() => void connection.stop());
+        }
+    };
   }, []);
 
   const safeRows = useMemo(() => {
@@ -188,97 +259,78 @@ export function SupplyRequestsPage() {
   const columns: ColumnDef<SupplyRequest>[] = [
     {
       key: 'requestId',
-      label: 'Request ID',
-      width: 120,
+      label: 'REQUEST ID',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>
           SR-{row.requestId}
         </Typography>
       ),
     },
     {
       key: 'branchName',
-      label: 'Branch',
+      label: 'BRANCH',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>
+        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
           {row.branchName || `Branch ${row.branchId}`}
         </Typography>
       ),
     },
     {
       key: 'requestedByName',
-      label: 'Requested By',
+      label: 'FILED BY',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
           {row.requestedByName || `User ${row.requestedByUserId}`}
         </Typography>
       ),
     },
     {
       key: 'items',
-      label: 'Items',
-      width: 90,
+      label: 'ITEMS',
       align: 'center',
       sortable: true,
       sortAccessor: (row) => row.items.length,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
           {row.items.length}
         </Typography>
       ),
     },
     {
       key: 'status',
-      label: 'Status',
-      width: 140,
+      label: 'STATUS',
       sortable: true,
-      render: (row) => {
-        const style = statusChip(row.status);
-        return (
-          <Chip
-            label={formatStatusLabel(row.status)}
-            size="small"
-            sx={{
-              fontSize: 11.5,
-              fontWeight: 600,
-              background: style.bg,
-              color: style.color,
-              border: `1px solid ${style.color}28`,
-            }}
-          />
-        );
-      },
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: statusColor(row.status) }}>
+          {formatStatusLabel(row.status)}
+        </Typography>
+      ),
     },
     {
       key: 'updatedAt',
-      label: 'Date Requested',
-      width: 140,
+      label: 'DATE AND TIME',
       sortable: true,
       sortAccessor: (row) => new Date(row.updatedAt).getTime(),
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-          {new Date(row.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+          {new Date(row.updatedAt).toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          })}
         </Typography>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
-      width: 110,
+      label: 'ACTIONS',
       align: 'right',
-      render: (row) => (
-        <Button
-          size="small"
-          variant="outlined"
-          sx={{ height: 32, px: 1.4 }}
-          onClick={() => navigate({ to: '/supply-requests/$requestId', params: { requestId: String(row.requestId) } })}
-        >
-          Manage
-        </Button>
-      ),
+      render: (row) => <ActionsMenu row={row} />,
     },
   ];
 
@@ -399,59 +451,59 @@ export function SupplyRequestsPage() {
           ]}
         />
 
+        <Tooltip title={datasetMode === 'active' ? "Active Requests" : "History"}>
+          <ToggleButtonGroup
+            value={datasetMode}
+            exclusive
+            onChange={(_event, value: DatasetMode | null) => {
+              if (value) {
+                setDatasetMode(value);
+                setStatusFilter('');
+              }
+            }}
+            size="small"
+            sx={{
+              height: 40,
+              borderRadius: '14px',
+              '& .MuiToggleButton-root': {
+                px: 1.4,
+                color: '#6B4C2A',
+                borderColor: 'rgba(107, 76, 42, 0.3)',
+                '&.Mui-selected': {
+                  bgcolor: 'rgba(107, 76, 42, 0.12)',
+                  color: '#4A3424',
+                },
+              },
+            }}
+          >
+            <ToggleButton value="active" aria-label="Active">
+              <ListAltRoundedIcon sx={{ fontSize: 16 }} />
+            </ToggleButton>
+            <ToggleButton value="history" aria-label="History">
+              <HistoryRoundedIcon sx={{ fontSize: 16 }} />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Tooltip>
+
         <Box sx={{ ml: { xs: 0, lg: 'auto' }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          {canCreateRequests && (
+            <Button
+              startIcon={<AddShoppingCartRoundedIcon />}
+              sx={{ whiteSpace: 'nowrap' }}
+              onClick={() => navigate({ to: '/supply-requests/new' })}
+            >
+              Request Supply
+            </Button>
+          )}
+
           {isHq && (
             <Button
-              variant="outlined"
               startIcon={<LocalShippingRoundedIcon />}
               onClick={() => navigate({ to: '/hq-inventory/vehicles' })}
             >
               Vehicles
             </Button>
           )}
-
-          <Tooltip title={datasetMode === 'active' ? "Active Requests" : "History"}>
-            <ToggleButtonGroup
-              value={datasetMode}
-              exclusive
-              onChange={(_event, value: DatasetMode | null) => {
-                if (value) {
-                  setDatasetMode(value);
-                  setStatusFilter('');
-                }
-              }}
-              size="small"
-              sx={{
-                height: 40,
-                borderRadius: '14px',
-                '& .MuiToggleButton-root': {
-                  px: 1.4,
-                  color: '#6B4C2A',
-                  borderColor: 'rgba(107, 76, 42, 0.3)',
-                  '&.Mui-selected': {
-                    bgcolor: 'rgba(107, 76, 42, 0.12)',
-                    color: '#4A3424',
-                  },
-                },
-              }}
-            >
-              <ToggleButton value="active" aria-label="Active">
-                <ListAltRoundedIcon sx={{ fontSize: 16 }} />
-              </ToggleButton>
-              <ToggleButton value="history" aria-label="History">
-                <HistoryRoundedIcon sx={{ fontSize: 16 }} />
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Tooltip>
-
-          <Button
-            startIcon={<AddShoppingCartRoundedIcon />}
-            sx={{ whiteSpace: 'nowrap' }}
-            onClick={() => navigate({ to: '/supply-requests/new' })}
-            disabled={!canCreateRequests}
-          >
-            Request Supply
-          </Button>
         </Box>
       </Box>
 

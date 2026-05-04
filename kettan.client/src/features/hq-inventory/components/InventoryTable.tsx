@@ -2,16 +2,24 @@ import { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
-  Chip,
-  LinearProgress,
 } from '@mui/material';
-import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
-import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
+import { 
+  Menu, 
+  MenuItem, 
+  ListItemIcon, 
+  ListItemText, 
+  Divider, 
+  IconButton 
+} from '@mui/material';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
@@ -28,11 +36,10 @@ import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 interface InventoryTableProps {
   items: InventoryItem[];
   transactions?: InventoryTransaction[];
-  onRowClick?: (id: string | number) => void;
   isBranchView?: boolean;
 }
 
-type ViewMode = 'default' | 'levels' | 'transactions';
+type ViewMode = 'default' | 'transactions';
 
 const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: string; color: string; bgcolor: string }> = {
   Restock: {
@@ -67,7 +74,58 @@ const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: strin
   },
 };
 
-export function InventoryTable({ items, transactions = [], onRowClick, isBranchView = false }: InventoryTableProps) {
+function ActionsMenu({ item }: { item: InventoryItem }) {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => setAnchorEl(null);
+
+  return (
+    <>
+      <IconButton size="small" onClick={handleClick} sx={{ color: 'text.secondary' }}>
+        <MoreVertRoundedIcon fontSize="small" />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            mt: 0.5,
+            minWidth: 180,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+          }
+        }}
+      >
+        <MenuItem onClick={() => { handleClose(); navigate({ to: '/hq-inventory/$itemId', params: { itemId: String(item.id) } }); }}>
+          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); }}>
+          <ListItemIcon><ArchiveRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="Archive Item" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <Divider sx={{ my: 1 }} />
+        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(item.sku); }}>
+          <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="Copy SKU" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+      </Menu>
+    </>
+  );
+}
+
+export function InventoryTable({ items, transactions = [], isBranchView = false }: InventoryTableProps) {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,7 +134,6 @@ export function InventoryTable({ items, transactions = [], onRowClick, isBranchV
 
   const viewOptions = [
     { value: 'default' as const, label: 'General', icon: <ViewListRoundedIcon fontSize="small" /> },
-    { value: 'levels' as const, label: 'Stock Levels', icon: <BarChartRoundedIcon fontSize="small" /> },
     { value: 'transactions' as const, label: 'Transactions', icon: <ReceiptLongRoundedIcon fontSize="small" /> },
   ];
 
@@ -150,179 +207,135 @@ export function InventoryTable({ items, transactions = [], onRowClick, isBranchV
 
   const defaultColumns: ColumnDef<InventoryItem>[] = [
     {
-      key: 'id',
-      label: 'ID',
-      width: 80,
+      key: 'name',
+      label: 'ITEM NAME',
+      sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.disabled', fontWeight: 500 }}>{row.id}</Typography>
+        <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13 }}>{row.name}</Typography>
       ),
     },
     {
-      key: 'name',
-      label: 'Item Name',
+      key: 'category',
+      label: 'CATEGORY',
+      sortable: true,
       render: (row) => (
-        <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13.5 }}>{row.name}</Typography>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>
+          {row.category?.name || 'Uncategorized'}
+        </Typography>
       ),
     },
     {
       key: 'sku',
       label: 'SKU',
+      sortable: true,
       render: (row) => (
-        <Typography sx={{ fontWeight: 400, color: 'text.secondary', fontSize: 12.5, fontFamily: 'monospace' }}>{row.sku}</Typography>
-      ),
-    },
-    {
-      key: 'category',
-      label: 'Category',
-      render: (row) => (
-        <Chip
-          label={row.category?.name || 'Uncategorized'}
-          size="small"
-          sx={{ height: 22, fontSize: 11, fontWeight: 600, textTransform: 'capitalize', bgcolor: 'rgba(107,76,42,0.08)', color: '#6B4C2A', border: '1px solid rgba(107,76,42,0.15)' }}
-        />
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
+          {row.sku}
+        </Typography>
       ),
     },
     {
       key: 'totalStock',
-      label: 'Stock',
+      label: 'STOCK',
       align: 'right',
+      sortable: true,
       render: (row) => {
         const isLow = row.totalStock <= row.defaultThreshold;
         return (
-          <Typography sx={{ fontWeight: 700, color: isLow ? 'error.main' : 'text.primary', fontSize: 14 }}>
-            {row.totalStock}
+          <Typography sx={{ fontWeight: 700, color: isLow ? '#B91C1C' : 'text.primary', fontSize: 14 }}>
+            {row.totalStock} {row.unit}
           </Typography>
         );
       },
     },
     {
-      key: 'unit',
-      label: 'Unit',
+      key: 'defaultThreshold',
+      label: 'THRESHOLD',
+      align: 'right',
+      sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.unit || ''}</Typography>
-      ),
-    },
-  ];
-
-  const levelsColumns: ColumnDef<InventoryItem>[] = [
-    {
-      key: 'name',
-      label: 'Item Info',
-      render: (row) => (
-        <Box>
-          <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13.5 }}>{row.name}</Typography>
-          <Typography sx={{ color: 'text.secondary', fontSize: 12, textTransform: 'capitalize', mt: 0.25 }}>{row.category?.name}</Typography>
-        </Box>
-      ),
-    },
-    {
-      key: 'sku',
-      label: 'SKU',
-      render: (row) => (
-        <Typography sx={{ fontWeight: 400, color: 'text.secondary', fontSize: 12.5, fontFamily: 'monospace' }}>{row.sku}</Typography>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+          {row.defaultThreshold} {row.unit}
+        </Typography>
       ),
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'STATUS',
+      sortable: true,
       render: (row) => {
         const isLow = row.totalStock <= row.defaultThreshold;
-        return isLow ? (
-          <Chip
-            icon={<WarningRoundedIcon fontSize="small" />}
-            label="Low Stock"
-            size="small"
-            sx={{ bgcolor: 'rgba(220, 38, 38, 0.08)', color: '#991B1B', fontWeight: 600, height: 24, '& .MuiChip-icon': { color: '#991B1B' }, border: '1px solid rgba(220, 38, 38, 0.15)' }}
-          />
-        ) : (
-          <Chip
-            label="In Stock"
-            size="small"
-            sx={{ bgcolor: 'rgba(84,107,63,0.08)', color: '#546B3F', fontWeight: 600, height: 24, border: '1px solid rgba(84,107,63,0.15)' }}
-          />
+        const isOut = row.totalStock <= 0;
+        let color = '#166534'; // In Stock
+        if (isOut) color = '#B91C1C';
+        else if (isLow) color = '#D97706';
+
+        return (
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color }}>
+            {row.status}
+          </Typography>
         );
       },
     },
     {
-      key: 'totalStock',
-      label: 'Stock Capacity',
-      width: 300,
-      render: (row) => {
-        const isLow = row.totalStock <= row.defaultThreshold;
-        const pct = Math.min((row.totalStock / (row.defaultThreshold * 3)) * 100, 100);
-        return (
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: isLow ? 'error.main' : 'text.primary' }}>
-                {row.totalStock}{' '}
-                <Typography component="span" sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 400 }}>{row.unit}</Typography>
-              </Typography>
-              <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 500 }}>
-                Reorder at {row.defaultThreshold}
-              </Typography>
-            </Box>
-            <LinearProgress
-              variant="determinate"
-              value={pct}
-              sx={{
-                height: 5,
-                borderRadius: '14px',
-                bgcolor: 'action.hover',
-                '& .MuiLinearProgress-bar': {
-                  bgcolor: isLow ? 'error.main' : '#6B9B5A',
-                  borderRadius: '14px',
-                },
-              }}
-            />
-          </Box>
-        );
-      },
+      key: 'unitCost',
+      label: 'PRICE',
+      align: 'right',
+      sortable: true,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
+          {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(row.unitCost)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'ACTIONS',
+      align: 'right',
+      render: (row) => <ActionsMenu item={row} />,
     },
   ];
+
 
   const transactionColumns: ColumnDef<InventoryTransaction>[] = [
     {
       key: 'timestamp',
-      label: 'Date',
-      width: 130,
+      label: 'DATE AND TIME',
+      width: 140,
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-          {formatDate(row.timestamp)}
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+          {new Date(row.timestamp).toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          })}
         </Typography>
       ),
     },
     {
       key: 'transactionType',
-      label: 'Type',
+      label: 'TYPE',
       width: 110,
       render: (row) => {
         const config = TYPE_CONFIG[row.transactionType];
         return (
-          <Chip
-            icon={config.icon as React.ReactElement}
-            label={config.label}
-            size="small"
-            sx={{
-              height: 24,
-              fontSize: 11,
-              fontWeight: 600,
-              bgcolor: config.bgcolor,
-              color: config.color,
-              '& .MuiChip-icon': { color: config.color },
-            }}
-          />
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: config.color }}>
+            {config.label}
+          </Typography>
         );
       },
     },
     {
       key: 'item',
-      label: 'Item',
+      label: 'ITEM',
       render: (row) => (
         <Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>
             {row.item?.name || 'Unknown Item'}
           </Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary', fontFamily: 'monospace' }}>
+          <Typography sx={{ fontSize: 11, color: 'text.secondary', fontFamily: 'monospace', fontWeight: 500 }}>
             {row.batch?.batchNumber || ''}
           </Typography>
         </Box>
@@ -330,7 +343,7 @@ export function InventoryTable({ items, transactions = [], onRowClick, isBranchV
     },
     {
       key: 'quantityChange',
-      label: 'Qty',
+      label: 'QTY',
       align: 'right',
       width: 100,
       render: (row) => {
@@ -340,7 +353,7 @@ export function InventoryTable({ items, transactions = [], onRowClick, isBranchV
             sx={{
               fontSize: 13,
               fontWeight: 700,
-              color: isPositive ? 'success.main' : 'error.main',
+              color: isPositive ? '#166534' : '#B91C1C',
             }}
           >
             {formatQuantity(row.quantityChange, row.item?.unit)}
@@ -350,20 +363,20 @@ export function InventoryTable({ items, transactions = [], onRowClick, isBranchV
     },
     {
       key: 'userName',
-      label: 'By',
-      width: 100,
+      label: 'BY',
+      width: 110,
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: row.userName === 'Auto' ? 'info.main' : 'text.primary' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color: row.userName === 'Auto' ? '#0288D1' : 'text.primary' }}>
           {row.userName || 'Unknown'}
         </Typography>
       ),
     },
     {
       key: 'referenceId',
-      label: 'Reference',
-      width: 100,
+      label: 'REFERENCE',
+      width: 120,
       render: (row) => (
-        <Typography sx={{ fontSize: 12, color: 'text.secondary', fontFamily: 'monospace' }}>
+        <Typography sx={{ fontSize: 12, color: 'text.secondary', fontFamily: 'monospace', fontWeight: 500 }}>
           {row.referenceId || row.remarks?.substring(0, 20) || '-'}
         </Typography>
       ),
@@ -454,11 +467,10 @@ export function InventoryTable({ items, transactions = [], onRowClick, isBranchV
 
   return (
     <DataTable
-      columns={viewMode === 'levels' ? levelsColumns : defaultColumns}
+      columns={defaultColumns}
       data={filteredItems}
       keyExtractor={(row) => row.id.toString()}
       toolbar={toolbar}
-      onRowClick={(row) => onRowClick ? onRowClick(row.id) : navigate({ to: '/hq-inventory/$itemId', params: { itemId: row.id.toString() } })}
       emptyTitle="No items found"
       emptyMessage={searchQuery ? "We couldn't find any inventory items matching your search." : "The inventory catalog is currently empty."}
       emptyIcon={<Inventory2RoundedIcon />}

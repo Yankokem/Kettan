@@ -1,3 +1,4 @@
+import React from 'react';
 import { 
   Table, 
   TableBody, 
@@ -18,6 +19,7 @@ interface ItemLine {
   itemName: string;
   itemSku: string;
   quantityDelivered: number;
+  branchStock: number;
   selected: boolean;
   quantityReturned: string;
   reasonCode: string;
@@ -89,8 +91,8 @@ export function ReturnItemTable({ lines, onToggleLine, onUpdateLine, reasons }: 
       </TableHead>
       <TableBody>
         {lines.map((line) => (
-          <TableRow
-            key={line.itemId}
+          <React.Fragment key={line.itemId}>
+            <TableRow
             sx={{
               bgcolor: line.selected ? 'rgba(201,168,77,0.04)' : 'transparent',
               transition: 'all 0.2s ease',
@@ -106,9 +108,10 @@ export function ReturnItemTable({ lines, onToggleLine, onUpdateLine, reasons }: 
               <Checkbox
                 checked={line.selected}
                 onChange={() => onToggleLine(line.itemId)}
+                disabled={line.branchStock <= 0}
                 size="small"
                 sx={{ 
-                  color: '#D6D3D1',
+                  color: line.branchStock <= 0 ? 'rgba(0,0,0,0.04)' : '#D6D3D1',
                   '&.Mui-checked': { color: '#B08B5A' } 
                 }}
               />
@@ -132,8 +135,8 @@ export function ReturnItemTable({ lines, onToggleLine, onUpdateLine, reasons }: 
                 size="small"
                 value={line.quantityReturned}
                 onChange={(e) => onUpdateLine(line.itemId, 'quantityReturned', e.target.value)}
-                disabled={!line.selected}
-                inputProps={{ min: 0, max: line.quantityDelivered, step: 1 }}
+                disabled={!line.selected || line.branchStock <= 0}
+                inputProps={{ min: 0, max: Math.min(line.quantityDelivered, line.branchStock), step: 1 }}
                 sx={{ 
                   width: 90,
                   '& .MuiInputBase-root': {
@@ -149,7 +152,7 @@ export function ReturnItemTable({ lines, onToggleLine, onUpdateLine, reasons }: 
               <Select
                 value={line.reasonCode}
                 onChange={(e) => onUpdateLine(line.itemId, 'reasonCode', e.target.value as string)}
-                disabled={!line.selected}
+                disabled={!line.selected || line.branchStock <= 0}
                 size="small"
                 fullWidth
                 sx={{ 
@@ -170,7 +173,40 @@ export function ReturnItemTable({ lines, onToggleLine, onUpdateLine, reasons }: 
               </Select>
             </TableCell>
           </TableRow>
-        ))}
+          {line.branchStock < line.quantityDelivered && (
+            <TableRow>
+              <TableCell />
+              <TableCell colSpan={4} sx={{ pt: '0 !important', pb: '8px !important', borderBottom: 'none' }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1, 
+                  bgcolor: line.branchStock <= 0 ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)', 
+                  p: 1.2, 
+                  borderRadius: '8px',
+                  border: '1px solid',
+                  borderColor: line.branchStock <= 0 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'
+                }}>
+                  <Typography sx={{ 
+                    fontSize: 11, 
+                    fontWeight: 700, 
+                    color: line.branchStock <= 0 ? '#DC2626' : '#D97706',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5
+                  }}>
+                    {line.branchStock <= 0 ? (
+                       <>⚠️ Cannot return: This item is out of stock in your branch inventory.</>
+                    ) : (
+                       <>⚠️ Attention: You only have {line.branchStock} in stock, but {line.quantityDelivered} were delivered.</>
+                    )}
+                  </Typography>
+                </Box>
+              </TableCell>
+            </TableRow>
+          )}
+        </React.Fragment>
+      ))}
       </TableBody>
     </Table>
   );

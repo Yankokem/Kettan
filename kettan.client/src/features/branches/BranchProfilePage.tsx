@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import { PageHeader } from '../../components/UI/PageHeader';
+import { Chip } from '@mui/material';
 import { Button } from '../../components/UI/Button';
 import {
   BRANCH_MANAGER_OPTIONS,
@@ -267,47 +267,27 @@ export function BranchProfilePage() {
 
   return (
     <Box sx={{ pb: 5 }}>
-      <Box sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => navigate({ to: '/branches' })}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              borderRadius: 10,
-              border: '1px solid #D6D3D1',
-              background: '#FFFFFF',
-              color: '#57534E',
-              padding: '6px 10px',
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
-            <ArrowBackRoundedIcon sx={{ fontSize: 14 }} />
-            Branches
-          </button>
-
-          <ChevronRightRoundedIcon sx={{ fontSize: 15, color: '#A8A29E' }} />
-
-          <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary' }}>{formData?.name || 'Loading...'}</Typography>
-
+      <PageHeader
+        title={formData?.name || 'Loading Branch...'}
+        description="Manage branch operations, network details, and network growth."
+        backTo="/branches"
+        action={
           <Chip
             label={branchCode}
             size="small"
             sx={{
-              height: 22,
-              borderRadius: 999,
-              bgcolor: 'rgba(201,168,76,0.2)',
+              height: 24,
+              borderRadius: '6px',
+              bgcolor: 'rgba(201,168,76,0.12)',
               color: '#5C4518',
               fontSize: 11,
-              fontWeight: 700,
+              fontWeight: 800,
+              fontFamily: 'monospace',
+              border: '1px solid rgba(201,168,76,0.2)'
             }}
           />
-        </Box>
-      </Box>
+        }
+      />
 
       <BranchProfileHero
         branch={selectedBranch}

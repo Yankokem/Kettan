@@ -1,5 +1,6 @@
 import { Box, Grid, ToggleButton, ToggleButtonGroup, Tooltip, Typography, Chip } from '@mui/material';
 import { useEffect, useState } from 'react';
+import * as signalR from '@microsoft/signalr';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -12,7 +13,6 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
 
 import { EmptyState } from '../../components/UI/EmptyState';
@@ -23,9 +23,7 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
-import { ViewToggle } from '../../components/UI/ViewToggle';
 import { OrderRowActionsMenu, type OrderActionStatus } from './components/OrderRowActionsMenu';
-import { OrderListCard } from './components/OrderListCard';
 import { fetchOrders, fetchSupplyRequests, type BranchOrder, type SupplyRequest } from '../branch-operations/api';
 
 function defaultStartDate() {
@@ -70,7 +68,6 @@ type ActiveStatusTab = 'Approved' | 'Processing' | 'Picking' | 'Packed';
 const ACTIVE_STATUSES: OrderActionStatus[] = ['Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Allocated', 'Packing', 'Packed'];
 const HISTORY_STATUSES: OrderActionStatus[] = ['Dispatched', 'InTransit', 'Delivered', 'Rejected', 'Returned'];
 const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['Approved', 'Processing', 'Picking', 'Packed'];
-type OrdersListViewMode = 'card' | 'table';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
@@ -102,20 +99,33 @@ function getDefaultActiveStatusByRole(role?: string): ActiveStatusTab {
 }
 
 function getColumns(
-  mode: DatasetMode,
   onViewDetails: (orderId: string) => void,
   onApprove: (orderId: string) => void,
-  onProceed: (orderId: string) => void,
   onReject: (orderId: string) => void,
 ): ColumnDef<OrderItem>[] {
-  const baseColumns: ColumnDef<OrderItem>[] = [
+  return [
     {
       key: 'id',
       label: 'Order ID',
-      width: 120,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A', fontFamily: 'monospace' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
           {row.id.startsWith('SR-') ? row.id : `ORD-${row.id}`}
+        </Typography>
+      ),
+    },
+    {
+      key: 'date',
+      label: 'Date Requested',
+      sortable: true,
+      render: (row) => (
+        <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
+          {new Date(row.date).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
         </Typography>
       ),
     },
@@ -123,7 +133,7 @@ function getColumns(
       key: 'branch',
       label: 'Branch',
       render: (row) => (
-        <Typography sx={{ fontSize: 13.5, color: 'text.primary', fontWeight: 600 }}>
+        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
           {row.branch}
         </Typography>
       ),
@@ -131,92 +141,58 @@ function getColumns(
     {
       key: 'itemsCount',
       label: 'Items',
-      width: 100,
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
           {row.itemsCount} SKUs
-        </Typography>
-      ),
-    },
-    {
-      key: 'totalCost',
-      label: 'Fulfillment Cost',
-      width: 150,
-      sortable: true,
-      align: 'right',
-      render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
-          {row.totalCost > 0 ? `₱${row.totalCost.toFixed(2)}` : '--'}
         </Typography>
       ),
     },
     {
       key: 'status',
       label: 'Status',
-      width: 130,
       render: (row) => {
         const st = STATUS_MAP[row.status] || { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
         const displayLabel = getStatusDisplayLabel(row.status);
         return (
-          <Chip
-            label={displayLabel}
-            size="small"
-            sx={{
-              fontSize: 11.5,
-              fontWeight: 600,
-              background: st.bg,
-              color: st.color,
-              border: `1px solid ${st.color}28`,
-            }}
-          />
+          <Typography sx={{ 
+            fontSize: 12, 
+            fontWeight: 700, 
+            color: st.color,
+            textTransform: 'lowercase',
+            '&::first-letter': { textTransform: 'capitalize' }
+          }}>
+            {displayLabel}
+          </Typography>
         );
       },
     },
+    {
+      key: 'totalCost',
+      label: 'Fulfillment Cost',
+      sortable: true,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 700 }}>
+          {row.totalCost > 0 ? `₱${row.totalCost.toFixed(2)}` : '--'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      align: 'right',
+      render: (row) => (
+        <OrderRowActionsMenu
+          orderId={row.id}
+          status={row.status}
+          onViewDetails={onViewDetails}
+          onApprove={onApprove}
+          onProceed={() => {}} // Dummy as it's being removed from menu
+          onReject={onReject}
+        />
+      ),
+    },
   ];
-
-  const modeColumn: ColumnDef<OrderItem> =
-    mode === 'history'
-      ? {
-          key: 'actionedBy',
-          label: 'Actioned By',
-          width: 150,
-          render: (row) => (
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
-              {row.actionedBy || '--'}
-            </Typography>
-          ),
-        }
-      : {
-          key: 'date',
-          label: 'Date Requested',
-          width: 140,
-          sortable: true,
-          render: (row) => (
-            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-              {new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </Typography>
-          ),
-        };
-
-  const actionsColumn: ColumnDef<OrderItem> = {
-    key: 'actions',
-    label: 'Actions',
-    width: 90,
-    align: 'right',
-    render: (row) => (
-      <OrderRowActionsMenu
-        orderId={row.id}
-        status={row.status}
-        onViewDetails={onViewDetails}
-        onApprove={onApprove}
-        onProceed={onProceed}
-        onReject={onReject}
-      />
-    ),
-  };
-
-  return [...baseColumns, modeColumn, actionsColumn];
 }
 
 export function OrdersPage() {
@@ -226,7 +202,6 @@ export function OrdersPage() {
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
   const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
-  const [viewMode, setViewMode] = useState<OrdersListViewMode>('card');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [activeStatusTab, setActiveStatusTab] = useState<ActiveStatusTab>(() => getDefaultActiveStatusByRole(user?.role));
@@ -292,12 +267,35 @@ export function OrdersPage() {
 
     void loadOrders();
 
-    // ── Real-Time Polling (30 seconds) ──
+    // ── SignalR Real-Time Sync ──
+    const baseUrl = (window as any).API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5173/api' : '/api');
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${baseUrl.replace('/api', '')}/hub/workflow`, {
+            withCredentials: true,
+            accessTokenFactory: () => useAuthStore.getState().token || ''
+        })
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on('ReceiveStatusUpdate', () => {
+        void loadOrders();
+    });
+
+    connection.start()
+        .then(() => connection.invoke('JoinOrdersList'))
+        .catch(err => console.error('Orders Page SignalR Error: ', err));
+
+    // ── Real-Time Polling (30 seconds) fallback ──
     const interval = setInterval(() => {
       void loadOrders();
     }, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+        clearInterval(interval);
+        if (connection.state === signalR.HubConnectionState.Connected) {
+            connection.invoke('LeaveGroup', 'Orders_All').finally(() => void connection.stop());
+        }
+    };
   }, []);
 
   const source = orders.filter((order) => {
@@ -363,9 +361,6 @@ export function OrdersPage() {
     openDetails(id);
   };
 
-  const handleProceed = (id: string) => {
-    openDetails(id);
-  };
 
   const handleReject = (id: string) => {
     openDetails(id);
@@ -375,11 +370,10 @@ export function OrdersPage() {
     setDatasetMode(nextMode);
     if (nextMode === 'history') {
       setHistoryStatusFilter('');
-      setViewMode('table');
     }
   };
 
-  const columns = getColumns(datasetMode, openDetails, handleApprove, handleProceed, handleReject);
+  const columns = getColumns(openDetails, handleApprove, handleReject);
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -538,15 +532,6 @@ export function OrdersPage() {
             </ToggleButtonGroup>
           </Tooltip>
 
-          <ViewToggle
-            value={viewMode}
-            onChange={setViewMode}
-            options={[
-              ...(datasetMode === 'active' ? [{ value: 'card' as const, label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> }] : []),
-              { value: 'table' as const, label: '', icon: <TableRowsRoundedIcon sx={{ fontSize: 16 }} /> },
-            ]}
-          />
-
           <Button
             startIcon={<LocalMallRoundedIcon />}
             onClick={() => navigate({ to: '/orders/new' })}
@@ -561,49 +546,17 @@ export function OrdersPage() {
         <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1.2 }}>{error}</Typography>
       ) : null}
 
-      {viewMode === 'table' ? (
-        <DataTable
-          data={sorted}
-          columns={columns}
-          keyExtractor={(row) => row.id}
-          defaultRowsPerPage={10}
-          rowsPerPageOptions={[10, 25, 50]}
-          onRowClick={(row) => openDetails(row.id)}
-          emptyTitle="No orders found"
-          emptyMessage={isLoading ? 'Loading orders...' : 'No orders match the selected filters.'}
-          emptyIcon={<Inventory2RoundedIcon />}
-        />
-      ) : (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-            gap: 2,
-          }}
-        >
-          {sorted.length > 0 ? (
-            sorted.map((order) => (
-              <OrderListCard
-                key={order.id}
-                order={order}
-                datasetMode={datasetMode}
-                onOpen={openDetails}
-                onApprove={handleApprove}
-                onProceed={handleProceed}
-                onReject={handleReject}
-              />
-            ))
-          ) : (
-            <Box sx={{ gridColumn: '1 / -1' }}>
-              <EmptyState
-                title="No orders found"
-                message="We couldn't find any orders that match your current search and filters."
-                icon={<Inventory2RoundedIcon />}
-              />
-            </Box>
-          )}
-        </Box>
-      )}
+      <DataTable
+        data={sorted}
+        columns={columns}
+        keyExtractor={(row) => row.id}
+        defaultRowsPerPage={10}
+        rowsPerPageOptions={[10, 25, 50]}
+        onRowClick={(row) => openDetails(row.id)}
+        emptyTitle="No orders found"
+        emptyMessage={isLoading ? 'Loading orders...' : 'No orders match the selected filters.'}
+        emptyIcon={<Inventory2RoundedIcon />}
+      />
     </Box>
   );
 }
