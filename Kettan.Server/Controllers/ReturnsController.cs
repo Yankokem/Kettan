@@ -37,7 +37,7 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpGet("eligible-orders")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "TenantAdmin,HqManager,BranchManager,BranchOwner")]
     public async Task<ActionResult<List<ReturnEligibleOrderDto>>> GetEligibleOrders()
     {
         var rows = await _service.GetEligibleOrdersAsync();
@@ -45,7 +45,7 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpGet("eligible-orders/{orderId:int}")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "TenantAdmin,HqManager,BranchManager,BranchOwner")]
     public async Task<ActionResult<ReturnEligibleOrderDto>> GetEligibleOrderDetail(int orderId)
     {
         var row = await _service.GetEligibleOrderDetailAsync(orderId);

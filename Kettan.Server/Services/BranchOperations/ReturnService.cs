@@ -81,21 +81,36 @@ public class ReturnService : IReturnService
 
     public async Task<List<ReturnEligibleOrderDto>> GetEligibleOrdersAsync()
     {
-        if (!_currentUser.BranchId.HasValue)
+        var branchId = _currentUser.BranchId;
+        bool isManager = _currentUser.Role == "TenantAdmin" || _currentUser.Role == "HqManager";
+
+        if (!branchId.HasValue && !isManager)
         {
             throw new InvalidOperationException("Authenticated branch context is required.");
         }
 
-        var branchId = _currentUser.BranchId.Value;
-
-        var rows = await _context.Orders
+        var query = _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(sr => sr!.Branch)
             .Include(o => o.SupplyRequest)
                 .ThenInclude(sr => sr!.Items)
                     .ThenInclude(i => i.Item)
-            .Where(o => o.SupplyRequest != null && o.SupplyRequest.BranchId == branchId)
-            .Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Completed)
+            .Where(o => o.SupplyRequest != null)
+            .Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Completed);
+
+        if (branchId.HasValue)
+        {
+            query = query.Where(o => o.SupplyRequest!.BranchId == branchId.Value);
+        }
+
+        // Native filtering: exclude orders that already have an active return
+        var ordersWithReturns = await _context.Returns
+            .Where(r => r.Status != ReturnStatus.Rejected)
+            .Select(r => r.OrderId)
+            .ToListAsync();
+
+        var rows = await query
+            .Where(o => !ordersWithReturns.Contains(o.OrderId))
             .OrderByDescending(o => o.CompletedAt ?? o.ArrivedAt ?? o.PushedToFulfillmentAt)
             .ToListAsync();
 
@@ -234,14 +249,32 @@ public class ReturnService : IReturnService
         returnEntry.SubmittedAt = now;
         returnEntry.SubmittedBy_UserId = userId;
 
+        // Consolidate notes and photos into the initial message
+        var messageLines = new List<string>();
         if (!string.IsNullOrWhiteSpace(dto.Note))
+        {
+            messageLines.Add(dto.Note.Trim());
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnEntry.PhotoUrls))
+        {
+            if (messageLines.Count > 0) messageLines.Add(""); // spacer
+            messageLines.Add("### Attached Photos");
+            var urls = returnEntry.PhotoUrls.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var url in urls)
+            {
+                messageLines.Add($"![Return Proof]({url.Trim()})");
+            }
+        }
+
+        if (messageLines.Count > 0)
         {
             _context.ReturnMessages.Add(new ReturnMessage
             {
                 TenantId = returnEntry.TenantId,
                 ReturnId = returnEntry.ReturnId,
                 SenderUserId = userId,
-                Content = dto.Note.Trim(),
+                Content = string.Join("\n", messageLines),
                 SentAt = now
             });
         }

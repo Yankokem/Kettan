@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  IconButton,
   MenuItem,
   Paper,
   Select,
@@ -20,6 +21,7 @@ import {
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import type { AxiosError } from 'axios';
 import { useParams } from '@tanstack/react-router';
 
@@ -131,6 +133,75 @@ function TimelinePanel({ row }: { row: ReturnRecord }) {
     </Paper>
   );
 }
+function MessageContent({ content, onImageClick, isOwn }: { content: string; onImageClick: (url: string) => void; isOwn: boolean }) {
+  // Regex to find Markdown images: ![alt](url)
+  const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = imgRegex.exec(content)) !== null) {
+    // Add preceding text
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', value: content.substring(lastIndex, match.index) });
+    }
+    // Add image
+    parts.push({ type: 'image', alt: match[1], url: match[2] });
+    lastIndex = imgRegex.lastIndex;
+  }
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    parts.push({ type: 'text', value: content.substring(lastIndex) });
+  }
+
+  return (
+    <Box sx={{ display: 'grid', gap: 0.8 }}>
+      {parts.map((p, i) => {
+        if (p.type === 'text') {
+          return (
+            <Typography 
+              key={i} 
+              sx={{ 
+                fontSize: 13, 
+                whiteSpace: 'pre-wrap', 
+                wordBreak: 'break-word',
+                lineHeight: 1.5
+              }}
+            >
+              {p.value}
+            </Typography>
+          );
+        }
+        return (
+          <Box
+            key={i}
+            onClick={() => onImageClick(p.url!)}
+            sx={{
+              width: '100%',
+              maxWidth: 320,
+              aspectRatio: '16/10',
+              borderRadius: 2,
+              overflow: 'hidden',
+              cursor: 'pointer',
+              border: '2px solid',
+              borderColor: isOwn ? 'rgba(255,255,255,0.2)' : 'divider',
+              transition: 'transform 0.2s ease',
+              '&:hover': { transform: 'scale(1.02)' }
+            }}
+          >
+            <Box 
+              component="img" 
+              src={p.url} 
+              alt={p.alt}
+              sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
 
 // ── Messages Panel ──
 function MessagesPanel({ returnId, currentUserId }: { returnId: number; currentUserId?: number }) {
@@ -138,6 +209,7 @@ function MessagesPanel({ returnId, currentUserId }: { returnId: number; currentU
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const loadMessages = async () => {
@@ -195,15 +267,20 @@ function MessagesPanel({ returnId, currentUserId }: { returnId: number; currentU
                 </Typography>
                 <Box
                   sx={{
-                    maxWidth: '80%',
+                    maxWidth: '85%',
                     px: 1.4,
                     py: 0.9,
-                    borderRadius: isOwn ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                    borderRadius: isOwn ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
                     bgcolor: isOwn ? '#6B4C2A' : 'action.hover',
                     color: isOwn ? '#fff' : 'text.primary',
+                    boxShadow: isOwn ? '0 4px 12px rgba(107,76,42,0.15)' : 'none'
                   }}
                 >
-                  <Typography sx={{ fontSize: 13 }}>{m.content}</Typography>
+                  <MessageContent 
+                    content={m.content} 
+                    onImageClick={(url) => setPreviewImageUrl(url)} 
+                    isOwn={isOwn}
+                  />
                 </Box>
               </Box>
             );
@@ -211,6 +288,30 @@ function MessagesPanel({ returnId, currentUserId }: { returnId: number; currentU
         )}
         <div ref={bottomRef} />
       </Box>
+
+      {/* Message Image Lightbox */}
+      <Dialog 
+        open={Boolean(previewImageUrl)} 
+        onClose={() => setPreviewImageUrl(null)}
+        maxWidth="lg"
+        PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none', overflow: 'visible', m: 2 } }}
+      >
+        <Box sx={{ position: 'relative' }}>
+          <IconButton
+            onClick={() => setPreviewImageUrl(null)}
+            sx={{ position: 'absolute', right: -12, top: -12, bgcolor: '#fff', boxShadow: 3, '&:hover': { bgcolor: '#f5f5f5' }, zIndex: 1 }}
+          >
+            <CloseRoundedIcon />
+          </IconButton>
+          {previewImageUrl && (
+            <Box 
+              component="img" 
+              src={previewImageUrl} 
+              sx={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 3, boxShadow: 24, objectFit: 'contain' }} 
+            />
+          )}
+        </Box>
+      </Dialog>
 
       <Box sx={{ display: 'flex', gap: 1 }}>
         <TextField

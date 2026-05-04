@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Chip,
@@ -12,6 +12,7 @@ import {
   useTheme
 } from '@mui/material';
 import type { AxiosError } from 'axios';
+import { api } from '../../utils/api';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import ShoppingBagRoundedIcon from '@mui/icons-material/ShoppingBagRounded';
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
@@ -19,7 +20,10 @@ import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import TagRoundedIcon from '@mui/icons-material/TagRounded';
+import HelpCenterRoundedIcon from '@mui/icons-material/HelpCenterRounded';
+import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -32,8 +36,10 @@ import {
   submitReturn,
   fetchReturns,
   type ReturnEligibleOrder,
+  type ReturnRecord,
 } from '../branch-operations/api';
 import { ReturnItemTable } from './components/ReturnItemTable';
+import { ReturnMediaUploader } from './components/ReturnMediaUploader';
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string }>;
@@ -48,9 +54,8 @@ const REASON_OPTIONS = [
 ];
 
 const RESOLUTION_OPTIONS = [
-  { value: 'Replacement', label: 'Replacement' },
-  { value: 'StockReturn', label: 'Stock Return' },
-  { value: 'Disposal', label: 'Disposal / Write-off' },
+  { value: 'Replaced', label: 'Replacement' },
+  { value: 'Credited', label: 'Stock Return' },
 ];
 
 interface ItemLine {
@@ -79,9 +84,12 @@ export function ReturnCreatePage() {
   // Step 2 — item lines
   const [lines, setLines] = useState<ItemLine[]>([]);
   const [nextReturnId, setNextReturnId] = useState<number | null>(null);
-  const [resolution, setResolution] = useState('Replacement');
+  const [resolution, setResolution] = useState('Replaced');
   const [reason, setReason] = useState('');
   const [photoUrls, setPhotoUrls] = useState('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [returns, setReturns] = useState<ReturnRecord[]>([]);
 
   // Draft tracking
   const [draftId, setDraftId] = useState<number | null>(null);
@@ -95,15 +103,16 @@ export function ReturnCreatePage() {
     void (async () => {
       try {
         setOrdersLoading(true);
-        const [orders, returns] = await Promise.all([
+        const [orders, returnsList] = await Promise.all([
           fetchEligibleOrders(),
           fetchReturns()
         ]);
         
         setEligibleOrders(orders);
+        setReturns(returnsList);
         
-        if (returns.length > 0) {
-          const maxId = Math.max(...returns.map(r => r.returnId));
+        if (returnsList.length > 0) {
+          const maxId = Math.max(...returnsList.map(r => r.returnId));
           setNextReturnId(maxId + 1);
         } else {
           setNextReturnId(1);
@@ -220,7 +229,33 @@ export function ReturnCreatePage() {
     try {
       setIsSaving(true);
       setError(null);
-      const payload = buildDraftPayload();
+
+      // 1. Upload local images to Cloudinary first
+      const nextId = nextReturnId ? `RET-${nextReturnId.toString().padStart(5, '0')}` : 'Returns';
+      const folderPath = `Returns/${nextId}`;
+      let currentUrls = photoUrls ? photoUrls.split(',').filter(Boolean) : [];
+      
+      if (imageFiles.length > 0) {
+        for (const file of imageFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('folder', folderPath);
+          
+          const uploadRes = await api.post('/api/uploads/image', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          
+          if (uploadRes.data.Url) {
+            currentUrls.push(uploadRes.data.Url);
+          }
+        }
+      }
+
+      // 2. Prepare payload with final URLs
+      const payload = {
+        ...buildDraftPayload(),
+        photoUrls: currentUrls.join(',')
+      };
 
       let id = draftId;
       if (id) {
@@ -228,16 +263,26 @@ export function ReturnCreatePage() {
       } else {
         const draft = await createReturnDraft(payload);
         id = draft.returnId;
-        setDraftId(id);
       }
 
-      await submitReturn(id!);
+      // 3. Final submission
+      await submitReturn(id!, reason);
       navigate({ to: '/returns/$returnId', params: { returnId: String(id) } });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Filter eligible orders: we should clearly flag or disable those already linked to a return
+  const linkedOrderIds = useMemo(() => {
+    return new Set(returns.map(r => r.orderId));
+  }, [returns]);
+
+  const getReturnStatusForOrder = (orderId: number) => {
+    const record = returns.find(r => r.orderId === orderId);
+    return record?.status;
   };
 
   return (
@@ -331,16 +376,45 @@ export function ReturnCreatePage() {
                     <MenuItem value="" disabled>
                       <em>Select a delivered order...</em>
                     </MenuItem>
-                    {eligibleOrders.map((o) => (
-                      <MenuItem key={o.orderId} value={o.orderId}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>#{o.orderId}</Typography>
-                          <Typography sx={{ fontSize: 12, color: 'text.secondary', ml: 'auto' }}>
-                            {new Date(o.deliveredAt).toLocaleDateString()}
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                    ))}
+                    {eligibleOrders.map((o) => {
+                      const isLinked = linkedOrderIds.has(o.orderId);
+                      const returnStatus = getReturnStatusForOrder(o.orderId);
+                      
+                      return (
+                        <MenuItem 
+                          key={o.orderId} 
+                          value={o.orderId}
+                          disabled={isLinked}
+                          sx={{
+                            opacity: isLinked ? 0.6 : 1,
+                            '&.Mui-disabled': { color: 'text.disabled' }
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                            <Typography sx={{ fontSize: 13, fontWeight: 700, color: isLinked ? 'text.disabled' : '#6B4C2A' }}>
+                              #{o.orderId}
+                            </Typography>
+                            {isLinked && (
+                              <Chip 
+                                label={returnStatus === 'Completed' ? 'Already Returned' : 'Return Pending'} 
+                                size="small" 
+                                sx={{ 
+                                  height: 18, 
+                                  fontSize: 10, 
+                                  fontWeight: 700,
+                                  bgcolor: 'rgba(0,0,0,0.05)',
+                                  color: 'text.secondary',
+                                  ml: 1
+                                }} 
+                              />
+                            )}
+                            <Typography sx={{ fontSize: 12, color: 'text.secondary', ml: 'auto' }}>
+                              {new Date(o.deliveredAt).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      );
+                    })}
                   </Select>
                 )}
                 {orderDetailLoading && (
@@ -395,15 +469,19 @@ export function ReturnCreatePage() {
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>
-                  Proof / Photo URLs
-                </Typography>
-                <TextField
-                  placeholder="Comma-separated image links..."
-                  value={photoUrls}
-                  onChange={(e) => setPhotoUrls(e.target.value)}
-                  fullWidth
-                  size="small"
+                <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ImageRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                  <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    Proof / Photo Evidence
+                  </Typography>
+                </Box>
+                <ReturnMediaUploader 
+                  files={imageFiles}
+                  onChange={setImageFiles}
+                  existingUrls={photoUrls ? photoUrls.split(',').filter(Boolean) : []}
+                  onRemoveExisting={(url) => {
+                    setPhotoUrls(prev => prev.split(',').filter(u => u !== url).join(','));
+                  }}
                 />
               </Box>
             </Paper>
@@ -488,34 +566,24 @@ export function ReturnCreatePage() {
             </Box>
 
             <Box sx={{ p: 3, bgcolor: '#FAFAFA', borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-              <Button 
-                variant="outlined" 
-                onClick={() => navigate({ to: '/returns' })}
-                sx={{ border: 'none', '&:hover': { border: 'none', bgcolor: 'rgba(0,0,0,0.04)' } }}
-              >
-                Discard Changes
-              </Button>
               <Button
-                variant="outlined"
-                startIcon={<SaveRoundedIcon />}
-                onClick={() => void handleSaveDraft()}
-                disabled={isSaving || selectedLines.length === 0}
-              >
-                Save as Draft
-              </Button>
-              <Button
-                startIcon={<SendRoundedIcon />}
-                onClick={() => void handleSubmit()}
-                disabled={isSaving || selectedLines.length === 0}
-                sx={{
-                  bgcolor: '#6B4C2A',
-                  color: '#FAF5EF',
-                  '&:hover': {
-                    bgcolor: '#5C4518',
-                  }
+                variant="contained"
+                startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendRoundedIcon />}
+                onClick={handleSubmit}
+                disabled={!selectedOrderId || lines.filter(l => l.selected).length === 0 || isSubmitting}
+                sx={{ 
+                  bgcolor: '#6B4C2A', 
+                  color: 'white',
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  fontWeight: 800,
+                  fontSize: 15,
+                  '&:hover': { bgcolor: '#543B21' },
+                  '&.Mui-disabled': { bgcolor: 'rgba(107,76,42,0.3)', color: 'rgba(255,255,255,0.7)' }
                 }}
               >
-                {isSaving ? 'Processing...' : 'Process Return'}
+                {isSubmitting ? 'Processing...' : 'Process Return'}
               </Button>
             </Box>
           </Paper>

@@ -10,8 +10,9 @@ public interface IImageService
     /// </summary>
     /// <param name="file">The image file to upload.</param>
     /// <param name="existingPublicId">Optional. The public ID of the existing image to overwrite.</param>
+    /// <param name="folder">Optional. The folder name to store the image in.</param>
     /// <returns>A tuple containing the SecureUrl and the PublicId of the uploaded image.</returns>
-    Task<(string SecureUrl, string PublicId)> UploadImageAsync(IFormFile file, string? existingPublicId = null);
+    Task<(string SecureUrl, string PublicId)> UploadImageAsync(IFormFile file, string? existingPublicId = null, string? folder = null);
 
     /// <summary>
     /// Deletes an image from cloud storage using its public ID.

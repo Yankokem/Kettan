@@ -22,7 +22,7 @@ public class UploadsController : ControllerBase
     /// </summary>
     [HttpPost("image")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadImage(IFormFile file, [FromForm] string? existingPublicId)
+    public async Task<IActionResult> UploadImage(IFormFile file, [FromForm] string? existingPublicId, [FromForm] string? folder)
     {
         if (file == null || file.Length == 0)
         {
@@ -31,7 +31,7 @@ public class UploadsController : ControllerBase
 
         try
         {
-            var (secureUrl, publicId) = await _imageService.UploadImageAsync(file, existingPublicId);
+            var (secureUrl, publicId) = await _imageService.UploadImageAsync(file, existingPublicId, folder);
             return Ok(new { Url = secureUrl, PublicId = publicId });
         }
         catch (ArgumentException ex)

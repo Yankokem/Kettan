@@ -22,7 +22,7 @@ public class CloudinaryService : IImageService
         _cloudinary.Api.Secure = true;
     }
 
-    public async Task<(string SecureUrl, string PublicId)> UploadImageAsync(IFormFile file, string? existingPublicId = null)
+    public async Task<(string SecureUrl, string PublicId)> UploadImageAsync(IFormFile file, string? existingPublicId = null, string? folder = null)
     {
         if (file.Length > MaxFileSizeInBytes)
         {
@@ -44,7 +44,8 @@ public class CloudinaryService : IImageService
             var uploadParams = new ImageUploadParams
             {
                 File = new FileDescription(file.FileName, stream),
-                Transformation = new Transformation().Quality("auto").FetchFormat("auto")
+                Transformation = new Transformation().Quality("auto").FetchFormat("auto"),
+                Folder = folder
             };
 
             // If an existing public ID is provided, Cloudinary will overwrite it.
