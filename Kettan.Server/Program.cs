@@ -43,9 +43,16 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = context =>
         {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            
             if (context.Request.Cookies.ContainsKey("jwt"))
             {
                 context.Token = context.Request.Cookies["jwt"];
+            }
+            else if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub"))
+            {
+                context.Token = accessToken;
             }
             return Task.CompletedTask;
         }
@@ -67,6 +74,7 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<ICsvExportService, CsvExportService>();
 builder.Services.AddScoped<IPdfExportService, PdfExportService>();
 builder.Services.AddScoped<IImageService, CloudinaryService>();
+builder.Services.AddSignalR();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -152,6 +160,7 @@ app.UseAuthorization();
 app.UseMiddleware<SubscriptionCheckMiddleware>();
 
 app.MapControllers();
+app.MapHub<Kettan.Server.Hubs.ReturnHub>("/hub/returns");
 
 using (var scope = app.Services.CreateScope())
 {

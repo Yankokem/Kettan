@@ -18,8 +18,20 @@ export function ReturnMediaUploader({ files, onChange, existingUrls = [], onRemo
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const handleFileSelection = (newFiles: FileList) => {
-    const fileArray = Array.from(newFiles);
-    onChange([...files, ...fileArray]);
+    const fileArray = Array.from(newFiles).filter(file => {
+        if (!file.type.startsWith('image/')) {
+            alert(`File ${file.name} is not an image.`);
+            return false;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`File ${file.name} exceeds the 10MB limit.`);
+            return false;
+        }
+        return true;
+    });
+    if (fileArray.length > 0) {
+        onChange([...files, ...fileArray]);
+    }
   };
 
   const removeFile = (index: number) => {

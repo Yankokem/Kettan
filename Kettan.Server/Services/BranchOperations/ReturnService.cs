@@ -6,6 +6,9 @@ using Kettan.Server.Enums;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Services.Inventory;
 
+using Kettan.Server.Hubs;
+using Microsoft.AspNetCore.SignalR;
+
 namespace Kettan.Server.Services.BranchOperations;
 
 public class ReturnService : IReturnService
@@ -22,17 +25,20 @@ public class ReturnService : IReturnService
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notificationService;
     private readonly IInventoryService _inventoryService;
+    private readonly IHubContext<ReturnHub> _hubContext;
 
     public ReturnService(
         ApplicationDbContext context,
         ICurrentUserService currentUser,
         INotificationService notificationService,
-        IInventoryService inventoryService)
+        IInventoryService inventoryService,
+        IHubContext<ReturnHub> hubContext)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationService = notificationService;
         _inventoryService = inventoryService;
+        _hubContext = hubContext;
     }
 
     public async Task<List<ReturnDto>> ListAsync(string? status = null, string? resolution = null)
@@ -251,15 +257,18 @@ public class ReturnService : IReturnService
 
         // Consolidate notes and photos into the initial message
         var messageLines = new List<string>();
+        // Also save photos on the return record from payload when submitting
         if (!string.IsNullOrWhiteSpace(dto.Note))
         {
             messageLines.Add(dto.Note.Trim());
         }
 
+        // We should check the existing PhotoUrls and compare it to the payload if it were there.
+        // Wait, dto is SubmitReturnDto. Does SubmitReturnDto have PhotoUrls? 
+        // No, in previous code, the draft has the photos. 
         if (!string.IsNullOrWhiteSpace(returnEntry.PhotoUrls))
         {
             if (messageLines.Count > 0) messageLines.Add(""); // spacer
-            messageLines.Add("### Attached Photos");
             var urls = returnEntry.PhotoUrls.Split(',', StringSplitOptions.RemoveEmptyEntries);
             foreach (var url in urls)
             {
@@ -269,17 +278,28 @@ public class ReturnService : IReturnService
 
         if (messageLines.Count > 0)
         {
-            _context.ReturnMessages.Add(new ReturnMessage
+            var msg = new ReturnMessage
             {
                 TenantId = returnEntry.TenantId,
                 ReturnId = returnEntry.ReturnId,
                 SenderUserId = userId,
                 Content = string.Join("\n", messageLines),
                 SentAt = now
-            });
-        }
+            };
+            _context.ReturnMessages.Add(msg);
+            await _context.SaveChangesAsync();
 
-        await _context.SaveChangesAsync();
+            // Broadcast it
+            var hydrated = await _context.ReturnMessages
+                .Include(m => m.SenderUser)
+                .FirstAsync(m => m.MessageId == msg.MessageId);
+            
+            await _hubContext.Clients.Group($"Return_{returnEntry.ReturnId}").SendAsync("ReceiveMessage", returnEntry.ReturnId, MapMessage(hydrated));
+        }
+        else
+        {
+             await _context.SaveChangesAsync();
+        }
 
         await _notificationService.CreateForRolesAsync(
             ["TenantAdmin", "HqManager", "HqStaff"],
@@ -849,7 +869,11 @@ public class ReturnService : IReturnService
             .Include(m => m.SenderUser)
             .FirstAsync(m => m.MessageId == message.MessageId);
 
-        return MapMessage(hydrated);
+        var dtoResult = MapMessage(hydrated);
+
+        await _hubContext.Clients.Group($"Return_{returnId}").SendAsync("ReceiveMessage", returnId, dtoResult);
+
+        return dtoResult;
     }
 
     private async Task<Order?> LoadOrderForReturnAsync(int orderId)

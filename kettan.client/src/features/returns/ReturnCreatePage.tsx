@@ -245,8 +245,9 @@ export function ReturnCreatePage() {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
           
-          if (uploadRes.data.Url) {
-            currentUrls.push(uploadRes.data.Url);
+          const url = uploadRes.data.url || uploadRes.data.Url;
+          if (url) {
+            currentUrls.push(url);
           }
         }
       }

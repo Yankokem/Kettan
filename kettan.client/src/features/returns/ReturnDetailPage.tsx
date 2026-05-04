@@ -22,8 +22,11 @@ import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded';
 import type { AxiosError } from 'axios';
 import { useParams } from '@tanstack/react-router';
+import * as signalR from '@microsoft/signalr';
+import { api } from '../../utils/api';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -210,7 +213,10 @@ function MessagesPanel({ returnId, currentUserId }: { returnId: number; currentU
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMessages = async () => {
     const msgs = await fetchReturnMessages(returnId);
@@ -219,15 +225,105 @@ function MessagesPanel({ returnId, currentUserId }: { returnId: number; currentU
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
   };
 
-  useEffect(() => { void loadMessages(); }, [returnId]);
+  useEffect(() => { 
+    void loadMessages(); 
+    
+    // Setup SignalR connection
+    let url = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
+    if (url && !url.startsWith('http')) {
+        url = window.location.origin + url;
+    }
+    
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${url}/hub/returns`, {
+            withCredentials: true,
+            accessTokenFactory: () => {
+                const state = useAuthStore.getState();
+                return state.token || '';
+            }
+        })
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on('ReceiveMessage', (pReturnId: number, dto: ReturnMessage) => {
+        if (pReturnId === returnId) {
+            setMessages(prev => {
+                if (prev.some(m => m.messageId === dto.messageId)) return prev;
+                return [...prev, dto];
+            });
+            setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+        }
+    });
+
+    connection.start()
+        .then(() => {
+            return connection.invoke('JoinReturnGroup', returnId);
+        })
+        .catch(err => console.error('SignalR Connection Error: ', err));
+
+    return () => {
+        if (connection.state === signalR.HubConnectionState.Connected) {
+            connection.invoke('LeaveReturnGroup', returnId)
+                .finally(() => void connection.stop());
+        }
+    };
+  }, [returnId]);
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {  // 10MB
+        alert('File size must be less than 10MB.');
+        return;
+    }
+
+    setPendingImage(file);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
+  };
 
   const handleSend = async () => {
-    if (!content.trim()) return;
+    if (!content.trim() && !pendingImage) return;
     try {
       setSending(true);
-      await sendReturnMessage(returnId, content.trim());
+      let finalContent = content.trim();
+
+      if (pendingImage) {
+          setUploadingImage(true);
+          const formData = new FormData();
+          formData.append('file', pendingImage);
+          formData.append('folder', `Returns/Messages/RET-${returnId.toString().padStart(5, '0')}`);
+          
+          try {
+              const uploadRes = await api.post('/api/uploads/image', formData, {
+                  headers: { 'Content-Type': 'multipart/form-data' }
+              });
+              
+              const imgUrl = uploadRes.data.url || uploadRes.data.Url;
+              if (imgUrl) {
+                  finalContent = finalContent + (finalContent ? '\n' : '') + `![${pendingImage.name}](${imgUrl})`;
+              }
+          } catch (err) {
+              console.error('Image upload failed', err);
+              alert('Failed to upload image. Sending text only if any.');
+          } finally {
+              setUploadingImage(false);
+          }
+      }
+
+      if (finalContent) {
+          await sendReturnMessage(returnId, finalContent);
+      }
       setContent('');
-      await loadMessages();
+      setPendingImage(null);
+      // Note: SignalR will handle the incoming real-time update
     } finally {
       setSending(false);
     }
@@ -313,18 +409,49 @@ function MessagesPanel({ returnId, currentUserId }: { returnId: number; currentU
         </Box>
       </Dialog>
 
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <TextField
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Write a message..."
-          size="small"
-          fullWidth
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); } }}
-        />
-        <Button onClick={() => void handleSend()} disabled={sending || !content.trim()} sx={{ minWidth: 44, px: 1.5 }}>
-          <SendRoundedIcon sx={{ fontSize: 17 }} />
-        </Button>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {pendingImage && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: 'action.hover', borderRadius: 2, alignSelf: 'flex-start' }}>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                    [ ❌ [{pendingImage.name}] ]
+                </Typography>
+                <IconButton size="small" onClick={() => setPendingImage(null)} sx={{ p: 0.5 }}>
+                    <CloseRoundedIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+            </Box>
+        )}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+            <input 
+              type="file" 
+              accept="image/*" 
+              hidden 
+              ref={fileInputRef} 
+              onChange={(e) => void handleImageUpload(e)}
+            />
+            <IconButton 
+              disabled={uploadingImage || sending}
+              onClick={() => fileInputRef.current?.click()}
+              sx={{ 
+                 bgcolor: 'action.hover', 
+                 borderRadius: '8px', 
+                 aspectRatio: '1',
+                 '&:hover': { bgcolor: 'action.selected' } 
+              }}
+            >
+              {uploadingImage ? <CircularProgress size={18} /> : <AttachFileRoundedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />}
+            </IconButton>
+            <TextField
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Write a message..."
+              size="small"
+              fullWidth
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); } }}
+            />
+            <Button onClick={() => void handleSend()} disabled={sending || (!content.trim() && !pendingImage)} sx={{ minWidth: 44, px: 1.5 }}>
+              <SendRoundedIcon sx={{ fontSize: 17 }} />
+            </Button>
+        </Box>
       </Box>
     </Paper>
   );
