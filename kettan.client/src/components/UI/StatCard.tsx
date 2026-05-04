@@ -7,7 +7,7 @@ export interface StatCardProps {
   label: string;
   value: string | number;
   sub?: string;
-  trend?: 'up' | 'down' | null;
+  trend?: 'up' | 'down' | 'neutral' | null;
   trendValue?: string;
   icon: React.ReactNode;
   accentClass: string;
@@ -81,24 +81,25 @@ export function StatCard({ label, value, sub, trend, trendValue, icon, accentCla
         </Box>
       </Box>
 
-      {trend && (
+      {(trend || trendValue) && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-          {trend === 'up'
-            ? <TrendingUpRoundedIcon sx={{ fontSize: 14, color: '#546B3F' }} />
-            : <TrendingDownRoundedIcon sx={{ fontSize: 14, color: '#B91C1C' }} />
-          }
+          {trend === 'up' && <TrendingUpRoundedIcon sx={{ fontSize: 14, color: '#546B3F' }} />}
+          {trend === 'down' && <TrendingDownRoundedIcon sx={{ fontSize: 14, color: '#B91C1C' }} />}
+          
           <Typography
             sx={{
               fontSize: 11.5,
               fontWeight: 600,
-              color: trend === 'up' ? '#546B3F' : '#B91C1C',
+              color: trend === 'up' ? '#546B3F' : trend === 'down' ? '#B91C1C' : 'text.secondary',
             }}
           >
             {trendValue}
           </Typography>
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-            vs last week
-          </Typography>
+          {trend !== 'neutral' && trend !== null && (
+            <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+              vs last week
+            </Typography>
+          )}
         </Box>
       )}
     </Box>
