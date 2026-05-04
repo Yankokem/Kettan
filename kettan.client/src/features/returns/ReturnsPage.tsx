@@ -162,14 +162,10 @@ export function ReturnsPage() {
 
   // Real-time Status Sync via SignalR
   useEffect(() => {
-    let url = typeof useAuthStore.getState().token === 'string' ? '/api' : ''; // Fallback for testing
-    // Actually we should get it from a common place. In ReturnDetailPage it was hardcoded from api.defaults.baseURL
-    
-    // For now, let's use a similar pattern to ReturnDetailPage
-    const baseUrl = (window as any).API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5173/api' : '/api');
+    const url = import.meta.env.VITE_API_URL || '';
     
     const connection = new signalR.HubConnectionBuilder()
-        .withUrl(`${baseUrl.replace('/api', '')}/hub/workflow`, {
+        .withUrl(`${url}/hub/workflow`, {
             withCredentials: true,
             accessTokenFactory: () => useAuthStore.getState().token || ''
         })

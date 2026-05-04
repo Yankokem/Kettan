@@ -173,9 +173,9 @@ export function SupplyRequestsPage() {
 
   // Real-time Status Sync via SignalR
   useEffect(() => {
-    const baseUrl = (window as any).API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5173/api' : '/api');
+    const url = import.meta.env.VITE_API_URL || '';
     const connection = new signalR.HubConnectionBuilder()
-        .withUrl(`${baseUrl.replace('/api', '')}/hub/workflow`, {
+        .withUrl(`${url}/hub/workflow`, {
             withCredentials: true,
             accessTokenFactory: () => useAuthStore.getState().token || ''
         })

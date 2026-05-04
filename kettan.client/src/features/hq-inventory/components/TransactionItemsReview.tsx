@@ -44,11 +44,6 @@ function getTypeChip(transactionType: InventoryTransactionKind) {
 export function TransactionItemsReview({ items, transactionType, onEdit, onRemove }: TransactionItemsReviewProps) {
   const typeChip = getTypeChip(transactionType);
 
-  const estimatedValue = items.reduce((sum, item) => {
-    if (!item.unitCost) return sum;
-    return sum + item.quantity * item.unitCost;
-  }, 0);
-
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
@@ -167,12 +162,6 @@ export function TransactionItemsReview({ items, transactionType, onEdit, onRemov
         </Box>
       )}
 
-      <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between' }}>
-        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Estimated total value</Typography>
-        <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#6B4C2A' }}>
-          ₱{estimatedValue.toFixed(2)}
-        </Typography>
-      </Box>
     </Box>
   );
 }

@@ -325,7 +325,7 @@ export const MOCK_TRANSACTIONS: InventoryTransaction[] = [
 export function getBatchesForItem(itemId: string): Batch[] {
   return MOCK_BATCHES
     .filter(b => b.itemId === itemId)
-    .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()); // FIFO by expiry
+    .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()); // Sort by expiry
 }
 
 export function getTransactionsForItem(itemId: string): InventoryTransaction[] {

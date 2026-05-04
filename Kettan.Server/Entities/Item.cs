@@ -35,6 +35,11 @@ public class Item : ITenantEntity
     [ForeignKey(nameof(ItemCategoryId))]
     public ItemCategory? ItemCategory { get; set; }
 
+    public int? SupplierId { get; set; }
+
+    [ForeignKey(nameof(SupplierId))]
+    public Supplier? Supplier { get; set; }
+
     [Column(TypeName = "decimal(18,4)")]
     public decimal DefaultThreshold { get; set; } = 0;
 

@@ -53,6 +53,7 @@ public class ItemsController : ControllerBase
         var query = _context.Items
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
+            .Include(i => i.Supplier)
             .AsQueryable();
 
         // If branch user and NOT viewing HQ catalog, only show items they have stock for
@@ -137,7 +138,7 @@ public class ItemsController : ControllerBase
         try
         {
             ValidateItemPayload(dto.SKU, dto.Name, dto.DefaultThreshold, dto.UnitCost, dto.SellingPrice);
-            await ValidateLookupReferencesAsync(dto.InventoryCategoryId, dto.ItemCategoryId);
+            await ValidateLookupReferencesAsync(dto.InventoryCategoryId, dto.ItemCategoryId, dto.SupplierId);
             await EnsureSkuIsUniqueAsync(dto.SKU);
 
             var now = DateTime.UtcNow;
@@ -150,6 +151,7 @@ public class ItemsController : ControllerBase
                 Unit = dto.Unit,
                 InventoryCategoryId = dto.InventoryCategoryId,
                 ItemCategoryId = dto.ItemCategoryId,
+                SupplierId = dto.SupplierId,
                 DefaultThreshold = dto.DefaultThreshold,
                 UnitCost = dto.UnitCost,
                 SellingPrice = dto.SellingPrice,
@@ -189,7 +191,7 @@ public class ItemsController : ControllerBase
         try
         {
             ValidateItemPayload(dto.SKU, dto.Name, dto.DefaultThreshold, dto.UnitCost, dto.SellingPrice);
-            await ValidateLookupReferencesAsync(dto.InventoryCategoryId, dto.ItemCategoryId);
+            await ValidateLookupReferencesAsync(dto.InventoryCategoryId, dto.ItemCategoryId, dto.SupplierId);
             await EnsureSkuIsUniqueAsync(dto.SKU, id);
 
             if (item.UnitCost != dto.UnitCost)
@@ -202,6 +204,7 @@ public class ItemsController : ControllerBase
             item.Unit = dto.Unit;
             item.InventoryCategoryId = dto.InventoryCategoryId;
             item.ItemCategoryId = dto.ItemCategoryId;
+            item.SupplierId = dto.SupplierId;
             item.DefaultThreshold = dto.DefaultThreshold;
             item.UnitCost = dto.UnitCost;
             item.SellingPrice = dto.SellingPrice;
@@ -231,26 +234,14 @@ public class ItemsController : ControllerBase
 
         try
         {
-            if (dto.UnitCost.HasValue)
-            {
-                if (dto.UnitCost.Value < 0)
-                {
-                    throw new InvalidOperationException("Unit cost cannot be negative.");
-                }
-
-                if (item.UnitCost != dto.UnitCost.Value)
-                {
-                    item.PreviousUnitCost = item.UnitCost;
-                    item.UnitCost = dto.UnitCost.Value;
-                    item.UpdatedAt = DateTime.UtcNow;
-                }
-            }
-
             var created = await _inventoryService.StockInAsync(
                 itemId: id,
                 quantity: dto.Quantity,
                 batchNumber: dto.BatchNumber,
                 expiryDate: dto.ExpiryDate,
+                unitCost: dto.UnitCost ?? 0,
+                supplierId: dto.SupplierId,
+                defaultThreshold: dto.DefaultThreshold,
                 remarks: dto.Remarks);
 
             var batch = await _context.Batches
@@ -375,6 +366,7 @@ public class ItemsController : ControllerBase
         var item = await _context.Items
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
+            .Include(i => i.Supplier)
             .FirstOrDefaultAsync(i => i.ItemId == id);
 
         if (item == null)
@@ -431,7 +423,7 @@ public class ItemsController : ControllerBase
         };
     }
 
-    private async Task ValidateLookupReferencesAsync(int? inventoryCategoryId, int? itemCategoryId)
+    private async Task ValidateLookupReferencesAsync(int? inventoryCategoryId, int? itemCategoryId, int? supplierId = null)
     {
 
         if (inventoryCategoryId.HasValue)
@@ -453,6 +445,17 @@ public class ItemsController : ControllerBase
             if (!itemCategoryExists)
             {
                 throw new InvalidOperationException("Item category was not found.");
+            }
+        }
+
+        if (supplierId.HasValue)
+        {
+            var supplierExists = await _context.Suppliers
+                .AnyAsync(s => s.SupplierId == supplierId.Value && s.IsActive);
+
+            if (!supplierExists)
+            {
+                throw new InvalidOperationException("Supplier was not found.");
             }
         }
     }
@@ -509,6 +512,8 @@ public class ItemsController : ControllerBase
             InventoryCategoryName = item.InventoryCategory?.Name,
             ItemCategoryId = item.ItemCategoryId,
             ItemCategoryName = item.ItemCategory?.Name,
+            SupplierId = item.SupplierId,
+            SupplierName = item.Supplier?.Name,
             DefaultThreshold = item.DefaultThreshold,
             UnitCost = item.UnitCost,
             PreviousUnitCost = item.PreviousUnitCost,

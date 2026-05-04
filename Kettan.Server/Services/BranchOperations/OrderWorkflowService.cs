@@ -239,7 +239,7 @@ public class OrderWorkflowService : IOrderWorkflowService
                 var qtyToDeduct = item.SendQuantity ?? item.QuantityApproved ?? item.QuantityRequested;
                 if (qtyToDeduct <= 0) continue;
 
-                var deductions = await _inventoryService.DeductFifoAsync(
+                var deductions = await _inventoryService.DeductStockAsync(
                     item.ItemId,
                     branchId: null, // HQ stock
                     quantity: qtyToDeduct,
@@ -799,7 +799,7 @@ public class OrderWorkflowService : IOrderWorkflowService
                 var qtyToDeduct = item.SendQuantity ?? item.QuantityApproved ?? item.QuantityRequested;
                 if (qtyToDeduct <= 0) continue;
 
-                var deductions = await _inventoryService.DeductFifoAsync(
+                var deductions = await _inventoryService.DeductStockAsync(
                     item.ItemId,
                     branchId: null,
                     quantity: qtyToDeduct,

@@ -88,7 +88,7 @@ function statusStyle(status: string): StatusStyle {
     case 'Inspecting':  return { bg: '#F3E5F5', color: '#6A1B9A', label: 'Inspecting' };
     case 'Completed':   return { bg: '#E8F5E9', color: '#1B5E20', label: 'Completed' };
     case 'Rejected':    return { bg: '#FFEBEE', color: '#B71C1C', label: 'Rejected' };
-    case 'Credited':    return { bg: '#E8F5E9', color: '#2E7D32', label: 'Credited' };
+    case 'Credited':    return { bg: '#E8F5E9', color: '#2E7D32', label: 'Stock Return' };
     case 'Replaced':    return { bg: '#E3F2FD', color: '#1565C0', label: 'Replaced' };
     case 'Pending':     return { bg: '#FFF8E1', color: '#F57F17', label: 'Pending' };
     default:            return { bg: '#F5F5F5', color: '#616161', label: status };
@@ -697,9 +697,9 @@ export function ReturnDetailPage() {
                   <Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
                           <ReceiptLongRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Credit Amount</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Amount</Typography>
                       </Box>
-                      <Typography sx={{ pl: 3, fontSize: 14, fontWeight: 700, color: 'success.main' }}>
+                      <Typography sx={{ pl: 3, fontSize: 14, fontWeight: 700, color: 'text.primary' }}>
                           {row.creditAmount.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
                       </Typography>
                   </Box>

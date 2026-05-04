@@ -8,6 +8,7 @@ import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
@@ -435,6 +436,13 @@ export function InventoryTable({ items, transactions = [], isBranchView = false 
               onClick={() => navigate({ to: '/hq-inventory/categories' })}
             >
               Item Categories
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<BusinessRoundedIcon />}
+              onClick={() => navigate({ to: '/hq-inventory/suppliers' })}
+            >
+              Suppliers
             </Button>
             <Button
               startIcon={<CallReceivedRoundedIcon />}

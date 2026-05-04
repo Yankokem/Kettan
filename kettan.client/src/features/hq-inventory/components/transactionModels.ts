@@ -17,6 +17,7 @@ export interface TransactionLineItem {
   expiryDate?: string;
   reason?: StockOutReason;
   isNewItem: boolean;
+  defaultThreshold?: number;
   newCategoryId?: string;
   newUnit?: string;
 }
@@ -32,6 +33,7 @@ export interface TransactionItemDraft {
   quantity: string;
   unitCost: string;
   expiryDate: string;
+  defaultThreshold: string;
   reason: StockOutReason;
 }
 
@@ -62,6 +64,7 @@ export function createEmptyTransactionItemDraft(mode: TransactionEntryMode = 'ex
     quantity: '',
     unitCost: '',
     expiryDate: '',
+    defaultThreshold: '10',
     reason: 'Wastage',
   };
 }

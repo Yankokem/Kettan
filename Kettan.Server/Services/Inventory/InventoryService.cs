@@ -23,7 +23,7 @@ public class InventoryService : IInventoryService
         _notificationService = notificationService;
     }
 
-    public async Task<StockInResult> StockInAsync(int itemId, decimal quantity, string batchNumber, DateTime expiryDate, string? remarks = null)
+    public async Task<StockInResult> StockInAsync(int itemId, decimal quantity, string batchNumber, DateTime expiryDate, decimal unitCost, int? supplierId = null, decimal? defaultThreshold = null, string? remarks = null)
     {
         var tenantId = EnsureTenantContext();
         var userId = EnsureUserContext();
@@ -38,11 +38,32 @@ public class InventoryService : IInventoryService
             throw new InvalidOperationException("Batch number is required.");
         }
 
-        var itemExists = await _context.Items.AnyAsync(i => i.ItemId == itemId);
-        if (!itemExists)
+        var item = await _context.Items.FirstOrDefaultAsync(i => i.ItemId == itemId);
+        if (item == null)
         {
             throw new InvalidOperationException("Item was not found.");
         }
+
+        // --- Weighted Average Costing (WAC) Logic ---
+        var currentStock = await GetStockLevelAsync(itemId, null);
+        
+        item.PreviousUnitCost = item.UnitCost;
+        if (currentStock > 0)
+        {
+            var totalValue = (currentStock * item.UnitCost) + (quantity * unitCost);
+            item.UnitCost = totalValue / (currentStock + quantity);
+        }
+        else
+        {
+            item.UnitCost = unitCost;
+        }
+
+        // Update other metadata if provided
+        if (supplierId.HasValue) item.SupplierId = supplierId.Value;
+        if (defaultThreshold.HasValue) item.DefaultThreshold = defaultThreshold.Value;
+
+        item.UpdatedAt = DateTime.UtcNow;
+        // --------------------------------------------
 
         var now = DateTime.UtcNow;
 
@@ -88,13 +109,13 @@ public class InventoryService : IInventoryService
         };
     }
 
-    public Task<List<FifoDeductionResult>> StockOutAsync(int itemId, decimal quantity, string reason, string? remarks = null)
+    public Task<List<StockDeductionResult>> StockOutAsync(int itemId, decimal quantity, string reason, string? remarks = null)
     {
         var note = string.IsNullOrWhiteSpace(remarks)
             ? reason
             : $"{reason}: {remarks}";
 
-        return DeductFifoAsync(
+        return DeductStockAsync(
             itemId,
             branchId: null,
             quantity,
@@ -104,7 +125,7 @@ public class InventoryService : IInventoryService
             referenceId: itemId);
     }
 
-    public async Task<List<FifoDeductionResult>> DeductFifoAsync(
+    public async Task<List<StockDeductionResult>> DeductStockAsync(
         int itemId,
         int? branchId,
         decimal quantity,
@@ -148,7 +169,7 @@ public class InventoryService : IInventoryService
 
         var now = DateTime.UtcNow;
         var remaining = quantity;
-        var deductions = new List<FifoDeductionResult>();
+        var deductions = new List<StockDeductionResult>();
 
         foreach (var batch in batches)
         {
@@ -179,7 +200,7 @@ public class InventoryService : IInventoryService
                 Timestamp = now
             });
 
-            deductions.Add(new FifoDeductionResult
+            deductions.Add(new StockDeductionResult
             {
                 BatchId = batch.BatchId,
                 BatchNumber = batch.BatchNumber,

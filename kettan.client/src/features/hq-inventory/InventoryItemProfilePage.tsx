@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Typography, Paper, Chip, Divider } from '@mui/material';
+import { Box, Typography, Paper, Chip, Divider, Grid, Stack } from '@mui/material';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
+import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import StraightenRoundedIcon from '@mui/icons-material/StraightenRounded';
+import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
+import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
+import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
+import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { Button } from '../../components/UI/Button';
 import { PageHeader } from '../../components/UI/PageHeader';
@@ -19,6 +28,7 @@ import {
   fetchItemCategories,
   updateInventoryItem,
 } from './hqInventoryApi';
+import { listSuppliers, type Supplier } from './supplierApi';
 import type {
   AdjustmentFormData,
   Batch,
@@ -27,6 +37,10 @@ import type {
   InventoryTransaction,
 } from './types';
 
+// Kettan Brand Colors
+const KETTAN_BROWN = '#6D4C41';
+const KETTAN_LABEL = '#8D6E63';
+
 interface ItemFormState {
   name: string;
   sku: string;
@@ -34,6 +48,7 @@ interface ItemFormState {
   unit: string;
   defaultThreshold: string;
   unitCost: string;
+  supplierId: string;
 }
 
 function toItemFormState(item: InventoryItem): ItemFormState {
@@ -44,7 +59,43 @@ function toItemFormState(item: InventoryItem): ItemFormState {
     unit: item.unit,
     defaultThreshold: String(item.defaultThreshold),
     unitCost: String(item.unitCost),
+    supplierId: item.supplierId || '',
   };
+}
+
+function InfoRow({ 
+  label, 
+  value, 
+  editing = false, 
+  children,
+  color = 'text.primary'
+}: { 
+  label: string; 
+  value?: string | number | React.ReactNode; 
+  editing?: boolean; 
+  children?: React.ReactNode;
+  color?: string;
+}) {
+  return (
+    <Box sx={{ mb: 2.5 }}>
+      <Typography sx={{ 
+        fontSize: 13, 
+        fontWeight: 700, 
+        color: KETTAN_LABEL, 
+        textTransform: 'none', 
+        mb: 0.5
+      }}>
+        {label}
+      </Typography>
+      {editing ? (
+        <Box sx={{ mt: 1 }}>{children}</Box>
+      ) : (
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color }}>
+          {value ?? '-'}
+        </Typography>
+      )}
+    </Box>
+  );
 }
 
 export function InventoryItemProfilePage() {
@@ -55,6 +106,7 @@ export function InventoryItemProfilePage() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [form, setForm] = useState<ItemFormState | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -75,9 +127,10 @@ export function InventoryItemProfilePage() {
         setErrorMessage(null);
         setSaveError(null);
 
-        const [detail, liveCategories] = await Promise.all([
+        const [detail, liveCategories, liveSuppliers] = await Promise.all([
           fetchInventoryItemDetail(itemId),
           fetchItemCategories(),
+          listSuppliers(),
         ]);
 
         const liveTransactions = await fetchInventoryItemTransactions(itemId, {
@@ -93,6 +146,7 @@ export function InventoryItemProfilePage() {
         setBatches(detail.batches);
         setTransactions(liveTransactions);
         setCategories(liveCategories);
+        setSuppliers(liveSuppliers);
         setForm(toItemFormState(detail.item));
       } catch {
         if (!isMounted) {
@@ -185,6 +239,7 @@ export function InventoryItemProfilePage() {
         name: form.name,
         unit: form.unit,
         inventoryCategoryId: form.categoryId || undefined,
+        supplierId: form.supplierId || undefined,
         defaultThreshold: threshold,
         unitCost,
       });
@@ -226,6 +281,11 @@ export function InventoryItemProfilePage() {
     ...categories.map((category) => ({ value: category.id, label: category.name })),
   ];
 
+  const supplierOptions = [
+    { value: '', label: 'No Supplier' },
+    ...suppliers.map((s) => ({ value: String(s.supplierId), label: s.name })),
+  ];
+
   const unitOptions = [
     { value: 'pc', label: 'Piece (pc)' },
     { value: 'pack', label: 'Pack (pack)' },
@@ -255,10 +315,10 @@ export function InventoryItemProfilePage() {
       {/* Header */}
       <PageHeader
         title="Item Profile"
-        description="Manage item details and history"
+        description="View and manage item information and stock levels."
         backTo="/hq-inventory"
         action={
-          <>
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
             <Button
               variant="outlined"
               startIcon={<CallReceivedRoundedIcon />}
@@ -267,225 +327,253 @@ export function InventoryItemProfilePage() {
               New Transaction
             </Button>
             {!isEditing ? (
-              <Button startIcon={<EditRoundedIcon />} onClick={() => setIsEditing(true)}>
-                Edit Item
+              <Button 
+                startIcon={<EditRoundedIcon />} 
+                onClick={() => setIsEditing(true)}
+              >
+                Edit Profile
               </Button>
             ) : (
-              <>
+              <Stack direction="row" spacing={1.5}>
                 <Button variant="outlined" onClick={handleCancelEdit}>
                   Cancel
                 </Button>
                 <Button onClick={handleSaveChanges} disabled={isSaving}>
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
-              </>
+              </Stack>
             )}
-          </>
+          </Box>
         }
       />
 
       {saveError && (
-        <Typography sx={{ fontSize: 13, color: 'error.main', mb: 2 }}>
+        <Typography sx={{ fontSize: 13, color: 'error.main', mb: 2, px: 1 }}>
           {saveError}
         </Typography>
       )}
 
-      {/* Two Column Layout */}
-      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-        {/* Left Column - Item Details */}
-        <Box sx={{ width: { xs: '100%', md: '40%' } }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden', bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', gap: 3 }}>
-
-            {/* Hero Header — name & SKU on warm gradient */}
-            <Box
-              sx={{
-                background: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.96) 0%, rgba(58, 39, 24, 0.92) 100%)'
-                    : 'linear-gradient(170deg, rgba(250, 245, 239, 0.98) 0%, rgba(240, 230, 211, 0.98) 100%)',
-                px: 3,
-                pt: 3,
-                pb: 2.5,
-                position: 'relative',
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  inset: 0,
-                  background: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? 'radial-gradient(ellipse at 80% 20%, rgba(201,168,77,0.08) 0%, transparent 62%)'
-                      : 'radial-gradient(ellipse at 80% 20%, rgba(201,168,77,0.12) 0%, transparent 62%)',
-                  pointerEvents: 'none',
-                },
-              }}
-            >
-              {isLowStock && (
-                <Chip
-                  icon={<WarningRoundedIcon sx={{ fontSize: 14 }} />}
-                  label="Low Stock"
-                  size="small"
-                  sx={{
-                    mb: 1.5,
-                    bgcolor: 'rgba(220,38,38,0.85)',
-                    color: 'white',
-                    fontWeight: 700,
-                    fontSize: 11,
-                    height: 22,
-                    backdropFilter: 'blur(4px)',
-                    '& .MuiChip-icon': { color: 'white' },
-                  }}
-                />
-              )}
-              <Typography sx={{ fontSize: 26, fontWeight: 800, color: (theme) => (theme.palette.mode === 'dark' ? '#E8D3A9' : '#2E1F0C'), lineHeight: 1.15, letterSpacing: '-0.01em' }}>
-                {item?.name || '...'}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: (theme) => (theme.palette.mode === 'dark' ? 'rgba(232,211,169,0.72)' : 'rgba(140,107,67,0.9)'), fontFamily: 'monospace', mt: 0.75, letterSpacing: '0.04em' }}>
-                SKU: {item?.sku || '...'}
-              </Typography>
-            </Box>
-
-            {/* Body */}
-            <Box sx={{ px: 3, pb: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
-
-            {/* Quick Stats */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1.5 }}>
-              <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2, textAlign: 'center' }}>
-                <Typography sx={{ fontSize: 24, fontWeight: 700, color: isLowStock ? 'error.main' : 'text.primary' }}>
-                  {item?.totalStock ?? 0}
-                </Typography>
-                <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
-                  {selectedUnit} Stock
-                </Typography>
+      {/* Main Grid */}
+      <Grid container spacing={4}>
+        {/* Left Column - COMPREHENSIVE Item Card */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: 4, 
+              border: '1px solid', 
+              borderColor: 'divider', 
+              borderRadius: '24px',
+              bgcolor: 'background.paper',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4
+            }}
+          >
+            {/* Header / Summary Section */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+               <Box 
+                sx={{ 
+                  width: 64, 
+                  height: 64, 
+                  borderRadius: '16px', 
+                  bgcolor: 'action.hover', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
+                <Inventory2RoundedIcon sx={{ fontSize: 32, color: KETTAN_BROWN }} />
               </Box>
-              <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2, textAlign: 'center' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                  <Typography sx={{ fontSize: 24, fontWeight: 700 }}>
-                    ₱{currentUnitCost}
-                  </Typography>
-                  {costChange !== 0 && (
-                    costChange > 0 ? (
-                      <TrendingUpRoundedIcon sx={{ fontSize: 18, color: 'error.main' }} />
-                    ) : (
-                      <TrendingDownRoundedIcon sx={{ fontSize: 18, color: 'success.main' }} />
-                    )
+              <Box>
+                <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', mb: 0.5 }}>
+                  {item?.name || '...'}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Chip 
+                    label={item?.category?.name || 'Uncategorized'} 
+                    size="small" 
+                    sx={{ fontWeight: 800, fontSize: 11, height: 22, bgcolor: KETTAN_BROWN, color: 'background.paper' }} 
+                  />
+                  {isLowStock && (
+                    <Chip 
+                      label="Low Stock" 
+                      size="small" 
+                      color="error"
+                      sx={{ fontWeight: 800, fontSize: 11, height: 22 }} 
+                    />
                   )}
                 </Box>
-                <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
-                  Per {selectedUnit}
-                </Typography>
-              </Box>
-              <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2, textAlign: 'center' }}>
-                <Typography sx={{ fontSize: 24, fontWeight: 700 }}>
-                  {batches.length}
-                </Typography>
-                <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
-                  Batches
-                </Typography>
               </Box>
             </Box>
 
             <Divider />
 
-            {/* Form Fields */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-              <FormTextField
-                label="Item Name"
-                value={form?.name ?? item?.name ?? ''}
-                onChange={(event) => setForm((prev) => (prev ? { ...prev, name: event.target.value } : prev))}
-                disabled={!isEditing}
-              />
-              <FormTextField
-                label="SKU"
-                value={form?.sku ?? item?.sku ?? ''}
-                onChange={(event) => setForm((prev) => (prev ? { ...prev, sku: event.target.value } : prev))}
-                disabled={!isEditing}
-              />
-              <FormDropdown
-                label="Category"
-                value={form?.categoryId ?? item?.categoryId ?? ''}
-                onChange={(event) => setForm((prev) => (prev ? { ...prev, categoryId: String(event.target.value) } : prev))}
-                options={categoryOptions}
-                disabled={!isEditing}
-              />
-              <FormDropdown
-                label="Unit of Measure"
-                value={form?.unit ?? item?.unit ?? ''}
-                onChange={(event) => setForm((prev) => (prev ? { ...prev, unit: String(event.target.value) } : prev))}
-                options={unitOptions}
-                disabled={!isEditing}
-              />
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ flex: 1 }}>
-                  <FormTextField
-                    label="Reorder Threshold"
-                    type="number"
-                    value={form?.defaultThreshold ?? (item ? String(item.defaultThreshold) : '0')}
-                    onChange={(event) =>
-                      setForm((prev) => (prev ? { ...prev, defaultThreshold: event.target.value } : prev))
-                    }
-                    disabled={!isEditing}
-                  />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <FormTextField
-                    label={`Unit Cost (₱)`}
-                    type="number"
-                    value={form?.unitCost ?? (item ? String(item.unitCost) : '0')}
-                    onChange={(event) =>
-                      setForm((prev) => (prev ? { ...prev, unitCost: event.target.value } : prev))
-                    }
-                    disabled={!isEditing}
-                  />
-                </Box>
+            {/* Specifications Section */}
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                <BadgeRoundedIcon sx={{ fontSize: 20, color: KETTAN_BROWN }} />
+                <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Item Specifications
+                </Typography>
               </Box>
-              {costChange !== 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                    Previous cost: ₱{item?.previousUnitCost || 0}
-                  </Typography>
-                  <Chip
-                    label={`${costChange > 0 ? '+' : ''}${costChange.toFixed(1)}%`}
+              <Stack spacing={0.5}>
+                <InfoRow 
+                  label="SKU / Barcode" 
+                  value={item?.sku} 
+                  editing={isEditing}
+                >
+                  <FormTextField
+                    value={form?.sku ?? ''}
+                    label="Update SKU"
+                    onChange={(e) => setForm(f => f ? { ...f, sku: e.target.value } : f)}
                     size="small"
-                    sx={{
-                      height: 20,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      bgcolor: costChange > 0 ? 'error.light' : 'success.light',
-                      color: costChange > 0 ? 'error.dark' : 'success.dark',
-                    }}
+                    fullWidth
                   />
-                </Box>
-              )}
+                </InfoRow>
+                <InfoRow 
+                  label="Category" 
+                  value={item?.category?.name || 'Uncategorized'} 
+                  editing={isEditing}
+                >
+                  <FormDropdown
+                    value={form?.categoryId ?? ''}
+                    label="Update Category"
+                    onChange={(e) => setForm(f => f ? { ...f, categoryId: String(e.target.value) } : f)}
+                    options={categoryOptions}
+                    size="small"
+                    fullWidth
+                  />
+                </InfoRow>
+                <InfoRow 
+                  label="Unit of Measure" 
+                  value={item?.unit} 
+                />
+                <InfoRow 
+                  label="Primary Supplier" 
+                  value={suppliers.find(s => String(s.supplierId) === item?.supplierId)?.name || 'Not Linked'} 
+                />
+              </Stack>
             </Box>
-            </Box>{/* end Body */}
-          </Paper>
-        </Box>
 
-        {/* Right Column - Batches & Transactions */}
-        <Box sx={{ width: { xs: '100%', md: '60%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {/* Batches Section */}
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3 }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>
-              Batches ({batches.length})
-            </Typography>
-            {selectedUnit && (
-              <BatchList
-                batches={batches}
-                unit={selectedUnit}
-                onAdjust={handleAdjustBatch}
-              />
-            )}
-          </Paper>
+            <Divider />
 
-          {/* Recent Transactions Section */}
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 3 }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>
-              Recent Transactions
-            </Typography>
-            <TransactionsTable transactions={transactions} compact />
+            {/* Pricing Section */}
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                <PaymentsRoundedIcon sx={{ fontSize: 20, color: KETTAN_BROWN }} />
+                <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Inventory & Pricing
+                </Typography>
+              </Box>
+              <Stack spacing={0.5}>
+                <InfoRow 
+                  label="Weighted Average Cost" 
+                  value={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      ₱{currentUnitCost}
+                      {costChange !== 0 && (
+                        <Chip
+                          label={`${costChange > 0 ? '+' : ''}${costChange.toFixed(1)}%`}
+                          size="small"
+                          sx={{
+                            height: 18,
+                            fontSize: 10,
+                            fontWeight: 800,
+                            bgcolor: costChange > 0 ? 'error.light' : 'success.light',
+                            color: costChange > 0 ? 'error.dark' : 'success.dark',
+                            border: 'none'
+                          }}
+                        />
+                      )}
+                    </Box>
+                  }
+                  editing={isEditing}
+                >
+                  <FormTextField
+                    type="number"
+                    label="Override Base Cost"
+                    value={form?.unitCost ?? ''}
+                    onChange={(e) => setForm(f => f ? { ...f, unitCost: e.target.value } : f)}
+                    size="small"
+                    fullWidth
+                  />
+                </InfoRow>
+                <InfoRow 
+                  label="Reorder Threshold" 
+                  value={`${item?.defaultThreshold ?? 0} ${selectedUnit}`}
+                  editing={isEditing}
+                >
+                  <FormTextField
+                    type="number"
+                    label="Low Stock Warning"
+                    value={form?.defaultThreshold ?? ''}
+                    onChange={(e) => setForm(f => f ? { ...f, defaultThreshold: e.target.value } : f)}
+                    size="small"
+                    fullWidth
+                  />
+                </InfoRow>
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* System Info */}
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                <NotificationsActiveRoundedIcon sx={{ fontSize: 20, color: KETTAN_BROWN }} />
+                <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  System Metrics
+                </Typography>
+              </Box>
+              <Stack spacing={0.5}>
+                <InfoRow 
+                  label="Total Inventory" 
+                  value={`${item?.totalStock ?? 0} ${selectedUnit}`}
+                  color={isLowStock ? 'error.main' : 'text.primary'}
+                />
+                <InfoRow 
+                  label="Last Transaction" 
+                  value={item?.updatedAt ? new Date(item.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+                />
+                <InfoRow 
+                  label="Item System ID" 
+                  value={String(item?.id).padStart(6, '0')}
+                />
+              </Stack>
+            </Box>
           </Paper>
-        </Box>
-      </Box>
+        </Grid>
+
+        {/* Right Column - Batches & History */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Stack spacing={3}>
+            {/* Batch List */}
+            <Paper elevation={0} sx={{ p: 4, border: '1px solid', borderColor: 'divider', borderRadius: '24px' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, mb: 3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Available Batches
+              </Typography>
+              {selectedUnit && (
+                <BatchList
+                  batches={batches}
+                  unit={selectedUnit}
+                  onAdjust={handleAdjustBatch}
+                />
+              )}
+            </Paper>
+
+            {/* History Table */}
+            <Paper elevation={0} sx={{ p: 4, border: '1px solid', borderColor: 'divider', borderRadius: '24px' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, mb: 3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Transaction History
+              </Typography>
+              <TransactionsTable transactions={transactions} compact />
+            </Paper>
+          </Stack>
+        </Grid>
+      </Grid>
 
       {/* Modals */}
       <AdjustmentModal

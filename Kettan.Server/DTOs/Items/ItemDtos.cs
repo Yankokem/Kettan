@@ -11,6 +11,8 @@ public class ItemDto
     public string? InventoryCategoryName { get; set; }
     public int? ItemCategoryId { get; set; }
     public string? ItemCategoryName { get; set; }
+    public int? SupplierId { get; set; }
+    public string? SupplierName { get; set; }
     public decimal DefaultThreshold { get; set; }
     public decimal UnitCost { get; set; }
     public decimal? PreviousUnitCost { get; set; }
@@ -39,6 +41,7 @@ public class CreateItemDto
     public decimal UnitCost { get; set; }
     public decimal? SellingPrice { get; set; }
     public bool IsBundle { get; set; }
+    public int? SupplierId { get; set; }
 
 }
 
@@ -53,6 +56,7 @@ public class UpdateItemDto
     public decimal UnitCost { get; set; }
     public decimal? SellingPrice { get; set; }
     public bool IsBundle { get; set; }
+    public int? SupplierId { get; set; }
 
 }
 
@@ -62,6 +66,8 @@ public class StockInDto
     public string BatchNumber { get; set; } = string.Empty;
     public DateTime ExpiryDate { get; set; }
     public decimal? UnitCost { get; set; }
+    public int? SupplierId { get; set; }
+    public decimal? DefaultThreshold { get; set; }
     public string? Remarks { get; set; }
 }
 

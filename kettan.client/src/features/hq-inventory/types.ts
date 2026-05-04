@@ -19,14 +19,23 @@ export interface InventoryCategory {
   createdAt: string;
 }
 
+export interface Supplier {
+  supplierId: number;
+  name: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
 export interface ItemCategoryFormData {
   name: string;
   description: string;
   displayOrder: number;
   isActive: boolean;
 }
-
-
 
 export interface Vehicle {
   id: string;
@@ -74,6 +83,8 @@ export interface InventoryItem {
   unit: string;
   categoryId: string;
   category?: InventoryCategory;
+  supplierId?: string;
+  supplierName?: string;
   defaultThreshold: number;
   unitCost: number;
   previousUnitCost?: number;
@@ -84,7 +95,7 @@ export interface InventoryItem {
   updatedAt: string;
 }
 
-// Batch for FIFO tracking
+// Batch for inventory tracking
 export interface Batch {
   id: string;
   itemId: string;

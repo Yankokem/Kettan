@@ -75,7 +75,7 @@ public class ConsumptionService : IConsumptionService
 
                     if (requiredQty <= 0) continue;
 
-                    await _inventoryService.DeductFifoAsync(
+                    await _inventoryService.DeductStockAsync(
                         itemId: ingredient.ItemId,
                         branchId: _currentUser.BranchId.Value,
                         quantity: requiredQty,
@@ -149,14 +149,14 @@ public class ConsumptionService : IConsumptionService
             {
                 if (line.Quantity <= 0) continue;
 
-                await _inventoryService.DeductFifoAsync(
-                    itemId: line.ItemId,
-                    branchId: _currentUser.BranchId.Value,
-                    quantity: line.Quantity,
-                    transactionType: TransactionType.Consumption,
-                    remarks: line.Reason,
-                    referenceType: ReferenceType.ConsumptionLog,
-                    referenceId: log.ConsumptionLogId);
+                    await _inventoryService.DeductStockAsync(
+                        itemId: line.ItemId,
+                        branchId: _currentUser.BranchId.Value,
+                        quantity: line.Quantity,
+                        transactionType: TransactionType.Consumption,
+                        remarks: line.Reason,
+                        referenceType: ReferenceType.ConsumptionLog,
+                        referenceId: log.ConsumptionLogId);
 
                 log.Items.Add(new ConsumptionLogItem
                 {

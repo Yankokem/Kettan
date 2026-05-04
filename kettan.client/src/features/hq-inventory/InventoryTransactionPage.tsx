@@ -3,7 +3,9 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Box, Paper, Typography, Divider } from '@mui/material';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded';
+import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded';
 import { PageHeader } from '../../components/UI/PageHeader';
+import { Button } from '../../components/UI/Button';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormActions } from '../../components/Form/FormActions';
@@ -16,7 +18,8 @@ import {
   stockOutInventoryItem,
 } from './hqInventoryApi';
 import type { InventoryCategory, InventoryItem } from './types';
-import { TransactionItemComposer } from './components/TransactionItemComposer';
+import { listSuppliers, type Supplier } from './supplierApi';
+import { TransactionItemModal } from './components/TransactionItemModal';
 import { TransactionItemsReview } from './components/TransactionItemsReview';
 import {
   TRANSACTION_TYPE_OPTIONS,
@@ -56,6 +59,7 @@ export default function InventoryTransactionPage() {
 
   const [catalogItems, setCatalogItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -69,6 +73,8 @@ export default function InventoryTransactionPage() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [composerError, setComposerError] = useState<string | null>(null);
   const [prefillApplied, setPrefillApplied] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
 
   useEffect(() => {
     let isMounted = true;
@@ -78,9 +84,10 @@ export default function InventoryTransactionPage() {
         setIsLoadingCatalog(true);
         setLoadError(null);
 
-        const [liveItems, liveCategories] = await Promise.all([
+        const [liveItems, liveCategories, liveSuppliers] = await Promise.all([
           fetchInventoryItems(),
           fetchItemCategories(),
+          listSuppliers(),
         ]);
 
         if (!isMounted) {
@@ -89,6 +96,7 @@ export default function InventoryTransactionPage() {
 
         setCatalogItems(liveItems);
         setCategories(liveCategories);
+        setSuppliers(liveSuppliers);
       } catch {
         if (!isMounted) {
           return;
@@ -340,24 +348,60 @@ export default function InventoryTransactionPage() {
     resetDraft('new');
   };
 
-  const handleEditLine = (index: number) => {
-    const line = items[index];
+  const handleAddFromModal = (draft: TransactionItemDraft) => {
+    const quantity = Number(draft.quantity) || 0;
+    const unitCostInput = parseFloat(draft.unitCost);
+    const unitCost = isNaN(unitCostInput) ? undefined : unitCostInput;
 
+    const nextLine: TransactionLineItem = draft.mode === 'existing' 
+      ? {
+          id: editingIndex !== null ? items[editingIndex].id : makeLineId(),
+          itemId: draft.selectedItemId,
+          itemName: catalogItems.find(i => i.id === draft.selectedItemId)?.name || '',
+          itemSku: catalogItems.find(i => i.id === draft.selectedItemId)?.sku || '',
+          unit: catalogItems.find(i => i.id === draft.selectedItemId)?.unit || '',
+          categoryName: catalogItems.find(i => i.id === draft.selectedItemId)?.category?.name,
+          currentStock: catalogItems.find(i => i.id === draft.selectedItemId)?.totalStock || 0,
+          quantity,
+          unitCost: transactionType === 'Stock-In' ? unitCost : undefined,
+          batchNumber: transactionType === 'Stock-In' ? generateBatchNumber(catalogItems.find(i => i.id === draft.selectedItemId)?.sku || '') : undefined,
+          expiryDate: transactionType === 'Stock-In' && draft.expiryDate ? draft.expiryDate : undefined,
+          reason: transactionType !== 'Stock-In' ? draft.reason : undefined,
+          isNewItem: false,
+          defaultThreshold: Number(draft.defaultThreshold) || 10,
+        }
+      : {
+          id: editingIndex !== null ? items[editingIndex].id : makeLineId(),
+          itemId: `new-${Date.now()}`,
+          itemName: draft.newItemName.trim(),
+          itemSku: draft.newSku.trim() || `NEW-${Date.now().toString().slice(-6)}`,
+          unit: draft.newUnit || 'pc',
+          categoryName: categories.find((entry) => entry.id === draft.newCategoryId)?.name,
+          currentStock: 0,
+          quantity,
+          unitCost,
+          batchNumber: generateBatchNumber(draft.newSku.trim() || ''),
+          expiryDate: draft.expiryDate || undefined,
+          reason: undefined,
+          isNewItem: true,
+          defaultThreshold: Number(draft.defaultThreshold) || 10,
+          newCategoryId: draft.newCategoryId,
+          newUnit: draft.newUnit,
+        };
+
+    if (editingIndex !== null) {
+      setItems((prev) => prev.map((line, index) => (index === editingIndex ? nextLine : line)));
+    } else {
+      setItems((prev) => [...prev, nextLine]);
+    }
+    
+    setIsModalOpen(false);
+    setEditingIndex(null);
+  };
+
+  const handleEditLine = (index: number) => {
     setEditingIndex(index);
-    setComposerError(null);
-    setDraft({
-      mode: line.isNewItem ? 'new' : 'existing',
-      searchQuery: line.itemName,
-      selectedItemId: line.isNewItem ? '' : line.itemId,
-      newItemName: line.isNewItem ? line.itemName : '',
-      newSku: line.isNewItem ? line.itemSku : '',
-      newCategoryId: line.newCategoryId || '',
-      newUnit: line.newUnit || '',
-      quantity: String(line.quantity),
-      unitCost: line.unitCost?.toString() || '',
-      expiryDate: line.expiryDate || '',
-      reason: line.reason || 'Wastage',
-    });
+    setIsModalOpen(true);
   };
 
   const handleCancelEdit = () => {
@@ -422,7 +466,7 @@ export default function InventoryTransactionPage() {
             name: line.itemName,
             unit: line.newUnit,
             inventoryCategoryId: line.newCategoryId || undefined,
-            defaultThreshold: 0,
+            defaultThreshold: line.defaultThreshold || 10,
             unitCost: line.unitCost ?? 0,
           });
 
@@ -435,6 +479,8 @@ export default function InventoryTransactionPage() {
             batchNumber: line.batchNumber || generateBatchNumber(line.itemSku),
             expiryDate: line.expiryDate,
             unitCost: line.unitCost,
+            supplierId: selectedSupplierId ? Number(selectedSupplierId) : undefined,
+            defaultThreshold: line.defaultThreshold,
             remarks: sharedRemarks,
           });
 
@@ -504,15 +550,29 @@ export default function InventoryTransactionPage() {
             </Box>
 
             {transactionType === 'Stock-In' && (
-              <Box>
-                <FormTextField
-                  label="Reference / Invoice Number"
-                  value={referenceNumber}
-                  placeholder="INV-2026-001"
-                  onChange={(event) => setReferenceNumber(event.target.value)}
-                  fullWidth
-                />
-              </Box>
+              <>
+                <Box>
+                  <FormDropdown
+                    label="Supplier (Optional)"
+                    value={selectedSupplierId}
+                    onChange={(event) => setSelectedSupplierId(String(event.target.value))}
+                    options={[
+                      { value: '', label: 'Select Supplier' },
+                      ...suppliers.map((s) => ({ value: String(s.supplierId), label: s.name })),
+                    ]}
+                    fullWidth
+                  />
+                </Box>
+                <Box>
+                  <FormTextField
+                    label="Reference / Invoice Number"
+                    value={referenceNumber}
+                    placeholder="INV-2026-001"
+                    onChange={(event) => setReferenceNumber(event.target.value)}
+                    fullWidth
+                  />
+                </Box>
+              </>
             )}
 
             <Box>
@@ -542,11 +602,6 @@ export default function InventoryTransactionPage() {
 
             <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Total Quantity</Typography>
             <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{totalQuantity}</Typography>
-
-            <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Estimated Value</Typography>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>
-              ₱{estimatedValue.toFixed(2)}
-            </Typography>
           </Box>
         </Paper>
 
@@ -564,18 +619,30 @@ export default function InventoryTransactionPage() {
             gap: 3,
           }}
         >
-          <TransactionItemComposer
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <AssessmentRoundedIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+              <Typography sx={{ fontSize: 16, fontWeight: 700 }}>Transaction Items</Typography>
+            </Box>
+            <Button
+              startIcon={<AddCircleRoundedIcon />}
+              onClick={() => setIsModalOpen(true)}
+              variant="outlined"
+              size="small"
+            >
+              Add Item Entry
+            </Button>
+          </Box>
+
+          <TransactionItemModal
+            open={isModalOpen}
+            onClose={() => { setIsModalOpen(false); setEditingIndex(null); }}
             transactionType={transactionType}
-            draft={draft}
-            availableItems={availableItems}
-            categoryOptions={categoryOptions}
+            catalogItems={availableItems}
+            categories={categories}
             unitOptions={unitOptions}
-            editingIndex={editingIndex}
-            errorMessage={composerError}
-            onModeChange={handleModeChange}
-            onDraftChange={patchDraft}
-            onSubmit={handleComposerSubmit}
-            onCancelEdit={handleCancelEdit}
+            onAdd={handleAddFromModal}
+            editingLine={editingIndex !== null ? items[editingIndex] : null}
           />
 
           <TransactionItemsReview

@@ -57,7 +57,7 @@ const REASON_OPTIONS = [
 
 const RESOLUTION_OPTIONS = [
   { value: 'Replaced', label: 'Replacement' },
-  { value: 'Credited', label: 'Stock Return' },
+  { value: 'Credited', label: 'Stock Return' }, // Labeled "Stock Return" instead of "Credited" for UI
 ];
 
 interface ItemLine {

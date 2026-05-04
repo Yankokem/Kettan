@@ -568,7 +568,7 @@ public class ReturnService : IReturnService
         var branchId = returnEntry.BranchId;
         foreach (var item in returnEntry.Items)
         {
-            await _inventoryService.DeductFifoAsync(
+            await _inventoryService.DeductStockAsync(
                 item.ItemId,
                 branchId,
                 item.QuantityReturned,

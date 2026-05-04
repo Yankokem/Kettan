@@ -16,6 +16,8 @@ interface ItemDto {
   inventoryCategoryName: string | null;
   itemCategoryId: number | null;
   itemCategoryName: string | null;
+  supplierId: number | null;
+  supplierName: string | null;
   defaultThreshold: number;
   unitCost: number;
   previousUnitCost: number | null;
@@ -69,6 +71,7 @@ interface CreateOrUpdateItemPayload {
   unit: string;
   inventoryCategoryId: number | null;
   itemCategoryId: number | null;
+  supplierId: number | null;
   defaultThreshold: number;
   unitCost: number;
   sellingPrice: number | null;
@@ -82,6 +85,7 @@ interface CreateItemInput {
   unit: string;
   inventoryCategoryId?: string;
   itemCategoryId?: string;
+  supplierId?: string;
   defaultThreshold: number;
   unitCost: number;
   sellingPrice?: number;
@@ -95,6 +99,8 @@ interface StockInInput {
   batchNumber: string;
   expiryDate?: string;
   unitCost?: number;
+  supplierId?: number;
+  defaultThreshold?: number;
   remarks?: string;
 }
 
@@ -171,6 +177,8 @@ function toItem(row: ItemDto): InventoryItem {
     name: row.name,
     unit: row.unit,
     categoryId: categoryId != null ? String(categoryId) : '',
+    supplierId: row.supplierId != null ? String(row.supplierId) : undefined,
+    supplierName: row.supplierName ?? undefined,
     category:
       categoryId != null
         ? {
@@ -269,6 +277,7 @@ function toDateOrFallback(expiryDate?: string): string {
 function toItemPayload(input: CreateItemInput | UpdateItemInput): CreateOrUpdateItemPayload {
   const rawItemCategoryId = input.itemCategoryId?.trim();
   const rawInventoryCategoryId = input.inventoryCategoryId?.trim();
+  const rawSupplierId = input.supplierId?.trim();
 
   return {
     sku: input.sku.trim(),
@@ -276,6 +285,7 @@ function toItemPayload(input: CreateItemInput | UpdateItemInput): CreateOrUpdate
     unit: input.unit,
     inventoryCategoryId: rawInventoryCategoryId ? Number(rawInventoryCategoryId) : null,
     itemCategoryId: rawItemCategoryId ? Number(rawItemCategoryId) : null,
+    supplierId: rawSupplierId ? Number(rawSupplierId) : null,
     defaultThreshold: Number(input.defaultThreshold || 0),
     unitCost: Number(input.unitCost || 0),
     sellingPrice:
@@ -348,6 +358,8 @@ export async function stockInInventoryItem(itemId: string, input: StockInInput):
     batchNumber: input.batchNumber,
     expiryDate: toDateOrFallback(input.expiryDate),
     unitCost: input.unitCost,
+    supplierId: input.supplierId,
+    defaultThreshold: input.defaultThreshold,
     remarks: input.remarks,
   });
 

@@ -14,7 +14,7 @@ public class StockInResult
     public DateTime CreatedAt { get; set; }
 }
 
-public class FifoDeductionResult
+public class StockDeductionResult
 {
     public int BatchId { get; set; }
     public string BatchNumber { get; set; } = string.Empty;
@@ -44,9 +44,9 @@ public class StockTransferResult
 
 public interface IInventoryService
 {
-    Task<StockInResult> StockInAsync(int itemId, decimal quantity, string batchNumber, DateTime expiryDate, string? remarks = null);
-    Task<List<FifoDeductionResult>> StockOutAsync(int itemId, decimal quantity, string reason, string? remarks = null);
-    Task<List<FifoDeductionResult>> DeductFifoAsync(
+    Task<StockInResult> StockInAsync(int itemId, decimal quantity, string batchNumber, DateTime expiryDate, decimal unitCost, int? supplierId = null, decimal? defaultThreshold = null, string? remarks = null);
+    Task<List<StockDeductionResult>> StockOutAsync(int itemId, decimal quantity, string reason, string? remarks = null);
+    Task<List<StockDeductionResult>> DeductStockAsync(
         int itemId,
         int? branchId,
         decimal quantity,

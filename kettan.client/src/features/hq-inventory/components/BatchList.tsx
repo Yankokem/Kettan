@@ -43,27 +43,9 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
       label: '#',
       gridWidth: compact ? '0.8fr' : '0.7fr',
       render: (row) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-            {row.index}
-          </Typography>
-          {row.index === 1 && (
-            <Chip
-              label="FIFO"
-              size="small"
-              sx={{
-                height: 20,
-                fontSize: 10,
-                fontWeight: 800,
-                bgcolor: 'primary.main',
-                color: 'white',
-                border: '1px solid',
-                borderColor: 'primary.dark',
-                letterSpacing: '0.05em',
-              }}
-            />
-          )}
-        </Box>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+          {row.index}
+        </Typography>
       ),
     },
     {
@@ -137,7 +119,7 @@ export function BatchList({ batches, unit, onAdjust, compact = false }: BatchLis
     });
   }
 
-  // Add index to batches for FIFO display
+  // Add index to batches for display
   const batchesWithIndex = batches.map((batch, i) => ({ ...batch, index: i + 1 }));
 
   return (

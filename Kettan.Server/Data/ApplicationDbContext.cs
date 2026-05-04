@@ -45,6 +45,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Employee> Employees { get; set; } = null!;
 
     public DbSet<Vehicle> Vehicles { get; set; } = null!;
+    public DbSet<Supplier> Suppliers { get; set; } = null!;
     public DbSet<MenuCategory> MenuCategories { get; set; } = null!;
     public DbSet<MenuTag> MenuTags { get; set; } = null!;
     public DbSet<MenuItemTag> MenuItemTags { get; set; } = null!;
@@ -135,6 +136,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Employee>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
 
         modelBuilder.Entity<Vehicle>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
+        modelBuilder.Entity<Supplier>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
         modelBuilder.Entity<MenuCategory>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
         modelBuilder.Entity<MenuTag>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
 
