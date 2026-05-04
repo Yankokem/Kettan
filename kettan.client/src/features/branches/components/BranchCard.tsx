@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Box, Card, Chip, IconButton, Divider, Typography, Menu, MenuItem, ListItemIcon } from '@mui/material';
+import { Box, Card, Chip, IconButton, Divider, Typography, Menu, MenuItem, ListItemIcon, useTheme } from '@mui/material';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
+import LocalPhoneRoundedIcon from '@mui/icons-material/LocalPhoneRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
@@ -15,14 +16,8 @@ interface BranchCardProps {
   alertCount?: number;
 }
 
-const getStatusChip = (status: string) => {
-  if (status === 'active') {
-    return <Chip label="Active" size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#FEF3C7', color: '#92400E', borderRadius: 1 }} />;
-  }
-  return <Chip label="Setup Pending" size="small" sx={{ height: 22, fontSize: 11, fontWeight: 600, bgcolor: '#F3F4F6', color: '#4B5563', borderRadius: 1 }} />;
-};
-
 export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -39,33 +34,41 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
   const handleInactive = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
     handleMenuClose();
-    // Placeholder for set inactive action
     console.log('Set inactive:', branch.id);
   };
 
   const handleArchive = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
     handleMenuClose();
-    // Placeholder for archive action
     console.log('Archive:', branch.id);
   };
+
+  const statusStyle = branch.status === 'active' 
+    ? theme.custom.status.active 
+    : theme.custom.status.inactive;
 
   return (
     <Card 
       onClick={() => onClick ? onClick(branch.id) : navigate({ to: '/branches/$branchId', params: { branchId: branch.id.toString() } })}
       elevation={0}
       sx={{
+        p: 0,
         border: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        borderRadius: '14px',
+        borderColor: theme.palette.mode === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
+        background: theme.custom.gradients.card,
+        borderRadius: '16px',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'all 0.2s ease-in-out',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         cursor: 'pointer',
+        boxShadow: theme.palette.mode === 'light' 
+          ? '0 2px 4px rgba(0,0,0,0.02), 0 1px 1px rgba(0,0,0,0.04)'
+          : '0 4px 20px rgba(0,0,0,0.2)',
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 12px 24px -10px rgba(107, 76, 42, 0.15)',
+          transform: 'translateY(-5px)',
+          boxShadow: theme.palette.mode === 'light'
+            ? '0 12px 20px -8px rgba(107, 76, 42, 0.12), 0 4px 6px -2px rgba(0,0,0,0.05)'
+            : '0 12px 30px rgba(0,0,0,0.4)',
           borderColor: '#C9A84C',
         }
       }}
@@ -78,11 +81,11 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
               sx={{
                 width: 72,
                 height: 72,
-                borderRadius: '14px',
+                borderRadius: '12px',
                 overflow: 'hidden',
                 border: '1px solid',
                 borderColor: 'divider',
-                bgcolor: '#F3F4F6',
+                bgcolor: theme.palette.mode === 'light' ? '#FAF5EF' : 'rgba(201,168,77,0.05)',
                 flexShrink: 0,
               }}
             >
@@ -123,9 +126,33 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {getStatusChip(branch.status)}
+            <Chip 
+              label={branch.status === 'active' ? 'Active' : 'Setup Pending'} 
+              size="small" 
+              sx={{ 
+                height: 24, 
+                px: 1.5,
+                fontSize: 11, 
+                fontWeight: 700, 
+                bgcolor: statusStyle.bg, 
+                color: statusStyle.text, 
+                borderRadius: '6px' 
+              }} 
+            />
+            
             {alertCount !== undefined && alertCount > 0 && (
-               <Chip label={`${alertCount} Alerts`} size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#FEF2F2', color: '#B91C1C', borderRadius: 1 }} />
+               <Chip 
+                 label={`${alertCount} Alerts`} 
+                 size="small" 
+                 sx={{ 
+                   height: 22, 
+                   fontSize: 10.5, 
+                   fontWeight: 700, 
+                   bgcolor: '#FEF2F2', 
+                   color: '#B91C1C', 
+                   borderRadius: '6px' 
+                 }} 
+               />
             )}
             <IconButton 
               size="small" 
@@ -148,6 +175,7 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
                   borderColor: 'divider',
                   minWidth: 160,
                   mt: 1,
+                  borderRadius: '12px',
                   '& .MuiMenuItem-root': {
                     px: 2,
                     py: 1,
@@ -174,20 +202,20 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
         </Box>
       </Box>
 
-      <Divider />
+      <Divider sx={{ opacity: 0.6 }} />
 
       {/* Card Details Section */}
       <Box sx={{ p: 2.5, pt: 2, display: 'flex', flexDirection: 'column', gap: 2, flexGrow: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-          <LocationOnRoundedIcon sx={{ fontSize: 18, color: '#546B3F', mt: 0.1 }} />
+          <LocationOnRoundedIcon sx={{ fontSize: 18, color: '#8C6B43', mt: 0.1 }} />
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary', lineHeight: 1.4, fontWeight: 500 }}>
             {branch.address}, {branch.city}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <PeopleRoundedIcon sx={{ fontSize: 18, color: '#546B3F' }} />
+          <LocalPhoneRoundedIcon sx={{ fontSize: 18, color: '#8C6B43' }} />
           <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>
-            Operations team: {branch.staff} active members
+            Contact: {branch.contactNumber || 'N/A'}
           </Typography>
         </Box>
       </Box>

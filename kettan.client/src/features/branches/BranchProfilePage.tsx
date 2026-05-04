@@ -176,13 +176,13 @@ export function BranchProfilePage() {
 
   const tabBadges = useMemo(
     () => ({
-      staff: staffMembers.length,
+      staff: staffMembers.filter((e) => e.position !== 'BranchOwner').length,
       activity: activityLogs.length,
       transactions: transactions.length,
       inventory: inventoryItems.length,
       menu: menuItems.length,
     }),
-    [activityLogs.length, inventoryItems.length, menuItems.length, staffMembers.length, transactions.length]
+    [activityLogs.length, inventoryItems.length, menuItems.length, staffMembers, transactions.length]
   );
 
   const kpis = useMemo(

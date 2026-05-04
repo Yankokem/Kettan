@@ -13,6 +13,16 @@ export interface BranchDto {
   isActive: boolean;
   imageUrl?: string | null;
   createdAt: string;
+  address?: string;
+  city?: string;
+  contactNumber?: string;
+  openTime?: string;
+  closeTime?: string;
+  ownerUserId?: number | string;
+  managerName?: string;
+  staffCount?: number;
+  totalItems?: number;
+  lowStockItems?: number;
 }
 
 export interface CreateBranchDto {

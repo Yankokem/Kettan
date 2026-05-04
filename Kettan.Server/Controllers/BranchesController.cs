@@ -4,6 +4,7 @@ using Kettan.Server.Data;
 using Kettan.Server.Entities;
 using Kettan.Server.DTOs.Branches;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Controllers;
 
@@ -35,7 +36,28 @@ public class BranchesController : ControllerBase
                 CustomThresholds = b.CustomThresholds,
                 IsActive = b.IsActive,
                 ImageUrl = b.ImageUrl,
-                CreatedAt = b.CreatedAt
+                CreatedAt = b.CreatedAt,
+                Address = b.Address,
+                City = b.City,
+                ContactNumber = b.ContactNumber,
+                OpenTime = b.OpenTime.HasValue ? b.OpenTime.Value.ToString("HH:mm") : null,
+                CloseTime = b.CloseTime.HasValue ? b.CloseTime.Value.ToString("HH:mm") : null,
+                OwnerUserId = b.OwnerUserId,
+                ManagerName = b.ManagerUser != null 
+                    ? b.ManagerUser.FirstName + " " + b.ManagerUser.LastName 
+                    : (b.OwnerUser != null 
+                        ? b.OwnerUser.FirstName + " " + b.OwnerUser.LastName + " (Owner)" 
+                        : (_context.Users
+                            .Where(u => u.BranchId == b.BranchId && u.Role == UserRole.BranchOwner)
+                            .Select(u => u.FirstName + " " + u.LastName + " (Owner)")
+                            .FirstOrDefault() ?? "Unassigned")),
+                StaffCount = _context.Users.Count(u => u.BranchId == b.BranchId && !u.IsDeleted && u.Role != UserRole.BranchOwner),
+                TotalItems = _context.Batches.Where(batch => batch.BranchId == b.BranchId).Select(batch => batch.ItemId).Distinct().Count(),
+                LowStockItems = _context.Batches
+                    .Where(batch => batch.BranchId == b.BranchId)
+                    .GroupBy(batch => batch.ItemId)
+                    .Select(g => new { ItemId = g.Key, TotalQty = g.Sum(x => x.CurrentQuantity) })
+                    .Count(x => x.TotalQty < _context.Items.Where(i => i.ItemId == x.ItemId).Select(i => i.DefaultThreshold).FirstOrDefault())
             })
             .ToListAsync();
 

@@ -37,6 +37,7 @@ export function BranchesPage() {
 
   const activeBranches = branches.filter((b) => b.isActive).length;
   const inactiveBranches = branches.filter((b) => !b.isActive).length;
+  const lowStockBranches = branches.filter((b) => (b as any).lowStockItems > 0).length;
 
   const filteredBranches = branches.filter((b) => {
     const matchSearch = !searchTerm || b.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -65,7 +66,7 @@ export function BranchesPage() {
               label="Monitored Branches"
               value={activeBranches.toString()}
               trend="up"
-              trendValue="1.5%"
+              trendValue="Active"
               icon={<ViewModuleRoundedIcon />}
               accentClass="stat-accent-gold"
               iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
@@ -74,9 +75,9 @@ export function BranchesPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Branches Low on Stock"
-              value="—"
-              trend="down"
-              trendValue="2.4%"
+              value={lowStockBranches.toString()}
+              trend={lowStockBranches > 0 ? "up" : "neutral"}
+              trendValue="Needs attention"
               icon={<TuneRoundedIcon />}
               accentClass="stat-accent-error"
               iconBg="linear-gradient(135deg, #E65C5C 0%, #F89696 100%)"
@@ -86,8 +87,8 @@ export function BranchesPage() {
             <StatCard
               label="Total Branches"
               value={branches.length.toString()}
-              trend="up"
-              trendValue="3.1%"
+              trend="neutral"
+              trendValue="Network size"
               icon={<Inventory2RoundedIcon />}
               accentClass="stat-accent-brown"
               iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
@@ -97,11 +98,11 @@ export function BranchesPage() {
             <StatCard
               label="Inactive Branches"
               value={inactiveBranches.toString()}
-              trend="down"
-              trendValue="1.0%"
+              trend="neutral"
+              trendValue="In setup"
               icon={<HourglassEmptyRoundedIcon />}
-              accentClass="stat-accent-sage"
-              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+              accentClass="stat-accent-tan"
+              iconBg="linear-gradient(135deg, #A89078 0%, #D2B496 100%)"
             />
           </Grid>
         </Grid>

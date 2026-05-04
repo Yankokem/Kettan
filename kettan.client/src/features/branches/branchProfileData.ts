@@ -186,13 +186,14 @@ export const getInitials = (label: string) =>
     .join('');
 
 const buildDetailsKpis = ({ branch, employees }: BranchKpiContext): BranchProfileKpi[] => {
-  const activeEmployees = employees.filter((employee) => employee.isActive).length;
+  const staffExcludingOwner = employees.filter((employee) => employee.position !== 'BranchOwner');
+  const activeStaff = staffExcludingOwner.filter((employee) => employee.isActive).length;
 
   return [
     {
       id: 'details-total-staff',
       label: 'Total Staff',
-      value: employees.length.toString(),
+      value: staffExcludingOwner.length.toString(),
       icon: PeopleRoundedIcon,
       iconColor: '#6B4C2A',
       iconBg: 'rgba(107,76,42,0.16)',
@@ -200,7 +201,7 @@ const buildDetailsKpis = ({ branch, employees }: BranchKpiContext): BranchProfil
     {
       id: 'details-active-staff',
       label: 'Active Staff',
-      value: activeEmployees.toString(),
+      value: activeStaff.toString(),
       icon: PersonAddAlt1RoundedIcon,
       iconColor: '#166534',
       iconBg: '#DCFCE7',
@@ -225,15 +226,16 @@ const buildDetailsKpis = ({ branch, employees }: BranchKpiContext): BranchProfil
 };
 
 const buildStaffKpis = ({ employees }: BranchKpiContext): BranchProfileKpi[] => {
-  const activeEmployees = employees.filter((employee) => employee.isActive).length;
-  const inactiveEmployees = employees.length - activeEmployees;
-  const leadEmployees = employees.filter((employee) => /(lead|supervisor|manager)/i.test(employee.position)).length;
+  const staffExcludingOwner = employees.filter((employee) => employee.position !== 'BranchOwner');
+  const activeStaff = staffExcludingOwner.filter((employee) => employee.isActive).length;
+  const inactiveStaff = staffExcludingOwner.length - activeStaff;
+  const leadEmployees = staffExcludingOwner.filter((employee) => /(lead|supervisor|manager)/i.test(employee.position)).length;
 
   return [
     {
       id: 'staff-total',
       label: 'Total Staff',
-      value: employees.length.toString(),
+      value: staffExcludingOwner.length.toString(),
       icon: PeopleRoundedIcon,
       iconColor: '#6B4C2A',
       iconBg: 'rgba(107,76,42,0.16)',
@@ -241,7 +243,7 @@ const buildStaffKpis = ({ employees }: BranchKpiContext): BranchProfileKpi[] => 
     {
       id: 'staff-active',
       label: 'Active Staff',
-      value: activeEmployees.toString(),
+      value: activeStaff.toString(),
       icon: PersonAddAlt1RoundedIcon,
       iconColor: '#166534',
       iconBg: '#DCFCE7',
@@ -249,7 +251,7 @@ const buildStaffKpis = ({ employees }: BranchKpiContext): BranchProfileKpi[] => 
     {
       id: 'staff-inactive',
       label: 'Inactive Staff',
-      value: inactiveEmployees.toString(),
+      value: inactiveStaff.toString(),
       icon: BlockRoundedIcon,
       iconColor: '#991B1B',
       iconBg: '#FEE2E2',
