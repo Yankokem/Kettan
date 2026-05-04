@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { api } from '../../utils/api';
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Chip, Typography, useTheme } from '@mui/material';
 import FeedRoundedIcon from '@mui/icons-material/FeedRounded';
 import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
@@ -159,22 +159,19 @@ export function AuditLogsPage() {
       width: '1fr',
       sortable: true,
       render: (row) => {
+        const theme = useTheme();
         const style = actionStyle(row.action);
         return (
-          <Chip
-            label={row.action}
-            size="small"
-            sx={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              bgcolor: style.bg,
+          <Typography 
+            sx={{ 
+              fontSize: 13, 
+              fontWeight: 800, 
               color: style.color,
-              border: `1px solid ${style.color}2b`,
-              borderRadius: 1,
-              height: 24,
-              px: 0.5
+              letterSpacing: '0.01em'
             }}
-          />
+          >
+            {row.action}
+          </Typography>
         );
       },
     },
@@ -185,14 +182,15 @@ export function AuditLogsPage() {
       sortable: true,
       render: (row) => (
         <Box>
-          <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.primary', letterSpacing: '0.01em' }}>
-            {row.entityName}
+          <Typography sx={{ fontSize: 13.5, fontWeight: 500, color: 'text.primary', letterSpacing: '0.01em' }}>
+            <Box component="span" sx={{ fontWeight: 800, color: '#6B4C2A' }}>{row.action}</Box>
+            {` the `}
+            <Box component="span" sx={{ fontWeight: 700 }}>{row.entityName}</Box>
+            {row.entityId ? ` (ID: #${row.entityId})` : ''}
           </Typography>
-          {row.entityId && (
-            <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.2 }}>
-              ID: #{row.entityId}
-            </Typography>
-          )}
+          <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.3, fontWeight: 500, opacity: 0.8 }}>
+            Category: {row.eventCategory}
+          </Typography>
         </Box>
       ),
     },
@@ -202,7 +200,7 @@ export function AuditLogsPage() {
       width: '2fr',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#6B4C2A' }}>
+        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: 'text.primary' }}>
           {row.actorName}
         </Typography>
       ),
@@ -212,41 +210,47 @@ export function AuditLogsPage() {
       label: 'Role',
       width: '1.2fr',
       sortable: true,
-      render: (row) => (
-        <Chip 
-          label={row.actorRole} 
-          size="small" 
-          variant="outlined"
-          sx={{ fontSize: 10.5, fontWeight: 600, color: 'text.secondary', height: 22, borderStyle: 'dashed' }}
-        />
-      ),
+      render: (row) => {
+        const theme = useTheme();
+        const roleStyle = theme.custom.roles[row.actorRole] || { text: theme.palette.text.secondary };
+        return (
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: roleStyle.text }}>
+            {row.actorRole}
+          </Typography>
+        );
+      },
     },
     {
       key: 'id',
       label: 'Outcome',
       width: '1fr',
       align: 'center',
-      render: (row) => (
-        <Chip
-          label={row.action === 'Deleted' ? 'Flagged' : 'Successful'}
-          size="small"
-          sx={{
-            height: 24,
-            fontSize: 10.5,
-            fontWeight: 700,
-            borderRadius: 1.5,
-            bgcolor: row.action === 'Deleted' ? 'rgba(220, 38, 38, 0.08)' : 'rgba(16, 185, 129, 0.08)',
-            color: row.action === 'Deleted' ? '#DC2626' : '#10B981',
-            minWidth: 90
-          }}
-        />
-      ),
+      render: (row) => {
+        const theme = useTheme();
+        const isNegative = row.action.toLowerCase().includes('delete') || row.action.toLowerCase().includes('archive');
+        return (
+          <Typography 
+            sx={{ 
+              fontSize: 13, 
+              fontWeight: 700, 
+              color: isNegative ? theme.custom.status.danger : theme.custom.status.success,
+            }}
+          >
+            {isNegative ? 'Flagged' : 'Successful'}
+          </Typography>
+        );
+      },
     },
   ];
 
   const uniqueActors = new Set(rows.map((row) => row.actorName)).size;
   const createdEvents = rows.filter((row) => row.action === 'Created').length;
-  const deletedEvents = rows.filter((row) => row.action === 'Deleted').length;
+  const archiveInactiveEvents = rows.filter((row) => 
+    row.action.toLowerCase().includes('delete') || 
+    row.action.toLowerCase().includes('archive') || 
+    row.action.toLowerCase().includes('inactivate') ||
+    row.action.toLowerCase().includes('deactivate')
+  ).length;
 
   return (
     <Box sx={{ px: { xs: 2, md: 3 }, pb: 5 }}>
@@ -270,7 +274,7 @@ export function AuditLogsPage() {
           iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
         />
         <StatCard
-          label="Active Actors"
+          label="Active Users"
           value={uniqueActors}
           icon={<ManageAccountsRoundedIcon />}
           trend="up"
@@ -279,8 +283,8 @@ export function AuditLogsPage() {
           iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
         />
         <StatCard
-          label="Deleted Events"
-          value={deletedEvents}
+          label="Archive/Inactive Events"
+          value={archiveInactiveEvents}
           icon={<HighlightOffRoundedIcon />}
           trend="up"
           trendValue="Needs review"

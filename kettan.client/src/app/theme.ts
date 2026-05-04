@@ -11,6 +11,9 @@ declare module '@mui/material/styles' {
         active: { bg: string; text: string };
         inactive: { bg: string; text: string };
         archived: { bg: string; text: string };
+        success: string;
+        danger: string;
+        pending: string;
       };
       roles: Record<string, { bg: string; text: string }>;
       text: {
@@ -27,6 +30,9 @@ declare module '@mui/material/styles' {
         active?: { bg: string; text: string };
         inactive?: { bg: string; text: string };
         archived?: { bg: string; text: string };
+        success?: string;
+        danger?: string;
+        pending?: string;
       };
       roles?: Record<string, { bg: string; text: string }>;
       text?: {
@@ -135,6 +141,9 @@ export const lightTheme = createTheme({
       active: { bg: '#E8F5E9', text: '#2E7D32' },
       inactive: { bg: '#F5F5F5', text: '#616161' },
       archived: { bg: '#FFEBEE', text: '#D32F2F' },
+      success: '#2E7D32',
+      danger: '#D32F2F',
+      pending: '#ED6C02',
     },
     roles: {
       'TenantAdmin': { bg: '#FEF9C3', text: '#854D0E' },
@@ -192,6 +201,9 @@ export const darkTheme = createTheme({
       active: { bg: 'rgba(74, 222, 128, 0.1)', text: '#4ADE80' },
       inactive: { bg: 'rgba(163, 156, 147, 0.1)', text: '#A39C93' },
       archived: { bg: 'rgba(239, 68, 68, 0.1)', text: '#EF4444' },
+      success: '#4ADE80',
+      danger: '#EF4444',
+      pending: '#F59E0B',
     },
     roles: {
       'TenantAdmin': { bg: 'rgba(234, 179, 8, 0.1)', text: '#FACC15' },
