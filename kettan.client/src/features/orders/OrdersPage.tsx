@@ -187,7 +187,6 @@ function getColumns(
           status={row.status}
           onViewDetails={onViewDetails}
           onApprove={onApprove}
-          onProceed={() => {}} // Dummy as it's being removed from menu
           onReject={onReject}
         />
       ),
