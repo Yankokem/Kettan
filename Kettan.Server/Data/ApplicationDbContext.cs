@@ -167,6 +167,14 @@ public class ApplicationDbContext : DbContext
             .Property(e => e.Role)
             .HasConversion<byte>();
 
+        modelBuilder.Entity<User>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
+        modelBuilder.Entity<Employee>()
+            .Property(e => e.Status)
+            .HasConversion<byte>();
+
         modelBuilder.Entity<MenuItem>()
             .Property(e => e.Status)
             .HasConversion<byte>();

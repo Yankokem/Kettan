@@ -1,3 +1,5 @@
+using Kettan.Server.Enums;
+
 namespace Kettan.Server.DTOs.Employees;
 
 public class EmployeeDto
@@ -12,6 +14,7 @@ public class EmployeeDto
     public string? ContactNumber { get; set; }
     public DateTime? DateHired { get; set; }
     public bool IsActive { get; set; }
+    public EmployeeStatus Status { get; set; }
     public string? Email { get; set; }
     public string? ImageUrl { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -26,6 +29,7 @@ public class CreateEmployeeDto
     public string? ContactNumber { get; set; }
     public DateTime? DateHired { get; set; }
     public bool IsActive { get; set; } = true;
+    public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
     public string? Email { get; set; }
     public string? ImageUrl { get; set; }
 }
@@ -39,6 +43,7 @@ public class UpdateEmployeeDto
     public string? ContactNumber { get; set; }
     public DateTime? DateHired { get; set; }
     public bool IsActive { get; set; }
+    public EmployeeStatus Status { get; set; }
     public string? Email { get; set; }
     public string? ImageUrl { get; set; }
 }

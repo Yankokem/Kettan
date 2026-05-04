@@ -5,6 +5,7 @@ using Kettan.Server.Data;
 using Kettan.Server.DTOs.Employees;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Controllers;
 
@@ -100,6 +101,7 @@ public class EmployeesController : ControllerBase
                 ContactNumber = dto.ContactNumber,
                 DateHired = dto.DateHired,
                 IsActive = dto.IsActive,
+                Status = dto.Status,
                 Email = dto.Email?.Trim(),
                 ImageUrl = dto.ImageUrl,
                 CreatedAt = DateTime.UtcNow
@@ -157,6 +159,7 @@ public class EmployeesController : ControllerBase
             employee.ContactNumber = dto.ContactNumber;
             employee.DateHired = dto.DateHired;
             employee.IsActive = dto.IsActive;
+            employee.Status = dto.Status;
             employee.Email = dto.Email?.Trim();
             employee.ImageUrl = dto.ImageUrl;
 
@@ -190,9 +193,39 @@ public class EmployeesController : ControllerBase
             return Forbid();
         }
 
+        employee.Status = EmployeeStatus.Archived;
         employee.IsActive = false;
         employee.IsDeleted = true;
         employee.DeletedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPatch("{id:int}/status")]
+    [Authorize(Roles = "TenantAdmin,HqManager,BranchOwner,BranchManager")]
+    public async Task<IActionResult> UpdateEmployeeStatus(int id, [FromBody] EmployeeStatus status)
+    {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var employee = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeId == id);
+        if (employee == null)
+        {
+            return NotFound();
+        }
+
+        if (_currentUser.BranchId.HasValue && employee.BranchId != _currentUser.BranchId.Value)
+        {
+            return Forbid();
+        }
+
+        employee.Status = status;
+        
+        // Keep IsActive in sync for now
+        employee.IsActive = status == EmployeeStatus.Active;
 
         await _context.SaveChangesAsync();
         return NoContent();
@@ -253,6 +286,7 @@ public class EmployeesController : ControllerBase
             ContactNumber = employee.ContactNumber,
             DateHired = employee.DateHired,
             IsActive = employee.IsActive,
+            Status = employee.Status,
             Email = employee.Email,
             ImageUrl = employee.ImageUrl,
             CreatedAt = employee.CreatedAt

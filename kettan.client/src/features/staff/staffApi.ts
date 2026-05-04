@@ -15,6 +15,7 @@ export interface EmployeeDto {
   contactNo?: string | null;
   birthday?: string | null;
   isActive: boolean;
+  status: number;
   email: string;
   imageUrl?: string | null;
   createdAt: string;
@@ -29,6 +30,7 @@ export interface CreateEmployeeDto {
   email: string;
   birthday?: string | null;
   isActive: boolean;
+  status: number;
   imageUrl?: string | null;
 }
 
@@ -81,4 +83,12 @@ export async function updateEmployee(employeeId: number, dto: CreateEmployeeDto)
 
 export async function deleteEmployee(employeeId: number): Promise<void> {
   return request<void>(`/api/users/${employeeId}`, { method: 'DELETE' });
+}
+
+export async function updateEmployeeStatus(employeeId: number, status: number): Promise<void> {
+  return request<void>(`/api/users/${employeeId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(status),
+  });
 }

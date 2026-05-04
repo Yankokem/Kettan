@@ -1,37 +1,74 @@
 import { useState } from 'react';
-import { Card, Box, Avatar, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon } from '@mui/material';
+import { Card, Box, Avatar, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, useTheme } from '@mui/material';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import { useNavigate } from '@tanstack/react-router';
+import { useAuthStore } from '../../../store/useAuthStore';
 import type { StaffMember } from '../types';
 
 interface StaffCardProps {
   staff: StaffMember;
   onEdit: (staffId: number) => void;
+  onActivate: (staffId: number) => void;
   onInactivate: (staffId: number) => void;
   onArchive: (staffId: number) => void;
 }
 
-const getRoleChip = (role: string) => {
-  if (role === 'HQ Executive') return <Chip label={role} size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#E8D3A9', color: '#6B4C2A', borderRadius: 1 }} />;
-  if (role === 'Branch Manager') return <Chip label={role} size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#F0F4E8', color: '#546B3F', borderRadius: 1 }} />;
-  return <Chip label={role} size="small" sx={{ height: 22, fontSize: 11, fontWeight: 600, bgcolor: '#F3F4F6', color: '#4B5563', borderRadius: 1 }} />;
+const getRoleChip = (role: string, theme: any) => {
+  const style = theme.custom.roles[role] || { bg: theme.palette.action.hover, text: theme.palette.text.secondary };
+
+  return (
+    <Chip
+      label={role}
+      size="small"
+      sx={{
+        height: 22,
+        fontSize: 11,
+        fontWeight: 700,
+        bgcolor: style.bg,
+        color: style.text,
+        borderRadius: '6px',
+        border: '1px solid',
+        borderColor: 'rgba(0,0,0,0.03)',
+      }}
+    />
+  );
 };
 
-const getStatusChip = (status: StaffMember['status']) => {
-  if (status === 'active') return <Chip label="Active" size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#FEF3C7', color: '#92400E', borderRadius: 1 }} />;
-  if (status === 'inactive') return <Chip label="Inactive" size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#F3F4F6', color: '#4B5563', borderRadius: 1 }} />;
-  return <Chip label="Archived" size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#FEE2E2', color: '#B91C1C', borderRadius: 1 }} />;
+const getStatusChip = (status: StaffMember['status'], theme: any) => {
+  const style = theme.custom.status[status];
+
+  return (
+    <Chip
+      label={status.charAt(0).toUpperCase() + status.slice(1)}
+      size="small"
+      sx={{
+        height: 22,
+        fontSize: 11,
+        fontWeight: 700,
+        bgcolor: style.bg,
+        color: style.text,
+        borderRadius: '6px',
+        border: '1px solid',
+        borderColor: 'rgba(0,0,0,0.03)',
+      }}
+    />
+  );
 };
 
-export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardProps) {
+export function StaffCard({ staff, onEdit, onActivate, onInactivate, onArchive }: StaffCardProps) {
+  const theme = useTheme();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
+
+  const isSelf = String(staff.id) === currentUser?.id;
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -46,6 +83,12 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
     event.stopPropagation();
     handleMenuClose();
     onEdit(staff.id);
+  };
+
+  const handleActivate = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    handleMenuClose();
+    onActivate(staff.id);
   };
 
   const handleInactivate = (event: React.MouseEvent<HTMLElement>) => {
@@ -69,17 +112,22 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
       sx={{
         p: 2,
         border: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        borderRadius: '14px',
+        borderColor: theme.palette.mode === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
+        background: theme.custom.gradients.card,
+        borderRadius: '16px',
         display: 'flex',
         gap: 1.75,
-        transition: 'all 0.2s ease-in-out',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         cursor: 'pointer',
-        opacity: staff.status === 'archived' ? 0.55 : staff.status === 'inactive' ? 0.75 : 1,
+        boxShadow: theme.palette.mode === 'light' 
+          ? '0 2px 4px rgba(0,0,0,0.02), 0 1px 1px rgba(0,0,0,0.04)'
+          : '0 4px 20px rgba(0,0,0,0.2)',
+        opacity: staff.status === 'archived' ? 0.65 : staff.status === 'inactive' ? 0.85 : 1,
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 12px 24px -10px rgba(107, 76, 42, 0.15)',
+          transform: 'translateY(-5px)',
+          boxShadow: theme.palette.mode === 'light'
+            ? '0 12px 20px -8px rgba(107, 76, 42, 0.12), 0 4px 6px -2px rgba(0,0,0,0.05)'
+            : '0 12px 30px rgba(0,0,0,0.4)',
           borderColor: '#C9A84C',
           opacity: 1,
         },
@@ -93,7 +141,7 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
           borderRadius: '11px',
           border: '1px solid',
           borderColor: 'divider',
-          bgcolor: '#FAF5EF',
+          bgcolor: theme.palette.mode === 'light' ? '#FAF5EF' : 'rgba(201,168,77,0.05)',
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
@@ -109,7 +157,7 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
             width: '100%',
             height: '100%',
             borderRadius: '11px',
-            bgcolor: '#FAF5EF',
+            bgcolor: theme.palette.mode === 'light' ? '#FAF5EF' : 'rgba(201,168,77,0.1)',
             color: '#6B4C2A',
             fontWeight: 700,
             fontSize: 30,
@@ -124,12 +172,12 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
       <Box sx={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 800, color: 'text.primary', lineHeight: 1.2, mb: 0.6 }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 800, color: theme.palette.text.primary, lineHeight: 1.2, mb: 0.8 }}>
               {staff.name}
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, alignItems: 'center' }}>
-              {getRoleChip(staff.role)}
-              {getStatusChip(staff.status)}
+              {getRoleChip(staff.role, theme)}
+              {getStatusChip(staff.status, theme)}
             </Box>
           </Box>
 
@@ -173,31 +221,45 @@ export function StaffCard({ staff, onEdit, onInactivate, onArchive }: StaffCardP
               </ListItemIcon>
               Edit
             </MenuItem>
-            <MenuItem onClick={handleInactivate}>
-              <ListItemIcon>
-                <BlockRoundedIcon fontSize="small" sx={{ color: 'inherit' }} />
-              </ListItemIcon>
-              Inactivate
-            </MenuItem>
-            <MenuItem onClick={handleArchive}>
-              <ListItemIcon>
-                <ArchiveRoundedIcon fontSize="small" sx={{ color: '#B91C1C' }} />
-              </ListItemIcon>
-              <Typography sx={{ color: '#B91C1C', fontSize: 14, fontWeight: 500 }}>Archive</Typography>
-            </MenuItem>
+            {staff.status !== 'active' ? (
+              <MenuItem onClick={handleActivate}>
+                <ListItemIcon>
+                  <CheckCircleRoundedIcon fontSize="small" sx={{ color: '#2E7D32' }} />
+                </ListItemIcon>
+                <Typography sx={{ color: '#2E7D32', fontSize: 14, fontWeight: 500 }}>
+                  {staff.status === 'archived' ? 'Restore' : 'Activate'}
+                </Typography>
+              </MenuItem>
+            ) : (
+              <MenuItem onClick={handleInactivate} disabled={isSelf}>
+                <ListItemIcon>
+                  <BlockRoundedIcon fontSize="small" sx={{ color: 'inherit' }} />
+                </ListItemIcon>
+                Inactivate
+              </MenuItem>
+            )}
+
+            {staff.status !== 'archived' && (
+              <MenuItem onClick={handleArchive} disabled={isSelf}>
+                <ListItemIcon>
+                  <ArchiveRoundedIcon fontSize="small" sx={{ color: isSelf ? 'inherit' : '#B91C1C' }} />
+                </ListItemIcon>
+                <Typography sx={{ color: isSelf ? 'inherit' : '#B91C1C', fontSize: 14, fontWeight: 500 }}>Archive</Typography>
+              </MenuItem>
+            )}
           </Menu>
         </Box>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1.6, pt: 1.4, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, mt: 2, pt: 1.6, borderTop: '1px solid', borderColor: 'rgba(0,0,0,0.05)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, minWidth: 0 }}>
-            <EmailRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <EmailRoundedIcon sx={{ fontSize: 16, color: '#4B5563' }} />
+            <Typography sx={{ fontSize: 13, color: theme.custom.text.charcoal, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {staff.email}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, minWidth: 0 }}>
-            <StorefrontRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <StorefrontRoundedIcon sx={{ fontSize: 16, color: '#4B5563' }} />
+            <Typography sx={{ fontSize: 13, color: theme.custom.text.charcoal, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {staff.location}
             </Typography>
           </Box>

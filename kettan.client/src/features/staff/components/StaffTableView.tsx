@@ -1,45 +1,61 @@
-import { Avatar, Box, Chip, IconButton, Menu, MenuItem, ListItemIcon, Typography } from '@mui/material';
+import { Avatar, Box, Chip, IconButton, Menu, MenuItem, ListItemIcon, Typography, useTheme } from '@mui/material';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import type { StaffMember } from '../types';
 import { KettanTable, type KettanColumnDef } from '../../../components/UI/KettanTable';
 import { useState } from 'react';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 interface StaffTableViewProps {
   data: StaffMember[];
   onOpenProfile: (staffId: number) => void;
   onEdit: (staffId: number) => void;
+  onActivate: (staffId: number) => void;
   onInactivate: (staffId: number) => void;
   onArchive: (staffId: number) => void;
 }
 
-const getStatusChip = (status: StaffMember['status']) => {
-  if (status === 'active') {
-    return <Chip label="Active" size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#FEF3C7', color: '#92400E', borderRadius: 1 }} />;
-  }
+const getStatusChip = (status: StaffMember['status'], theme: any) => {
+  const style = theme.custom.status[status];
 
-  if (status === 'inactive') {
-    return <Chip label="Inactive" size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#F3F4F6', color: '#4B5563', borderRadius: 1 }} />;
-  }
-
-  return <Chip label="Archived" size="small" sx={{ height: 22, fontSize: 11, fontWeight: 700, bgcolor: '#FEE2E2', color: '#B91C1C', borderRadius: 1 }} />;
+  return (
+    <Chip
+      label={status.charAt(0).toUpperCase() + status.slice(1)}
+      size="small"
+      sx={{
+        height: 22,
+        fontSize: 11,
+        fontWeight: 700,
+        bgcolor: style.bg,
+        color: style.text,
+        borderRadius: '6px',
+        border: '1px solid',
+        borderColor: 'rgba(0,0,0,0.03)',
+      }}
+    />
+  );
 };
 
 function StaffActionsMenu({
   staff,
   onEdit,
+  onActivate,
   onInactivate,
   onArchive,
 }: {
   staff: StaffMember;
   onEdit: (staffId: number) => void;
+  onActivate: (staffId: number) => void;
   onInactivate: (staffId: number) => void;
   onArchive: (staffId: number) => void;
 }) {
+  const { user: currentUser } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const isSelf = String(staff.id) === currentUser?.id;
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -54,6 +70,12 @@ function StaffActionsMenu({
     event.stopPropagation();
     handleMenuClose();
     onEdit(staff.id);
+  };
+
+  const handleActivate = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    handleMenuClose();
+    onActivate(staff.id);
   };
 
   const handleInactivate = (event: React.MouseEvent<HTMLElement>) => {
@@ -110,24 +132,39 @@ function StaffActionsMenu({
           </ListItemIcon>
           Edit
         </MenuItem>
-        <MenuItem onClick={handleInactivate}>
-          <ListItemIcon>
-            <BlockRoundedIcon fontSize="small" sx={{ color: 'inherit' }} />
-          </ListItemIcon>
-          Inactivate
-        </MenuItem>
-        <MenuItem onClick={handleArchive}>
-          <ListItemIcon>
-            <ArchiveRoundedIcon fontSize="small" sx={{ color: '#B91C1C' }} />
-          </ListItemIcon>
-          <Typography sx={{ color: '#B91C1C', fontSize: 14, fontWeight: 500 }}>Archive</Typography>
-        </MenuItem>
+        {staff.status !== 'active' ? (
+          <MenuItem onClick={handleActivate}>
+            <ListItemIcon>
+              <CheckCircleRoundedIcon fontSize="small" sx={{ color: '#2E7D32' }} />
+            </ListItemIcon>
+            <Typography sx={{ color: '#2E7D32', fontSize: 14, fontWeight: 500 }}>
+              {staff.status === 'archived' ? 'Restore' : 'Activate'}
+            </Typography>
+          </MenuItem>
+        ) : (
+          <MenuItem onClick={handleInactivate} disabled={isSelf}>
+            <ListItemIcon>
+              <BlockRoundedIcon fontSize="small" sx={{ color: 'inherit' }} />
+            </ListItemIcon>
+            Inactivate
+          </MenuItem>
+        )}
+
+        {staff.status !== 'archived' && (
+          <MenuItem onClick={handleArchive} disabled={isSelf}>
+            <ListItemIcon>
+              <ArchiveRoundedIcon fontSize="small" sx={{ color: isSelf ? 'inherit' : '#B91C1C' }} />
+            </ListItemIcon>
+            <Typography sx={{ color: isSelf ? 'inherit' : '#B91C1C', fontSize: 14, fontWeight: 500 }}>Archive</Typography>
+          </MenuItem>
+        )}
       </Menu>
     </>
   );
 }
 
-export function StaffTableView({ data, onOpenProfile, onEdit, onInactivate, onArchive }: StaffTableViewProps) {
+export function StaffTableView({ data, onOpenProfile, onEdit, onActivate, onInactivate, onArchive }: StaffTableViewProps) {
+  const theme = useTheme();
   const columns: KettanColumnDef<StaffMember>[] = [
     {
       key: 'name',
@@ -142,20 +179,21 @@ export function StaffTableView({ data, onOpenProfile, onEdit, onInactivate, onAr
             sx={{
               width: 36,
               height: 36,
-              bgcolor: '#FAF5EF',
+              bgcolor: theme.palette.mode === 'light' ? '#FAF5EF' : 'rgba(201,168,77,0.05)',
               color: '#6B4C2A',
               fontWeight: 700,
-              border: '1px solid #EADDCD',
+              border: '1px solid',
+              borderColor: 'divider',
               borderRadius: 2,
             }}
           >
             {!row.imageUrl ? row.avatar : null}
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: theme.palette.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {row.name}
             </Typography>
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {row.email}
             </Typography>
           </Box>
@@ -169,7 +207,7 @@ export function StaffTableView({ data, onOpenProfile, onEdit, onInactivate, onAr
       gridWidth: '1.3fr',
       sortAccessor: (row) => row.role,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>
+        <Typography sx={{ fontSize: 13, color: theme.palette.text.secondary, fontWeight: 600 }}>
           {row.role}
         </Typography>
       ),
@@ -181,7 +219,7 @@ export function StaffTableView({ data, onOpenProfile, onEdit, onInactivate, onAr
       gridWidth: '1.3fr',
       sortAccessor: (row) => row.location,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>
+        <Typography sx={{ fontSize: 13, color: theme.palette.text.secondary, fontWeight: 600 }}>
           {row.location}
         </Typography>
       ),
@@ -193,7 +231,7 @@ export function StaffTableView({ data, onOpenProfile, onEdit, onInactivate, onAr
       gridWidth: '0.8fr',
       align: 'center',
       sortAccessor: (row) => row.status,
-      render: (row) => getStatusChip(row.status),
+      render: (row) => getStatusChip(row.status, theme),
     },
     {
       key: 'actions',
@@ -204,6 +242,7 @@ export function StaffTableView({ data, onOpenProfile, onEdit, onInactivate, onAr
         <StaffActionsMenu
           staff={row}
           onEdit={onEdit}
+          onActivate={onActivate}
           onInactivate={onInactivate}
           onArchive={onArchive}
         />

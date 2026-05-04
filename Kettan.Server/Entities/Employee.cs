@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Kettan.Server.Enums;
 
 namespace Kettan.Server.Entities;
 
@@ -36,6 +37,9 @@ public class Employee : ITenantEntity
     public DateTime? DateHired { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    [Required]
+    public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
 
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }

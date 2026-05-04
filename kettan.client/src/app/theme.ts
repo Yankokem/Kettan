@@ -1,7 +1,40 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, alpha } from '@mui/material/styles';
 import type { ThemeOptions } from '@mui/material/styles';
 
-// Brand palette reference: browns #6B4C2A→#C9A87D, sage #546B3F→#93AF7E, gold #C9A84C
+declare module '@mui/material/styles' {
+  interface Theme {
+    custom: {
+      gradients: {
+        card: string;
+      };
+      status: {
+        active: { bg: string; text: string };
+        inactive: { bg: string; text: string };
+        archived: { bg: string; text: string };
+      };
+      roles: Record<string, { bg: string; text: string }>;
+      text: {
+        charcoal: string;
+      };
+    };
+  }
+  interface ThemeOptions {
+    custom?: {
+      gradients?: {
+        card?: string;
+      };
+      status?: {
+        active?: { bg: string; text: string };
+        inactive?: { bg: string; text: string };
+        archived?: { bg: string; text: string };
+      };
+      roles?: Record<string, { bg: string; text: string }>;
+      text?: {
+        charcoal?: string;
+      };
+    };
+  }
+}
 
 const baseOptions: ThemeOptions = {
   typography: {
@@ -94,6 +127,31 @@ export const lightTheme = createTheme({
     info:    { main: '#3B82F6' },
     success: { main: '#16A34A' },
   },
+  custom: {
+    gradients: {
+      card: 'linear-gradient(45deg, #FAF5EF 0%, #FFFFFF 100%)',
+    },
+    status: {
+      active: { bg: '#E8F5E9', text: '#2E7D32' },
+      inactive: { bg: '#F5F5F5', text: '#616161' },
+      archived: { bg: '#FFEBEE', text: '#D32F2F' },
+    },
+    roles: {
+      'TenantAdmin': { bg: '#FEF9C3', text: '#854D0E' },
+      'HQ Manager': { bg: '#F0FDFA', text: '#0F766E' },
+      'HqManager': { bg: '#F0FDFA', text: '#0F766E' },
+      'Branch Owner': { bg: '#EEF2FF', text: '#4338CA' },
+      'BranchOwner': { bg: '#EEF2FF', text: '#4338CA' },
+      'Branch Manager': { bg: '#F0F9FF', text: '#0369A1' },
+      'BranchManager': { bg: '#F0F9FF', text: '#0369A1' },
+      'HQ Staff': { bg: '#FFFBEB', text: '#B45309' },
+      'HqStaff': { bg: '#FFFBEB', text: '#B45309' },
+      'HQ Executive': { bg: '#FFF1F2', text: '#BE123C' },
+    },
+    text: {
+      charcoal: '#374151',
+    },
+  },
 });
 
 export const darkTheme = createTheme({
@@ -125,5 +183,30 @@ export const darkTheme = createTheme({
     warning: { main: '#F59E0B' },
     info:    { main: '#60A5FA' },
     success: { main: '#4ADE80' },
+  },
+  custom: {
+    gradients: {
+      card: 'linear-gradient(45deg, #1F1B18 0%, #2E2824 100%)',
+    },
+    status: {
+      active: { bg: 'rgba(74, 222, 128, 0.1)', text: '#4ADE80' },
+      inactive: { bg: 'rgba(163, 156, 147, 0.1)', text: '#A39C93' },
+      archived: { bg: 'rgba(239, 68, 68, 0.1)', text: '#EF4444' },
+    },
+    roles: {
+      'TenantAdmin': { bg: 'rgba(234, 179, 8, 0.1)', text: '#FACC15' },
+      'HQ Manager': { bg: 'rgba(20, 184, 166, 0.1)', text: '#2DD4BF' },
+      'HqManager': { bg: 'rgba(20, 184, 166, 0.1)', text: '#2DD4BF' },
+      'Branch Owner': { bg: 'rgba(99, 102, 241, 0.1)', text: '#818CF8' },
+      'BranchOwner': { bg: 'rgba(99, 102, 241, 0.1)', text: '#818CF8' },
+      'Branch Manager': { bg: 'rgba(59, 130, 246, 0.1)', text: '#60A5FA' },
+      'BranchManager': { bg: 'rgba(59, 130, 246, 0.1)', text: '#60A5FA' },
+      'HQ Staff': { bg: 'rgba(245, 158, 11, 0.1)', text: '#FBBF24' },
+      'HqStaff': { bg: 'rgba(245, 158, 11, 0.1)', text: '#FBBF24' },
+      'HQ Executive': { bg: 'rgba(244, 63, 94, 0.1)', text: '#FB7185' },
+    },
+    text: {
+      charcoal: '#E5E7EB',
+    },
   },
 });

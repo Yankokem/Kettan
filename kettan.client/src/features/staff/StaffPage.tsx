@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import Groups2RoundedIcon from '@mui/icons-material/Groups2Rounded';
@@ -10,6 +10,7 @@ import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
+import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
 import type { StaffMember } from './types';
 import { StaffCard } from './components/StaffCard';
 import { StaffTableView } from './components/StaffTableView';
@@ -19,7 +20,9 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
-import { fetchEmployees, type EmployeeDto } from './staffApi';
+import { ConfirmationModal } from '../../components/UI/ConfirmationModal';
+import { useAuthStore } from '../../store/useAuthStore';
+import { fetchEmployees, updateEmployeeStatus, type EmployeeDto } from './staffApi';
 
 function toStaffMember(e: EmployeeDto): StaffMember {
   return {
@@ -28,7 +31,7 @@ function toStaffMember(e: EmployeeDto): StaffMember {
     email: e.email ?? '',
     role: e.role,
     location: e.branchName ?? 'Unassigned',
-    status: e.isActive ? 'active' : 'inactive',
+    status: e.status === 0 ? 'active' : e.status === 1 ? 'inactive' : 'archived',
     avatar: `${e.firstName.charAt(0)}${e.lastName.charAt(0)}`.toUpperCase(),
     imageUrl: e.imageUrl ?? null,
   };
@@ -40,16 +43,36 @@ type SortOption = 'name-asc' | 'name-desc' | 'recent';
 
 export function StaffPage() {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuthStore();
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<StaffStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StaffStatusFilter>('active');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [viewMode, setViewMode] = useState<StaffViewMode>('card');
 
+  // Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    staffId: number | null;
+    staffName: string;
+    action: 'inactivate' | 'archive';
+  }>({
+    open: false,
+    staffId: null,
+    staffName: '',
+    action: 'inactivate',
+  });
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // RBAC Check
+  const isAuthorized = currentUser?.role === 'TenantAdmin' || currentUser?.role === 'HqManager';
+
   useEffect(() => {
+    if (!isAuthorized) return;
+
     setLoading(true);
     fetchEmployees()
       .then((employees: EmployeeDto[]) => {
@@ -57,7 +80,33 @@ export function StaffPage() {
       })
       .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAuthorized]);
+
+  if (!isAuthorized) {
+    return (
+      <Box sx={{ 
+        height: '70vh', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        gap: 2,
+        color: 'text.secondary'
+      }}>
+        <SecurityRoundedIcon sx={{ fontSize: 64, opacity: 0.2 }} />
+        <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+          Access Denied
+        </Typography>
+        <Typography sx={{ maxWidth: 400, textAlign: 'center', fontWeight: 500 }}>
+          Only Tenant Administrators and HQ Managers have permission to access the Staff Directory. 
+          Please contact your administrator if you believe this is an error.
+        </Typography>
+        <Button onClick={() => navigate({ to: '/' })} sx={{ mt: 2 }}>
+          Return to Dashboard
+        </Button>
+      </Box>
+    );
+  }
 
   const handleOpenProfile = (staffId: number) => {
     navigate({ to: '/staff/$staffId', params: { staffId: staffId.toString() } });
@@ -67,27 +116,79 @@ export function StaffPage() {
     navigate({ to: '/staff/$staffId/edit', params: { staffId: staffId.toString() } });
   };
 
+  const handleActivateStaff = async (staffId: number) => {
+    try {
+      await updateEmployeeStatus(staffId, 0); // 0 = Active
+      setStaffMembers((previous) =>
+        previous.map((staff) => (staff.id === staffId ? { ...staff, status: 'active' } : staff))
+      );
+    } catch (err) {
+      console.error('Failed to activate staff:', err);
+    }
+  };
+
   const handleInactivateStaff = (staffId: number) => {
-    setStaffMembers((previous) =>
-      previous.map((staff) => (staff.id === staffId && staff.status !== 'archived' ? { ...staff, status: 'inactive' } : staff))
-    );
+    if (String(staffId) === currentUser?.id) return;
+    const staff = staffMembers.find(s => s.id === staffId);
+    setConfirmModal({
+      open: true,
+      staffId,
+      staffName: staff?.name || 'this staff member',
+      action: 'inactivate',
+    });
   };
 
   const handleArchiveStaff = (staffId: number) => {
-    setStaffMembers((previous) =>
-      previous.map((staff) => (staff.id === staffId ? { ...staff, status: 'archived' } : staff))
-    );
+    if (String(staffId) === currentUser?.id) return;
+    const staff = staffMembers.find(s => s.id === staffId);
+    setConfirmModal({
+      open: true,
+      staffId,
+      staffName: staff?.name || 'this staff member',
+      action: 'archive',
+    });
+  };
+
+  const executeStatusChange = async () => {
+    if (!confirmModal.staffId) return;
+
+    setActionLoading(true);
+    try {
+      const newStatus = confirmModal.action === 'archive' ? 2 : 1;
+      await updateEmployeeStatus(confirmModal.staffId, newStatus);
+      
+      setStaffMembers((previous) =>
+        previous.map((staff) => 
+          staff.id === confirmModal.staffId 
+            ? { ...staff, status: confirmModal.action === 'archive' ? 'archived' : 'inactive' } 
+            : staff
+        )
+      );
+      setConfirmModal(prev => ({ ...prev, open: false }));
+    } catch (err) {
+      console.error(`Failed to ${confirmModal.action} staff:`, err);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const roleOptions = useMemo(() => {
-    const uniqueRoles = Array.from(new Set(staffMembers.map((staff) => staff.role))).sort();
-    return uniqueRoles.map((role) => ({ value: role, label: role }));
-  }, [staffMembers]);
+    return [
+      { value: 'TenantAdmin', label: 'Tenant Admin' },
+      { value: 'HqManager', label: 'HQ Manager' },
+      { value: 'HqStaff', label: 'HQ Staff' },
+      { value: 'BranchOwner', label: 'Branch Owner' },
+      { value: 'BranchManager', label: 'Branch Manager' },
+    ];
+  }, []);
 
   const filteredStaff = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
     const searched = staffMembers.filter((staff) => {
+      // Hide Tenant Admins from the directory list
+      if (staff.role === 'TenantAdmin') return false;
+
       if (!query) {
         return true;
       }
@@ -110,10 +211,11 @@ export function StaffPage() {
   }, [roleFilter, searchTerm, sortBy, staffMembers, statusFilter]);
 
   const stats = useMemo(() => {
-    const total = staffMembers.length;
-    const active = staffMembers.filter((staff) => staff.status === 'active').length;
-    const inactive = staffMembers.filter((staff) => staff.status === 'inactive').length;
-    const archived = staffMembers.filter((staff) => staff.status === 'archived').length;
+    const visibleStaff = staffMembers.filter(s => s.role !== 'TenantAdmin');
+    const total = visibleStaff.length;
+    const active = visibleStaff.filter((staff) => staff.status === 'active').length;
+    const inactive = visibleStaff.filter((staff) => staff.status === 'inactive').length;
+    const archived = visibleStaff.filter((staff) => staff.status === 'archived').length;
 
     return { total, active, inactive, archived };
   }, [staffMembers]);
@@ -237,6 +339,7 @@ export function StaffPage() {
                 key={staff.id}
                 staff={staff}
                 onEdit={handleEditStaff}
+                onActivate={handleActivateStaff}
                 onInactivate={handleInactivateStaff}
                 onArchive={handleArchiveStaff}
               />
@@ -247,11 +350,27 @@ export function StaffPage() {
             data={filteredStaff}
             onOpenProfile={handleOpenProfile}
             onEdit={handleEditStaff}
+            onActivate={handleActivateStaff}
             onInactivate={handleInactivateStaff}
             onArchive={handleArchiveStaff}
           />
         )}
       </DataStateWrapper>
+
+      <ConfirmationModal
+        open={confirmModal.open}
+        title={confirmModal.action === 'archive' ? 'Archive Staff Member?' : 'Inactivate Staff Member?'}
+        message={
+          confirmModal.action === 'archive'
+            ? `Are you sure you want to archive ${confirmModal.staffName}? This will revoke all system access and hide them from active lists.`
+            : `Are you sure you want to inactivate ${confirmModal.staffName}? They will no longer be able to log in until reactivated.`
+        }
+        confirmLabel={confirmModal.action === 'archive' ? 'Archive Staff' : 'Inactivate Staff'}
+        severity={confirmModal.action === 'archive' ? 'danger' : 'warning'}
+        onConfirm={executeStatusChange}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+        loading={actionLoading}
+      />
     </Box>
   );
 }

@@ -32,6 +32,16 @@ public class AuthService : IAuthService
             return null;
         }
 
+        if (user.Status == EmployeeStatus.Inactive)
+        {
+            throw new UnauthorizedAccessException("Your account is currently inactive. Please contact your account provider.");
+        }
+
+        if (user.Status == EmployeeStatus.Archived)
+        {
+            throw new UnauthorizedAccessException("Your account has been archived. Please contact your account provider.");
+        }
+
         if ((user.Role == UserRole.BranchManager || user.Role == UserRole.BranchOwner || user.Role == UserRole.StoreStaff) && !user.BranchId.HasValue)
         {
             throw new UnauthorizedAccessException("Your account is pending assignment to a branch. Please contact your administrator.");

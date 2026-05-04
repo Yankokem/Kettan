@@ -48,6 +48,9 @@ public class User
 
     public bool IsActive { get; set; } = true;
 
+    [Required]
+    public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
+
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 

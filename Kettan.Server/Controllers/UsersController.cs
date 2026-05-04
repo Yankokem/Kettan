@@ -55,6 +55,7 @@ public class UsersController : ControllerBase
                 Birthday = u.Birthday,
                 ContactNo = u.ContactNo,
                 IsActive = u.IsActive,
+                Status = u.Status,
                 CreatedAt = u.CreatedAt,
                 ImageUrl = u.ImageUrl
             })
@@ -86,6 +87,7 @@ public class UsersController : ControllerBase
             Birthday = user.Birthday,
             ContactNo = user.ContactNo,
             IsActive = user.IsActive,
+            Status = user.Status,
             CreatedAt = user.CreatedAt,
             ImageUrl = user.ImageUrl
         });
@@ -143,6 +145,7 @@ public class UsersController : ControllerBase
             ContactNo = user.ContactNo,
             ImageUrl = user.ImageUrl,
             IsActive = user.IsActive,
+            Status = user.Status,
             CreatedAt = user.CreatedAt
         });
     }
@@ -163,6 +166,7 @@ public class UsersController : ControllerBase
         user.Role = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : user.Role;
         user.BranchId = dto.BranchId;
         user.IsActive = dto.IsActive;
+        user.Status = dto.Status;
         
         // Only update ImageUrl if a new one is provided. Or if explicitly nulling? Usually it's if not null. 
         // For project scope, allow it to be updated to whatever is sent, except in partial updates.
@@ -187,6 +191,24 @@ public class UsersController : ControllerBase
             return Forbid();
 
         user.IsActive = false; // Soft delete
+        user.Status = EmployeeStatus.Archived;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] EmployeeStatus status)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound();
+
+        if (_currentUserService.TenantId.HasValue && user.TenantId != _currentUserService.TenantId.Value)
+            return Forbid();
+
+        user.Status = status;
+        user.IsActive = status == EmployeeStatus.Active;
+
         await _context.SaveChangesAsync();
 
         return NoContent();

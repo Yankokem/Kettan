@@ -10,6 +10,7 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
@@ -30,6 +31,7 @@ import { fetchEmployee, type EmployeeDto } from './staffApi';
 export function StaffProfilePage() {
   const { staffId } = useParams({ from: '/layout/staff/$staffId' });
   const navigate = useNavigate();
+  const theme = useTheme();
   const [employee, setEmployee] = useState<EmployeeDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,17 +150,18 @@ export function StaffProfilePage() {
           </Typography>
 
           <Chip
-            icon={<BadgeRoundedIcon fontSize="small" />}
+            icon={<BadgeRoundedIcon fontSize="small" sx={{ color: 'inherit !important' }} />}
             label={employee.role}
-            color="primary"
             sx={{
               fontWeight: 700,
-              borderRadius: 2,
+              borderRadius: '8px',
               height: 32,
               fontSize: 13,
               mb: 3,
-              bgcolor: '#E8D3A9',
-              color: '#6B4C2A',
+              ...(() => {
+                const style = theme.custom.roles[employee.role] || { bg: theme.palette.action.hover, text: theme.palette.text.secondary };
+                return { bgcolor: style.bg, color: style.text };
+              })()
             }}
           />
 
@@ -203,14 +206,22 @@ export function StaffProfilePage() {
                   Employment Status
                 </Typography>
                 <Chip
-                  label={employee.isActive ? 'Active' : 'Inactive'}
+                  {...(() => {
+                    const statusKey = employee.status === 0 ? 'active' : employee.status === 1 ? 'inactive' : 'archived';
+                    const style = theme.custom.status[statusKey] || theme.custom.status.inactive;
+                    return { label: statusKey.charAt(0).toUpperCase() + statusKey.slice(1), sx: { bgcolor: style.bg, color: style.text } };
+                  })()}
                   size="small"
                   sx={{
-                    bgcolor: employee.isActive ? '#FEF3C7' : '#F3F4F6',
-                    color: employee.isActive ? '#92400E' : '#4B5563',
                     fontWeight: 700,
-                    borderRadius: 2,
+                    borderRadius: '6px',
                     height: 24,
+                    fontSize: 11,
+                    ...(() => {
+                      const statusKey = employee.status === 0 ? 'active' : employee.status === 1 ? 'inactive' : 'archived';
+                      const style = theme.custom.status[statusKey] || theme.custom.status.inactive;
+                      return { bgcolor: style.bg, color: style.text };
+                    })()
                   }}
                 />
               </Box>
