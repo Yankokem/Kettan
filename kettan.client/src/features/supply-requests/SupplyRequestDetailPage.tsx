@@ -52,7 +52,12 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
       requestedQty: Number(item.quantityRequested),
       approvedQty: item.quantityApproved != null ? Number(item.quantityApproved) : null,
       hqStock: item.hqStock ?? 0,
-      availability: (item.hqStock ?? 0) > 0 ? 'Available' : 'Out of Stock',
+      availability:
+        (item.hqStock ?? 0) === 0
+          ? 'Out of Stock'
+          : (item.hqStock ?? 0) < Number(item.quantityRequested)
+          ? 'Low Stock'
+          : 'Available',
       isPicked: item.isPicked,
       sendQuantity: item.sendQuantity,
       isRejectedDuringPicking: item.isRejectedDuringPicking,

@@ -40,7 +40,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@m
 const POLL_INTERVAL_MS = 10_000;
 
 // Statuses where HQ action buttons should be completely locked (order is done or in branch hands)
-
+const LOCKED_STATUSES = ['Packed', 'Dispatched', 'InTransit', 'Arrived', 'Completed', 'Cancelled', 'Delivered'];
 
 function mapOrderItemsToViewModel(requestedItems: OrderDetail['requestedItems']): SupplyRequestDetailItem[] {
   return (requestedItems || []).map((i) => ({
@@ -271,14 +271,16 @@ export function OrderDetailPage() {
   };
 
   // ── Table mode logic ──
-  // After Packed the HQ table is read-only (items are locked in, inventory already deducted)
+  // Processing / Allocated → picking stage (show ✅ ❌ action buttons)
+  // Picking → still picking stage (HQ is mid-pick, hasn't confirmed yet)
+  // Packing → packing checkboxes
+  // Packed and beyond → readonly-packed (inventory already deducted, nothing to edit)
   let tableMode: SRTableMode = 'readonly';
-  if (orderStatus === 'Processing' || orderStatus === 'Allocated') {
+  if (orderStatus === 'Processing' || orderStatus === 'Allocated' || orderStatus === 'Picking') {
     tableMode = 'picking';
-  } else if (orderStatus === 'Picking' || orderStatus === 'Packing') {
+  } else if (orderStatus === 'Packing') {
     tableMode = 'packing';
   } else if (orderStatus === 'Packed' || orderStatus === 'Dispatched' || orderStatus === 'InTransit') {
-    // HQ sees items locked — inventory deducted, no more edits
     tableMode = 'readonly-packed';
   } else if (orderStatus === 'Arrived') {
     tableMode = isBranch ? 'branch-check' : 'readonly-packed';
@@ -313,7 +315,8 @@ export function OrderDetailPage() {
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Typography
-                sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}
+                variant="h5"
+                sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}
               >
                 ORD-{order.orderId}
               </Typography>
@@ -350,7 +353,7 @@ export function OrderDetailPage() {
                 }}
               />
             </Box>
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.3 }}>
+            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
               Requested by <strong>{order.branchName}</strong> on{' '}
               {new Date(order.pushedToFulfillmentAt).toLocaleDateString('en-US', {
                 month: 'short',
@@ -387,7 +390,7 @@ export function OrderDetailPage() {
             </Button>
           )}
 
-          {/* Save Picking — only in processing/picking stage, not after */}
+          {/* Save Picking — Processing, Allocated, or Picking status */}
           {isHq && (orderStatus === 'Processing' || orderStatus === 'Picking' || orderStatus === 'Allocated') && (
             <Tooltip
               title={
@@ -407,14 +410,14 @@ export function OrderDetailPage() {
                     !localItems.some((i) => i.isPicked || i.isRejectedDuringPicking)
                   }
                 >
-                  {orderStatus === 'Processing' ? 'Confirm Picking' : 'Update Picking'}
+                  {orderStatus === 'Processing' || orderStatus === 'Allocated' ? 'Confirm Picking' : 'Update Picking'}
                 </Button>
               </span>
             </Tooltip>
           )}
 
-          {/* Confirm Items Packed — only in picking/packing stage */}
-          {isHq && (orderStatus === 'Picking' || orderStatus === 'Packing') && (
+          {/* Confirm Items Packed — only once picking is confirmed (Packing status) */}
+          {isHq && orderStatus === 'Packing' && (
             <Tooltip
               title={
                 localItems.filter((i) => !i.isRejectedDuringPicking).some((i) => !i.isPacked)

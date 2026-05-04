@@ -213,7 +213,7 @@ export function OrderMessagesModal({ open, onClose, orderId }: OrderMessagesModa
                             bgcolor: alpha('#94a3b8', 0.15),
                             px: 1.5,
                             py: 0.5,
-                            borderRadius: '14px',
+                            borderRadius: 4,
                             color: 'text.secondary',
                             fontWeight: 600,
                           }}
@@ -321,7 +321,7 @@ export function OrderMessagesModal({ open, onClose, orderId }: OrderMessagesModa
             disabled={loading || sending}
             sx={{
               '& .MuiInputBase-root': {
-                borderRadius: '14px',
+                borderRadius: 3,
                 bgcolor: '#f8fafc',
                 '&:hover': { bgcolor: '#f1f5f9' },
                 '&.Mui-focused': { bgcolor: '#ffffff' },

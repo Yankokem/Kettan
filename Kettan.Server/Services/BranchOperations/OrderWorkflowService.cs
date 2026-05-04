@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.SignalR;
-using Kettan.Server.Hubs;
 using Kettan.Server.Data;
 using Kettan.Server.DTOs.Orders;
 using Kettan.Server.Entities;
@@ -18,22 +16,18 @@ public class OrderWorkflowService : IOrderWorkflowService
     private readonly IInventoryService _inventoryService;
     private readonly ILogger<OrderWorkflowService> _logger;
 
-    private readonly IHubContext<WorkflowHub> _hubContext;
-
     public OrderWorkflowService(
         ApplicationDbContext context,
         ICurrentUserService currentUser,
         INotificationService notificationService,
         IInventoryService inventoryService,
-        ILogger<OrderWorkflowService> logger,
-        IHubContext<WorkflowHub> hubContext)
+        ILogger<OrderWorkflowService> logger)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationService = notificationService;
         _inventoryService = inventoryService;
         _logger = logger;
-        _hubContext = hubContext;
     }
 
     public async Task<List<BranchOrderDto>> ListBranchOrdersAsync(string? status = null, int? branchId = null)
@@ -141,7 +135,6 @@ public class OrderWorkflowService : IOrderWorkflowService
         await _context.SaveChangesAsync();
         await tx.CommitAsync();
 
-        await BroadcastOrderUpdateAsync(order.OrderId);
         return await MapToOrderDetailDto(order, null);
     }
 
@@ -294,7 +287,6 @@ public class OrderWorkflowService : IOrderWorkflowService
             $"Order #{order.OrderId} for {order.SupplyRequest?.Branch?.Name ?? "branch"} is now Packed.",
             "OrderPacked");
 
-        await BroadcastOrderUpdateAsync(order.OrderId);
         return true;
     }
 
@@ -365,9 +357,8 @@ public class OrderWorkflowService : IOrderWorkflowService
             order,
             "Order Dispatched",
             $"Order #{order.OrderId} for {order.SupplyRequest?.Branch?.Name ?? "branch"} has been dispatched.",
-            "OrderDispatched");
+            notificationType: "OrderDispatched");
 
-        await BroadcastOrderUpdateAsync(order.OrderId);
         return true;
     }
 
@@ -424,7 +415,6 @@ public class OrderWorkflowService : IOrderWorkflowService
             referenceType: nameof(Order),
             referenceId: order.OrderId);
 
-        await BroadcastOrderUpdateAsync(order.OrderId);
         return true;
     }
 
@@ -472,7 +462,6 @@ public class OrderWorkflowService : IOrderWorkflowService
             $"Order #{order.OrderId} for {order.SupplyRequest?.Branch?.Name ?? "branch"} is now {nextStatus}.",
             notificationType);
 
-        await BroadcastOrderUpdateAsync(order.OrderId);
         return true;
     }
 
@@ -740,7 +729,6 @@ public class OrderWorkflowService : IOrderWorkflowService
         });
 
         await _context.SaveChangesAsync();
-        await BroadcastOrderUpdateAsync(orderId);
         return await GetOrderDetailAsync(orderId);
     }
 
@@ -749,6 +737,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
+                    .ThenInclude(i => i.Item)
             .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
         if (order?.SupplyRequest == null) return null;
@@ -774,13 +763,37 @@ public class OrderWorkflowService : IOrderWorkflowService
         var nextStatus = allPacked ? OrderStatus.Packed : OrderStatus.Packing;
         order.Status = nextStatus;
 
-        // When all items are packed, deduct HQ inventory and create allocations
+        // When all items are packed, validate stock THEN deduct HQ inventory
         if (allPacked)
         {
             var packedItems = order.SupplyRequest.Items
                 .Where(i => !i.IsRejectedDuringPicking)
                 .ToList();
 
+            // ── Pre-deduction stock validation ──
+            // Check every item has enough HQ stock before committing any deduction.
+            var stockErrors = new List<string>();
+            foreach (var item in packedItems)
+            {
+                var qtyToDeduct = item.SendQuantity ?? item.QuantityApproved ?? item.QuantityRequested;
+                if (qtyToDeduct <= 0) continue;
+
+                var hqStock = await _inventoryService.GetStockLevelAsync(item.ItemId, branchId: null);
+                if (qtyToDeduct > hqStock)
+                {
+                    stockErrors.Add(
+                        $"'{item.Item?.Name ?? $"Item {item.ItemId}"}': need {qtyToDeduct}, only {hqStock} available in HQ");
+                }
+            }
+
+            if (stockErrors.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot pack — insufficient HQ stock for: {string.Join("; ", stockErrors)}. " +
+                    "Please go back to picking and reduce the send quantities.");
+            }
+
+            // All good — now actually deduct
             foreach (var item in packedItems)
             {
                 var qtyToDeduct = item.SendQuantity ?? item.QuantityApproved ?? item.QuantityRequested;
@@ -788,7 +801,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
                 var deductions = await _inventoryService.DeductFifoAsync(
                     item.ItemId,
-                    branchId: null, // HQ stock
+                    branchId: null,
                     quantity: qtyToDeduct,
                     transactionType: TransactionType.OrderFulfillment,
                     remarks: $"Packed for order {order.OrderId}",
@@ -819,7 +832,6 @@ public class OrderWorkflowService : IOrderWorkflowService
         });
 
         await _context.SaveChangesAsync();
-        await BroadcastOrderUpdateAsync(orderId);
         return await GetOrderDetailAsync(orderId);
     }
 
@@ -1248,14 +1260,5 @@ public class OrderWorkflowService : IOrderWorkflowService
     private bool IsHqRole()
     {
         return _currentUser.Role is "TenantAdmin" or "HqManager" or "HqStaff";
-    }
-
-    private async Task BroadcastOrderUpdateAsync(int orderId)
-    {
-        // Specific order detail
-        await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
-        
-        // Orders list
-        await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
     }
 }
