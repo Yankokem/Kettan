@@ -231,11 +231,22 @@ app.MapGet("/api/debug/fix-database", async (ApplicationDbContext db) =>
 {
     try
     {
-        // 1. Fix Users table
+        // 1. Fix Users table (Must be tinyint for Enum mapping)
         await db.Database.ExecuteSqlRawAsync(@"
+            IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Users]') AND name = 'Status' AND system_type_id != 48) -- 48 is tinyint
+            BEGIN
+                -- Drop constraint first if it exists
+                DECLARE @ConstraintName nvarchar(200)
+                SELECT @ConstraintName = Name FROM sys.default_constraints
+                WHERE parent_object_id = OBJECT_ID('Users') AND parent_column_id = COLUMNPROPERTY(OBJECT_ID('Users'), 'Status', 'ColumnId')
+                IF @ConstraintName IS NOT NULL EXEC('ALTER TABLE [Users] DROP CONSTRAINT ' + @ConstraintName)
+                
+                ALTER TABLE [Users] DROP COLUMN [Status];
+            END
+
             IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Users]') AND name = 'Status')
             BEGIN
-                ALTER TABLE [Users] ADD [Status] int NOT NULL DEFAULT 0;
+                ALTER TABLE [Users] ADD [Status] tinyint NOT NULL DEFAULT 0;
             END");
 
         // 2. Fix Shipments table
