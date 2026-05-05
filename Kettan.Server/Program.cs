@@ -227,4 +227,30 @@ app.MapGet("/api/debug/auth-diag", async (string email, ApplicationDbContext db,
     });
 });
 
+app.MapGet("/api/debug/fix-database", async (ApplicationDbContext db) =>
+{
+    try
+    {
+        // 1. Fix Users table
+        await db.Database.ExecuteSqlRawAsync(@"
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Users]') AND name = 'Status')
+            BEGIN
+                ALTER TABLE [Users] ADD [Status] int NOT NULL DEFAULT 0;
+            END");
+
+        // 2. Fix Shipments table
+        await db.Database.ExecuteSqlRawAsync(@"
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Shipments]') AND name = 'ShippingCost')
+            BEGIN
+                ALTER TABLE [Shipments] ADD [ShippingCost] decimal(18,2) NOT NULL DEFAULT 0.0;
+            END");
+
+        return Results.Ok("Database columns fixed successfully! You can now log in.");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to fix database: {ex.Message}");
+    }
+});
+
 app.Run();
