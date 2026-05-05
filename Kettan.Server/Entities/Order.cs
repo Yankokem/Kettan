@@ -41,5 +41,11 @@ public class Order : ITenantEntity
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 
+    // Navigation
+    public Shipment? Shipment { get; set; }
+    
+    [NotMapped]
+    public DateTime? DeliveredAt => ArrivedAt;
+
     public ICollection<OrderAllocation> Allocations { get; set; } = [];
 }

@@ -13,7 +13,7 @@ export interface ColumnDef<T> {
   align?: 'left' | 'center' | 'right';
   sortable?: boolean;
   sortAccessor?: (row: T) => string | number | null | undefined;
-  render: (row: T) => React.ReactNode;
+  render: (row: T, index: number) => React.ReactNode;
 }
 
 export interface QuickFilter {
@@ -405,7 +405,7 @@ export function DataTable<T>({
           >
             {columns.map((col) => (
               <Box key={col.key} sx={{ display: 'flex', justifyContent: getAlign(col.align), px: 0.5 }}>
-                {col.render(row)}
+                {col.render(row, page * rowsPerPage + rowIndex)}
               </Box>
             ))}
           </Box>

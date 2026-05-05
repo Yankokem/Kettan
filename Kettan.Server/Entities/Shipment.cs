@@ -25,6 +25,9 @@ public class Shipment : ITenantEntity
     [Column(TypeName = "decimal(18,2)")]
     public decimal? DistanceMap { get; set; }
 
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal ShippingCost { get; set; }
+
     public DateTime? DispatchDate { get; set; }
 
     public DateTime? EstimatedArrival { get; set; }

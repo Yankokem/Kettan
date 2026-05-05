@@ -29,6 +29,9 @@ public class User
     [MaxLength(50)]
     public required string LastName { get; set; }
 
+    [NotMapped]
+    public string FullName => $"{FirstName} {LastName}";
+
     [Required]
     [EmailAddress]
     [MaxLength(50)]

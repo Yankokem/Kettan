@@ -17,18 +17,24 @@ public class AnalyticsService : IAnalyticsService
         _currentUser = currentUser;
     }
 
-    public async Task<EoqResultDto> CalculateEOQAsync(int itemId)
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private int RequireTenantId()
     {
         if (!_currentUser.TenantId.HasValue)
-        {
             throw new InvalidOperationException("Tenant context required.");
-        }
+        return _currentUser.TenantId.Value;
+    }
+
+    // ── Existing Methods ──────────────────────────────────────────────────────
+
+    public async Task<EoqResultDto> CalculateEOQAsync(int itemId)
+    {
+        var tenantId = RequireTenantId();
 
         var item = await _context.Items.FindAsync(itemId);
-        if (item == null || item.TenantId != _currentUser.TenantId.Value)
-        {
+        if (item == null || item.TenantId != tenantId)
             throw new InvalidOperationException("Item not found.");
-        }
 
         decimal annualDemand = item.AnnualDemand;
 
@@ -36,9 +42,11 @@ public class AnalyticsService : IAnalyticsService
         {
             var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
             var recentConsumption = await _context.ConsumptionLogItems
-                .Where(i => i.ItemId == itemId && i.TenantId == _currentUser.TenantId.Value && i.ConsumptionLog != null && i.ConsumptionLog.LogDate >= thirtyDaysAgo)
+                .Where(i => i.ItemId == itemId
+                    && i.TenantId == tenantId
+                    && i.ConsumptionLog != null
+                    && i.ConsumptionLog.LogDate >= thirtyDaysAgo)
                 .SumAsync(i => i.Quantity);
-            
             annualDemand = recentConsumption * 12;
         }
 
@@ -67,13 +75,17 @@ public class AnalyticsService : IAnalyticsService
     public async Task<List<BranchScorecardDto>> CalculateBranchScoresAsync(DateTime startDate, DateTime endDate)
     {
         if (!_currentUser.TenantId.HasValue) return [];
-
         var tenantId = _currentUser.TenantId.Value;
-        var branches = await _context.Branches.Where(b => b.TenantId == tenantId && b.IsActive).ToListAsync();
-        var scorecards = new List<BranchScorecardDto>();
+
+        var branches = await _context.Branches
+            .Where(b => b.TenantId == tenantId && b.IsActive)
+            .ToListAsync();
 
         var consumptions = await _context.ConsumptionLogs
-            .Where(c => c.TenantId == tenantId && c.Method == ConsumptionMethod.Sales && c.LogDate >= startDate && c.LogDate <= endDate)
+            .Where(c => c.TenantId == tenantId
+                && c.Method == ConsumptionMethod.Sales
+                && c.LogDate >= startDate
+                && c.LogDate <= endDate)
             .GroupBy(c => c.BranchId)
             .Select(g => new { BranchId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.BranchId, x => x.Count);
@@ -91,6 +103,7 @@ public class AnalyticsService : IAnalyticsService
             .ToDictionaryAsync(x => x.BranchId, x => x.Count);
 
         int maxSales = consumptions.Values.DefaultIfEmpty(0).Max();
+        var scorecards = new List<BranchScorecardDto>();
 
         foreach (var branch in branches)
         {
@@ -118,13 +131,14 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<InventorySummaryDto> GetInventorySummaryAsync(int? branchId = null)
     {
-        if (!_currentUser.TenantId.HasValue) throw new InvalidOperationException("Tenant context required.");
+        var tenantId = RequireTenantId();
 
         var query = _context.Batches
             .Include(b => b.Item)
-            .Where(b => b.TenantId == _currentUser.TenantId.Value && b.CurrentQuantity > 0);
+            .Where(b => b.TenantId == tenantId && b.CurrentQuantity > 0);
 
-        if (branchId.HasValue) query = query.Where(b => b.BranchId == branchId.Value);
+        if (branchId.HasValue)
+            query = query.Where(b => b.BranchId == branchId.Value);
 
         var batches = await query.ToListAsync();
 
@@ -138,19 +152,22 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<OrderFulfillmentMetricsDto> GetFulfillmentMetricsAsync(DateTime startDate, DateTime endDate)
     {
-        if (!_currentUser.TenantId.HasValue) throw new InvalidOperationException("Tenant context required.");
+        var tenantId = RequireTenantId();
 
         var orders = await _context.Orders
             .Include(o => o.Allocations)
                 .ThenInclude(a => a.Batch)
                     .ThenInclude(b => b.Item)
-            .Where(o => o.TenantId == _currentUser.TenantId.Value && o.PushedToFulfillmentAt >= startDate && o.PushedToFulfillmentAt <= endDate)
+            .Where(o => o.TenantId == tenantId
+                && o.PushedToFulfillmentAt >= startDate
+                && o.PushedToFulfillmentAt <= endDate)
             .ToListAsync();
 
         var delivered = orders.Count(o => o.Status == OrderStatus.Delivered);
         decimal rate = orders.Count > 0 ? ((decimal)delivered / orders.Count) * 100 : 0;
 
-        decimal totalCost = orders.Where(o => o.Status == OrderStatus.Delivered)
+        decimal totalCost = orders
+            .Where(o => o.Status == OrderStatus.Delivered)
             .SelectMany(o => o.Allocations)
             .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0));
 
@@ -166,11 +183,14 @@ public class AnalyticsService : IAnalyticsService
     public async Task<List<ConsumptionTrendDto>> GetConsumptionTrendsAsync(DateTime startDate, DateTime endDate)
     {
         if (!_currentUser.TenantId.HasValue) return [];
+        var tenantId = _currentUser.TenantId.Value;
 
         var trends = await _context.ConsumptionLogs
             .Include(c => c.Branch)
             .Include(c => c.Items)
-            .Where(c => c.TenantId == _currentUser.TenantId.Value && c.LogDate >= startDate && c.LogDate <= endDate)
+            .Where(c => c.TenantId == tenantId
+                && c.LogDate >= startDate
+                && c.LogDate <= endDate)
             .ToListAsync();
 
         return trends.GroupBy(c => c.BranchId)
@@ -183,5 +203,587 @@ public class AnalyticsService : IAnalyticsService
             })
             .OrderByDescending(t => t.TotalConsumptionVolume)
             .ToList();
+    }
+
+    // ── New HQ Methods ────────────────────────────────────────────────────────
+
+    public async Task<HqOverviewDto> GetHqOverviewAsync(DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        // Fulfillment cost & rate
+        var fulfillment = await GetFulfillmentMetricsAsync(startDate, endDate);
+
+        // Chain inventory value (all batches across HQ + branches)
+        var allBatches = await _context.Batches
+            .Include(b => b.Item)
+            .Where(b => b.TenantId == tenantId && b.CurrentQuantity > 0)
+            .ToListAsync();
+        decimal chainInventoryValue = allBatches.Sum(b => b.CurrentQuantity * (b.Item?.UnitCost ?? 0));
+
+        // Wastage/spoilage loss
+        var wastageTransactions = await _context.InventoryTransactions
+            .Include(t => t.Batch)
+                .ThenInclude(b => b.Item)
+            .Where(t => t.TenantId == tenantId
+                && t.Timestamp >= startDate
+                && t.Timestamp <= endDate
+                && t.TransactionType == TransactionType.Adjustment
+                && t.QuantityChange < 0)
+            .ToListAsync();
+        decimal wastageLoss = wastageTransactions.Sum(t =>
+            Math.Abs(t.QuantityChange) * (t.Batch?.Item?.UnitCost ?? 0));
+
+        // Return loss (credited returns = cost credited back = loss to chain)
+        var returnLoss = await _context.Returns
+            .Where(r => r.TenantId == tenantId
+                && r.LoggedAt >= startDate
+                && r.LoggedAt <= endDate
+                && r.Resolution == ReturnResolution.Credited)
+            .SumAsync(r => r.CreditAmount ?? 0);
+
+        // Top performer
+        var scores = await CalculateBranchScoresAsync(startDate, endDate);
+        var top = scores.FirstOrDefault();
+
+        return new HqOverviewDto
+        {
+            TotalFulfillmentCost = fulfillment.TotalFulfillmentCost,
+            TotalChainInventoryValue = chainInventoryValue,
+            TotalWastageLoss = wastageLoss,
+            TotalReturnLoss = returnLoss,
+            TopPerformerName = top?.BranchName ?? string.Empty,
+            TopPerformerScore = top?.ScorePercentage ?? 0,
+            FulfillmentRate = fulfillment.FulfillmentRate,
+            TotalOrders = fulfillment.TotalOrders
+        };
+    }
+
+    public async Task<List<CostTrendPointDto>> GetCostTrendAsync(DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        var orders = await _context.Orders
+            .Include(o => o.Allocations)
+                .ThenInclude(a => a.Batch)
+                    .ThenInclude(b => b.Item)
+            .Include(o => o.Shipment)
+            .Where(o => o.TenantId == tenantId
+                && o.Status == OrderStatus.Delivered
+                && o.PushedToFulfillmentAt >= startDate
+                && o.PushedToFulfillmentAt <= endDate)
+            .ToListAsync();
+
+        var grouped = orders
+            .GroupBy(o => new
+            {
+                Year = o.PushedToFulfillmentAt.Year,
+                Month = o.PushedToFulfillmentAt.Month
+            })
+            .Select(g => new CostTrendPointDto
+            {
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                Label = new DateTime(g.Key.Year, g.Key.Month, 1, 0, 0, 0, DateTimeKind.Utc).ToString("MMM yyyy"),
+                FulfillmentCost = g.SelectMany(o => o.Allocations)
+                    .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0)),
+                ShippingCost = g.Sum(o => o.Shipment != null ? o.Shipment.ShippingCost : 0)
+            })
+            .OrderBy(p => p.Year).ThenBy(p => p.Month)
+            .ToList();
+
+        return grouped;
+    }
+
+    public async Task<List<BranchSpendDto>> GetBranchSpendAsync(DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        var orders = await _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(sr => sr!.Branch)
+            .Include(o => o.Allocations)
+                .ThenInclude(a => a.Batch)
+                    .ThenInclude(b => b.Item)
+            .Where(o => o.TenantId == tenantId
+                && o.Status == OrderStatus.Delivered
+                && o.PushedToFulfillmentAt >= startDate
+                && o.PushedToFulfillmentAt <= endDate)
+            .ToListAsync();
+
+        return orders
+            .GroupBy(o => new
+            {
+                BranchId = o.SupplyRequest?.BranchId ?? 0,
+                BranchName = o.SupplyRequest?.Branch?.Name ?? "Unknown"
+            })
+            .Select(g => new BranchSpendDto
+            {
+                BranchId = g.Key.BranchId,
+                BranchName = g.Key.BranchName,
+                TotalSpend = g.SelectMany(o => o.Allocations)
+                    .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0))
+            })
+            .OrderByDescending(b => b.TotalSpend)
+            .ToList();
+    }
+
+    public async Task<List<BranchInventoryValuationDto>> GetAllBranchInventoryValuationsAsync()
+    {
+        var tenantId = RequireTenantId();
+
+        var branches = await _context.Branches
+            .Where(b => b.TenantId == tenantId && b.IsActive)
+            .ToListAsync();
+
+        var batchesByBranch = await _context.Batches
+            .Include(b => b.Item)
+            .Where(b => b.TenantId == tenantId
+                && b.BranchId != null
+                && b.CurrentQuantity > 0)
+            .GroupBy(b => b.BranchId!.Value)
+            .ToDictionaryAsync(
+                g => g.Key,
+                g => g.ToList()
+            );
+
+        return branches.Select(branch =>
+        {
+            var batches = batchesByBranch.TryGetValue(branch.BranchId, out var b) ? b : [];
+            return new BranchInventoryValuationDto
+            {
+                BranchId = branch.BranchId,
+                BranchName = branch.Name,
+                TotalSkus = batches.Select(x => x.ItemId).Distinct().Count(),
+                TotalVolume = batches.Sum(x => x.CurrentQuantity),
+                TotalValuation = batches.Sum(x => x.CurrentQuantity * (x.Item?.UnitCost ?? 0))
+            };
+        })
+        .OrderByDescending(b => b.TotalValuation)
+        .ToList();
+    }
+
+    public async Task<List<WastageRecordDto>> GetWastageRecordsAsync(
+        DateTime startDate, DateTime endDate, int? branchId = null)
+    {
+        var tenantId = RequireTenantId();
+
+        var query = _context.InventoryTransactions
+            .Include(t => t.Batch)
+                .ThenInclude(b => b.Item)
+            .Include(t => t.User)
+            .Where(t => t.TenantId == tenantId
+                && t.Timestamp >= startDate
+                && t.Timestamp <= endDate
+                && t.TransactionType == TransactionType.Adjustment
+                && t.QuantityChange < 0);
+
+        if (branchId.HasValue)
+            query = query.Where(t => t.Batch != null && t.Batch.BranchId == branchId.Value);
+
+        var records = await query
+            .OrderByDescending(t => t.Timestamp)
+            .ToListAsync();
+
+        return records.Select(t => new WastageRecordDto
+        {
+            TransactionId = t.TransactionId,
+            ItemName = t.Batch?.Item?.Name ?? string.Empty,
+            ItemSku = t.Batch?.Item?.SKU ?? string.Empty,
+            QuantityLost = Math.Abs(t.QuantityChange),
+            Unit = t.Batch?.Item?.Unit ?? string.Empty,
+            UnitCost = t.Batch?.Item?.UnitCost ?? 0,
+            TotalLoss = Math.Abs(t.QuantityChange) * (t.Batch?.Item?.UnitCost ?? 0),
+            Reason = t.Remarks ?? string.Empty,
+            LoggedByName = t.User?.FullName ?? string.Empty,
+            Timestamp = t.Timestamp
+        }).ToList();
+    }
+
+    public async Task<List<EoqSuggestionDto>> GetEoqSuggestionsAsync()
+    {
+        var tenantId = RequireTenantId();
+
+        var items = await _context.Items
+            .Where(i => i.TenantId == tenantId && !i.IsDeleted)
+            .ToListAsync();
+
+        var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+
+        // Get recent consumption per item
+        var consumptionByItem = await _context.ConsumptionLogItems
+            .Where(ci => ci.TenantId == tenantId
+                && ci.ConsumptionLog != null
+                && ci.ConsumptionLog.LogDate >= thirtyDaysAgo)
+            .Where(ci => ci.ItemId != null)
+            .GroupBy(ci => ci.ItemId!.Value)
+            .Select(g => new { ItemId = g.Key, Total = g.Sum(ci => ci.Quantity) })
+            .ToDictionaryAsync(x => x.ItemId, x => x.Total);
+
+        // Get current HQ stock per item
+        var hqStockByItem = await _context.Batches
+            .Where(b => b.TenantId == tenantId
+                && b.BranchId == null
+                && b.CurrentQuantity > 0)
+            .GroupBy(b => b.ItemId)
+            .Select(g => new { ItemId = g.Key, Total = g.Sum(b => b.CurrentQuantity) })
+            .ToDictionaryAsync(x => x.ItemId, x => x.Total);
+
+        var suggestions = new List<EoqSuggestionDto>();
+
+        foreach (var item in items)
+        {
+            var annualDemand = item.AnnualDemand > 0
+                ? item.AnnualDemand
+                : (consumptionByItem.TryGetValue(item.ItemId, out var recent) ? recent * 12 : 0);
+
+            decimal eoq = 0;
+            if (annualDemand > 0 && item.HoldingCost > 0 && item.SetupCost > 0)
+                eoq = (decimal)Math.Sqrt((double)((2 * annualDemand * item.SetupCost) / item.HoldingCost));
+
+            suggestions.Add(new EoqSuggestionDto
+            {
+                ItemId = item.ItemId,
+                ItemName = item.Name,
+                ItemSku = item.SKU,
+                Unit = item.Unit,
+                CurrentStock = hqStockByItem.TryGetValue(item.ItemId, out var stock) ? stock : 0,
+                AnnualDemand = annualDemand,
+                EOQ = Math.Round(eoq, 2),
+                UnitCost = item.UnitCost
+            });
+        }
+
+        return suggestions
+            .Where(s => s.EOQ > 0)
+            .OrderByDescending(s => s.EOQ)
+            .ToList();
+    }
+
+    public async Task<ReturnsLossOverviewDto> GetReturnsLossOverviewAsync(
+        DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        var returns = await _context.Returns
+            .Where(r => r.TenantId == tenantId
+                && r.LoggedAt >= startDate
+                && r.LoggedAt <= endDate)
+            .ToListAsync();
+
+        var totalOrders = await _context.Orders
+            .Where(o => o.TenantId == tenantId
+                && o.PushedToFulfillmentAt >= startDate
+                && o.PushedToFulfillmentAt <= endDate)
+            .CountAsync();
+
+        decimal creditedLoss = returns
+            .Where(r => r.Resolution == ReturnResolution.Credited)
+            .Sum(r => r.CreditAmount ?? 0);
+
+        decimal avgReturnRate = totalOrders > 0
+            ? Math.Round(((decimal)returns.Count / totalOrders) * 100, 2)
+            : 0;
+
+        return new ReturnsLossOverviewDto
+        {
+            TotalReturns = returns.Count,
+            ReplacedCount = returns.Count(r => r.Resolution == ReturnResolution.Replaced),
+            CreditedCount = returns.Count(r => r.Resolution == ReturnResolution.Credited),
+            RejectedCount = returns.Count(r => r.Resolution == ReturnResolution.Rejected),
+            TotalMoneyLost = creditedLoss,
+            AverageReturnRate = avgReturnRate
+        };
+    }
+
+    public async Task<List<ReturnLossRecordDto>> GetReturnLossRecordsAsync(
+        DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        return await _context.Returns
+            .Include(r => r.Branch)
+            .Include(r => r.Items)
+            .Where(r => r.TenantId == tenantId
+                && r.LoggedAt >= startDate
+                && r.LoggedAt <= endDate)
+            .OrderByDescending(r => r.LoggedAt)
+            .Select(r => new ReturnLossRecordDto
+            {
+                ReturnId = r.ReturnId,
+                OrderId = r.OrderId,
+                BranchName = r.Branch != null ? r.Branch.Name : string.Empty,
+                Resolution = r.Resolution.ToString(),
+                Reason = r.Reason ?? string.Empty,
+                CreditAmount = r.CreditAmount ?? 0,
+                ItemCount = r.Items.Count,
+                LoggedAt = r.LoggedAt
+            })
+            .ToListAsync();
+    }
+
+    public async Task<ConsumptionAnalyticsDto> GetConsumptionAnalyticsAsync(
+        DateTime startDate, DateTime endDate, int? branchId = null)
+    {
+        var tenantId = RequireTenantId();
+
+        var logsQuery = _context.ConsumptionLogs
+            .Include(c => c.Items)
+                .ThenInclude(ci => ci.MenuItem)
+            .Include(c => c.Items)
+                .ThenInclude(ci => ci.Item)
+            .Where(c => c.TenantId == tenantId
+                && c.LogDate >= startDate
+                && c.LogDate <= endDate);
+
+        if (branchId.HasValue)
+            logsQuery = logsQuery.Where(c => c.BranchId == branchId.Value);
+
+        var logs = await logsQuery.ToListAsync();
+
+        // Top menu items (sales method)
+        var salesLogs = logs.Where(c => c.Method == ConsumptionMethod.Sales);
+        var topMenuItems = salesLogs
+            .SelectMany(c => c.Items)
+            .Where(ci => ci.MenuItem != null)
+            .GroupBy(ci => new { ci.MenuItemId, Name = ci.MenuItem!.Name })
+            .Select(g => new TopMenuItemDto
+            {
+                MenuItemId = g.Key.MenuItemId ?? 0,
+                MenuItemName = g.Key.Name,
+                TotalSold = (int)g.Sum(ci => ci.Quantity),
+                LogCount = g.Select(ci => ci.ConsumptionLogId).Distinct().Count()
+            })
+            .OrderByDescending(m => m.TotalSold)
+            .Take(10)
+            .ToList();
+
+        // Ingredient usage (all methods)
+        var ingredientUsage = logs
+            .SelectMany(c => c.Items)
+            .Where(ci => ci.Item != null)
+            .GroupBy(ci => new { ci.ItemId, Name = ci.Item!.Name, Unit = ci.Item.Unit })
+            .Select(g => new IngredientUsageDto
+            {
+                ItemId = g.Key.ItemId ?? 0,
+                ItemName = g.Key.Name,
+                Unit = g.Key.Unit,
+                TotalConsumed = g.Sum(ci => ci.Quantity)
+            })
+            .OrderByDescending(i => i.TotalConsumed)
+            .Take(15)
+            .ToList();
+
+        // Shift breakdown
+        var shiftBreakdown = logs
+            .GroupBy(c => c.Shift.HasValue ? c.Shift.ToString()! : "Unspecified")
+            .Select(g => new ShiftBreakdownDto
+            {
+                Shift = g.Key,
+                LogCount = g.Count(),
+                TotalVolume = g.Sum(c => c.Items.Sum(i => i.Quantity))
+            })
+            .OrderByDescending(s => s.TotalVolume)
+            .ToList();
+
+        return new ConsumptionAnalyticsDto
+        {
+            TopMenuItems = topMenuItems,
+            IngredientUsage = ingredientUsage,
+            ShiftBreakdown = shiftBreakdown
+        };
+    }
+
+    // ── Branch Methods ────────────────────────────────────────────────────────
+
+    public async Task<BranchOverviewDto> GetBranchOverviewAsync(
+        int branchId, DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        // Branch inventory value
+        var batches = await _context.Batches
+            .Include(b => b.Item)
+            .Where(b => b.TenantId == tenantId
+                && b.BranchId == branchId
+                && b.CurrentQuantity > 0)
+            .ToListAsync();
+
+        decimal inventoryValue = batches.Sum(b => b.CurrentQuantity * (b.Item?.UnitCost ?? 0));
+        int totalSkus = batches.Select(b => b.ItemId).Distinct().Count();
+
+        // Total supply spend received (delivered orders to this branch)
+        var orders = await _context.Orders
+            .Include(o => o.Allocations)
+                .ThenInclude(a => a.Batch)
+                    .ThenInclude(b => b.Item)
+            .Include(o => o.SupplyRequest)
+            .Where(o => o.TenantId == tenantId
+                && o.Status == OrderStatus.Delivered
+                && o.SupplyRequest != null
+                && o.SupplyRequest.BranchId == branchId
+                && o.PushedToFulfillmentAt >= startDate
+                && o.PushedToFulfillmentAt <= endDate)
+            .ToListAsync();
+
+        decimal supplySpend = orders.SelectMany(o => o.Allocations)
+            .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0));
+
+        // Wastage loss for this branch
+        var wastage = await _context.InventoryTransactions
+            .Include(t => t.Batch)
+                .ThenInclude(b => b.Item)
+            .Where(t => t.TenantId == tenantId
+                && t.Batch != null
+                && t.Batch.BranchId == branchId
+                && t.TransactionType == TransactionType.Adjustment
+                && t.QuantityChange < 0
+                && t.Timestamp >= startDate
+                && t.Timestamp <= endDate)
+            .ToListAsync();
+
+        decimal wastageLoss = wastage.Sum(t =>
+            Math.Abs(t.QuantityChange) * (t.Batch?.Item?.UnitCost ?? 0));
+
+        // Performance score & rank
+        var allScores = await CalculateBranchScoresAsync(startDate, endDate);
+        var myScore = allScores.FirstOrDefault(s => s.BranchId == branchId);
+        var rank = allScores.FindIndex(s => s.BranchId == branchId) + 1;
+
+        return new BranchOverviewDto
+        {
+            InventoryValue = inventoryValue,
+            TotalSkus = totalSkus,
+            TotalSupplySpendReceived = supplySpend,
+            WastageLoss = wastageLoss,
+            PerformanceScore = myScore?.ScorePercentage ?? 0,
+            RankInChain = rank > 0 ? rank : allScores.Count,
+            TotalBranchesInChain = allScores.Count
+        };
+    }
+
+    public async Task<List<WastageRecordDto>> GetBranchWastageAsync(
+        int branchId, DateTime startDate, DateTime endDate)
+    {
+        return await GetWastageRecordsAsync(startDate, endDate, branchId);
+    }
+
+    public async Task<List<BranchSupplyHistoryDto>> GetBranchSupplyHistoryAsync(
+        int branchId, DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        var requests = await _context.SupplyRequests
+            .Include(sr => sr.Orders)
+                .ThenInclude(o => o.Allocations)
+                    .ThenInclude(a => a.Batch)
+                        .ThenInclude(b => b.Item)
+            .Where(sr => sr.TenantId == tenantId
+                && sr.BranchId == branchId
+                && sr.CreatedAt >= startDate
+                && sr.CreatedAt <= endDate)
+            .OrderByDescending(sr => sr.CreatedAt)
+            .ToListAsync();
+
+        return requests.Select(sr =>
+        {
+            var order = sr.Orders.FirstOrDefault();
+            decimal cost = order?.Allocations
+                .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0)) ?? 0;
+
+            bool fullyFulfilled = order != null && sr.Items != null
+                && sr.Items.All(i => i.QuantityApproved >= i.QuantityRequested);
+
+            return new BranchSupplyHistoryDto
+            {
+                RequestId = sr.RequestId,
+                ReferenceNumber = sr.ReferenceNumber ?? $"SR-{sr.RequestId}",
+                Status = sr.Status.ToString(),
+                Priority = sr.Priority.ToString(),
+                FulfillmentCost = cost,
+                IsFullyFulfilled = fullyFulfilled,
+                CreatedAt = sr.CreatedAt,
+                DeliveredAt = order?.DeliveredAt
+            };
+        }).ToList();
+    }
+
+    public async Task<BranchPerformanceDetailDto> GetBranchPerformanceDetailAsync(
+        int branchId, DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        var allScores = await CalculateBranchScoresAsync(startDate, endDate);
+        var myEntry = allScores.FirstOrDefault(s => s.BranchId == branchId);
+        var rank = allScores.FindIndex(s => s.BranchId == branchId) + 1;
+
+        // Fulfillment rate for this branch
+        var orders = await _context.Orders
+            .Include(o => o.SupplyRequest)
+            .Where(o => o.TenantId == tenantId
+                && o.SupplyRequest != null
+                && o.SupplyRequest.BranchId == branchId
+                && o.PushedToFulfillmentAt >= startDate
+                && o.PushedToFulfillmentAt <= endDate)
+            .ToListAsync();
+
+        int totalOrders = orders.Count;
+        int deliveredOrders = orders.Count(o => o.Status == OrderStatus.Delivered);
+        decimal fulfillmentRate = totalOrders > 0
+            ? Math.Round(((decimal)deliveredOrders / totalOrders) * 100, 1)
+            : 0;
+
+        // Return rate
+        int returnsCount = myEntry?.ReturnsCount ?? 0;
+        decimal returnRate = totalOrders > 0
+            ? Math.Round(((decimal)returnsCount / Math.Max(totalOrders, 1)) * 100, 1)
+            : 0;
+
+        // Average delivery speed (hours from approval to delivery)
+        var deliveredWithDates = orders
+            .Where(o => o.Status == OrderStatus.Delivered
+                && o.ArrivedAt.HasValue)
+            .ToList();
+
+        decimal avgSpeedHrs = deliveredWithDates.Count > 0
+            ? (decimal)deliveredWithDates
+                .Average(o => (o.ArrivedAt!.Value - o.PushedToFulfillmentAt).TotalHours)
+            : 0;
+
+        // Stock accuracy approximation (100 - normalized wastage penalty)
+        var wastage = await _context.InventoryTransactions
+            .Where(t => t.TenantId == tenantId
+                && t.Batch != null
+                && t.Batch.BranchId == branchId
+                && t.TransactionType == TransactionType.Adjustment
+                && t.QuantityChange < 0
+                && t.Timestamp >= startDate
+                && t.Timestamp <= endDate)
+            .CountAsync();
+
+        decimal stockAccuracy = Math.Clamp(100 - (wastage * 2m), 50, 100);
+
+        // Weighted score: Fulfillment(30%) + ReturnRate(20% inverted) + Speed(25% inverted) + Accuracy(25%)
+        decimal speedScore = avgSpeedHrs > 0
+            ? Math.Clamp(100 - (decimal)(avgSpeedHrs / 24.0m) * 20, 0, 100)
+            : 100;
+        decimal returnScore = Math.Clamp(100 - (returnRate * 5), 0, 100);
+
+        decimal weightedScore = Math.Round(
+            (fulfillmentRate * 0.30m) +
+            (returnScore * 0.20m) +
+            (speedScore * 0.25m) +
+            (stockAccuracy * 0.25m), 1);
+
+        return new BranchPerformanceDetailDto
+        {
+            WeightedScore = weightedScore,
+            FulfillmentRate = fulfillmentRate,
+            ReturnRate = returnRate,
+            DeliverySpeedHrs = Math.Round(avgSpeedHrs, 1),
+            StockAccuracy = Math.Round(stockAccuracy, 1),
+            RankInChain = rank > 0 ? rank : allScores.Count,
+            TotalBranches = allScores.Count
+        };
     }
 }
