@@ -1,4 +1,4 @@
-import { Box, Typography, Backdrop, styled, keyframes } from '@mui/material';
+import { Box, Backdrop, styled, keyframes } from '@mui/material';
 
 const l7 = keyframes`
   0%   { transform: translate(0,0); }
@@ -8,13 +8,7 @@ const l7 = keyframes`
   100% { transform: translate(0,0); }
 `;
 
-const shimmer = keyframes`
-  0% { opacity: 0.5; }
-  50% { opacity: 1; }
-  100% { opacity: 0.5; }
-`;
-
-const LoaderContainer = styled(Box)(({ theme }) => ({
+const LoaderContainer = styled(Box)(() => ({
   width: 120,
   height: 120,
   padding: 10,

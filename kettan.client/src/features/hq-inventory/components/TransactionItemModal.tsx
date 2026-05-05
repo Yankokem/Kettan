@@ -9,10 +9,8 @@ import {
   Paper,
   Tabs,
   Tab,
-  Divider,
 } from '@mui/material';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';

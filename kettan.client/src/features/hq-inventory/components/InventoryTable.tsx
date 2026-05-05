@@ -170,22 +170,6 @@ export function InventoryTable({ items, transactions = [], isBranchView = false 
     );
   }, [transactions, searchQuery]);
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const isYesterday = date.toDateString() === yesterday.toDateString();
-
-    if (isToday) {
-      return `Today ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
-    }
-    if (isYesterday) {
-      return `Yesterday`;
-    }
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
 
   const formatQuantity = (qty: number, unit?: string) => {
     const absQty = Math.abs(qty);

@@ -4,7 +4,7 @@ import MenuIcon          from '@mui/icons-material/Menu';
 import DarkModeRoundedIcon   from '@mui/icons-material/DarkModeRounded';
 import LightModeRoundedIcon  from '@mui/icons-material/LightModeRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
+
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';

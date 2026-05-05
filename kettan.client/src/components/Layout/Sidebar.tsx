@@ -189,7 +189,7 @@ function NavLink({
 export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggle }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
 
 
 

@@ -177,7 +177,7 @@ function toItem(row: ItemDto): InventoryItem {
     name: row.name,
     unit: row.unit,
     categoryId: categoryId != null ? String(categoryId) : '',
-    supplierId: row.supplierId != null ? String(row.supplierId) : undefined,
+    supplierIds: row.supplierId != null ? [String(row.supplierId)] : undefined,
     supplierName: row.supplierName ?? undefined,
     category:
       categoryId != null

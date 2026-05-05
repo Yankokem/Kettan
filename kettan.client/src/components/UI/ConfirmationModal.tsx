@@ -1,4 +1,4 @@
-import { Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, useTheme, IconButton } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, IconButton } from '@mui/material';
 import { Button } from './Button';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
@@ -30,7 +30,6 @@ export function ConfirmationModal({
   severity = 'info',
   loading = false,
 }: ConfirmationModalProps) {
-  const theme = useTheme();
 
   const getSeverityConfig = () => {
     switch (severity) {

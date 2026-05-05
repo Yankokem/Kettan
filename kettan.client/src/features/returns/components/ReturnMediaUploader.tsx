@@ -1,10 +1,9 @@
-import { Box, Typography, IconButton, Grid, Dialog, DialogContent, CircularProgress } from '@mui/material';
+import { Box, Typography, IconButton, Dialog, DialogContent } from '@mui/material';
 import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import FullscreenRoundedIcon from '@mui/icons-material/FullscreenRounded';
 import { useRef, useState } from 'react';
-import { api } from '../../../utils/api';
 
 interface ReturnMediaUploaderProps {
   files: File[];

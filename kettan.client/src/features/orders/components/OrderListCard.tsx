@@ -17,7 +17,6 @@ interface OrderListCardProps {
   datasetMode: 'active' | 'history';
   onOpen: (orderId: string) => void;
   onApprove: (orderId: string) => void;
-  onProceed: (orderId: string) => void;
   onReject: (orderId: string) => void;
 }
 
@@ -39,7 +38,7 @@ const STATUS_MAP: Record<string, { color: string; bg: string }> = {
   Returned: { color: '#9333EA', bg: 'rgba(147,51,234,0.10)' },
 };
 
-export function OrderListCard({ order, datasetMode, onOpen, onApprove, onProceed, onReject }: OrderListCardProps) {
+export function OrderListCard({ order, datasetMode, onOpen, onApprove, onReject }: OrderListCardProps) {
   const statusStyle = STATUS_MAP[order.status] || { color: '#666', bg: 'rgba(0,0,0,0.05)' };
   const dateLabel = datasetMode === 'history' ? 'Completed' : 'Requested';
 
@@ -51,7 +50,6 @@ export function OrderListCard({ order, datasetMode, onOpen, onApprove, onProceed
           status={order.status}
           onViewDetails={onOpen}
           onApprove={onApprove}
-          onProceed={onProceed}
           onReject={onReject}
         />
       </Box>

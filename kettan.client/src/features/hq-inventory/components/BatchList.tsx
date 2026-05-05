@@ -1,4 +1,4 @@
-import { Box, Typography, Chip, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, IconButton, Tooltip } from '@mui/material';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';

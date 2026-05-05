@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { api } from '../../utils/api';
-import { Box, Chip, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import FeedRoundedIcon from '@mui/icons-material/FeedRounded';
 import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
@@ -159,7 +159,6 @@ export function AuditLogsPage() {
       width: '1fr',
       sortable: true,
       render: (row) => {
-        const theme = useTheme();
         const style = actionStyle(row.action);
         return (
           <Typography 

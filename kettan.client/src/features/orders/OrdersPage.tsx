@@ -1,4 +1,4 @@
-import { Box, Grid, ToggleButton, ToggleButtonGroup, Tooltip, Typography, Chip } from '@mui/material';
+import { Box, Grid, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { useNavigate } from '@tanstack/react-router';
@@ -13,9 +13,7 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
 
-import { EmptyState } from '../../components/UI/EmptyState';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { StatCard } from '../../components/UI/StatCard';

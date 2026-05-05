@@ -1,6 +1,5 @@
 import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
 import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';

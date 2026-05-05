@@ -8,22 +8,17 @@ import {
   Paper,
   Select,
   Typography,
-  Grid,
-  useTheme
+  Grid
 } from '@mui/material';
 import type { AxiosError } from 'axios';
 import { api } from '../../utils/api';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import ShoppingBagRoundedIcon from '@mui/icons-material/ShoppingBagRounded';
-import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
-import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import TagRoundedIcon from '@mui/icons-material/TagRounded';
-import HelpCenterRoundedIcon from '@mui/icons-material/HelpCenterRounded';
-import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -72,7 +67,6 @@ interface ItemLine {
 }
 
 export function ReturnCreatePage() {
-  const theme = useTheme();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const isRestricted = user?.role === 'TenantAdmin' || user?.role === 'HqManager' || user?.role === 'HqStaff' || user?.role === 'HQ Staff';
@@ -91,7 +85,7 @@ export function ReturnCreatePage() {
   const [eligibleOrders, setEligibleOrders] = useState<ReturnEligibleOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [selectedOrderId, setSelectedOrderId] = useState<number | ''>('');
-  const [orderDetail, setOrderDetail] = useState<ReturnEligibleOrder | null>(null);
+  const [, setOrderDetail] = useState<ReturnEligibleOrder | null>(null);
   const [orderDetailLoading, setOrderDetailLoading] = useState(false);
 
   // Step 2 — item lines
@@ -101,11 +95,11 @@ export function ReturnCreatePage() {
   const [reason, setReason] = useState('');
   const [photoUrls, setPhotoUrls] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
 
   // Draft tracking
-  const [draftId, setDraftId] = useState<number | null>(null);
+  const [draftId] = useState<number | null>(null);
 
   // UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -211,30 +205,6 @@ export function ReturnCreatePage() {
     })),
   });
 
-  const handleSaveDraft = async () => {
-    const validationError = validateLines();
-    if (validationError) { setError(validationError); return; }
-
-    try {
-      setIsSaving(true);
-      setError(null);
-      const payload = buildDraftPayload();
-
-      let draft;
-      if (draftId) {
-        draft = await updateReturnDraft(draftId, payload);
-      } else {
-        draft = await createReturnDraft(payload);
-        setDraftId(draft.returnId);
-      }
-
-      navigate({ to: '/returns/$returnId', params: { returnId: String(draft.returnId) } });
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleSubmit = async () => {
     const validationError = validateLines();

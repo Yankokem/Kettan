@@ -1,15 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
 import {
   Alert,
   Box,
   Chip,
-  CircularProgress,
   Dialog,
   DialogContent,
   DialogTitle,
-  IconButton,
   MenuItem,
   Paper,
   Select,
@@ -21,14 +19,10 @@ import {
   Typography,
 } from '@mui/material';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
-import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
-import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
-import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import EventRepeatRoundedIcon from '@mui/icons-material/EventRepeatRounded';
@@ -52,8 +46,6 @@ import { TextField } from '../../components/UI/TextField';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
   fetchReturnById,
-  fetchReturnMessages,
-  sendReturnMessage,
   acknowledgeReturn,
   rejectReturn,
   rescheduleReturnPickup,
@@ -63,7 +55,6 @@ import {
   saveReturnInspection,
   completeReturn,
   type ReturnRecord,
-  type ReturnMessage,
   type ReturnItemDto,
 } from '../branch-operations/api';
 import { listVehicles, type Vehicle } from '../hq-inventory/vehicleApi';

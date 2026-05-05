@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Box, Typography, Grid } from '@mui/material';
+import { Box, Grid } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
-import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import StoreRoundedIcon from '@mui/icons-material/StoreRounded';

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
-import { Box, Chip, Typography, Card } from '@mui/material';
+import { Box, Typography, Card } from '@mui/material';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';

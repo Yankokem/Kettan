@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Typography, IconButton, TextField, CircularProgress, Dialog, Paper, Fab, Badge, Popover } from '@mui/material';
+import { Box, Typography, IconButton, TextField, CircularProgress, Dialog, Fab, Badge, Popover } from '@mui/material';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded';

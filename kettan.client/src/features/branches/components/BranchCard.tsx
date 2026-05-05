@@ -3,7 +3,6 @@ import { Box, Card, Chip, IconButton, Divider, Typography, Menu, MenuItem, ListI
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import LocalPhoneRoundedIcon from '@mui/icons-material/LocalPhoneRounded';
-import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';

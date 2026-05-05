@@ -45,13 +45,6 @@ function makeLineId() {
   return `${LINE_ID_PREFIX}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
-function parsePositiveNumber(value: string) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return null;
-  }
-  return parsed;
-}
 
 export default function InventoryTransactionPage() {
   const navigate = useNavigate();
@@ -71,7 +64,6 @@ export default function InventoryTransactionPage() {
   const [items, setItems] = useState<TransactionLineItem[]>([]);
   const [draft, setDraft] = useState<TransactionItemDraft>(createEmptyTransactionItemDraft('existing'));
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [composerError, setComposerError] = useState<string | null>(null);
   const [prefillApplied, setPrefillApplied] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
@@ -169,10 +161,6 @@ export default function InventoryTransactionPage() {
     }
   }, [transactionType, draft.mode]);
 
-  const categoryOptions = useMemo(
-    () => categories.map((category) => ({ value: category.id, label: category.name })),
-    [categories]
-  );
 
   const unitOptions = INVENTORY_UNITS;
 
@@ -192,25 +180,10 @@ export default function InventoryTransactionPage() {
     [items]
   );
 
-  const estimatedValue = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity * (item.unitCost || 0), 0),
-    [items]
-  );
 
   const resetDraft = (mode: TransactionItemDraft['mode'] = 'existing') => {
     setDraft(createEmptyTransactionItemDraft(mode));
-    setComposerError(null);
   };
-
-  const patchDraft = (patch: Partial<TransactionItemDraft>) => {
-    setDraft((prev) => ({ ...prev, ...patch }));
-    if (composerError) {
-      setComposerError(null);
-    }
-  };
-
-  const getItemById = (itemId: string): InventoryItem | undefined =>
-    catalogItems.find((item) => item.id === itemId);
 
   const handleTypeChange = (nextType: InventoryTransactionKind) => {
     if (nextType === transactionType) return;
@@ -224,7 +197,6 @@ export default function InventoryTransactionPage() {
     }
 
     setTransactionType(nextType);
-    setComposerError(null);
 
     if (nextType !== 'Stock-In') {
       setReferenceNumber('');
@@ -235,118 +207,6 @@ export default function InventoryTransactionPage() {
     resetDraft('existing');
   };
 
-  const handleModeChange = (mode: TransactionItemDraft['mode']) => {
-    setDraft((prev) => ({
-      ...createEmptyTransactionItemDraft(mode),
-      reason: prev.reason,
-    }));
-    setComposerError(null);
-  };
-
-  const handleComposerSubmit = () => {
-    const quantity = parsePositiveNumber(draft.quantity);
-    if (quantity === null) {
-      setComposerError('Enter a valid quantity greater than zero.');
-      return;
-    }
-
-    if (draft.mode === 'existing') {
-      const selectedItem = getItemById(draft.selectedItemId);
-
-      if (!selectedItem) {
-        setComposerError('Select an existing item from the catalog first.');
-        return;
-      }
-
-      if (transactionType !== 'Stock-In' && quantity > selectedItem.totalStock) {
-        setComposerError('Quantity cannot exceed current stock for this transaction type.');
-        return;
-      }
-
-      const unitCost = parsePositiveNumber(draft.unitCost);
-      if (transactionType === 'Stock-In' && unitCost === null) {
-        setComposerError('Enter a valid unit cost for Stock-In transactions.');
-        return;
-      }
-
-      const nextLine: TransactionLineItem = {
-        id: editingIndex !== null ? items[editingIndex].id : makeLineId(),
-        itemId: selectedItem.id,
-        itemName: selectedItem.name,
-        itemSku: selectedItem.sku,
-        unit: selectedItem.unit || '',
-        categoryName: selectedItem.category?.name,
-        currentStock: selectedItem.totalStock,
-        quantity,
-        unitCost: transactionType === 'Stock-In' ? unitCost || selectedItem.unitCost : undefined,
-        batchNumber: transactionType === 'Stock-In' ? generateBatchNumber(selectedItem.sku) : undefined,
-        expiryDate: transactionType === 'Stock-In' && draft.expiryDate ? draft.expiryDate : undefined,
-        reason: transactionType !== 'Stock-In' ? draft.reason : undefined,
-        isNewItem: false,
-      };
-
-      if (editingIndex !== null) {
-        setItems((prev) => prev.map((line, index) => (index === editingIndex ? nextLine : line)));
-      } else {
-        setItems((prev) => [...prev, nextLine]);
-      }
-
-      setEditingIndex(null);
-      resetDraft(transactionType === 'Stock-In' ? draft.mode : 'existing');
-      return;
-    }
-
-    if (transactionType !== 'Stock-In') {
-      setComposerError('Quick create is only available for Stock-In transactions.');
-      return;
-    }
-
-    if (!draft.newItemName.trim()) {
-      setComposerError('Enter a name for the new inventory item.');
-      return;
-    }
-
-    const unit = INVENTORY_UNITS.find((entry) => entry.value === draft.newUnit);
-    if (!unit) {
-      setComposerError('Select a valid unit for the new item.');
-      return;
-    }
-
-    const unitCost = parsePositiveNumber(draft.unitCost);
-    if (unitCost === null) {
-      setComposerError('Enter a valid unit cost for the new item.');
-      return;
-    }
-
-    const sku = draft.newSku.trim() || `NEW-${Date.now().toString().slice(-6)}`;
-
-    const nextLine: TransactionLineItem = {
-      id: editingIndex !== null ? items[editingIndex].id : makeLineId(),
-      itemId: `new-${Date.now()}`,
-      itemName: draft.newItemName.trim(),
-      itemSku: sku,
-      unit: unit.value,
-      categoryName: categories.find((entry) => entry.id === draft.newCategoryId)?.name,
-      currentStock: 0,
-      quantity,
-      unitCost,
-      batchNumber: generateBatchNumber(sku),
-      expiryDate: draft.expiryDate || undefined,
-      reason: undefined,
-      isNewItem: true,
-      newCategoryId: draft.newCategoryId,
-      newUnit: draft.newUnit,
-    };
-
-    if (editingIndex !== null) {
-      setItems((prev) => prev.map((line, index) => (index === editingIndex ? nextLine : line)));
-    } else {
-      setItems((prev) => [...prev, nextLine]);
-    }
-
-    setEditingIndex(null);
-    resetDraft('new');
-  };
 
   const handleAddFromModal = (draft: TransactionItemDraft) => {
     const quantity = Number(draft.quantity) || 0;

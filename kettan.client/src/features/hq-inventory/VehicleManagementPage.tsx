@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Grid, IconButton, Paper, Typography, Card } from '@mui/material';
+import { Box, Chip, Grid, IconButton, Typography, Card } from '@mui/material';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';

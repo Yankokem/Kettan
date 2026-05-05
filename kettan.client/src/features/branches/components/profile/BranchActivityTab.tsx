@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Box, Chip, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
