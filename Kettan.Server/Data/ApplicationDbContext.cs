@@ -46,6 +46,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Vehicle> Vehicles { get; set; } = null!;
     public DbSet<Supplier> Suppliers { get; set; } = null!;
+    public DbSet<ItemSupplier> ItemSuppliers { get; set; } = null!;
     public DbSet<MenuCategory> MenuCategories { get; set; } = null!;
     public DbSet<MenuTag> MenuTags { get; set; } = null!;
     public DbSet<MenuItemTag> MenuItemTags { get; set; } = null!;
@@ -137,6 +138,11 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Vehicle>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
         modelBuilder.Entity<Supplier>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
+
+        // ItemSupplier: one row per (Item, Supplier) pair — no global filter needed (filtered via parent)
+        modelBuilder.Entity<ItemSupplier>()
+            .HasIndex(e => new { e.ItemId, e.SupplierId })
+            .IsUnique();
         modelBuilder.Entity<MenuCategory>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
         modelBuilder.Entity<MenuTag>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
 

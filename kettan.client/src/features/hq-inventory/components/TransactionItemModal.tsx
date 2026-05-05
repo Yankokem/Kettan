@@ -346,36 +346,40 @@ export function TransactionItemModal({
             </Box>
 
             <FormTextField 
-              label="Quantity Received" 
+              label={transactionType === 'Stock-Out' ? 'Quantity Deducted' : transactionType === 'Adjustment' ? 'Adjusted Quantity' : 'Quantity Received'} 
               type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               inputProps={{ min: 1 }}
             />
             
-            <FormTextField 
-              label="Unit Cost" 
-              type="number"
-              value={unitCost}
-              onChange={(e) => setUnitCost(e.target.value)}
-              placeholder={selectedItem ? selectedItem.unitCost.toString() : '0.00'}
-            />
+            {transactionType === 'Stock-In' && (
+              <>
+                <FormTextField 
+                  label="Unit Cost" 
+                  type="number"
+                  value={unitCost}
+                  onChange={(e) => setUnitCost(e.target.value)}
+                  placeholder={selectedItem ? selectedItem.unitCost.toString() : '0.00'}
+                />
 
-            <FormTextField 
-              label="Low Stock Threshold" 
-              type="number"
-              value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
-              placeholder="10"
-            />
+                <FormTextField 
+                  label="Low Stock Threshold" 
+                  type="number"
+                  value={threshold}
+                  onChange={(e) => setThreshold(e.target.value)}
+                  placeholder="10"
+                />
 
-            <FormTextField 
-              label="Expiry Date (Optional)" 
-              type="date"
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-            />
+                <FormTextField 
+                  label="Expiry Date (Optional)" 
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </>
+            )}
 
             {error && (
               <Typography sx={{ fontSize: 12, color: 'error.main', textAlign: 'center' }}>{error}</Typography>

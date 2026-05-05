@@ -1,19 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Typography, Paper, Chip, Divider, Grid, Stack } from '@mui/material';
-import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
-import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
-import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
-import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
-import StraightenRoundedIcon from '@mui/icons-material/StraightenRounded';
-import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
 import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
-import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { Button } from '../../components/UI/Button';
 import { PageHeader } from '../../components/UI/PageHeader';
@@ -48,7 +40,6 @@ interface ItemFormState {
   unit: string;
   defaultThreshold: string;
   unitCost: string;
-  supplierId: string;
 }
 
 function toItemFormState(item: InventoryItem): ItemFormState {
@@ -59,7 +50,6 @@ function toItemFormState(item: InventoryItem): ItemFormState {
     unit: item.unit,
     defaultThreshold: String(item.defaultThreshold),
     unitCost: String(item.unitCost),
-    supplierId: item.supplierId || '',
   };
 }
 
@@ -239,7 +229,6 @@ export function InventoryItemProfilePage() {
         name: form.name,
         unit: form.unit,
         inventoryCategoryId: form.categoryId || undefined,
-        supplierId: form.supplierId || undefined,
         defaultThreshold: threshold,
         unitCost,
       });
@@ -279,21 +268,6 @@ export function InventoryItemProfilePage() {
   const categoryOptions = [
     { value: '', label: 'Uncategorized' },
     ...categories.map((category) => ({ value: category.id, label: category.name })),
-  ];
-
-  const supplierOptions = [
-    { value: '', label: 'No Supplier' },
-    ...suppliers.map((s) => ({ value: String(s.supplierId), label: s.name })),
-  ];
-
-  const unitOptions = [
-    { value: 'pc', label: 'Piece (pc)' },
-    { value: 'pack', label: 'Pack (pack)' },
-    { value: 'box', label: 'Box (box)' },
-    { value: 'case', label: 'Case (case)' },
-    { value: 'can', label: 'Can (can)' },
-    { value: 'bottle', label: 'Bottle (bottle)' },
-    { value: 'roll', label: 'Roll (roll)' },
   ];
 
   const handleAdjustBatch = (batchId: string) => {
@@ -452,8 +426,35 @@ export function InventoryItemProfilePage() {
                   value={item?.unit} 
                 />
                 <InfoRow 
-                  label="Primary Supplier" 
-                  value={suppliers.find(s => String(s.supplierId) === item?.supplierId)?.name || 'Not Linked'} 
+                  label="Linked Suppliers" 
+                  value={
+                    item?.supplierIds && item.supplierIds.length > 0
+                      ? (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 0.5 }}>
+                          {item.supplierIds.map((sid, idx) => {
+                            const supplier = suppliers.find(s => String(s.supplierId) === sid);
+                            if (!supplier) return null;
+                            const isLatest = idx === item.supplierIds!.length - 1;
+                            return (
+                              <Chip
+                                key={sid}
+                                label={isLatest ? `${supplier.name} (Active)` : supplier.name}
+                                size="small"
+                                sx={{
+                                  height: 22,
+                                  fontSize: 11.5,
+                                  fontWeight: 700,
+                                  bgcolor: isLatest ? 'rgba(84,107,63,0.12)' : 'action.hover',
+                                  color: isLatest ? '#546B3F' : 'text.secondary',
+                                  border: `1px solid ${isLatest ? 'rgba(84,107,63,0.25)' : 'divider'}`,
+                                }}
+                              />
+                            );
+                          })}
+                        </Box>
+                      )
+                      : 'Not Linked'
+                  }
                 />
               </Stack>
             </Box>

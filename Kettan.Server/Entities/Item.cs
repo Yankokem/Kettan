@@ -35,10 +35,11 @@ public class Item : ITenantEntity
     [ForeignKey(nameof(ItemCategoryId))]
     public ItemCategory? ItemCategory { get; set; }
 
-    public int? SupplierId { get; set; }
-
-    [ForeignKey(nameof(SupplierId))]
-    public Supplier? Supplier { get; set; }
+    /// <summary>
+    /// All suppliers that have ever supplied this item (many-to-many via ItemSupplier join table).
+    /// The most-recently added supplier is considered the active/preferred one.
+    /// </summary>
+    public ICollection<ItemSupplier> ItemSuppliers { get; set; } = new List<ItemSupplier>();
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal DefaultThreshold { get; set; } = 0;

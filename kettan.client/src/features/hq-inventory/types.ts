@@ -83,7 +83,7 @@ export interface InventoryItem {
   unit: string;
   categoryId: string;
   category?: InventoryCategory;
-  supplierId?: string;
+  supplierIds?: string[];
   supplierName?: string;
   defaultThreshold: number;
   unitCost: number;

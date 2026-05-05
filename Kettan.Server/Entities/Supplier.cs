@@ -29,6 +29,8 @@ public class Supplier : ITenantEntity
     [MaxLength(50)]
     public string? Address { get; set; }
 
+    public ICollection<ItemSupplier> ItemSuppliers { get; set; } = new List<ItemSupplier>();
+
     public bool IsActive { get; set; } = true;
 
     public bool IsDeleted { get; set; } = false;

@@ -59,13 +59,30 @@ public class InventoryService : IInventoryService
         }
 
         // Update other metadata if provided
-        if (supplierId.HasValue) item.SupplierId = supplierId.Value;
+        var now = DateTime.UtcNow;
+
+        if (supplierId.HasValue)
+        {
+            // Append supplier to the many-to-many list (ignore if already linked)
+            var alreadyLinked = await _context.ItemSuppliers
+                .AnyAsync(s => s.ItemId == itemId && s.SupplierId == supplierId.Value);
+
+            if (!alreadyLinked)
+            {
+                _context.ItemSuppliers.Add(new ItemSupplier
+                {
+                    ItemId = itemId,
+                    SupplierId = supplierId.Value,
+                    LinkedAt = now
+                });
+            }
+        }
+
+        // Always overwrite threshold when a new one is explicitly provided
         if (defaultThreshold.HasValue) item.DefaultThreshold = defaultThreshold.Value;
 
         item.UpdatedAt = DateTime.UtcNow;
         // --------------------------------------------
-
-        var now = DateTime.UtcNow;
 
         var batch = new Batch
         {

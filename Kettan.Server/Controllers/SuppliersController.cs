@@ -174,7 +174,7 @@ public class SuppliersController : ControllerBase
         }
 
         // Check if any items are using this supplier
-        var inUse = await _context.Items.AnyAsync(i => i.SupplierId == id);
+        var inUse = await _context.ItemSuppliers.AnyAsync(i => i.SupplierId == id);
         if (inUse)
         {
             return BadRequest(new { message = "Supplier cannot be deleted because it is in use by inventory items." });

@@ -53,7 +53,7 @@ public class ItemsController : ControllerBase
         var query = _context.Items
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
-            .Include(i => i.Supplier)
+            .Include(i => i.ItemSuppliers).ThenInclude(isup => isup.Supplier)
             .AsQueryable();
 
         // If branch user and NOT viewing HQ catalog, only show items they have stock for
@@ -151,7 +151,6 @@ public class ItemsController : ControllerBase
                 Unit = dto.Unit,
                 InventoryCategoryId = dto.InventoryCategoryId,
                 ItemCategoryId = dto.ItemCategoryId,
-                SupplierId = dto.SupplierId,
                 DefaultThreshold = dto.DefaultThreshold,
                 UnitCost = dto.UnitCost,
                 SellingPrice = dto.SellingPrice,
@@ -160,6 +159,11 @@ public class ItemsController : ControllerBase
                 CreatedAt = now,
                 UpdatedAt = now
             };
+
+            if (dto.SupplierId.HasValue)
+            {
+                item.ItemSuppliers.Add(new ItemSupplier { SupplierId = dto.SupplierId.Value });
+            }
 
             _context.Items.Add(item);
             await _context.SaveChangesAsync();
@@ -204,11 +208,19 @@ public class ItemsController : ControllerBase
             item.Unit = dto.Unit;
             item.InventoryCategoryId = dto.InventoryCategoryId;
             item.ItemCategoryId = dto.ItemCategoryId;
-            item.SupplierId = dto.SupplierId;
             item.DefaultThreshold = dto.DefaultThreshold;
             item.UnitCost = dto.UnitCost;
             item.SellingPrice = dto.SellingPrice;
             item.IsBundle = dto.IsBundle;
+
+            if (dto.SupplierId.HasValue)
+            {
+                var currentSupplierId = item.ItemSuppliers.OrderByDescending(s => s.LinkedAt).FirstOrDefault()?.SupplierId;
+                if (currentSupplierId != dto.SupplierId.Value)
+                {
+                    item.ItemSuppliers.Add(new ItemSupplier { SupplierId = dto.SupplierId.Value });
+                }
+            }
 
             item.UpdatedAt = DateTime.UtcNow;
 
@@ -366,7 +378,7 @@ public class ItemsController : ControllerBase
         var item = await _context.Items
             .Include(i => i.InventoryCategory)
             .Include(i => i.ItemCategory)
-            .Include(i => i.Supplier)
+            .Include(i => i.ItemSuppliers).ThenInclude(isup => isup.Supplier)
             .FirstOrDefaultAsync(i => i.ItemId == id);
 
         if (item == null)
@@ -501,6 +513,8 @@ public class ItemsController : ControllerBase
 
     private static ItemDto MapItem(Item item, decimal stockLevel)
     {
+        var latestSupplier = item.ItemSuppliers.OrderByDescending(s => s.LinkedAt).FirstOrDefault();
+
         return new ItemDto
         {
             ItemId = item.ItemId,
@@ -512,8 +526,9 @@ public class ItemsController : ControllerBase
             InventoryCategoryName = item.InventoryCategory?.Name,
             ItemCategoryId = item.ItemCategoryId,
             ItemCategoryName = item.ItemCategory?.Name,
-            SupplierId = item.SupplierId,
-            SupplierName = item.Supplier?.Name,
+            SupplierId = latestSupplier?.SupplierId,
+            SupplierName = latestSupplier?.Supplier?.Name,
+            SupplierIds = item.ItemSuppliers.Select(s => s.SupplierId).Distinct().ToList(),
             DefaultThreshold = item.DefaultThreshold,
             UnitCost = item.UnitCost,
             PreviousUnitCost = item.PreviousUnitCost,

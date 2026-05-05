@@ -12,6 +12,7 @@ public class ItemDto
     public int? ItemCategoryId { get; set; }
     public string? ItemCategoryName { get; set; }
     public int? SupplierId { get; set; }
+    public List<int>? SupplierIds { get; set; }
     public string? SupplierName { get; set; }
     public decimal DefaultThreshold { get; set; }
     public decimal UnitCost { get; set; }
