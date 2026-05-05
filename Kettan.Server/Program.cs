@@ -247,6 +247,23 @@ app.MapGet("/api/debug/fix-database", async (ApplicationDbContext db) =>
             IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Users]') AND name = 'Status')
             BEGIN
                 ALTER TABLE [Users] ADD [Status] tinyint NOT NULL DEFAULT 0;
+            END
+            
+            -- Fix Users Role enum
+            IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Users]') AND name = 'Role' AND system_type_id != 48)
+            BEGIN
+                ALTER TABLE [Users] ALTER COLUMN [Role] tinyint NOT NULL;
+            END
+
+            -- Fix Employees Status enum
+            IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Employees]') AND name = 'Status' AND system_type_id != 48)
+            BEGIN
+                DECLARE @EmpConstraintName nvarchar(200)
+                SELECT @EmpConstraintName = Name FROM sys.default_constraints
+                WHERE parent_object_id = OBJECT_ID('Employees') AND parent_column_id = COLUMNPROPERTY(OBJECT_ID('Employees'), 'Status', 'ColumnId')
+                IF @EmpConstraintName IS NOT NULL EXEC('ALTER TABLE [Employees] DROP CONSTRAINT ' + @EmpConstraintName)
+                
+                ALTER TABLE [Employees] ALTER COLUMN [Status] tinyint NOT NULL;
             END");
 
         // 2. Fix Shipments table
