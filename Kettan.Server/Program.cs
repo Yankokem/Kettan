@@ -266,7 +266,71 @@ app.MapGet("/api/debug/fix-database", async (ApplicationDbContext db) =>
                 ALTER TABLE [Employees] ALTER COLUMN [Status] tinyint NOT NULL;
             END");
 
-        // 2. Fix Shipments table
+        // 2. Comprehensive Enum Fixes for all tables
+        await db.Database.ExecuteSqlRawAsync(@"
+            DECLARE @TableName nvarchar(200)
+            DECLARE @ColumnName nvarchar(200)
+            DECLARE @ConstraintName nvarchar(200)
+            DECLARE @SQL nvarchar(max)
+
+            DECLARE EnumCursor CURSOR FOR
+            SELECT 'Returns', 'Resolution' UNION ALL
+            SELECT 'Returns', 'Status' UNION ALL
+            SELECT 'ReturnItems', 'ReasonCode' UNION ALL
+            SELECT 'ReturnItems', 'Disposition' UNION ALL
+            SELECT 'InventoryTransactions', 'TransactionType' UNION ALL
+            SELECT 'InventoryTransactions', 'ReferenceType' UNION ALL
+            SELECT 'ConsumptionLogs', 'Method' UNION ALL
+            SELECT 'ConsumptionLogs', 'Shift' UNION ALL
+            SELECT 'SupplyRequests', 'Status' UNION ALL
+            SELECT 'SupplyRequests', 'RequestType' UNION ALL
+            SELECT 'SupplyRequests', 'Priority' UNION ALL
+            SELECT 'SupplyRequests', 'DispatchWindow' UNION ALL
+            SELECT 'MenuItems', 'Status' UNION ALL
+            SELECT 'MenuVariants', 'PricingMode' UNION ALL
+            SELECT 'Vehicles', 'VehicleType' UNION ALL
+            SELECT 'Orders', 'Status' UNION ALL
+            SELECT 'OrderStatusHistory', 'Status' UNION ALL
+            SELECT 'Notifications', 'Type' UNION ALL
+            SELECT 'Notifications', 'ReferenceType' UNION ALL
+            SELECT 'Tenants', 'SubscriptionStatus' UNION ALL
+            SELECT 'Tenants', 'SubscriptionTier' UNION ALL
+            SELECT 'TenantSubscriptions', 'Status' UNION ALL
+            SELECT 'TenantSubscriptions', 'BillingCycle' UNION ALL
+            SELECT 'SubscriptionInvoices', 'Status' UNION ALL
+            SELECT 'SubscriptionPayments', 'Status' UNION ALL
+            SELECT 'SubscriptionPayments', 'PaymentMethod' UNION ALL
+            SELECT 'SubscriptionPayments', 'Provider'
+
+            OPEN EnumCursor
+            FETCH NEXT FROM EnumCursor INTO @TableName, @ColumnName
+
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(@TableName) AND name = @ColumnName AND system_type_id != 48)
+                BEGIN
+                    SET @ConstraintName = NULL
+                    SELECT @ConstraintName = Name FROM sys.default_constraints
+                    WHERE parent_object_id = OBJECT_ID(@TableName) AND parent_column_id = COLUMNPROPERTY(OBJECT_ID(@TableName), @ColumnName, 'ColumnId')
+                    
+                    IF @ConstraintName IS NOT NULL
+                    BEGIN
+                        SET @SQL = 'ALTER TABLE [' + @TableName + '] DROP CONSTRAINT [' + @ConstraintName + ']'
+                        EXEC sp_executesql @SQL
+                    END
+                    
+                    SET @SQL = 'ALTER TABLE [' + @TableName + '] ALTER COLUMN [' + @ColumnName + '] tinyint NOT NULL'
+                    -- Catch block handled by EF Core execution wrapper if fails
+                    EXEC sp_executesql @SQL
+                END
+                
+                FETCH NEXT FROM EnumCursor INTO @TableName, @ColumnName
+            END
+
+            CLOSE EnumCursor
+            DEALLOCATE EnumCursor");
+
+        // 3. Fix Shipments table
         await db.Database.ExecuteSqlRawAsync(@"
             IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Shipments]') AND name = 'ShippingCost')
             BEGIN
