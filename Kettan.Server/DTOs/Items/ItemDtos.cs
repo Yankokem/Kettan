@@ -22,6 +22,7 @@ public class ItemDto
 
     public decimal TotalStock { get; set; }
     public bool IsLowStock { get; set; }
+    public bool IsBranchThreshold { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
@@ -119,4 +120,10 @@ public class FifoBatchDeductionDto
     public string BatchNumber { get; set; } = string.Empty;
     public decimal QuantityDeducted { get; set; }
     public decimal RemainingBatchQuantity { get; set; }
+}
+
+public class SetBranchThresholdRequest
+{
+    public int ItemId { get; set; }
+    public decimal Threshold { get; set; }
 }

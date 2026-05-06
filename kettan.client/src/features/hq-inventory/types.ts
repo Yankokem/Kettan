@@ -90,6 +90,7 @@ export interface InventoryItem {
   previousUnitCost?: number;
   totalStock: number;
   status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  isBranchThreshold?: boolean;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;

@@ -435,18 +435,30 @@ public class InventoryService : IInventoryService
 
     private async Task CheckThresholdAndNotifyAsync(int itemId, int? branchId)
     {
-        var item = await _context.Items.FindAsync(itemId);
-        if (item == null || item.DefaultThreshold <= 0) return;
+        var item = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.ItemId == itemId);
+        if (item == null) return;
+
+        var threshold = item.DefaultThreshold;
+        if (branchId.HasValue)
+        {
+            var custom = await _context.BranchItemSettings
+                .Where(s => s.BranchId == branchId.Value && s.ItemId == itemId)
+                .Select(s => (decimal?)s.LowStockThreshold)
+                .FirstOrDefaultAsync();
+            if (custom.HasValue) threshold = custom.Value;
+        }
+
+        if (threshold <= 0) return;
 
         var currentStock = await GetStockLevelAsync(itemId, branchId);
-        if (currentStock <= item.DefaultThreshold)
+        if (currentStock <= threshold)
         {
             if (branchId.HasValue)
             {
                 await _notificationService.CreateForRolesAsync(
                     ["BranchManager", "BranchOwner"],
                     "Low Stock Alert",
-                    $"Stock for {item.Name} has dropped to {currentStock:G29} (below threshold of {item.DefaultThreshold:G29}).",
+                    $"Stock for {item.Name} has dropped to {currentStock:G29} (below threshold of {threshold:G29}).",
                     type: "LowStock",
                     branchId: branchId.Value);
             }
@@ -455,7 +467,7 @@ public class InventoryService : IInventoryService
                 await _notificationService.CreateForRolesAsync(
                     ["HqManager", "TenantAdmin"],
                     "Low Stock Alert (HQ)",
-                    $"HQ Stock for {item.Name} has dropped to {currentStock:G29} (below threshold of {item.DefaultThreshold:G29}).",
+                    $"HQ Stock for {item.Name} has dropped to {currentStock:G29} (below threshold of {threshold:G29}).",
                     type: "LowStock");
             }
         }

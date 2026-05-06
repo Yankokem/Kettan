@@ -78,10 +78,12 @@ public class AnalyticsService : IAnalyticsService
         var tenantId = _currentUser.TenantId.Value;
 
         var branches = await _context.Branches
+            .AsNoTracking()
             .Where(b => b.TenantId == tenantId && b.IsActive)
             .ToListAsync();
 
         var consumptions = await _context.ConsumptionLogs
+            .AsNoTracking()
             .Where(c => c.TenantId == tenantId
                 && c.Method == ConsumptionMethod.Sales
                 && c.LogDate >= startDate
@@ -91,12 +93,14 @@ public class AnalyticsService : IAnalyticsService
             .ToDictionaryAsync(x => x.BranchId, x => x.Count);
 
         var returns = await _context.Returns
+            .AsNoTracking()
             .Where(r => r.TenantId == tenantId && r.LoggedAt >= startDate && r.LoggedAt <= endDate)
             .GroupBy(r => r.BranchId)
             .Select(g => new { BranchId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.BranchId, x => x.Count);
 
         var requests = await _context.SupplyRequests
+            .AsNoTracking()
             .Where(s => s.TenantId == tenantId && s.CreatedAt >= startDate && s.CreatedAt <= endDate)
             .GroupBy(s => s.BranchId)
             .Select(g => new { BranchId = g.Key, Count = g.Count() })
@@ -112,7 +116,7 @@ public class AnalyticsService : IAnalyticsService
             int reqCount = requests.TryGetValue(branch.BranchId, out var req) ? req : 0;
 
             decimal baseScore = maxSales > 0 ? ((decimal)salesScore / maxSales) * 100m : 50m;
-            decimal penalty = returnScore * 10m;
+            decimal penalty = returnScore * 5m; // Adjusted penalty
             decimal finalScore = Math.Clamp(baseScore - penalty, 0, 100);
 
             scorecards.Add(new BranchScorecardDto
@@ -400,7 +404,7 @@ public class AnalyticsService : IAnalyticsService
         }).ToList();
     }
 
-    public async Task<List<EoqSuggestionDto>> GetEoqSuggestionsAsync()
+    public async Task<List<EoqSuggestionDto>> GetEoqSuggestionsAsync(int? branchId = null)
     {
         var tenantId = RequireTenantId();
 
@@ -408,23 +412,34 @@ public class AnalyticsService : IAnalyticsService
             .Where(i => i.TenantId == tenantId && !i.IsDeleted)
             .ToListAsync();
 
-        var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
-        // Get recent consumption per item
-        var consumptionByItem = await _context.ConsumptionLogItems
+        // Get recent consumption per item (optionally filtered by branch)
+        var consumptionQuery = _context.ConsumptionLogItems
             .Where(ci => ci.TenantId == tenantId
                 && ci.ConsumptionLog != null
-                && ci.ConsumptionLog.LogDate >= thirtyDaysAgo)
-            .Where(ci => ci.ItemId != null)
+                && ci.ConsumptionLog.LogDate >= sevenDaysAgo)
+            .Where(ci => ci.ItemId != null);
+
+        if (branchId.HasValue)
+            consumptionQuery = consumptionQuery.Where(ci => ci.ConsumptionLog!.BranchId == branchId.Value);
+
+        var consumptionByItem = await consumptionQuery
             .GroupBy(ci => ci.ItemId!.Value)
             .Select(g => new { ItemId = g.Key, Total = g.Sum(ci => ci.Quantity) })
             .ToDictionaryAsync(x => x.ItemId, x => x.Total);
 
-        // Get current HQ stock per item
-        var hqStockByItem = await _context.Batches
+        // Get current stock per item (optionally filtered by branch)
+        var stockQuery = _context.Batches
             .Where(b => b.TenantId == tenantId
-                && b.BranchId == null
-                && b.CurrentQuantity > 0)
+                && b.CurrentQuantity > 0);
+
+        if (branchId.HasValue)
+            stockQuery = stockQuery.Where(b => b.BranchId == branchId.Value);
+        else
+            stockQuery = stockQuery.Where(b => b.BranchId == null); // HQ only if no branchId
+
+        var stockByItem = await stockQuery
             .GroupBy(b => b.ItemId)
             .Select(g => new { ItemId = g.Key, Total = g.Sum(b => b.CurrentQuantity) })
             .ToDictionaryAsync(x => x.ItemId, x => x.Total);
@@ -433,13 +448,18 @@ public class AnalyticsService : IAnalyticsService
 
         foreach (var item in items)
         {
+            // Calculate annual demand: manual setting OR (last 7 days * 52 weeks)
             var annualDemand = item.AnnualDemand > 0
                 ? item.AnnualDemand
-                : (consumptionByItem.TryGetValue(item.ItemId, out var recent) ? recent * 12 : 0);
+                : (consumptionByItem.TryGetValue(item.ItemId, out var recent) ? recent * 52.14m : 0);
+
+            // Use fallbacks for S and H if they are not configured
+            var s = item.SetupCost > 0 ? item.SetupCost : 100m;
+            var h = item.HoldingCost > 0 ? item.HoldingCost : Math.Max(1.0m, item.UnitCost * 0.2m);
 
             decimal eoq = 0;
-            if (annualDemand > 0 && item.HoldingCost > 0 && item.SetupCost > 0)
-                eoq = (decimal)Math.Sqrt((double)((2 * annualDemand * item.SetupCost) / item.HoldingCost));
+            if (annualDemand > 0)
+                eoq = (decimal)Math.Sqrt((double)((2 * annualDemand * s) / h));
 
             suggestions.Add(new EoqSuggestionDto
             {
@@ -447,16 +467,19 @@ public class AnalyticsService : IAnalyticsService
                 ItemName = item.Name,
                 ItemSku = item.SKU,
                 Unit = item.Unit,
-                CurrentStock = hqStockByItem.TryGetValue(item.ItemId, out var stock) ? stock : 0,
+                CurrentStock = stockByItem.TryGetValue(item.ItemId, out var stock) ? stock : 0,
                 AnnualDemand = annualDemand,
                 EOQ = Math.Round(eoq, 2),
-                UnitCost = item.UnitCost
+                UnitCost = item.UnitCost,
+                SetupCost = s,
+                HoldingCost = h
             });
         }
 
         return suggestions
             .Where(s => s.EOQ > 0)
-            .OrderByDescending(s => s.EOQ)
+            .OrderByDescending(s => s.AnnualDemand)
+            .ThenByDescending(s => s.EOQ)
             .ToList();
     }
 
@@ -785,5 +808,154 @@ public class AnalyticsService : IAnalyticsService
             RankInChain = rank > 0 ? rank : allScores.Count,
             TotalBranches = allScores.Count
         };
+    }
+
+    public async Task<List<TrendPointDto>> GetBranchSalesTrendAsync(int branchId, DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        var logs = await _context.ConsumptionLogs
+            .Include(l => l.Items)
+                .ThenInclude(i => i.Item)
+            .Where(l => l.TenantId == tenantId 
+                && l.BranchId == branchId 
+                && l.LogDate >= startDate 
+                && l.LogDate <= endDate)
+            .ToListAsync();
+
+        var daily = logs.GroupBy(l => l.LogDate.Date)
+            .Select(g => new TrendPointDto
+            {
+                Label = g.Key.ToString("MMM dd"),
+                Value = g.SelectMany(l => l.Items).Sum(i => i.Quantity * (i.Item?.SellingPrice ?? 0))
+            })
+            .ToList();
+
+        return FillMissingDates(daily, startDate, endDate);
+    }
+
+    public async Task<List<BranchTrendDto>> GetHqSupplyTrendAsync(DateTime startDate, DateTime endDate)
+    {
+        var tenantId = RequireTenantId();
+
+        var orders = await _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(sr => sr!.Branch)
+            .Include(o => o.Allocations)
+                .ThenInclude(a => a.Batch)
+                    .ThenInclude(b => b.Item)
+            .Where(o => o.TenantId == tenantId 
+                && o.PushedToFulfillmentAt >= startDate 
+                && o.PushedToFulfillmentAt <= endDate)
+            .ToListAsync();
+
+        var branches = orders.Where(o => o.SupplyRequest?.Branch != null)
+            .Select(o => o.SupplyRequest!.Branch!)
+            .DistinctBy(b => b.BranchId)
+            .ToList();
+
+        var result = new List<BranchTrendDto>();
+
+        foreach (var branch in branches)
+        {
+            var branchDaily = orders.Where(o => o.SupplyRequest?.BranchId == branch.BranchId)
+                .GroupBy(o => o.PushedToFulfillmentAt.Date)
+                .Select(g => new TrendPointDto
+                {
+                    Label = g.Key.ToString("MMM dd"),
+                    Value = g.SelectMany(o => o.Allocations).Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0))
+                })
+                .ToList();
+
+            result.Add(new BranchTrendDto
+            {
+                BranchName = branch.Name,
+                Points = FillMissingDates(branchDaily, startDate, endDate)
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<List<LowStockAlertDto>> GetLowStockAlertsAsync(int? branchId = null)
+    {
+        var query = _context.Batches
+            .Include(b => b.Item)
+            .Include(b => b.Branch)
+            .AsNoTracking();
+
+        if (branchId.HasValue)
+        {
+            query = query.Where(b => b.BranchId == branchId.Value);
+        }
+        else
+        {
+            // HQ only sees their own warehouse stock alerts on their dashboard
+            query = query.Where(b => b.BranchId == null);
+        }
+
+        var stockGrouped = await query
+            .GroupBy(b => new { b.ItemId, b.BranchId, b.Item!.Name, b.Item.SKU, b.Item.Unit, b.Item.DefaultThreshold, BranchName = b.Branch!.Name })
+            .Select(g => new
+            {
+                g.Key.ItemId,
+                g.Key.BranchId,
+                g.Key.Name,
+                g.Key.SKU,
+                g.Key.Unit,
+                g.Key.DefaultThreshold,
+                g.Key.BranchName,
+                TotalStock = g.Sum(b => b.CurrentQuantity)
+            })
+            .ToListAsync();
+
+        // Get custom settings for these items/branches
+        var branchIds = stockGrouped.Select(s => s.BranchId ?? 0).Distinct().ToList();
+        var itemIds = stockGrouped.Select(s => s.ItemId).Distinct().ToList();
+
+        var customSettings = await _context.BranchItemSettings
+            .Where(s => branchIds.Contains(s.BranchId) && itemIds.Contains(s.ItemId))
+            .ToDictionaryAsync(s => $"{s.BranchId}_{s.ItemId}", s => s.LowStockThreshold);
+
+        var results = stockGrouped
+            .Select(s => {
+                var threshold = customSettings.TryGetValue($"{(s.BranchId ?? 0)}_{s.ItemId}", out var custom) 
+                    ? custom 
+                    : s.DefaultThreshold;
+                
+                return new LowStockAlertDto
+                {
+                    ItemId = s.ItemId,
+                    ItemName = s.Name,
+                    SKU = s.SKU,
+                    BranchName = s.BranchName ?? "HQ",
+                    CurrentStock = s.TotalStock,
+                    Threshold = threshold,
+                    Unit = s.Unit
+                };
+            })
+            .Where(a => a.Threshold > 0 && a.CurrentStock <= a.Threshold)
+            .OrderBy(a => a.Threshold > 0 ? (a.CurrentStock / a.Threshold) : 0)
+            .ToList();
+
+        return results;
+    }
+
+    private List<TrendPointDto> FillMissingDates(List<TrendPointDto> points, DateTime start, DateTime end)
+    {
+        var result = new List<TrendPointDto>();
+        var lookup = points.ToDictionary(p => p.Label, p => p.Value);
+
+        for (var date = start.Date; date <= end.Date; date = date.AddDays(1))
+        {
+            var label = date.ToString("MMM dd");
+            result.Add(new TrendPointDto
+            {
+                Label = label,
+                Value = lookup.TryGetValue(label, out var val) ? val : 0
+            });
+        }
+
+        return result;
     }
 }

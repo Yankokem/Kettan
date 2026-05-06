@@ -1,7 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  InputAdornment
 } from '@mui/material';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
@@ -26,7 +32,7 @@ import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded';
 import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
 import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import type { InventoryItem, InventoryTransaction, TransactionType } from '../types';
 import { SearchInput } from '../../../components/UI/SearchInput';
 import { Button } from '../../../components/UI/Button';
@@ -38,6 +44,7 @@ interface InventoryTableProps {
   items: InventoryItem[];
   transactions?: InventoryTransaction[];
   isBranchView?: boolean;
+  onRefresh?: () => void;
 }
 
 type ViewMode = 'default' | 'transactions';
@@ -75,7 +82,7 @@ const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: strin
   },
 };
 
-function ActionsMenu({ item }: { item: InventoryItem }) {
+function ActionsMenu({ item, isBranchView, onThresholdEdit }: { item: InventoryItem, isBranchView?: boolean, onThresholdEdit: (item: InventoryItem) => void }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const open = Boolean(anchorEl);
@@ -112,10 +119,18 @@ function ActionsMenu({ item }: { item: InventoryItem }) {
           <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
           <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
         </MenuItem>
-        <MenuItem onClick={() => { handleClose(); }}>
-          <ListItemIcon><ArchiveRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="Archive Item" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+
+        <MenuItem onClick={() => { handleClose(); onThresholdEdit(item); }}>
+          <ListItemIcon><TuneRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="Set Low Stock Alert" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
         </MenuItem>
+
+        {!isBranchView && (
+          <MenuItem onClick={() => { handleClose(); }}>
+            <ListItemIcon><ArchiveRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+            <ListItemText primary="Archive Item" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          </MenuItem>
+        )}
         <Divider sx={{ my: 1 }} />
         <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(item.sku); }}>
           <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
@@ -126,12 +141,61 @@ function ActionsMenu({ item }: { item: InventoryItem }) {
   );
 }
 
-export function InventoryTable({ items, transactions = [], isBranchView = false }: InventoryTableProps) {
+export function InventoryTable({ items, transactions = [], isBranchView = false, onRefresh }: InventoryTableProps) {
   const navigate = useNavigate();
+  const search = useSearch({ from: '/layout/hq-inventory' }) as { search?: string };
   const [viewMode, setViewMode] = useState<ViewMode>('default');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(search.search || '');
   const [sortBy, setSortBy] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
+
+  // Sync search query from URL if it changes
+  useEffect(() => {
+    if (search.search !== undefined) {
+      setSearchQuery(search.search);
+    }
+  }, [search.search]);
+
+  // Threshold Dialog State
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [newThreshold, setNewThreshold] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleOpenThreshold = (item: InventoryItem) => {
+    setEditingItem(item);
+    setNewThreshold(String(item.defaultThreshold));
+  };
+
+  const handleCloseThreshold = () => {
+    setEditingItem(null);
+    setNewThreshold('');
+  };
+
+  const handleSaveThreshold = async () => {
+    if (!editingItem) return;
+    try {
+      setIsSaving(true);
+      const val = parseFloat(newThreshold);
+      if (isNaN(val) || val < 0) return;
+      
+      const { setBranchThreshold, setGlobalThreshold } = await import('../hqInventoryApi');
+      
+      if (isBranchView) {
+        await setBranchThreshold(editingItem.id, val);
+      } else {
+        await setGlobalThreshold(editingItem.id, val);
+      }
+      
+      handleCloseThreshold();
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (err) {
+      console.error('Failed to save threshold', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const viewOptions = [
     { value: 'default' as const, label: 'General', icon: <ViewListRoundedIcon fontSize="small" /> },
@@ -239,9 +303,16 @@ export function InventoryTable({ items, transactions = [], isBranchView = false 
       align: 'right',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-          {row.defaultThreshold} {row.unit}
-        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+            {row.defaultThreshold} {row.unit}
+          </Typography>
+          {row.isBranchThreshold && (
+            <Typography sx={{ fontSize: 10, color: '#B08B5A', fontWeight: 700, letterSpacing: 0.5, mt: -0.5 }}>
+              BRANCH OVERRIDE
+            </Typography>
+          )}
+        </Box>
       ),
     },
     {
@@ -277,7 +348,13 @@ export function InventoryTable({ items, transactions = [], isBranchView = false 
       key: 'actions',
       label: 'ACTIONS',
       align: 'right',
-      render: (row) => <ActionsMenu item={row} />,
+      render: (row) => (
+        <ActionsMenu 
+          item={row} 
+          isBranchView={isBranchView} 
+          onThresholdEdit={handleOpenThreshold} 
+        />
+      ),
     },
   ];
 
@@ -458,16 +535,48 @@ export function InventoryTable({ items, transactions = [], isBranchView = false 
   }
 
   return (
-    <DataTable
-      columns={defaultColumns}
-      data={filteredItems}
-      keyExtractor={(row) => row.id.toString()}
-      toolbar={toolbar}
-      emptyTitle="No items found"
-      emptyMessage={searchQuery ? "We couldn't find any inventory items matching your search." : "The inventory catalog is currently empty."}
-      emptyIcon={<Inventory2RoundedIcon />}
-      defaultRowsPerPage={15}
-      rowsPerPageOptions={[15, 25, 50]}
-    />
+    <>
+      <DataTable
+        columns={defaultColumns}
+        data={filteredItems}
+        keyExtractor={(row) => row.id.toString()}
+        toolbar={toolbar}
+        emptyTitle="No items found"
+        emptyMessage={searchQuery ? "We couldn't find any inventory items matching your search." : "The inventory catalog is currently empty."}
+        emptyIcon={<Inventory2RoundedIcon />}
+        defaultRowsPerPage={15}
+        rowsPerPageOptions={[15, 25, 50]}
+      />
+
+    <Dialog open={!!editingItem} onClose={handleCloseThreshold} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ pb: 1 }}>Set Low Stock Alert</DialogTitle>
+      <DialogContent>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
+          {isBranchView 
+            ? `When the stock level for ${editingItem?.name} falls below this value in your branch, it will trigger an alert on your dashboard.`
+            : `Set the global default threshold for ${editingItem?.name}. This will apply to all branches that haven't set their own override.`
+          }
+        </Typography>
+        <TextField
+          autoFocus
+          fullWidth
+          label="Low Stock Threshold"
+          type="number"
+          value={newThreshold}
+          onChange={(e) => setNewThreshold(e.target.value)}
+          InputProps={{
+            endAdornment: <InputAdornment position="end">{editingItem?.unit}</InputAdornment>,
+          }}
+          helperText="Set to 0 to disable alerts for this item."
+        />
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button onClick={handleCloseThreshold} variant="text" sx={{ color: 'text.secondary' }}>Cancel</Button>
+        <Button onClick={handleSaveThreshold} loading={isSaving} disabled={!newThreshold || isNaN(parseFloat(newThreshold))}>
+          Save Threshold
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 }

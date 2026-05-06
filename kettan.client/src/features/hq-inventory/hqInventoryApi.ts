@@ -23,6 +23,7 @@ interface ItemDto {
   previousUnitCost: number | null;
   totalStock: number;
   isLowStock: boolean;
+  isBranchThreshold?: boolean;
   imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -196,6 +197,7 @@ function toItem(row: ItemDto): InventoryItem {
     previousUnitCost: row.previousUnitCost != null ? Number(row.previousUnitCost) : undefined,
     totalStock,
     status: toItemStatus(totalStock, defaultThreshold),
+    isBranchThreshold: row.isBranchThreshold,
     imageUrl: row.imageUrl,
     isDeleted: false,
     createdAt: row.createdAt,
@@ -380,4 +382,18 @@ export function generateBatchNumber(itemSku?: string): string {
   const seq = Math.floor(Math.random() * 900) + 100;
   const prefix = itemSku ? itemSku.split('-')[0] : 'BN';
   return `${prefix}-${year}-${seq}`;
+}
+
+export async function setBranchThreshold(itemId: string, threshold: number): Promise<void> {
+  await api.post('/api/items/branch/threshold', {
+    itemId: Number(itemId),
+    threshold
+  });
+}
+
+export async function setGlobalThreshold(itemId: string, threshold: number): Promise<void> {
+  await api.post('/api/items/global/threshold', {
+    itemId: Number(itemId),
+    threshold
+  });
 }

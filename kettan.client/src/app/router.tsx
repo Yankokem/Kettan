@@ -177,6 +177,11 @@ const editStaffRoute = createRoute({
 const inventoryRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/hq-inventory',
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      search: (search.search as string) || undefined,
+    } as { search?: string };
+  },
   component: InventoryPage,
 });
 

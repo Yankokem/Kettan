@@ -38,6 +38,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Notification> Notifications { get; set; } = null!;
     
     // New Entities
+    public DbSet<BranchItemSetting> BranchItemSettings { get; set; } = null!;
 
     public DbSet<InventoryCategory> InventoryCategories { get; set; } = null!;
     public DbSet<ItemCategory> ItemCategories { get; set; } = null!;
@@ -87,6 +88,10 @@ public class ApplicationDbContext : DbContext
         // Enforce one shipment per order.
         modelBuilder.Entity<Shipment>()
             .HasIndex(s => s.OrderId)
+            .IsUnique();
+
+        modelBuilder.Entity<BranchItemSetting>()
+            .HasIndex(e => new { e.BranchId, e.ItemId })
             .IsUnique();
 
         // MenuItemTag Composite Key
@@ -159,6 +164,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Notification>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
         modelBuilder.Entity<OrderMessage>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
         modelBuilder.Entity<ReturnMessage>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<BranchItemSetting>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
 
         // Models with IsDeleted but NO ITenantEntity
         modelBuilder.Entity<Tenant>().HasQueryFilter(e => !e.IsDeleted);

@@ -4,7 +4,7 @@ import DeleteSweepRoundedIcon from '@mui/icons-material/DeleteSweepRounded';
 import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
 import { 
   fetchBranchWastage, 
-  fetchEoqSuggestions,
+  fetchBranchEoqSuggestions,
   type WastageRecordDto,
   type EoqSuggestionDto
 } from '../reportsApi';
@@ -21,7 +21,7 @@ export function InventoryAnalyticsTab({ startDate, endDate }: Props) {
     setLoading(true);
     Promise.all([
       fetchBranchWastage(startDate, endDate),
-      fetchEoqSuggestions()
+      fetchBranchEoqSuggestions()
     ])
       .then(([w, e]) => {
         setWastage(w);
@@ -35,24 +35,72 @@ export function InventoryAnalyticsTab({ startDate, endDate }: Props) {
   }, [startDate, endDate]);
 
   const wastageColumns: ColumnDef<WastageRecordDto>[] = [
-    { key: 'itemName', label: 'Item Name', sortable: true, render: (row) => row.itemName },
-    { key: 'itemSku', label: 'SKU', width: 120, render: (row) => row.itemSku },
-    { key: 'quantityLost', label: 'Qty Lost', width: 100, align: 'right', render: (row) => `${row.quantityLost} ${row.unit}` },
-    { key: 'totalLoss', label: 'Loss Value', width: 120, align: 'right', render: (row) => `₱${row.totalLoss.toLocaleString()}` },
-    { key: 'reason', label: 'Reason', width: 180, render: (row) => row.reason },
-    { key: 'timestamp', label: 'Date', width: 120, render: (row) => new Date(row.timestamp).toLocaleDateString() },
+    { 
+      key: 'itemName', label: 'Item Name', sortable: true, 
+      render: (row) => <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>{row.itemName}</Typography> 
+    },
+    { 
+      key: 'itemSku', label: 'SKU', 
+      render: (row) => <Typography sx={{ fontSize: 12, color: 'text.secondary', fontFamily: 'monospace' }}>{row.itemSku}</Typography> 
+    },
+    { 
+      key: 'quantityLost', label: 'Qty Lost', align: 'right', 
+      render: (row) => <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>{row.quantityLost} {row.unit}</Typography> 
+    },
+    { 
+      key: 'totalLoss', label: 'Loss Value', align: 'right', 
+      render: (row) => <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#DC2626' }}>₱{row.totalLoss.toLocaleString()}</Typography> 
+    },
+    { 
+      key: 'reason', label: 'Reason', 
+      render: (row) => <Typography sx={{ fontSize: 12, color: 'text.secondary', lineHeight: 1.4 }}>{row.reason}</Typography> 
+    },
+    { 
+      key: 'timestamp', label: 'Logged At', 
+      render: (row) => (
+        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+          {new Date(row.timestamp).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}<br/>
+          {new Date(row.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
+        </Typography>
+      )
+    },
   ];
 
   const eoqColumns: ColumnDef<EoqSuggestionDto>[] = [
-    { key: 'itemName', label: 'Item Name', sortable: true, render: (row) => row.itemName },
-    { key: 'itemSku', label: 'SKU', width: 120, render: (row) => row.itemSku },
-    { key: 'currentStock', label: 'In Stock', width: 100, align: 'right', render: (row) => `${row.currentStock} ${row.unit}` },
-    { key: 'annualDemand', label: 'Annual Demand', width: 120, align: 'right', render: (row) => row.annualDemand },
-    { key: 'eoq', label: 'Suggested Order', width: 150, align: 'right', render: (row) => (
-      <Box sx={{ color: '#6B4C2A', fontWeight: 700 }}>
-        {row.eoq} {row.unit}
-      </Box>
-    )},
+    { 
+      key: 'itemName', label: 'Item Name', sortable: true,
+      render: (row) => <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>{row.itemName}</Typography> 
+    },
+    { 
+      key: 'itemSku', label: 'SKU', 
+      render: (row) => <Typography sx={{ fontSize: 11, color: 'text.secondary', fontFamily: 'monospace' }}>{row.itemSku}</Typography> 
+    },
+    { 
+      key: 'currentStock', label: 'In Stock', align: 'right', 
+      render: (row) => <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>{row.currentStock} {row.unit}</Typography> 
+    },
+    { 
+      key: 'annualDemand', label: 'Annual Demand', align: 'right', 
+      render: (row) => <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>{row.annualDemand.toLocaleString()}</Typography> 
+    },
+    { 
+      key: 'setupCost', label: 'Setup Cost (S)', align: 'right', 
+      render: (row) => <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>₱{row.setupCost.toLocaleString()}</Typography> 
+    },
+    { 
+      key: 'holdingCost', label: 'Holding Cost (H)', align: 'right', 
+      render: (row) => <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>₱{row.holdingCost.toLocaleString()}</Typography> 
+    },
+    { 
+      key: 'eoq', label: 'Suggested Order (EOQ)', align: 'right', 
+      render: (row) => (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Box sx={{ px: 1.5, py: 0.4, borderRadius: 1.5, bgcolor: 'rgba(107,76,42,0.08)', border: '1px solid rgba(107,76,42,0.2)' }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>{row.eoq} {row.unit}</Typography>
+          </Box>
+        </Box>
+      )
+    },
   ];
 
   return (
@@ -85,7 +133,7 @@ export function InventoryAnalyticsTab({ startDate, endDate }: Props) {
           data={eoq}
           columns={eoqColumns}
           keyExtractor={(row) => row.itemId.toString()}
-          emptyMessage="No suggestions available."
+          emptyMessage="No suggestions available. Items need Annual Demand, Holding Cost, and Setup Cost configured in Inventory settings."
           defaultRowsPerPage={5}
         />
       </Card>

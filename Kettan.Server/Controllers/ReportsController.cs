@@ -292,6 +292,59 @@ public class ReportsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("branch/eoq-suggestions")]
+    [Authorize(Roles = "BranchOwner,BranchManager")]
+    public async Task<ActionResult<List<EoqSuggestionDto>>> GetBranchEoqSuggestions()
+    {
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue)
+            return BadRequest(new { message = "Branch context required." });
+
+        var result = await _service.GetEoqSuggestionsAsync(branchId.Value);
+        return Ok(result);
+    }
+
+    [HttpGet("branch/sales-trend")]
+    [Authorize(Roles = "BranchOwner,BranchManager")]
+    public async Task<ActionResult<List<TrendPointDto>>> GetBranchSalesTrend(
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate)
+    {
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue)
+            return BadRequest(new { message = "Branch context required." });
+
+        var result = await _service.GetBranchSalesTrendAsync(branchId.Value, startDate, endDate);
+        return Ok(result);
+    }
+
+    [HttpGet("hq/supply-trend")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<List<BranchTrendDto>>> GetHqSupplyTrend([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    {
+        var trend = await _service.GetHqSupplyTrendAsync(startDate, endDate);
+        return Ok(trend);
+    }
+
+    [HttpGet("hq/low-stock")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<List<LowStockAlertDto>>> GetHqLowStock()
+    {
+        var alerts = await _service.GetLowStockAlertsAsync();
+        return Ok(alerts);
+    }
+
+    [HttpGet("branch/low-stock")]
+    [Authorize(Roles = "BranchOwner,BranchManager,BranchStaff")]
+    public async Task<ActionResult<List<LowStockAlertDto>>> GetBranchLowStock()
+    {
+        var branchId = int.Parse(User.FindFirst("BranchId")?.Value ?? "0");
+        if (branchId == 0) return Forbid();
+        
+        var alerts = await _service.GetLowStockAlertsAsync(branchId);
+        return Ok(alerts);
+    }
+
     // ── Export endpoints ─────────────────────────────────────────────────────
 
     [HttpGet("inventory/export")]

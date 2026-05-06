@@ -23,65 +23,50 @@ export function InventoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const loadInventory = async () => {
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      const liveItems = await fetchInventoryItems(
+        undefined,
+        isBranchUser && branchId ? { branchId } : undefined
+      );
+      
+      setItems(liveItems);
+
+      const transactionsByItem = await Promise.all(
+        liveItems.map(async (item) => {
+          try {
+            return await fetchInventoryItemTransactions(item.id, { item });
+          } catch {
+            return [];
+          }
+        })
+      );
+
+      const mergedTransactions = transactionsByItem
+        .flat()
+        .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
+        .slice(0, 300);
+
+      setTransactions(mergedTransactions);
+    } catch {
+      setItems([]);
+      setTransactions([]);
+      setErrorMessage('Unable to load inventory data from the API.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let isMounted = true;
-
-    const loadInventory = async () => {
-      try {
-        setIsLoading(true);
-        setErrorMessage(null);
-
-        const liveItems = await fetchInventoryItems(
-          undefined,
-          isBranchUser && branchId ? { branchId } : undefined
-        );
-        if (!isMounted) {
-          return;
-        }
-
-        setItems(liveItems);
-
-        const transactionsByItem = await Promise.all(
-          liveItems.map(async (item) => {
-            try {
-              return await fetchInventoryItemTransactions(item.id, { item });
-            } catch {
-              return [];
-            }
-          })
-        );
-
-        if (!isMounted) {
-          return;
-        }
-
-        const mergedTransactions = transactionsByItem
-          .flat()
-          .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
-          .slice(0, 300);
-
-        setTransactions(mergedTransactions);
-      } catch {
-        if (!isMounted) {
-          return;
-        }
-
-        setItems([]);
-        setTransactions([]);
-        setErrorMessage('Unable to load inventory data from the API.');
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
     void loadInventory();
-
-    return () => {
-      isMounted = false;
-    };
   }, [branchId, isBranchUser]);
+
+  const handleRefresh = () => {
+    void loadInventory();
+  };
 
   const stats = useMemo(() => {
     const totalSkus = items.length;
@@ -161,6 +146,7 @@ export function InventoryPage() {
         items={items}
         transactions={transactions}
         isBranchView={isBranchUser}
+        onRefresh={handleRefresh}
       />
     </Box>
   );

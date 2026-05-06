@@ -56,17 +56,19 @@ function MetricBar({
 }: {
   label: string; value: number; unit?: string; weight: string; good?: 'high' | 'low'; color: string;
 }) {
-  const display = good === 'low'
-    ? Math.max(0, 100 - value * 2)
-    : value;
+  const display = good === 'high'
+    ? value
+    : (unit === '%' ? (100 - value) : (100 - value * 2));
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>{label}</Typography>
-          <Box sx={{ px: 1, py: 0.2, borderRadius: 1, bgcolor: `${color}18`, border: `1px solid ${color}40` }}>
-            <Typography sx={{ fontSize: 10, fontWeight: 700, color }}>{weight}</Typography>
+          <Box sx={{ px: 1, py: 0.2, borderRadius: 1, bgcolor: `${color}12`, border: `1px solid ${color}30` }}>
+            <Typography sx={{ fontSize: 9, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+              Weight {weight}
+            </Typography>
           </Box>
         </Box>
         <Typography sx={{ fontSize: 13, fontWeight: 700, color }}>
@@ -76,7 +78,7 @@ function MetricBar({
       <Box sx={{ height: 8, borderRadius: 4, bgcolor: 'divider', overflow: 'hidden' }}>
         <Box sx={{
           height: '100%', borderRadius: 4,
-          width: `${Math.min(display, 100)}%`,
+          width: `${Math.max(0, Math.min(display, 100))}%`,
           bgcolor: color,
           transition: 'width 0.6s ease',
         }} />

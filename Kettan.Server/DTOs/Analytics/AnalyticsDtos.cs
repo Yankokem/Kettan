@@ -124,6 +124,8 @@ public class EoqSuggestionDto
     public decimal AnnualDemand { get; set; }
     public decimal EOQ { get; set; }
     public decimal UnitCost { get; set; }
+    public decimal SetupCost { get; set; }
+    public decimal HoldingCost { get; set; }
 }
 
 /// <summary>
@@ -239,4 +241,29 @@ public class BranchPerformanceDetailDto
     public decimal StockAccuracy { get; set; }          // 25%
     public int RankInChain { get; set; }
     public int TotalBranches { get; set; }
+}
+
+// ── Dashboard Trend DTOs ─────────────────────────────────────────────────────
+
+public class TrendPointDto
+{
+    public string Label { get; set; } = string.Empty;
+    public decimal Value { get; set; }
+}
+
+public class BranchTrendDto
+{
+    public string BranchName { get; set; } = string.Empty;
+    public List<TrendPointDto> Points { get; set; } = new();
+}
+
+public class LowStockAlertDto
+{
+    public int ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public string SKU { get; set; } = string.Empty;
+    public string BranchName { get; set; } = string.Empty;
+    public decimal CurrentStock { get; set; }
+    public decimal Threshold { get; set; }
+    public string Unit { get; set; } = string.Empty;
 }

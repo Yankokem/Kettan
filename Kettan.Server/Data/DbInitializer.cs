@@ -18,11 +18,9 @@ public static class DbInitializer
     {
         logger?.LogInformation("DbSeeder: starting migration and seed process.");
 
+        var applyMigrationsSetting = Environment.GetEnvironmentVariable("KETTAN_APPLY_MIGRATIONS");
         var shouldApplyMigrations =
-            string.Equals(
-                Environment.GetEnvironmentVariable("KETTAN_APPLY_MIGRATIONS"),
-                "true",
-                StringComparison.OrdinalIgnoreCase);
+            !string.Equals(applyMigrationsSetting, "false", StringComparison.OrdinalIgnoreCase);
 
         if (shouldApplyMigrations)
         {

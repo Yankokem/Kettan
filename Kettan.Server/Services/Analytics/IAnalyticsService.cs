@@ -17,7 +17,7 @@ public interface IAnalyticsService
     Task<List<BranchSpendDto>> GetBranchSpendAsync(DateTime startDate, DateTime endDate);
     Task<List<BranchInventoryValuationDto>> GetAllBranchInventoryValuationsAsync();
     Task<List<WastageRecordDto>> GetWastageRecordsAsync(DateTime startDate, DateTime endDate, int? branchId = null);
-    Task<List<EoqSuggestionDto>> GetEoqSuggestionsAsync();
+    Task<List<EoqSuggestionDto>> GetEoqSuggestionsAsync(int? branchId = null);
     Task<ReturnsLossOverviewDto> GetReturnsLossOverviewAsync(DateTime startDate, DateTime endDate);
     Task<List<ReturnLossRecordDto>> GetReturnLossRecordsAsync(DateTime startDate, DateTime endDate);
     Task<ConsumptionAnalyticsDto> GetConsumptionAnalyticsAsync(DateTime startDate, DateTime endDate, int? branchId = null);
@@ -27,4 +27,9 @@ public interface IAnalyticsService
     Task<List<WastageRecordDto>> GetBranchWastageAsync(int branchId, DateTime startDate, DateTime endDate);
     Task<List<BranchSupplyHistoryDto>> GetBranchSupplyHistoryAsync(int branchId, DateTime startDate, DateTime endDate);
     Task<BranchPerformanceDetailDto> GetBranchPerformanceDetailAsync(int branchId, DateTime startDate, DateTime endDate);
+
+    // ── Trend Analytics ──────────────────────────────────────────────────────
+    Task<List<TrendPointDto>> GetBranchSalesTrendAsync(int branchId, DateTime startDate, DateTime endDate);
+    Task<List<BranchTrendDto>> GetHqSupplyTrendAsync(DateTime startDate, DateTime endDate);
+    Task<List<LowStockAlertDto>> GetLowStockAlertsAsync(int? branchId = null);
 }

@@ -100,10 +100,26 @@ public class ItemsController : ControllerBase
             .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.CurrentQuantity) })
             .ToDictionaryAsync(x => x.ItemId, x => x.Quantity);
 
+        // Get custom thresholds for branch users
+        Dictionary<int, decimal> branchThresholds = new();
+        if (effectiveBranchId.HasValue)
+        {
+            branchThresholds = await _context.BranchItemSettings
+                .Where(s => s.BranchId == effectiveBranchId.Value)
+                .ToDictionaryAsync(s => s.ItemId, s => s.LowStockThreshold);
+        }
+
         var rows = items.Select(item =>
         {
             var stockLevel = stockByItem.TryGetValue(item.ItemId, out var qty) ? qty : 0;
-            return MapItem(item, stockLevel);
+            var isOverride = branchThresholds.TryGetValue(item.ItemId, out var custom);
+            var threshold = isOverride ? branchThresholds[item.ItemId] : item.DefaultThreshold;
+            
+            var dto = MapItem(item, stockLevel);
+            dto.DefaultThreshold = threshold; 
+            dto.IsLowStock = stockLevel <= threshold;
+            dto.IsBranchThreshold = isOverride;
+            return dto;
         }).ToList();
 
         return Ok(rows);
@@ -307,6 +323,69 @@ public class ItemsController : ControllerBase
         }
     }
 
+    [HttpPost("branch/threshold")]
+    [Authorize(Roles = "BranchOwner,BranchManager")]
+    public async Task<ActionResult> SetBranchThreshold([FromBody] SetBranchThresholdRequest request)
+    {
+        if (!_currentUser.TenantId.HasValue || !_currentUser.BranchId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var branchId = _currentUser.BranchId.Value;
+        var tenantId = _currentUser.TenantId.Value;
+
+        var setting = await _context.BranchItemSettings
+            .FirstOrDefaultAsync(s => s.BranchId == branchId && s.ItemId == request.ItemId);
+
+        if (setting == null)
+        {
+            setting = new BranchItemSetting
+            {
+                TenantId = tenantId,
+                BranchId = branchId,
+                ItemId = request.ItemId,
+                LowStockThreshold = request.Threshold,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.BranchItemSettings.Add(setting);
+        }
+        else
+        {
+            setting.LowStockThreshold = request.Threshold;
+            setting.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpPost("global/threshold")]
+    [Authorize(Roles = "TenantAdmin,HqManager")]
+    public async Task<ActionResult> SetGlobalThreshold([FromBody] SetBranchThresholdRequest request)
+    {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var tenantId = _currentUser.TenantId.Value;
+
+        var item = await _context.Items
+            .FirstOrDefaultAsync(i => i.ItemId == request.ItemId && i.TenantId == tenantId);
+
+        if (item == null)
+        {
+            return NotFound();
+        }
+
+        item.DefaultThreshold = request.Threshold;
+        item.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok();
+    }
+
     [HttpGet("{id:int}/batches")]
     public async Task<ActionResult<List<BatchDto>>> GetItemBatches(int id)
     {
@@ -408,7 +487,19 @@ public class ItemsController : ControllerBase
             .ThenBy(b => b.CreatedAt)
             .ToListAsync();
 
+        var threshold = item.DefaultThreshold;
+        if (_currentUser.BranchId.HasValue)
+        {
+            var custom = await _context.BranchItemSettings
+                .Where(s => s.BranchId == _currentUser.BranchId.Value && s.ItemId == item.ItemId)
+                .Select(s => (decimal?)s.LowStockThreshold)
+                .FirstOrDefaultAsync();
+            if (custom.HasValue) threshold = custom.Value;
+        }
+
         var dto = MapItem(item, totalStock);
+        dto.DefaultThreshold = threshold;
+        dto.IsLowStock = totalStock <= threshold;
 
         return new ItemDetailDto
         {

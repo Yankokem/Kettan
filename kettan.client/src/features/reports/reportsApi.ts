@@ -95,6 +95,8 @@ export interface EoqSuggestionDto {
   annualDemand: number;
   eoq: number;
   unitCost: number;
+  setupCost: number;
+  holdingCost: number;
 }
 
 export interface ReturnsLossOverviewDto {
@@ -174,6 +176,16 @@ export interface BranchPerformanceDetailDto {
   stockAccuracy: number;
   rankInChain: number;
   totalBranches: number;
+}
+
+export interface TrendPointDto {
+  label: string;
+  value: number;
+}
+
+export interface BranchTrendDto {
+  branchName: string;
+  points: TrendPointDto[];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -315,10 +327,26 @@ export async function fetchBranchPerformanceDetail(
   );
 }
 
+export async function fetchBranchEoqSuggestions(): Promise<EoqSuggestionDto[]> {
+  return get<EoqSuggestionDto[]>('/api/reports/branch/eoq-suggestions');
+}
+
 export async function fetchBranchConsumptionAnalytics(
   startDate: string, endDate: string
 ): Promise<ConsumptionAnalyticsDto> {
   return get<ConsumptionAnalyticsDto>(
     `/api/reports/branch/consumption-analytics${qs({ startDate, endDate })}`
   );
+}
+
+export async function fetchBranchSalesTrend(
+  startDate: string, endDate: string
+): Promise<TrendPointDto[]> {
+  return get<TrendPointDto[]>(`/api/reports/branch/sales-trend${qs({ startDate, endDate })}`);
+}
+
+export async function fetchHqSupplyTrend(
+  startDate: string, endDate: string
+): Promise<BranchTrendDto[]> {
+  return get<BranchTrendDto[]>(`/api/reports/hq/supply-trend${qs({ startDate, endDate })}`);
 }

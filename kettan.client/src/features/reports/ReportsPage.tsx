@@ -68,27 +68,15 @@ function HqReportsView({
 
   return (
     <Box sx={{ pb: 3 }}>
-      {/* Top bar */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onChange={(s, e) => { onStartDate(s); onEndDate(e); }}
-        />
-        <Dropdown
-          value={exportFormat}
-          onChange={(e) => onExportFormat(e.target.value as string)}
-          options={[
-            { value: 'pdf', label: 'PDF Format' },
-            { value: 'csv', label: 'CSV Spreadsheet' },
-          ]}
-          sx={{ minWidth: 140 }}
-        />
-        <Button startIcon={<DownloadRoundedIcon />}>Export</Button>
-      </Box>
-
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+      {/* ── Tabs & Controls Row ── */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-end', 
+        mb: 3,
+        flexWrap: 'wrap',
+        gap: 2
+      }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={TAB_SX}>
           <Tab label="Overview" value="overview" />
           <Tab label="Inventory Reports" value="inventory" />
@@ -96,6 +84,24 @@ function HqReportsView({
           <Tab label="Consumption Analytics" value="consumption" />
           <Tab label="Returns & Losses" value="returns" />
         </Tabs>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 0.5 }}>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(s, e) => { onStartDate(s); onEndDate(e); }}
+          />
+          <Dropdown
+            value={exportFormat}
+            onChange={(e) => onExportFormat(e.target.value as string)}
+            options={[
+              { value: 'pdf', label: 'PDF Format' },
+              { value: 'csv', label: 'CSV Spreadsheet' },
+            ]}
+            sx={{ minWidth: 140 }}
+          />
+          <Button startIcon={<DownloadRoundedIcon />}>Export</Button>
+        </Box>
       </Box>
 
       {/* Tab content */}
@@ -211,31 +217,37 @@ function BranchReportsView({
         </Grid>
       </Box>
 
-      {/* ── Controls (Below KPIs) ── */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2.5, flexWrap: 'wrap', gap: 1.5 }}>
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onChange={(s, e) => { onStartDate(s); onEndDate(e); }}
-        />
-        <Dropdown
-          value={exportFormat}
-          onChange={(e) => onExportFormat(e.target.value as string)}
-          options={[
-            { value: 'pdf', label: 'PDF Format' },
-            { value: 'csv', label: 'CSV Spreadsheet' },
-          ]}
-          sx={{ minWidth: 140 }}
-        />
-        <Button startIcon={<DownloadRoundedIcon />}>Export</Button>
-      </Box>
-
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+      {/* ── Tabs & Controls Row ── */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-end', 
+        mb: 3,
+        flexWrap: 'wrap',
+        gap: 2
+      }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={TAB_SX}>
           <Tab label="Branch Performance" value="performance" />
           <Tab label="Inventory & Stock Analytics" value="inventory" />
         </Tabs>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 0.5 }}>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(s, e) => { onStartDate(s); onEndDate(e); }}
+          />
+          <Dropdown
+            value={exportFormat}
+            onChange={(e) => onExportFormat(e.target.value as string)}
+            options={[
+              { value: 'pdf', label: 'PDF Format' },
+              { value: 'csv', label: 'CSV Spreadsheet' },
+            ]}
+            sx={{ minWidth: 140 }}
+          />
+          <Button startIcon={<DownloadRoundedIcon />}>Export</Button>
+        </Box>
       </Box>
 
       {/* Tab content */}
