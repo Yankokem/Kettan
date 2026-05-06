@@ -345,4 +345,17 @@ app.MapGet("/api/debug/fix-database", async (ApplicationDbContext db) =>
     }
 });
 
+app.MapGet("/api/debug/apply-migrations", async (ApplicationDbContext db) =>
+{
+    try
+    {
+        await db.Database.MigrateAsync();
+        return Results.Ok("Migrations applied successfully!");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to apply migrations: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}");
+    }
+});
+
 app.Run();
