@@ -15,7 +15,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { isHqRole, isBranchRole } from '../../utils/roleHelpers';
 import { BranchPerformance } from './components/BranchPerformance';
 import { InventoryAlerts } from './components/InventoryAlerts';
-import { FulfillmentStepper } from './components/FulfillmentStepper';
+import { FulfillmentStatus } from './components/FulfillmentStatus';
 import { DashboardChart } from './components/DashboardChart';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { fetchBranchOrders, type BranchOrder } from '../branch-operations/api';
@@ -285,7 +285,7 @@ export function DashboardPage() {
                 <DashboardChart />
               </Box>
               <Box sx={{ width: { xs: '100%', xl: 340, lg: 300 }, flexShrink: 0 }}>
-                <FulfillmentStepper />
+                <FulfillmentStatus />
               </Box>
             </Box>
 

@@ -13,7 +13,7 @@ public class BranchItemSetting : ITenantEntity
     [ForeignKey(nameof(TenantId))]
     public Tenant? Tenant { get; set; }
 
-    public int BranchId { get; set; }
+    public int? BranchId { get; set; }
 
     [ForeignKey(nameof(BranchId))]
     public Branch? Branch { get; set; }

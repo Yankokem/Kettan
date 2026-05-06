@@ -119,31 +119,6 @@ export interface ReturnLossRecordDto {
   loggedAt: string;
 }
 
-export interface TopMenuItemDto {
-  menuItemId: number;
-  menuItemName: string;
-  totalSold: number;
-  logCount: number;
-}
-
-export interface IngredientUsageDto {
-  itemId: number;
-  itemName: string;
-  unit: string;
-  totalConsumed: number;
-}
-
-export interface ShiftBreakdownDto {
-  shift: string;
-  logCount: number;
-  totalVolume: number;
-}
-
-export interface ConsumptionAnalyticsDto {
-  topMenuItems: TopMenuItemDto[];
-  ingredientUsage: IngredientUsageDto[];
-  shiftBreakdown: ShiftBreakdownDto[];
-}
 
 // ── New Branch DTOs ───────────────────────────────────────────────────────────
 
@@ -283,13 +258,6 @@ export async function fetchReturnLossRecords(
   );
 }
 
-export async function fetchConsumptionAnalytics(
-  startDate: string, endDate: string, branchId?: number
-): Promise<ConsumptionAnalyticsDto> {
-  return get<ConsumptionAnalyticsDto>(
-    `/api/reports/hq/consumption-analytics${qs({ startDate, endDate, branchId })}`
-  );
-}
 
 // ── New Branch API functions ──────────────────────────────────────────────────
 
@@ -331,13 +299,6 @@ export async function fetchBranchEoqSuggestions(): Promise<EoqSuggestionDto[]> {
   return get<EoqSuggestionDto[]>('/api/reports/branch/eoq-suggestions');
 }
 
-export async function fetchBranchConsumptionAnalytics(
-  startDate: string, endDate: string
-): Promise<ConsumptionAnalyticsDto> {
-  return get<ConsumptionAnalyticsDto>(
-    `/api/reports/branch/consumption-analytics${qs({ startDate, endDate })}`
-  );
-}
 
 export async function fetchBranchSalesTrend(
   startDate: string, endDate: string

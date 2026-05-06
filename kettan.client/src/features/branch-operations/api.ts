@@ -401,6 +401,19 @@ export async function createSupplyRequest(payload: CreateSupplyRequestPayload): 
   return response.data;
 }
 
+export async function fetchLatestOngoingSupplyRequest(): Promise<SupplyRequest | null> {
+  try {
+    const response = await api.get<SupplyRequest>('/api/SupplyRequests/latest-ongoing');
+    return {
+      ...response.data,
+      status: normalizeSupplyRequestStatus(response.data.status),
+      orderStatus: response.data.orderStatus ? normalizeOrderStatus(response.data.orderStatus) : null,
+    };
+  } catch (err) {
+    return null;
+  }
+}
+
 export async function submitSupplyRequest(requestId: number, notes?: string): Promise<void> {
   await api.post(`/api/SupplyRequests/${requestId}/submit`, { notes });
 }

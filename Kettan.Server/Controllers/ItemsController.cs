@@ -100,14 +100,10 @@ public class ItemsController : ControllerBase
             .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.CurrentQuantity) })
             .ToDictionaryAsync(x => x.ItemId, x => x.Quantity);
 
-        // Get custom thresholds for branch users
-        Dictionary<int, decimal> branchThresholds = new();
-        if (effectiveBranchId.HasValue)
-        {
-            branchThresholds = await _context.BranchItemSettings
-                .Where(s => s.BranchId == effectiveBranchId.Value)
-                .ToDictionaryAsync(s => s.ItemId, s => s.LowStockThreshold);
-        }
+        // Get custom thresholds for current view (Branch or HQ)
+        var branchThresholds = await _context.BranchItemSettings
+            .Where(s => s.BranchId == effectiveBranchId && s.TenantId == _currentUser.TenantId.Value)
+            .ToDictionaryAsync(s => s.ItemId, s => s.LowStockThreshold);
 
         var rows = items.Select(item =>
         {
@@ -371,16 +367,35 @@ public class ItemsController : ControllerBase
 
         var tenantId = _currentUser.TenantId.Value;
 
-        var item = await _context.Items
-            .FirstOrDefaultAsync(i => i.ItemId == request.ItemId && i.TenantId == tenantId);
-
-        if (item == null)
+        // Check if item exists and belongs to tenant
+        var itemExists = await _context.Items.AnyAsync(i => i.ItemId == request.ItemId && i.TenantId == tenantId);
+        if (!itemExists)
         {
             return NotFound();
         }
 
-        item.DefaultThreshold = request.Threshold;
-        item.UpdatedAt = DateTime.UtcNow;
+        // We save this as a BranchItemSetting with BranchId = null to represent "HQ Specific" 
+        // alert level, so it doesn't leak into the "DefaultThreshold" used by branches.
+        var setting = await _context.BranchItemSettings
+            .FirstOrDefaultAsync(s => s.BranchId == null && s.ItemId == request.ItemId && s.TenantId == tenantId);
+
+        if (setting == null)
+        {
+            setting = new BranchItemSetting
+            {
+                TenantId = tenantId,
+                BranchId = null,
+                ItemId = request.ItemId,
+                LowStockThreshold = request.Threshold,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.BranchItemSettings.Add(setting);
+        }
+        else
+        {
+            setting.LowStockThreshold = request.Threshold;
+            setting.UpdatedAt = DateTime.UtcNow;
+        }
 
         await _context.SaveChangesAsync();
         return Ok();

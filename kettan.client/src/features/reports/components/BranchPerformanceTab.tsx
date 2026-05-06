@@ -2,26 +2,16 @@ import { useEffect, useState } from 'react';
 import { Box, Card, Typography, Grid } from '@mui/material';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 import SpeedRoundedIcon from '@mui/icons-material/SpeedRounded';
-import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
 import { 
   fetchBranchPerformanceDetail, 
-  type BranchPerformanceDetailDto,
-  fetchBranchConsumptionAnalytics,
-  type ConsumptionAnalyticsDto
+  type BranchPerformanceDetailDto
 } from '../reportsApi';
-import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 
 interface Props { startDate: string; endDate: string; }
 
 const EMPTY_PERF: BranchPerformanceDetailDto = {
   weightedScore: 0, fulfillmentRate: 0, returnRate: 0,
   deliverySpeedHrs: 0, stockAccuracy: 0, rankInChain: 0, totalBranches: 0,
-};
-
-const EMPTY_CONS: ConsumptionAnalyticsDto = {
-  topMenuItems: [],
-  ingredientUsage: [],
-  shiftBreakdown: [],
 };
 
 // ── Gauge SVG ────────────────────────────────────────────────────────────────
@@ -89,86 +79,61 @@ function MetricBar({
 
 export function BranchPerformanceTab({ startDate, endDate }: Props) {
   const [perfData, setPerfData] = useState<BranchPerformanceDetailDto>(EMPTY_PERF);
-  const [consData, setConsData] = useState<ConsumptionAnalyticsDto>(EMPTY_CONS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      fetchBranchPerformanceDetail(startDate, endDate),
-      fetchBranchConsumptionAnalytics(startDate, endDate)
-    ])
-      .then(([perf, cons]) => {
+    fetchBranchPerformanceDetail(startDate, endDate)
+      .then((perf) => {
         setPerfData(perf);
-        setConsData(cons);
       })
       .catch(() => {
         setPerfData(EMPTY_PERF);
-        setConsData(EMPTY_CONS);
       })
       .finally(() => setLoading(false));
   }, [startDate, endDate]);
 
-  const topItemsColumns: ColumnDef<any>[] = [
-    { key: 'menuItemName', label: 'Item Name', sortable: true, render: (row) => row.menuItemName },
-    { key: 'totalSold', label: 'Total Sold', width: 120, align: 'right', sortable: true, render: (row) => row.totalSold },
-    { key: 'logCount', label: 'Logs', width: 100, align: 'right', sortable: true, render: (row) => row.logCount },
-  ];
-
   return (
     <Box sx={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, lg: 5 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            {/* Gauge card */}
-            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                <SpeedRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
-                <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>My Performance Score</Typography>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          {/* Gauge card */}
+          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <SpeedRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
+              <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>My Performance Score</Typography>
+            </Box>
+            <ScoreGauge score={perfData.weightedScore} />
+            {perfData.totalBranches > 0 && (
+              <Box sx={{ mt: 1.5, textAlign: 'center' }}>
+                <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+                  Ranked{' '}
+                  <strong style={{ color: perfData.rankInChain === 1 ? '#C9A84C' : '#374151' }}>
+                    #{perfData.rankInChain}
+                  </strong>
+                  {' '}of {perfData.totalBranches} branches
+                </Typography>
               </Box>
-              <ScoreGauge score={perfData.weightedScore} />
-              {perfData.totalBranches > 0 && (
-                <Box sx={{ mt: 1.5, textAlign: 'center' }}>
-                  <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
-                    Ranked{' '}
-                    <strong style={{ color: perfData.rankInChain === 1 ? '#C9A84C' : '#374151' }}>
-                      #{perfData.rankInChain}
-                    </strong>
-                    {' '}of {perfData.totalBranches} branches
-                  </Typography>
-                </Box>
-              )}
-            </Card>
-
-            {/* Metric breakdown */}
-            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <EmojiEventsRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
-                <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>Score Breakdown</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <MetricBar label="Fulfillment Rate" value={perfData.fulfillmentRate} weight="30%" good="high" color="#6B4C2A" />
-                <MetricBar label="Return Rate" value={perfData.returnRate} weight="20%" good="low" color="#DC2626" />
-                <MetricBar label="Delivery Speed" value={perfData.deliverySpeedHrs} unit="hrs" weight="25%" good="low" color="#2563EB" />
-                <MetricBar label="Stock Accuracy" value={perfData.stockAccuracy} weight="25%" good="high" color="#546B3F" />
-              </Box>
-            </Card>
-          </Box>
+            )}
+          </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 7 }}>
+        <Grid size={{ xs: 12, lg: 8 }}>
+          {/* Metric breakdown */}
           <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper', height: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2 }}>
-              <RestaurantMenuRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
-              <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>Top Consumed Items</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+              <EmojiEventsRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
+              <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>Score Breakdown</Typography>
             </Box>
-            <DataTable
-              data={consData.topMenuItems}
-              columns={topItemsColumns}
-              keyExtractor={(row) => row.menuItemId.toString()}
-              emptyMessage="No consumption data for this period."
-              defaultRowsPerPage={8}
-            />
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4 }}>
+              <MetricBar label="Fulfillment Rate" value={perfData.fulfillmentRate} weight="30%" good="high" color="#6B4C2A" />
+              <MetricBar label="Return Rate" value={perfData.returnRate} weight="20%" good="low" color="#DC2626" />
+              <MetricBar label="Delivery Speed" value={perfData.deliverySpeedHrs} unit="hrs" weight="25%" good="low" color="#2563EB" />
+              <MetricBar label="Stock Accuracy" value={perfData.stockAccuracy} weight="25%" good="high" color="#546B3F" />
+            </Box>
+            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 4, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
+              * These metrics are calculated based on your branch's operational data compared to HQ fulfillment targets and system inventory records.
+            </Typography>
           </Card>
         </Grid>
       </Grid>

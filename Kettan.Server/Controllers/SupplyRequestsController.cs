@@ -24,6 +24,17 @@ public class SupplyRequestsController : ControllerBase
         return Ok(rows);
     }
 
+    [HttpGet("latest-ongoing")]
+    public async Task<ActionResult<SupplyRequestDto>> GetLatestOngoing()
+    {
+        var row = await _service.GetLatestOngoingAsync();
+        if (row == null)
+        {
+            return NotFound();
+        }
+        return Ok(row);
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<SupplyRequestDto>> GetSupplyRequest(int id)
     {

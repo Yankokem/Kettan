@@ -20,7 +20,6 @@ public interface IAnalyticsService
     Task<List<EoqSuggestionDto>> GetEoqSuggestionsAsync(int? branchId = null);
     Task<ReturnsLossOverviewDto> GetReturnsLossOverviewAsync(DateTime startDate, DateTime endDate);
     Task<List<ReturnLossRecordDto>> GetReturnLossRecordsAsync(DateTime startDate, DateTime endDate);
-    Task<ConsumptionAnalyticsDto> GetConsumptionAnalyticsAsync(DateTime startDate, DateTime endDate, int? branchId = null);
 
     // ── Branch Reports ────────────────────────────────────────────────────────
     Task<BranchOverviewDto> GetBranchOverviewAsync(int branchId, DateTime startDate, DateTime endDate);

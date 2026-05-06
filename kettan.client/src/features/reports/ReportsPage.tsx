@@ -11,7 +11,6 @@ import { isBranchRole } from '../../utils/roleHelpers';
 import { HqOverviewTab } from './components/HqOverviewTab';
 import { HqInventoryReportsTab } from './components/HqInventoryReportsTab';
 import { HqBranchPerformanceTab } from './components/HqBranchPerformanceTab';
-import { HqConsumptionAnalyticsTab } from './components/HqConsumptionAnalyticsTab';
 import { HqReturnsLossTab } from './components/HqReturnsLossTab';
 
 // ── Branch Tabs ───────────────────────────────────────────────────────────────
@@ -51,7 +50,7 @@ function defaultDates() {
 
 // ── HQ View ───────────────────────────────────────────────────────────────────
 
-type HqTab = 'overview' | 'inventory' | 'performance' | 'consumption' | 'returns';
+type HqTab = 'overview' | 'inventory' | 'performance' | 'returns';
 
 function HqReportsView({
   startDate, endDate, onStartDate, onEndDate,
@@ -81,7 +80,6 @@ function HqReportsView({
           <Tab label="Overview" value="overview" />
           <Tab label="Inventory Reports" value="inventory" />
           <Tab label="Branch Performance" value="performance" />
-          <Tab label="Consumption Analytics" value="consumption" />
           <Tab label="Returns & Losses" value="returns" />
         </Tabs>
 
@@ -113,13 +111,6 @@ function HqReportsView({
       )}
       {tab === 'performance' && (
         <HqBranchPerformanceTab startDate={startDate} endDate={endDate} />
-      )}
-      {tab === 'consumption' && (
-        <HqConsumptionAnalyticsTab
-          startDate={startDate}
-          endDate={endDate}
-          branchId={branchFilter}
-        />
       )}
       {tab === 'returns' && (
         <HqReturnsLossTab startDate={startDate} endDate={endDate} />

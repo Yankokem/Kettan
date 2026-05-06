@@ -545,80 +545,6 @@ public class AnalyticsService : IAnalyticsService
             .ToListAsync();
     }
 
-    public async Task<ConsumptionAnalyticsDto> GetConsumptionAnalyticsAsync(
-        DateTime startDate, DateTime endDate, int? branchId = null)
-    {
-        var tenantId = RequireTenantId();
-
-        var logsQuery = _context.ConsumptionLogs
-            .Include(c => c.Items)
-                .ThenInclude(ci => ci.MenuItem)
-            .Include(c => c.Items)
-                .ThenInclude(ci => ci.Item)
-            .Where(c => c.TenantId == tenantId
-                && c.LogDate >= startDate
-                && c.LogDate <= endDate);
-
-        if (branchId.HasValue)
-            logsQuery = logsQuery.Where(c => c.BranchId == branchId.Value);
-
-        var logs = await logsQuery.ToListAsync();
-
-        // Top menu items (sales method)
-        var salesLogs = logs.Where(c => c.Method == ConsumptionMethod.Sales);
-        var topMenuItems = salesLogs
-            .SelectMany(c => c.Items)
-            .Where(ci => ci.MenuItem != null)
-            .GroupBy(ci => new { ci.MenuItemId, Name = ci.MenuItem!.Name })
-            .Select(g => new TopMenuItemDto
-            {
-                MenuItemId = g.Key.MenuItemId ?? 0,
-                MenuItemName = g.Key.Name,
-                TotalSold = (int)g.Sum(ci => ci.Quantity),
-                LogCount = g.Select(ci => ci.ConsumptionLogId).Distinct().Count()
-            })
-            .OrderByDescending(m => m.TotalSold)
-            .Take(10)
-            .ToList();
-
-        // Ingredient usage (all methods)
-        var ingredientUsage = logs
-            .SelectMany(c => c.Items)
-            .Where(ci => ci.Item != null)
-            .GroupBy(ci => new { ci.ItemId, Name = ci.Item!.Name, Unit = ci.Item.Unit })
-            .Select(g => new IngredientUsageDto
-            {
-                ItemId = g.Key.ItemId ?? 0,
-                ItemName = g.Key.Name,
-                Unit = g.Key.Unit,
-                TotalConsumed = g.Sum(ci => ci.Quantity)
-            })
-            .OrderByDescending(i => i.TotalConsumed)
-            .Take(15)
-            .ToList();
-
-        // Shift breakdown
-        var shiftBreakdown = logs
-            .GroupBy(c => c.Shift.HasValue ? c.Shift.ToString()! : "Unspecified")
-            .Select(g => new ShiftBreakdownDto
-            {
-                Shift = g.Key,
-                LogCount = g.Count(),
-                TotalVolume = g.Sum(c => c.Items.Sum(i => i.Quantity))
-            })
-            .OrderByDescending(s => s.TotalVolume)
-            .ToList();
-
-        return new ConsumptionAnalyticsDto
-        {
-            TopMenuItems = topMenuItems,
-            IngredientUsage = ingredientUsage,
-            ShiftBreakdown = shiftBreakdown
-        };
-    }
-
-    // ── Branch Methods ────────────────────────────────────────────────────────
-
     public async Task<BranchOverviewDto> GetBranchOverviewAsync(
         int branchId, DateTime startDate, DateTime endDate)
     {
@@ -910,16 +836,20 @@ public class AnalyticsService : IAnalyticsService
             .ToListAsync();
 
         // Get custom settings for these items/branches
-        var branchIds = stockGrouped.Select(s => s.BranchId ?? 0).Distinct().ToList();
+        var branchIds = stockGrouped.Select(s => s.BranchId).Distinct().ToList();
         var itemIds = stockGrouped.Select(s => s.ItemId).Distinct().ToList();
 
-        var customSettings = await _context.BranchItemSettings
+        var customSettingsList = await _context.BranchItemSettings
             .Where(s => branchIds.Contains(s.BranchId) && itemIds.Contains(s.ItemId))
-            .ToDictionaryAsync(s => $"{s.BranchId}_{s.ItemId}", s => s.LowStockThreshold);
+            .ToListAsync();
+
+        var customSettings = customSettingsList
+            .ToDictionary(s => $"{(s.BranchId?.ToString() ?? "HQ")}_{s.ItemId}", s => s.LowStockThreshold);
 
         var results = stockGrouped
             .Select(s => {
-                var threshold = customSettings.TryGetValue($"{(s.BranchId ?? 0)}_{s.ItemId}", out var custom) 
+                var key = $"{(s.BranchId?.ToString() ?? "HQ")}_{s.ItemId}";
+                var threshold = customSettings.TryGetValue(key, out var custom) 
                     ? custom 
                     : s.DefaultThreshold;
                 

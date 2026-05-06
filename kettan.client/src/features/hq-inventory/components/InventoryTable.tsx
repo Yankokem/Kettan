@@ -554,7 +554,7 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
         <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2.5 }}>
           {isBranchView 
             ? `When the stock level for ${editingItem?.name} falls below this value in your branch, it will trigger an alert on your dashboard.`
-            : `Set the global default threshold for ${editingItem?.name}. This will apply to all branches that haven't set their own override.`
+            : `Set the specific threshold for the HQ warehouse. This will trigger alerts on the HQ dashboard without affecting branch baselines.`
           }
         </Typography>
         <TextField

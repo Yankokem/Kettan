@@ -613,6 +613,39 @@ public class SupplyRequestService : ISupplyRequestService
         return MapToDto(hydrated);
     }
 
+    public async Task<SupplyRequestDto?> GetLatestOngoingAsync()
+    {
+        if (!_currentUser.TenantId.HasValue || !_currentUser.BranchId.HasValue)
+        {
+            return null;
+        }
+
+        var tenantId = _currentUser.TenantId.Value;
+        var branchId = _currentUser.BranchId.Value;
+
+        // "Ongoing" means not in a terminal state
+        var terminalStatuses = new[] { SupplyRequestStatus.Fulfilled, SupplyRequestStatus.Rejected, SupplyRequestStatus.Cancelled };
+
+        var latestRequest = await _context.SupplyRequests
+            .Include(r => r.Branch)
+            .Include(r => r.RequestedBy_User)
+            .Include(r => r.Items)
+                .ThenInclude(i => i.Item)
+            .Include(r => r.Orders)
+            .Where(r => r.TenantId == tenantId 
+                && r.BranchId == branchId 
+                && !terminalStatuses.Contains(r.Status))
+            .OrderByDescending(r => r.UpdatedAt)
+            .FirstOrDefaultAsync();
+
+        if (latestRequest == null)
+        {
+            return null;
+        }
+
+        return MapToDto(latestRequest);
+    }
+
     private int ResolveBranchId(int? dtoBranchId)
     {
         if (IsBranchScopedUser())

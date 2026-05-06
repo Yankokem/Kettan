@@ -13,4 +13,5 @@ public interface ISupplyRequestService
     Task<SupplyRequestDto?> RejectAsync(int requestId, RejectSupplyRequestDto dto);
     Task<SupplyRequestDto?> CancelAsync(int requestId, CancelSupplyRequestDto dto);
     Task<SupplyRequestDto?> AutoDraftOnLowStockAsync(int branchId);
+    Task<SupplyRequestDto?> GetLatestOngoingAsync();
 }

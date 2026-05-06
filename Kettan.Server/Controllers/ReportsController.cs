@@ -190,16 +190,6 @@ public class ReportsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("hq/consumption-analytics")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<ConsumptionAnalyticsDto>> GetConsumptionAnalytics(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate,
-        [FromQuery] int? branchId = null)
-    {
-        var result = await _service.GetConsumptionAnalyticsAsync(startDate, endDate, branchId);
-        return Ok(result);
-    }
 
     // ── New Branch endpoints ──────────────────────────────────────────────────
 
@@ -278,19 +268,6 @@ public class ReportsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("branch/consumption-analytics")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
-    public async Task<ActionResult<ConsumptionAnalyticsDto>> GetBranchConsumptionAnalytics(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
-    {
-        var branchId = _currentUser.BranchId;
-        if (!branchId.HasValue)
-            return BadRequest(new { message = "Branch context required." });
-
-        var result = await _service.GetConsumptionAnalyticsAsync(startDate, endDate, branchId.Value);
-        return Ok(result);
-    }
 
     [HttpGet("branch/eoq-suggestions")]
     [Authorize(Roles = "BranchOwner,BranchManager")]
