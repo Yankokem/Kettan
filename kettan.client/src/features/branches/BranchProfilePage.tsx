@@ -310,12 +310,13 @@ export function BranchProfilePage() {
           loading={tabLoading}
         />
 
-        {activeTab === 'details' && formData ? (
+        {activeTab === 'details' && (formData || tabLoading) ? (
           <BranchDetailsTab
             formData={formData}
             statusOptions={STATUS_OPTIONS}
             ownerOptions={OWNER_OPTIONS}
             managerOptions={MANAGER_OPTIONS}
+            loading={tabLoading}
           />
         ) : null}
 

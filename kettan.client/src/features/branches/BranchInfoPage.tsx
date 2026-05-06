@@ -6,8 +6,17 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import CallRoundedIcon from '@mui/icons-material/CallRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
+import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import { useAuthStore } from '../../store/useAuthStore';
 import { fetchBranch, fetchBranchStaff, fetchBranchInventory } from './branchesApi';
+import { fetchReturns, fetchSupplyRequests } from '../branch-operations/api';
+import { fetchMenuItems } from '../menu/menuItemsApi';
+import { Skeleton } from '@mui/material';
+import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
+import LocalPostOfficeRoundedIcon from '@mui/icons-material/LocalPostOfficeRounded';
+import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
 import { 
   mapBranch, 
   mapEmployee, 
@@ -17,22 +26,26 @@ import {
 } from './branchProfileData';
 import type { Branch, BranchEmployee, BranchInventoryItem } from './types';
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value, icon: Icon }: { label: string; value: string; icon?: React.ElementType }) {
   return (
     <Box sx={{ py: 1.1 }}>
-      <Typography
-        sx={{
-          fontSize: 10.5,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.09em',
-          color: 'text.secondary',
-          mb: 0.45,
-        }}
-      >
-        {label}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.45 }}>
+        {Icon && <Icon sx={{ fontSize: 13, color: 'text.secondary' }} />}
+        <Typography
+          sx={{
+            fontSize: 10.5,
+            fontWeight: 500,
+            textTransform: 'uppercase',
+            letterSpacing: '0.09em',
+            color: 'text.secondary',
+          }}
+        >
+          {label}
+        </Typography>
+      </Box>
+      <Typography sx={{ fontSize: 14.5, color: 'text.primary', fontWeight: 500, lineHeight: 1.35, pl: Icon ? 2.2 : 0 }}>
+        {value}
       </Typography>
-      <Typography sx={{ fontSize: 14.5, color: 'text.primary', fontWeight: 600, lineHeight: 1.35 }}>{value}</Typography>
     </Box>
   );
 }
@@ -40,11 +53,13 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 function SummaryMeter({
   label,
   current,
+  limit,
   icon,
   tone,
 }: {
   label: string;
   current: number;
+  limit?: number;
   icon: React.ReactNode;
   tone: 'gold' | 'sage';
 }) {
@@ -84,12 +99,19 @@ function SummaryMeter({
         />
       </Box>
 
-      <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600, mb: 1.2 }}>
-        Current operational count
+      <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500, mb: 1.2 }}>
+        {limit ? `${current} / ${limit} in use` : 'Current operational count'}
       </Typography>
 
       <Box sx={{ width: '100%', height: 8, bgcolor: toneStyles.track, borderRadius: 999, overflow: 'hidden' }}>
-        <Box sx={{ width: '100%', height: '100%', background: toneStyles.fill, borderRadius: 999 }} />
+        <Box 
+          sx={{ 
+            width: limit ? `${Math.min((current / limit) * 100, 100)}%` : '100%', 
+            height: '100%', 
+            background: toneStyles.fill, 
+            borderRadius: 999 
+          }} 
+        />
       </Box>
     </Box>
   );
@@ -102,6 +124,10 @@ export function BranchInfoPage() {
   const [branch, setBranch] = useState<Branch | null>(null);
   const [staff, setStaff] = useState<BranchEmployee[]>([]);
   const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
+  const [menuItemsCount, setMenuItemsCount] = useState<number>(0);
+  const [returnsCount, setReturnsCount] = useState<number>(0);
+  const [supplyRequestsCount, setSupplyRequestsCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!branchId) return;
@@ -110,10 +136,14 @@ export function BranchInfoPage() {
 
     const load = async () => {
       try {
-        const [branchDto, staffDto, invDto] = await Promise.all([
+        setLoading(true);
+        const [branchDto, staffDto, invDto, menuItems, returns, supplyRequests] = await Promise.all([
           fetchBranch(Number(branchId)),
           fetchBranchStaff(Number(branchId)),
           fetchBranchInventory(Number(branchId)),
+          fetchMenuItems(),
+          fetchReturns(),
+          fetchSupplyRequests()
         ]);
 
         if (!isMounted) return;
@@ -121,8 +151,13 @@ export function BranchInfoPage() {
         setBranch(mapBranch(branchDto));
         setStaff(staffDto.map(mapEmployee));
         setInventoryItems(invDto.map(mapInventoryItem));
+        setMenuItemsCount(menuItems.length);
+        setReturnsCount(returns.length);
+        setSupplyRequestsCount(supplyRequests.length);
       } catch (err) {
         console.error('Failed to load branch info:', err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
@@ -210,74 +245,85 @@ export function BranchInfoPage() {
                 whiteSpace: 'nowrap',
               }}
             >
-              {branch?.name || 'Loading Branch...'}
+              {loading ? <Skeleton width={200} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} /> : (branch?.name || 'Loading Branch...')}
             </Typography>
           </Box>
         </Box>
 
-        {/* ── Below-banner row: avatar + chips + meta ── */}
         <Box sx={{ px: { xs: 3, sm: 4 }, pb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2.5, mt: -5, flexWrap: 'wrap' }}>
-            {/* Avatar centered on the seam — half above, half below */}
-            <Avatar
-              variant="rounded"
-              src={branch?.imageUrl || undefined}
-              sx={{
-                width: 132,
-                height: 132,
-                borderRadius: '14px',
-                bgcolor: '#FAF5EF',
-                border: '5px solid',
-                borderColor: 'background.paper',
-                color: '#6B4C2A',
-                flexShrink: 0,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                fontSize: 48,
-                fontWeight: 800
-              }}
-            >
-              {branch ? getInitials(branch.name) : '??'}
-            </Avatar>
+            {loading ? (
+              <Skeleton variant="rounded" sx={{ width: 132, height: 132, borderRadius: '14px', border: '5px solid', borderColor: 'background.paper' }} />
+            ) : (
+              <Avatar
+                variant="rounded"
+                src={branch?.imageUrl || undefined}
+                sx={{
+                  width: 132,
+                  height: 132,
+                  borderRadius: '14px',
+                  bgcolor: '#FAF5EF',
+                  border: '5px solid',
+                  borderColor: 'background.paper',
+                  color: '#6B4C2A',
+                  flexShrink: 0,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                  fontSize: 48,
+                  fontWeight: 800
+                }}
+              >
+                {branch ? getInitials(branch.name) : '??'}
+              </Avatar>
+            )}
 
-            {/* Chips + meta below the avatar */}
             <Box sx={{ minWidth: 0, flex: 1, pb: 0.5, pt: 3.5 }}>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
-                <Chip
-                  icon={<MapRoundedIcon fontSize="small" />}
-                  label={branch?.city || 'City N/A'}
-                  size="small"
-                  sx={{
-                    bgcolor: 'background.paper',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 2,
-                    height: 28,
-                    fontWeight: 600,
-                  }}
-                />
-                <Chip
-                  label={branch?.status === 'active' ? 'Active Branch' : 'Setup Pending'}
-                  size="small"
-                  sx={{
-                    bgcolor: branch?.status === 'active' ? 'rgba(113,143,88,0.15)' : 'rgba(201,168,76,0.18)',
-                    color: branch?.status === 'active' ? '#3F5831' : '#6B4C2A',
-                    borderRadius: 999,
-                    height: 28,
-                    fontWeight: 800,
-                  }}
-                />
-                <Chip
-                  label={`BR-${branchId?.toString().padStart(5, '0')}`}
-                  size="small"
-                  sx={{
-                    bgcolor: 'rgba(107,76,42,0.10)',
-                    color: '#5C4518',
-                    borderRadius: 999,
-                    height: 24,
-                    fontWeight: 700,
-                    fontSize: 11,
-                  }}
-                />
+                {loading ? (
+                  <>
+                    <Skeleton width={100} height={28} sx={{ borderRadius: 2 }} />
+                    <Skeleton width={120} height={28} sx={{ borderRadius: 999 }} />
+                    <Skeleton width={80} height={24} sx={{ borderRadius: 999 }} />
+                  </>
+                ) : (
+                  <>
+                    <Chip
+                      icon={<MapRoundedIcon fontSize="small" />}
+                      label={branch?.city || 'City N/A'}
+                      size="small"
+                      sx={{
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        height: 28,
+                        fontWeight: 600,
+                      }}
+                    />
+                    <Chip
+                      label={branch?.status === 'active' ? 'Active Branch' : 'Setup Pending'}
+                      size="small"
+                      sx={{
+                        bgcolor: branch?.status === 'active' ? 'rgba(113,143,88,0.15)' : 'rgba(201,168,76,0.18)',
+                        color: branch?.status === 'active' ? '#3F5831' : '#6B4C2A',
+                        borderRadius: 999,
+                        height: 28,
+                        fontWeight: 800,
+                      }}
+                    />
+                    <Chip
+                      label={`BR-${branchId?.toString().padStart(5, '0')}`}
+                      size="small"
+                      sx={{
+                        bgcolor: 'rgba(107,76,42,0.10)',
+                        color: '#5C4518',
+                        borderRadius: 999,
+                        height: 24,
+                        fontWeight: 700,
+                        fontSize: 11,
+                      }}
+                    />
+                  </>
+                )}
               </Box>
 
               <Box
@@ -291,18 +337,24 @@ export function BranchInfoPage() {
                   flexWrap: 'wrap',
                 }}
               >
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                  <AccessTimeRoundedIcon sx={{ fontSize: 14 }} />
-                  {branch ? `${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}` : 'Schedule Not Set'}
-                </Typography>
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                  <CallRoundedIcon sx={{ fontSize: 14 }} />
-                  {branch?.contactNumber || 'No Contact Number'}
-                </Typography>
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                  <PeopleRoundedIcon sx={{ fontSize: 14 }} />
-                  {staff.length} Active Staff Members
-                </Typography>
+                {loading ? (
+                  <Skeleton width="60%" height={24} />
+                ) : (
+                  <>
+                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                      <AccessTimeRoundedIcon sx={{ fontSize: 14 }} />
+                      {branch ? `${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}` : 'Schedule Not Set'}
+                    </Typography>
+                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                      <CallRoundedIcon sx={{ fontSize: 14 }} />
+                      {branch?.contactNumber || 'No Contact Number'}
+                    </Typography>
+                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                      <PeopleRoundedIcon sx={{ fontSize: 14 }} />
+                      {staff.length} Active Staff Members
+                    </Typography>
+                  </>
+                )}
               </Box>
             </Box>
           </Box>
@@ -320,25 +372,25 @@ export function BranchInfoPage() {
 
             <Grid container spacing={2.4}>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Legal Name / Entity" value={branch?.name || 'N/A'} />
+                <DetailRow label="Legal Name / Entity" value={branch?.name || 'N/A'} icon={BadgeRoundedIcon} />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Branch Status" value={branch?.status === 'active' ? 'Operational' : 'Onboarding'} />
+                <DetailRow label="Branch Status" value={branch?.status === 'active' ? 'Operational' : 'Onboarding'} icon={DescriptionRoundedIcon} />
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <DetailRow label="Full Address" value={branch?.address || 'N/A'} />
+                <DetailRow label="Full Address" value={branch?.address || 'N/A'} icon={LocationOnRoundedIcon} />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Operating City" value={branch?.city || 'N/A'} />
+                <DetailRow label="Operating City" value={branch?.city || 'N/A'} icon={MapRoundedIcon} />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Official Contact" value={branch?.contactNumber || 'N/A'} />
+                <DetailRow label="Official Contact" value={branch?.contactNumber || 'N/A'} icon={CallRoundedIcon} />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Operating Schedule" value={branch ? `${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}` : 'N/A'} />
+                <DetailRow label="Operating Schedule" value={branch ? `${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}` : 'N/A'} icon={AccessTimeRoundedIcon} />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Assigned Manager" value={branch?.manager || 'Unassigned'} />
+                <DetailRow label="Assigned Manager" value={branch?.manager || 'Unassigned'} icon={PeopleRoundedIcon} />
               </Grid>
             </Grid>
           </Paper>
@@ -351,30 +403,49 @@ export function BranchInfoPage() {
               <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Branch Overview</Typography>
             </Box>
 
-            <Box sx={{ display: 'grid', gap: 1.4 }}>
-              <SummaryMeter 
-                label="Staff Members" 
-                current={staff.length} 
-                icon={<PeopleRoundedIcon fontSize="small" />} 
-                tone="sage" 
-              />
-              <SummaryMeter 
-                label="Inventory Items" 
-                current={inventoryItems.length} 
-                icon={<Inventory2RoundedIcon fontSize="small" />} 
-                tone="gold" 
-              />
-            </Box>
-
-            <Box sx={{ mt: 2.2, pt: 2, borderTop: '1px solid', borderColor: 'divider', display: 'grid', gap: 1 }}>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.8 }}>
-                <CallRoundedIcon sx={{ fontSize: 15 }} />
-                {branch?.contactNumber || 'Not available'}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.8 }}>
-                <MapRoundedIcon sx={{ fontSize: 15 }} />
-                {branch?.address || 'Address not set'}
-              </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.4 }}>
+              {loading ? (
+                <>
+                  <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
+                  <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
+                  <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
+                  <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
+                </>
+              ) : (
+                <>
+                  <SummaryMeter 
+                    label="Staff Members" 
+                    current={staff.length} 
+                    limit={5}
+                    icon={<PeopleRoundedIcon fontSize="small" />} 
+                    tone="sage" 
+                  />
+                  <SummaryMeter 
+                    label="Inventory Items" 
+                    current={inventoryItems.length} 
+                    icon={<Inventory2RoundedIcon fontSize="small" />} 
+                    tone="gold" 
+                  />
+                  <SummaryMeter 
+                    label="Menu Items" 
+                    current={menuItemsCount} 
+                    icon={<RestaurantMenuRoundedIcon fontSize="small" />} 
+                    tone="sage" 
+                  />
+                  <SummaryMeter 
+                    label="Returns" 
+                    current={returnsCount} 
+                    icon={<AssignmentReturnRoundedIcon fontSize="small" />} 
+                    tone="gold" 
+                  />
+                  <SummaryMeter 
+                    label="Supply Requests" 
+                    current={supplyRequestsCount} 
+                    icon={<LocalPostOfficeRoundedIcon fontSize="small" />} 
+                    tone="sage" 
+                  />
+                </>
+              )}
             </Box>
           </Paper>
         </Grid>

@@ -50,7 +50,7 @@ export function ConsumptionCreatePage() {
   const { user } = useAuthStore();
 
   const role = user?.role ?? '';
-  const canAccessPage = role === 'BranchManager' || role === 'BranchOwner';
+  const canAccessPage = role === 'BranchManager';
   const canCreateRequests = role === 'BranchManager';
 
   const [shift, setShift] = useState('Morning');
@@ -194,7 +194,7 @@ export function ConsumptionCreatePage() {
         <Paper sx={{ p: 3, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Create Consumption Log</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
-            This page is available for Branch Manager and Branch Owner only.
+            This page is available for Branch Managers only.
           </Typography>
         </Paper>
       </Box>
@@ -213,14 +213,6 @@ export function ConsumptionCreatePage() {
         </Box>
       </Box>
 
-      {!canCreateRequests ? (
-        <Paper sx={{ p: 2.25, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
-          <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Consumption Logging</Typography>
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
-            Branch Owner can view consumption history, but only Branch Manager can submit consumption logs.
-          </Typography>
-        </Paper>
-      ) : (
         <Paper sx={{ p: 2.25, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
             <Box
@@ -327,7 +319,6 @@ export function ConsumptionCreatePage() {
             </Box>
           </Box>
         </Paper>
-      )}
 
       <SalesMenuSelectionModal
         open={isSalesModalOpen}

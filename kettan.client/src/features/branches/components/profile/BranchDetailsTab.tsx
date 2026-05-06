@@ -1,4 +1,4 @@
-import { Box, Chip, Divider, Grid, Typography } from '@mui/material';
+import { Box, Chip, Divider, Grid, Skeleton, Typography } from '@mui/material';
 import type { BranchFormData } from '../../types';
 import { formatSchedule } from '../../branchProfileData';
 
@@ -8,10 +8,11 @@ interface OptionItem {
 }
 
 interface BranchDetailsTabProps {
-  formData: BranchFormData;
+  formData: BranchFormData | null;
   statusOptions: OptionItem[];
   ownerOptions: OptionItem[];
   managerOptions: OptionItem[];
+  loading?: boolean;
 }
 
 function DetailItem({ label, value }: { label: string; value: string }) {
@@ -30,11 +31,32 @@ export function BranchDetailsTab({
   statusOptions,
   ownerOptions,
   managerOptions,
+  loading = false,
 }: BranchDetailsTabProps) {
-  if (!formData) {
+  if (loading || !formData) {
     return (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Typography color="text.secondary">Loading location details...</Typography>
+      <Box sx={{ p: { xs: 3, md: 4 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+          <Skeleton width={180} height={24} />
+        </Box>
+        <Grid container spacing={2.5}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Grid key={i} size={{ xs: 12, md: 6 }}>
+              <Skeleton height={48} />
+            </Grid>
+          ))}
+        </Grid>
+        <Divider sx={{ my: 3 }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+          <Skeleton width={180} height={24} />
+        </Box>
+        <Grid container spacing={2.5}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Grid key={i} size={{ xs: 12, md: 6 }}>
+              <Skeleton height={48} />
+            </Grid>
+          ))}
+        </Grid>
       </Box>
     );
   }

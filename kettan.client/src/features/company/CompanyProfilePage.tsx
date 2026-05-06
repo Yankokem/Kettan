@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Avatar, Box, Chip, Grid, Paper, Typography } from '@mui/material';
+import { Avatar, Box, Chip, Grid, Paper, Typography, Skeleton } from '@mui/material';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import BuildRoundedIcon from '@mui/icons-material/BuildRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -9,8 +9,11 @@ import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
 import CallRoundedIcon from '@mui/icons-material/CallRounded';
-import AlternateEmailRoundedIcon from '@mui/icons-material/AlternateEmailRounded';
 import PublicRoundedIcon from '@mui/icons-material/PublicRounded';
+import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
+import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
+import ContactSupportRoundedIcon from '@mui/icons-material/ContactSupportRounded';
+import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import { Button } from '../../components/UI/Button';
 import { CompanyProfileEditModal } from './components/CompanyProfileEditModal';
 import type { CompanyProfile } from './types';
@@ -40,22 +43,26 @@ const COMPANY_PROFILE_MOCK: CompanyProfile = {
   contractRenewalDate: '2026-11-15',
 };
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value, icon: Icon }: { label: string; value: string; icon: React.ElementType }) {
   return (
     <Box sx={{ py: 1.1 }}>
-      <Typography
-        sx={{
-          fontSize: 10.5,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.09em',
-          color: 'text.secondary',
-          mb: 0.45,
-        }}
-      >
-        {label}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.45 }}>
+        <Icon sx={{ fontSize: 13, color: 'text.secondary' }} />
+        <Typography
+          sx={{
+            fontSize: 10.5,
+            fontWeight: 500,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'text.secondary',
+          }}
+        >
+          {label}
+        </Typography>
+      </Box>
+      <Typography sx={{ fontSize: 14.5, color: 'text.primary', fontWeight: 500, lineHeight: 1.35, pl: 2.2 }}>
+        {value}
       </Typography>
-      <Typography sx={{ fontSize: 14.5, color: 'text.primary', fontWeight: 600, lineHeight: 1.35 }}>{value}</Typography>
     </Box>
   );
 }
@@ -119,6 +126,7 @@ function UtilizationMeter({
 
 export function CompanyProfilePage() {
   const [profile, setProfile] = useState<CompanyProfile>(COMPANY_PROFILE_MOCK);
+  const [loading, setLoading] = useState(true);
   const [editDraft, setEditDraft] = useState<CompanyProfileFormData>(toCompanyProfileFormData(COMPANY_PROFILE_MOCK));
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
@@ -128,6 +136,23 @@ export function CompanyProfilePage() {
   const { user } = useAuthStore();
   const sessionTenant = user?.tenant;
 
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const result = await fetchCompanyProfile();
+        setProfile(result.profile);
+        setSubscriptionTier(result.subscriptionTier);
+        setEditDraft(toCompanyProfileFormData(result.profile));
+      } catch (err) {
+        console.error('Failed to load company profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
 
   useEffect(() => {
     if (!showSavedNotice) {
@@ -143,8 +168,8 @@ export function CompanyProfilePage() {
 
   const utilization = useMemo(
     () => ({
-      branches: Math.round((profile.activeBranches / profile.branchLimit) * 100),
-      staff: Math.round((profile.activeStaff / profile.staffLimit) * 100),
+      branches: profile.branchLimit > 0 ? Math.round((profile.activeBranches / profile.branchLimit) * 100) : 0,
+      staff: profile.staffLimit > 0 ? Math.round((profile.activeStaff / profile.staffLimit) * 100) : 0,
     }),
     [profile.activeBranches, profile.activeStaff, profile.branchLimit, profile.staffLimit]
   );
@@ -221,7 +246,7 @@ export function CompanyProfilePage() {
         <Box
           sx={{
             position: 'relative',
-            height: 138,
+            height: 140,
             background: 'linear-gradient(135deg, #6A4120 0%, #8C5F2B 34%, #B78644 68%, #E1C26F 100%)',
           }}
         >
@@ -234,68 +259,108 @@ export function CompanyProfilePage() {
               backgroundSize: '28px 28px',
             }}
           />
+
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 12,
+              left: { xs: 3, sm: '184px' },
+              right: { xs: 3, sm: '420px' },
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: { xs: 20, sm: 30 },
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+                color: '#FAF5EF',
+                textShadow: '0 1px 6px rgba(0,0,0,0.3)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {loading ? <Skeleton width={200} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} /> : profile.name}
+            </Typography>
+          </Box>
         </Box>
 
         <Box sx={{ px: { xs: 3, sm: 4 }, pb: 3.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mt: -8.5, flexWrap: 'wrap' }}>
-            <Avatar
-              variant="rounded"
-              sx={{
-                width: 108,
-                height: 108,
-                borderRadius: '14px',
-                bgcolor: '#2E1F14',
-                border: '4px solid #FFFFFF',
-                color: '#FAF5EF',
-              }}
-            >
-              <BusinessRoundedIcon sx={{ fontSize: 46 }} />
-            </Avatar>
+          <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2.5, mt: -5, flexWrap: 'wrap' }}>
+            {loading ? (
+              <Skeleton variant="rounded" sx={{ width: 132, height: 132, borderRadius: '14px', border: '5px solid', borderColor: 'background.paper' }} />
+            ) : (
+              <Avatar
+                variant="rounded"
+                sx={{
+                  width: 132,
+                  height: 132,
+                  borderRadius: '14px',
+                  bgcolor: '#FAF5EF',
+                  border: '5px solid',
+                  borderColor: 'background.paper',
+                  color: '#6B4C2A',
+                  flexShrink: 0,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                  fontSize: 48,
+                  fontWeight: 800
+                }}
+              >
+                <BusinessRoundedIcon sx={{ fontSize: 54 }} />
+              </Avatar>
+            )}
 
-            <Box sx={{ minWidth: 0, flex: 1, pt: 1.25 }}>
+            <Box sx={{ minWidth: 0, flex: 1, pt: 4 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
                 <Box>
-                  <Typography sx={{ fontSize: { xs: 24, sm: 36 }, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.07 }}>
-                    {profile.name}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mt: 1.2 }}>
-                    <Chip
-                      icon={<MapRoundedIcon fontSize="small" />}
-                      label={`${profile.headquartersCity} HQ`}
-                      size="small"
-                      sx={{
-                        bgcolor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        height: 28,
-                        fontWeight: 600,
-                      }}
-                    />
-                    <Chip
-                      label={profile.planName}
-                      size="small"
-                      sx={{
-                        bgcolor: 'rgba(201,168,76,0.18)',
-                        color: '#6B4C2A',
-                        borderRadius: 999,
-                        height: 28,
-                        fontWeight: 800,
-                      }}
-                    />
-                    <Chip
-                      label={profile.organizationId}
-                      size="small"
-                      sx={{
-                        bgcolor: 'rgba(107,76,42,0.10)',
-                        color: '#5C4518',
-                        borderRadius: 999,
-                        height: 24,
-                        fontWeight: 700,
-                        fontSize: 11,
-                      }}
-                    />
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
+                    {loading ? (
+                      <>
+                        <Skeleton width={100} height={28} sx={{ borderRadius: 2 }} />
+                        <Skeleton width={120} height={28} sx={{ borderRadius: 999 }} />
+                        <Skeleton width={80} height={24} sx={{ borderRadius: 999 }} />
+                      </>
+                    ) : (
+                      <>
+                        <Chip
+                          icon={<MapRoundedIcon fontSize="small" />}
+                          label={`${profile.headquartersCity} HQ`}
+                          size="small"
+                          sx={{
+                            bgcolor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 2,
+                            height: 28,
+                            fontWeight: 600,
+                          }}
+                        />
+                        <Chip
+                          label={profile.planName}
+                          size="small"
+                          sx={{
+                            bgcolor: 'rgba(201,168,76,0.18)',
+                            color: '#6B4C2A',
+                            borderRadius: 999,
+                            height: 28,
+                            fontWeight: 800,
+                          }}
+                        />
+                        <Chip
+                          label={profile.organizationId}
+                          size="small"
+                          sx={{
+                            bgcolor: 'rgba(107,76,42,0.10)',
+                            color: '#5C4518',
+                            borderRadius: 999,
+                            height: 24,
+                            fontWeight: 700,
+                            fontSize: 11,
+                          }}
+                        />
+                      </>
+                    )}
                   </Box>
                 </Box>
 
@@ -322,18 +387,24 @@ export function CompanyProfilePage() {
                   flexWrap: 'wrap',
                 }}
               >
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                  <CalendarMonthRoundedIcon sx={{ fontSize: 14 }} />
-                  Renewal: {new Date(profile.contractRenewalDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </Typography>
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                  <HubRoundedIcon sx={{ fontSize: 14 }} />
-                  {utilization.branches}% branch capacity utilized
-                </Typography>
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                  <BadgeRoundedIcon sx={{ fontSize: 14 }} />
-                  {utilization.staff}% seat utilization
-                </Typography>
+                {loading ? (
+                  <Skeleton width="60%" height={24} />
+                ) : (
+                  <>
+                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                      <CalendarMonthRoundedIcon sx={{ fontSize: 14 }} />
+                      Renewal: {new Date(profile.contractRenewalDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </Typography>
+                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                      <HubRoundedIcon sx={{ fontSize: 14 }} />
+                      {utilization.branches}% branch capacity utilized
+                    </Typography>
+                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
+                      <BadgeRoundedIcon sx={{ fontSize: 14 }} />
+                      {utilization.staff}% seat utilization
+                    </Typography>
+                  </>
+                )}
               </Box>
             </Box>
           </Box>
@@ -380,25 +451,25 @@ export function CompanyProfilePage() {
 
             <Grid container spacing={2.4}>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Legal Name" value={profile.legalName} />
+                {loading ? <Skeleton height={54} /> : <DetailRow label="Legal Name" value={profile.legalName} icon={BadgeRoundedIcon} />}
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Tax ID" value={profile.taxId} />
+                {loading ? <Skeleton height={54} /> : <DetailRow label="Tax ID" value={profile.taxId} icon={DescriptionRoundedIcon} />}
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Billing Email" value={profile.billingEmail} />
+                {loading ? <Skeleton height={54} /> : <DetailRow label="Billing Email" value={profile.billingEmail} icon={EmailRoundedIcon} />}
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Support Email" value={profile.supportEmail} />
+                {loading ? <Skeleton height={54} /> : <DetailRow label="Support Email" value={profile.supportEmail} icon={ContactSupportRoundedIcon} />}
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Phone Contact" value={profile.phoneContact} />
+                {loading ? <Skeleton height={54} /> : <DetailRow label="Phone Contact" value={profile.phoneContact} icon={CallRoundedIcon} />}
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <DetailRow label="Website" value={profile.website} />
+                {loading ? <Skeleton height={54} /> : <DetailRow label="Website" value={profile.website} icon={PublicRoundedIcon} />}
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <DetailRow label="Headquarters Address" value={profile.headquartersAddress} />
+                {loading ? <Skeleton height={54} /> : <DetailRow label="Headquarters Address" value={profile.headquartersAddress} icon={LocationOnRoundedIcon} />}
               </Grid>
             </Grid>
           </Paper>
@@ -412,23 +483,17 @@ export function CompanyProfilePage() {
             </Box>
 
             <Box sx={{ display: 'grid', gap: 1.4 }}>
-              <UtilizationMeter label="Active Branches" current={profile.activeBranches} limit={profile.branchLimit} tone="gold" />
-              <UtilizationMeter label="Staff Licenses" current={profile.activeStaff} limit={profile.staffLimit} tone="sage" />
-            </Box>
-
-            <Box sx={{ mt: 2.2, pt: 2, borderTop: '1px solid', borderColor: 'divider', display: 'grid', gap: 1 }}>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.8 }}>
-                <CallRoundedIcon sx={{ fontSize: 15 }} />
-                {profile.phoneContact}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.8 }}>
-                <AlternateEmailRoundedIcon sx={{ fontSize: 15 }} />
-                {profile.supportEmail}
-              </Typography>
-              <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.8 }}>
-                <PublicRoundedIcon sx={{ fontSize: 15 }} />
-                {profile.website}
-              </Typography>
+              {loading ? (
+                <>
+                  <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
+                  <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
+                </>
+              ) : (
+                <>
+                  <UtilizationMeter label="Active Branches" current={profile.activeBranches} limit={profile.branchLimit} tone="gold" />
+                  <UtilizationMeter label="Staff Licenses" current={profile.activeStaff} limit={profile.staffLimit} tone="sage" />
+                </>
+              )}
             </Box>
           </Paper>
         </Grid>

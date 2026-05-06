@@ -56,8 +56,7 @@ export function ConsumptionPage() {
 
   const role = user?.role ?? '';
   const isBranchManager = role === 'BranchManager';
-  const isBranchOwner = role === 'BranchOwner';
-  const canViewPage = isBranchManager || isBranchOwner;
+  const canViewPage = isBranchManager;
   const canCreateRequests = isBranchManager;
 
   const [logs, setLogs] = useState<ConsumptionLog[]>([]);
@@ -205,7 +204,7 @@ export function ConsumptionPage() {
         <Paper sx={{ p: 3, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Consumption Logging</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
-            This module is available for Branch Manager and Branch Owner only.
+            This module is available for Branch Managers only.
           </Typography>
         </Paper>
       </Box>
@@ -324,13 +323,6 @@ export function ConsumptionPage() {
         </Button>
       </Box>
 
-      {!canCreateRequests ? (
-        <Paper sx={{ p: 1.35, mb: 1.2, borderRadius: 2, border: '1px solid', borderColor: 'divider' }} elevation={0}>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-            Branch Owner can view consumption history, but only Branch Manager can submit consumption logs.
-          </Typography>
-        </Paper>
-      ) : null}
 
       {error ? (
         <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1.2 }}>{error}</Typography>
