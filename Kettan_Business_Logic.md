@@ -3,6 +3,7 @@
 > **What this doc is**: The single source of truth for how Kettan works operationally. Every user action, every status transition, every rule — all in one place.
 
 > **Last updated**: April 18, 2026
+> **See also**: [Use Case Data Package (AI-Ready)](file:///c:/Users/nyanc/OneDrive/Desktop/Kettan-laptop/kettan_use_case_data_package.md)
 
 ----
 

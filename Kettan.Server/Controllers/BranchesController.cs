@@ -5,6 +5,7 @@ using Kettan.Server.Entities;
 using Kettan.Server.DTOs.Branches;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Enums;
+using Kettan.Server.Services.Subscription;
 
 namespace Kettan.Server.Controllers;
 
@@ -14,11 +15,16 @@ public class BranchesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ISubscriptionLimitService _subscriptionLimitService;
 
-    public BranchesController(ApplicationDbContext context, ICurrentUserService currentUserService)
+    public BranchesController(
+        ApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        ISubscriptionLimitService subscriptionLimitService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _subscriptionLimitService = subscriptionLimitService;
     }
 
     [HttpGet]
@@ -84,43 +90,67 @@ public class BranchesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<BranchDto>> CreateBranch(CreateBranchDto dto)
+    public async Task<ActionResult<BranchDto>> CreateBranch(CreateBranchDto dto, CancellationToken cancellationToken)
     {
         if (!_currentUserService.TenantId.HasValue) 
             return Forbid();
 
-        var branch = new Branch
+        try
         {
-            TenantId = _currentUserService.TenantId.Value,
-            Name = dto.Name,
-            Location = dto.Location,
-            CustomThresholds = dto.CustomThresholds,
-            ImageUrl = dto.ImageUrl,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        };
+            await _subscriptionLimitService.EnsureCanCreateBranchAsync(_currentUserService.TenantId.Value, cancellationToken);
 
-        _context.Branches.Add(branch);
-        await _context.SaveChangesAsync();
+            var branch = new Branch
+            {
+                TenantId = _currentUserService.TenantId.Value,
+                Name = dto.Name,
+                Location = dto.Location,
+                CustomThresholds = dto.CustomThresholds,
+                ImageUrl = dto.ImageUrl,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
 
-        return CreatedAtAction(nameof(GetBranch), new { id = branch.BranchId }, new BranchDto
+            _context.Branches.Add(branch);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return CreatedAtAction(nameof(GetBranch), new { id = branch.BranchId }, new BranchDto
+            {
+                BranchId = branch.BranchId,
+                TenantId = branch.TenantId,
+                Name = branch.Name,
+                Location = branch.Location,
+                CustomThresholds = branch.CustomThresholds,
+                IsActive = branch.IsActive,
+                ImageUrl = branch.ImageUrl,
+                CreatedAt = branch.CreatedAt
+            });
+        }
+        catch (InvalidOperationException ex)
         {
-            BranchId = branch.BranchId,
-            TenantId = branch.TenantId,
-            Name = branch.Name,
-            Location = branch.Location,
-            CustomThresholds = branch.CustomThresholds,
-            IsActive = branch.IsActive,
-            ImageUrl = branch.ImageUrl,
-            CreatedAt = branch.CreatedAt
-        });
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateBranch(int id, UpdateBranchDto dto)
+    public async Task<IActionResult> UpdateBranch(int id, UpdateBranchDto dto, CancellationToken cancellationToken)
     {
-        var branch = await _context.Branches.FindAsync(id);
+        var branch = await _context.Branches.FindAsync([id], cancellationToken);
         if (branch == null) return NotFound();
+
+        if (_currentUserService.TenantId.HasValue && branch.TenantId != _currentUserService.TenantId.Value)
+            return Forbid();
+
+        if (dto.IsActive && !branch.IsActive)
+        {
+            try
+            {
+                await _subscriptionLimitService.EnsureCanCreateBranchAsync(branch.TenantId, cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
         branch.Name = dto.Name;
         branch.Location = dto.Location;
@@ -128,7 +158,7 @@ public class BranchesController : ControllerBase
         branch.ImageUrl = dto.ImageUrl;
         branch.IsActive = dto.IsActive;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return NoContent();
     }

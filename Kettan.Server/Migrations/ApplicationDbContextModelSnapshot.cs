@@ -194,6 +194,8 @@ namespace Kettan.Server.Migrations
 
                     b.HasIndex("TenantId");
 
+                    b.HasIndex("TenantId", "IsActive", "IsDeleted");
+
                     b.ToTable("Branches");
                 });
 
@@ -348,8 +350,8 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("datetime2(3)");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -1076,8 +1078,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
 
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("datetime2(3)");
@@ -1119,8 +1121,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
 
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("datetime2(3)");
@@ -1760,8 +1762,8 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("LegalName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(180)
+                        .HasColumnType("nvarchar(180)");
 
                     b.Property<string>("LogoUrl")
                         .HasMaxLength(300)
@@ -1769,12 +1771,16 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<string>("Phone")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Telephone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTime?>("SubscriptionPeriodEnd")
                         .HasColumnType("datetime2(3)");
@@ -1789,16 +1795,16 @@ namespace Kettan.Server.Migrations
                         .HasColumnType("tinyint");
 
                     b.Property<string>("SupportEmail")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
 
                     b.Property<string>("TaxId")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.Property<string>("Website")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.HasKey("TenantId");
 
@@ -1889,8 +1895,8 @@ namespace Kettan.Server.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -1934,6 +1940,8 @@ namespace Kettan.Server.Migrations
                         .IsUnique();
 
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "BranchId", "IsActive", "IsDeleted");
 
                     b.ToTable("Users");
                 });

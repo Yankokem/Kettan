@@ -18,7 +18,17 @@ public static class DbInitializer
     {
         logger?.LogInformation("DbSeeder: starting migration and seed process.");
 
-        // await context.Database.MigrateAsync(cancellationToken);
+        var shouldApplyMigrations =
+            string.Equals(
+                Environment.GetEnvironmentVariable("KETTAN_APPLY_MIGRATIONS"),
+                "true",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (shouldApplyMigrations)
+        {
+            await context.Database.MigrateAsync(cancellationToken);
+            logger?.LogInformation("DbSeeder: applied pending migrations.");
+        }
 
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 

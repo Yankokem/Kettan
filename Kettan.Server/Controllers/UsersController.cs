@@ -6,6 +6,7 @@ using Kettan.Server.DTOs.Users;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Enums;
+using Kettan.Server.Services.Subscription;
 
 namespace Kettan.Server.Controllers;
 
@@ -16,11 +17,16 @@ public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ISubscriptionLimitService _subscriptionLimitService;
 
-    public UsersController(ApplicationDbContext context, ICurrentUserService currentUserService)
+    public UsersController(
+        ApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        ISubscriptionLimitService subscriptionLimitService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _subscriptionLimitService = subscriptionLimitService;
     }
 
     [HttpGet]
@@ -94,37 +100,61 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<UserDto>> CreateUser(CreateUserDto dto)
+    public async Task<ActionResult<UserDto>> CreateUser(CreateUserDto dto, CancellationToken cancellationToken)
     {
+        if (!_currentUserService.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
         // First check if email already exists
-        var existingUser = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == dto.Email);
+        var existingUser = await _context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Email == dto.Email, cancellationToken);
+
         if (existingUser != null)
         {
             return BadRequest(new { message = "Email is already in use by another account." });
         }
 
-        // Note: Password hashing should normally happen here. 
-        // For project scope, utilizing a simple hash implementation or directly saving (not recommended for prod).
-        // Using BCrypt.Net-Next (Assuming logic is handled inside AuthService or directly here)
+        var isActiveStatus = dto.Status == EmployeeStatus.Active;
+        if (isActiveStatus)
+        {
+            try
+            {
+                await _subscriptionLimitService.EnsureCanAssignActiveUserAsync(
+                    _currentUserService.TenantId.Value,
+                    dto.BranchId,
+                    excludeUserId: null,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        var parsedRole = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.HqStaff;
 
         var user = new User
         {
             TenantId = _currentUserService.TenantId,
             BranchId = dto.BranchId,
             Email = dto.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password), // Needs BCrypt.Net package, or basic string for now
-            Role = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.HqStaff,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            Role = parsedRole,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Birthday = dto.Birthday,
             ContactNo = dto.ContactNo,
             ImageUrl = dto.ImageUrl,
-            IsActive = true,
+            IsActive = isActiveStatus,
+            Status = dto.Status,
             CreatedAt = DateTime.UtcNow
         };
 
         _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return CreatedAction(user);
     }
@@ -151,13 +181,30 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, UpdateUserDto dto)
+    public async Task<IActionResult> UpdateUser(int id, UpdateUserDto dto, CancellationToken cancellationToken)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.Users.FindAsync([id], cancellationToken);
         if (user == null) return NotFound();
 
         if (_currentUserService.TenantId.HasValue && user.TenantId != _currentUserService.TenantId.Value)
             return Forbid();
+
+        var nextIsActive = dto.IsActive && dto.Status == EmployeeStatus.Active;
+        if (nextIsActive && user.TenantId.HasValue)
+        {
+            try
+            {
+                await _subscriptionLimitService.EnsureCanAssignActiveUserAsync(
+                    user.TenantId.Value,
+                    dto.BranchId,
+                    user.UserId,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
         user.FirstName = dto.FirstName;
         user.LastName = dto.LastName;
@@ -165,7 +212,7 @@ public class UsersController : ControllerBase
         user.ContactNo = dto.ContactNo;
         user.Role = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : user.Role;
         user.BranchId = dto.BranchId;
-        user.IsActive = dto.IsActive;
+        user.IsActive = nextIsActive;
         user.Status = dto.Status;
         
         // Only update ImageUrl if a new one is provided. Or if explicitly nulling? Usually it's if not null. 
@@ -176,7 +223,7 @@ public class UsersController : ControllerBase
             user.ImageUrl = dto.ImageUrl;
         }
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return NoContent();
     }
@@ -198,18 +245,35 @@ public class UsersController : ControllerBase
     }
 
     [HttpPatch("{id:int}/status")]
-    public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] EmployeeStatus status)
+    public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] EmployeeStatus status, CancellationToken cancellationToken)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.Users.FindAsync([id], cancellationToken);
         if (user == null) return NotFound();
 
         if (_currentUserService.TenantId.HasValue && user.TenantId != _currentUserService.TenantId.Value)
             return Forbid();
 
-        user.Status = status;
-        user.IsActive = status == EmployeeStatus.Active;
+        var nextIsActive = status == EmployeeStatus.Active;
+        if (nextIsActive && user.TenantId.HasValue)
+        {
+            try
+            {
+                await _subscriptionLimitService.EnsureCanAssignActiveUserAsync(
+                    user.TenantId.Value,
+                    user.BranchId,
+                    user.UserId,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
-        await _context.SaveChangesAsync();
+        user.Status = status;
+        user.IsActive = nextIsActive;
+
+        await _context.SaveChangesAsync(cancellationToken);
 
         return NoContent();
     }

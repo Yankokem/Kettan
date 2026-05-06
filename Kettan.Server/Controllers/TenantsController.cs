@@ -46,6 +46,7 @@ public class TenantsController : ControllerBase
             SubscriptionTier = tenant.SubscriptionTier.ToString(),
             Email = tenant.Email,
             Phone = tenant.Phone,
+            Telephone = tenant.Telephone,
             Address = tenant.Address,
             SupportEmail = tenant.SupportEmail,
             SubscriptionStatus = tenant.SubscriptionStatus.ToString(),
@@ -79,6 +80,7 @@ public class TenantsController : ControllerBase
         tenant.Email = NormalizeNullable(dto.Email);
         tenant.SupportEmail = NormalizeNullable(dto.SupportEmail);
         tenant.Phone = NormalizeNullable(dto.Phone);
+        tenant.Telephone = NormalizeNullable(dto.Telephone);
         tenant.Address = NormalizeNullable(dto.Address);
         tenant.LogoUrl = NormalizeNullable(dto.LogoUrl);
 

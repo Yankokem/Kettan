@@ -16,11 +16,11 @@ import ContactSupportRoundedIcon from '@mui/icons-material/ContactSupportRounded
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import { Button } from '../../components/UI/Button';
 import { CompanyProfileEditModal } from './components/CompanyProfileEditModal';
-import type { CompanyProfile } from './types';
+import type { CompanyProfile, CompanySubscriptionDetails } from './types';
 import { toCompanyProfileFormData, type CompanyProfileFormData } from './types';
 import { api } from '../../utils/api';
 import { useAuthStore } from '../../store/useAuthStore';
-import { fetchCompanyProfile, updateCompanyProfile } from './companyProfileApi';
+import { cancelSubscription, fetchCompanyProfile, updateBillingCycle, updateCompanyProfile } from './companyProfileApi';
 
 
 const COMPANY_PROFILE_MOCK: CompanyProfile = {
@@ -34,6 +34,7 @@ const COMPANY_PROFILE_MOCK: CompanyProfile = {
   billingEmail: 'finance@phroasters.com',
   supportEmail: 'support@phroasters.com',
   phoneContact: '+63 2 8123 4567',
+  telephone: '+63 2 8123 9999',
   website: 'phroasters.com',
   taxId: '000-123-456-000',
   activeBranches: 12,
@@ -41,6 +42,30 @@ const COMPANY_PROFILE_MOCK: CompanyProfile = {
   activeStaff: 45,
   staffLimit: 50,
   contractRenewalDate: '2026-11-15',
+};
+
+const SUBSCRIPTION_MOCK: CompanySubscriptionDetails = {
+  planCode: 'GROWTH',
+  planName: 'Growth',
+  branchLimit: 10,
+  userLimit: 50,
+  usersPerBranchLimit: 5,
+  status: 'Active',
+  billingCycle: 'Monthly',
+  nextBillingDate: '2026-11-15T00:00:00.000Z',
+  periodStart: '2026-10-15T00:00:00.000Z',
+  periodEnd: '2026-11-15T00:00:00.000Z',
+  autoRenew: true,
+  canceledAt: null,
+  isReadOnly: false,
+  latestInvoiceStatus: 'Paid',
+  latestInvoiceDueAt: '2026-11-15T00:00:00.000Z',
+  latestInvoiceAmountDue: 7999,
+  latestPaymentStatus: 'Paid',
+  latestPaidAt: '2026-10-15T00:00:00.000Z',
+  paymentProvider: 'PayMongo',
+  activeBranches: 5,
+  activeUsers: 22,
 };
 
 function DetailRow({ label, value, icon: Icon }: { label: string; value: string; icon: React.ElementType }) {
@@ -126,15 +151,19 @@ function UtilizationMeter({
 
 export function CompanyProfilePage() {
   const [profile, setProfile] = useState<CompanyProfile>(COMPANY_PROFILE_MOCK);
+  const [subscription, setSubscription] = useState<CompanySubscriptionDetails>(SUBSCRIPTION_MOCK);
   const [loading, setLoading] = useState(true);
   const [editDraft, setEditDraft] = useState<CompanyProfileFormData>(toCompanyProfileFormData(COMPANY_PROFILE_MOCK));
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUpdatingBilling, setIsUpdatingBilling] = useState(false);
+  const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('Standard');
   const { user } = useAuthStore();
   const sessionTenant = user?.tenant;
+  const isTenantAdmin = user?.role === 'TenantAdmin';
 
   useEffect(() => {
     async function loadData() {
@@ -143,6 +172,7 @@ export function CompanyProfilePage() {
         const result = await fetchCompanyProfile();
         setProfile(result.profile);
         setSubscriptionTier(result.subscriptionTier);
+        setSubscription(result.subscription);
         setEditDraft(toCompanyProfileFormData(result.profile));
       } catch (err) {
         console.error('Failed to load company profile:', err);
@@ -211,6 +241,7 @@ export function CompanyProfilePage() {
 
       setProfile(refreshed.profile);
       setSubscriptionTier(refreshed.subscriptionTier);
+      setSubscription(refreshed.subscription);
       setEditDraft(toCompanyProfileFormData(refreshed.profile));
 
       if (sessionTenant) {
@@ -230,6 +261,56 @@ export function CompanyProfilePage() {
       setIsSaving(false);
     }
   };
+
+  const handleChangeBillingCycle = async () => {
+    const nextCycle = subscription.billingCycle === 'Monthly' ? 'Yearly' : 'Monthly';
+    setSaveError(null);
+    setIsUpdatingBilling(true);
+    try {
+      const updated = await updateBillingCycle(nextCycle);
+      setSubscription(updated);
+      const refreshed = await fetchCompanyProfile();
+      setProfile(refreshed.profile);
+      setSubscriptionTier(refreshed.subscriptionTier);
+      setSubscription(refreshed.subscription);
+    } catch (err) {
+      console.error('Failed to update billing cycle:', err);
+      setSaveError('Unable to update billing cycle right now.');
+    } finally {
+      setIsUpdatingBilling(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Cancel subscription and switch your tenant to read-only mode?')) {
+      return;
+    }
+
+    setSaveError(null);
+    setIsCancellingSubscription(true);
+    try {
+      const updated = await cancelSubscription();
+      setSubscription(updated);
+      const refreshed = await fetchCompanyProfile();
+      setProfile(refreshed.profile);
+      setSubscriptionTier(refreshed.subscriptionTier);
+      setSubscription(refreshed.subscription);
+    } catch (err) {
+      console.error('Failed to cancel subscription:', err);
+      setSaveError('Unable to cancel subscription right now.');
+    } finally {
+      setIsCancellingSubscription(false);
+    }
+  };
+
+  const isBusy = isSaving || isUpdatingBilling || isCancellingSubscription;
+  const busyLabel = isSaving
+    ? 'Saving...'
+    : isUpdatingBilling
+      ? 'Updating billing cycle...'
+      : isCancellingSubscription
+        ? 'Cancelling subscription...'
+        : 'Processing...';
 
   return (
     <Box sx={{ pb: 5 }}>
@@ -365,11 +446,19 @@ export function CompanyProfilePage() {
                 </Box>
 
                 <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-                  <Button variant="outlined" startIcon={<BuildRoundedIcon sx={{ fontSize: 18 }} />}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<BuildRoundedIcon sx={{ fontSize: 18 }} />}
+                    onClick={() => document.getElementById('subscription-billing-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  >
                     Manage Subscription
                   </Button>
 
-                  <Button startIcon={<EditRoundedIcon sx={{ fontSize: 18 }} />} onClick={handleOpenEditModal}>
+                  <Button
+                    startIcon={<EditRoundedIcon sx={{ fontSize: 18 }} />}
+                    onClick={handleOpenEditModal}
+                    disabled={subscription.isReadOnly}
+                  >
                     Edit Company Profile
                   </Button>
                 </Box>
@@ -441,6 +530,81 @@ export function CompanyProfilePage() {
         </Box>
       </Paper>
 
+      <Paper
+        id="subscription-billing-section"
+        elevation={0}
+        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 }, mb: 3 }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
+          <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
+          <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Subscription & Billing</Typography>
+        </Box>
+
+        <Grid container spacing={2.2}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <DetailRow label="Plan" value={subscription.planName} icon={BuildRoundedIcon} />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <DetailRow label="Billing Cycle" value={subscription.billingCycle} icon={CalendarMonthRoundedIcon} />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <DetailRow
+              label="Next Billing"
+              value={subscription.nextBillingDate ? new Date(subscription.nextBillingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not available'}
+              icon={CalendarMonthRoundedIcon}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <DetailRow label="Status" value={subscription.status} icon={CheckCircleRoundedIcon} />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <DetailRow label="Payment Provider" value={subscription.paymentProvider} icon={DescriptionRoundedIcon} />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <DetailRow
+              label="Latest Invoice"
+              value={subscription.latestInvoiceStatus ?? 'No invoices yet'}
+              icon={DescriptionRoundedIcon}
+            />
+          </Grid>
+        </Grid>
+
+        <Box sx={{ mt: 2.3, display: 'flex', gap: 1.1, flexWrap: 'wrap', alignItems: 'center' }}>
+          {subscription.isReadOnly ? (
+            <Chip
+              label="Read-only mode: transactions are disabled, exports remain available."
+              sx={{ borderRadius: 999, bgcolor: 'warning.light', color: 'warning.dark', fontWeight: 700 }}
+            />
+          ) : null}
+
+          {isTenantAdmin ? (
+            <>
+              <Button
+                variant="outlined"
+                onClick={handleChangeBillingCycle}
+                disabled={isUpdatingBilling || isCancellingSubscription || subscription.isReadOnly}
+              >
+                {isUpdatingBilling ? 'Updating billing cycle...' : `Switch to ${subscription.billingCycle === 'Monthly' ? 'Yearly' : 'Monthly'} Billing`}
+              </Button>
+
+              <Button
+                variant="outlined"
+                onClick={handleCancelSubscription}
+                disabled={isCancellingSubscription || isUpdatingBilling || !subscription.autoRenew}
+                sx={{ borderColor: 'error.main', color: 'error.main' }}
+              >
+                {isCancellingSubscription ? 'Cancelling subscription...' : 'Cancel Subscription'}
+              </Button>
+            </>
+          ) : (
+            <Chip
+              label="Only Tenant Admin can manage subscription actions."
+              sx={{ borderRadius: 999, bgcolor: 'info.light', color: 'info.dark', fontWeight: 700 }}
+            />
+          )}
+        </Box>
+      </Paper>
+
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 } }}>
@@ -464,6 +628,9 @@ export function CompanyProfilePage() {
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 {loading ? <Skeleton height={54} /> : <DetailRow label="Phone Contact" value={profile.phoneContact} icon={CallRoundedIcon} />}
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                {loading ? <Skeleton height={54} /> : <DetailRow label="Telephone" value={profile.telephone || 'N/A'} icon={CallRoundedIcon} />}
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 {loading ? <Skeleton height={54} /> : <DetailRow label="Website" value={profile.website} icon={PublicRoundedIcon} />}
@@ -506,9 +673,9 @@ export function CompanyProfilePage() {
         onSave={handleSaveProfile}
       />
 
-      {isSaving && (
+      {isBusy && (
         <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(255,255,255,0.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="h6">Saving...</Typography>
+          <Typography variant="h6">{busyLabel}</Typography>
         </Box>
       )}
     </Box>

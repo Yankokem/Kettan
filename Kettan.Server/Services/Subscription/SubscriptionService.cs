@@ -233,7 +233,14 @@ public class SubscriptionService : ISubscriptionService
             throw new InvalidOperationException("Password must be at least 8 characters, contain an uppercase letter, a number, and a special character.");
         }
 
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var normalizedEmail = NormalizeEmail(request.Email);
+        var normalizedBillingEmail = string.IsNullOrWhiteSpace(request.BillingEmail)
+            ? normalizedEmail
+            : NormalizeEmail(request.BillingEmail);
+        var normalizedSupportEmail = string.IsNullOrWhiteSpace(request.SupportEmail)
+            ? normalizedBillingEmail
+            : NormalizeEmail(request.SupportEmail);
+
         var requestedPlanCode = request.PlanCode.Trim().ToUpperInvariant();
 
         var nowUtc = DateTime.UtcNow;
@@ -275,8 +282,13 @@ public class SubscriptionService : ISubscriptionService
         var tenant = new Tenant
         {
             Name = request.CompanyName.Trim(),
-            Email = normalizedEmail,
+            LegalName = request.LegalName.Trim(),
+            TaxId = request.TaxId.Trim(),
+            Website = NormalizeNullable(request.Website),
+            Email = normalizedBillingEmail,
+            SupportEmail = normalizedSupportEmail,
             Phone = request.PhoneContact.Trim(),
+            Telephone = NormalizeNullable(request.Telephone),
             Address = request.HeadquartersAddress.Trim(),
             IsActive = true,
             SubscriptionTier = Enum.TryParse<SubscriptionTier>(plan.Name, true, out var tier) ? tier : SubscriptionTier.Starter,
@@ -466,7 +478,9 @@ public class SubscriptionService : ISubscriptionService
             {
                 tenantSubscription.Status = SubscriptionStatus.Active;
                 tenantSubscription.PeriodStart = paidAt;
-                tenantSubscription.PeriodEnd = paidAt.AddMonths(1);
+                tenantSubscription.PeriodEnd = tenantSubscription.BillingCycle == BillingCycle.Yearly
+                    ? paidAt.AddYears(1)
+                    : paidAt.AddMonths(1);
                 tenantSubscription.UpdatedAt = DateTime.UtcNow;
 
                 var tenant = tenantSubscription.Tenant;
@@ -527,6 +541,151 @@ public class SubscriptionService : ISubscriptionService
         }
 
         return await GeneratePayMongoCheckoutAsync(plan, $"chk_session_{Guid.NewGuid():N}", request.Email, cancellationToken);
+    }
+
+    public async Task<CurrentSubscriptionResponse> GetCurrentSubscriptionAsync(
+        int tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var tenant = await _context.Tenants
+            .IgnoreQueryFilters()
+            .Include(t => t.CurrentSubscription)
+            .ThenInclude(s => s!.Plan)
+            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted, cancellationToken);
+
+        if (tenant == null)
+        {
+            throw new InvalidOperationException("Tenant not found.");
+        }
+
+        var activeBranches = await _context.Branches
+            .IgnoreQueryFilters()
+            .CountAsync(
+                b => b.TenantId == tenantId
+                     && !b.IsDeleted
+                     && b.IsActive,
+                cancellationToken);
+
+        var activeUsers = await _context.Users
+            .IgnoreQueryFilters()
+            .CountAsync(
+                u => u.TenantId == tenantId
+                     && !u.IsDeleted
+                     && u.IsActive,
+                cancellationToken);
+
+        var subscription = tenant.CurrentSubscription;
+        var latestInvoice = subscription == null
+            ? null
+            : await _context.SubscriptionInvoices
+                .Where(i => i.TenantSubscriptionId == subscription.TenantSubscriptionId)
+                .OrderByDescending(i => i.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        var latestPayment = latestInvoice == null
+            ? null
+            : await _context.SubscriptionPayments
+                .Where(p => p.InvoiceId == latestInvoice.InvoiceId)
+                .OrderByDescending(p => p.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        var planCode = subscription?.Plan?.PlanCode
+            ?? tenant.SubscriptionTier.ToString().ToUpperInvariant();
+        var planName = subscription?.Plan?.Name
+            ?? tenant.SubscriptionTier.ToString();
+        var branchLimit = subscription?.Plan?.BranchLimit;
+        var userLimit = subscription?.Plan?.UserLimit;
+
+        if (!branchLimit.HasValue || !userLimit.HasValue)
+        {
+            var fallbackPlan = await _context.SubscriptionPlans
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(
+                    p => p.IsActive
+                         && !p.IsDeleted
+                         && (p.PlanCode == planCode || p.Name == planName),
+                    cancellationToken);
+
+            branchLimit ??= fallbackPlan?.BranchLimit;
+            userLimit ??= fallbackPlan?.UserLimit;
+            if (fallbackPlan != null)
+            {
+                planCode = fallbackPlan.PlanCode;
+                planName = fallbackPlan.Name;
+            }
+        }
+
+        return new CurrentSubscriptionResponse
+        {
+            TenantId = tenant.TenantId,
+            PlanCode = planCode,
+            PlanName = planName,
+            BranchLimit = branchLimit,
+            UserLimit = userLimit,
+            UsersPerBranchLimit = SubscriptionLimitService.DefaultUsersPerBranchLimit,
+            ActiveBranches = activeBranches,
+            ActiveUsers = activeUsers,
+            Status = tenant.SubscriptionStatus.ToString(),
+            BillingCycle = (subscription?.BillingCycle ?? BillingCycle.Monthly).ToString(),
+            PeriodStart = tenant.SubscriptionPeriodStart ?? subscription?.PeriodStart,
+            PeriodEnd = tenant.SubscriptionPeriodEnd ?? subscription?.PeriodEnd,
+            NextBillingDate = tenant.SubscriptionPeriodEnd ?? subscription?.PeriodEnd,
+            AutoRenew = subscription?.AutoRenew ?? false,
+            CanceledAt = subscription?.CanceledAt,
+            IsReadOnly = IsReadOnlyStatus(tenant.SubscriptionStatus),
+            LatestInvoiceStatus = latestInvoice?.Status.ToString(),
+            LatestInvoiceDueAt = latestInvoice?.DueAt,
+            LatestInvoiceAmountDue = latestInvoice?.AmountDue,
+            LatestPaymentStatus = latestPayment?.Status.ToString(),
+            LatestPaidAt = latestPayment?.PaidAt,
+            PaymentProvider = (latestPayment?.Provider ?? PaymentProvider.PayMongo).ToString()
+        };
+    }
+
+    public async Task<CurrentSubscriptionResponse> UpdateBillingCycleAsync(
+        int tenantId,
+        BillingCycle billingCycle,
+        CancellationToken cancellationToken = default)
+    {
+        var tenant = await _context.Tenants
+            .IgnoreQueryFilters()
+            .Include(t => t.CurrentSubscription)
+            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted, cancellationToken);
+
+        if (tenant == null)
+        {
+            throw new InvalidOperationException("Tenant not found.");
+        }
+
+        if (tenant.CurrentSubscription == null)
+        {
+            throw new InvalidOperationException("No active tenant subscription was found.");
+        }
+
+        if (IsReadOnlyStatus(tenant.SubscriptionStatus))
+        {
+            throw new InvalidOperationException("Billing cycle cannot be changed while subscription is in read-only status.");
+        }
+
+        var nowUtc = DateTime.UtcNow;
+        tenant.CurrentSubscription.BillingCycle = billingCycle;
+        tenant.CurrentSubscription.UpdatedAt = nowUtc;
+
+        if (tenant.CurrentSubscription.PeriodStart == default)
+        {
+            tenant.CurrentSubscription.PeriodStart = nowUtc;
+        }
+
+        var periodStart = tenant.CurrentSubscription.PeriodStart;
+        tenant.CurrentSubscription.PeriodEnd = billingCycle == BillingCycle.Yearly
+            ? periodStart.AddYears(1)
+            : periodStart.AddMonths(1);
+
+        tenant.SubscriptionPeriodStart = tenant.CurrentSubscription.PeriodStart;
+        tenant.SubscriptionPeriodEnd = tenant.CurrentSubscription.PeriodEnd;
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetCurrentSubscriptionAsync(tenantId, cancellationToken);
     }
 
     private async Task<CheckoutSessionResponse> GeneratePayMongoCheckoutAsync(
@@ -661,20 +820,37 @@ public class SubscriptionService : ISubscriptionService
     public async Task CancelSubscriptionAsync(int tenantId, CancellationToken cancellationToken = default)
     {
         var tenant = await _context.Tenants
+            .IgnoreQueryFilters()
             .Include(t => t.CurrentSubscription)
-            .FirstOrDefaultAsync(t => t.TenantId == tenantId, cancellationToken);
+            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted, cancellationToken);
 
         if (tenant == null)
         {
             throw new InvalidOperationException("Tenant not found.");
         }
 
-        tenant.SubscriptionStatus = SubscriptionStatus.Canceled;
-        if (tenant.CurrentSubscription != null)
+        if (tenant.CurrentSubscription == null)
         {
-            tenant.CurrentSubscription.Status = SubscriptionStatus.Canceled;
-            tenant.CurrentSubscription.AutoRenew = false;
-            tenant.CurrentSubscription.UpdatedAt = DateTime.UtcNow;
+            throw new InvalidOperationException("No tenant subscription found.");
+        }
+
+        var nowUtc = DateTime.UtcNow;
+        tenant.SubscriptionStatus = SubscriptionStatus.Canceled;
+        tenant.CurrentSubscription.Status = SubscriptionStatus.Canceled;
+        tenant.CurrentSubscription.AutoRenew = false;
+        tenant.CurrentSubscription.CanceledAt = nowUtc;
+        tenant.CurrentSubscription.UpdatedAt = nowUtc;
+
+        if (!tenant.SubscriptionPeriodStart.HasValue)
+        {
+            tenant.SubscriptionPeriodStart = tenant.CurrentSubscription.PeriodStart;
+        }
+
+        if (!tenant.SubscriptionPeriodEnd.HasValue)
+        {
+            tenant.SubscriptionPeriodEnd = tenant.CurrentSubscription.PeriodEnd <= nowUtc
+                ? nowUtc
+                : tenant.CurrentSubscription.PeriodEnd;
         }
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -699,6 +875,23 @@ public class SubscriptionService : ISubscriptionService
     private static string NormalizeEmail(string email)
     {
         return email.Trim().ToLowerInvariant();
+    }
+
+    private static string? NormalizeNullable(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim();
+    }
+
+    private static bool IsReadOnlyStatus(SubscriptionStatus status)
+    {
+        return status != SubscriptionStatus.Active
+               && status != SubscriptionStatus.PendingPayment
+               && status != SubscriptionStatus.Trialing;
     }
 
     private static bool ValidatePasswordComplexity(string password)

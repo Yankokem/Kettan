@@ -1,5 +1,5 @@
 import { api } from '../../utils/api';
-import type { CompanyProfile, CompanyProfileFormData } from './types';
+import type { CompanyProfile, CompanyProfileFormData, CompanySubscriptionDetails } from './types';
 
 interface TenantDto {
   tenantId: number;
@@ -10,6 +10,7 @@ interface TenantDto {
   subscriptionTier: string;
   email?: string | null;
   phone?: string | null;
+  telephone?: string | null;
   address?: string | null;
   supportEmail?: string | null;
   subscriptionStatus: string;
@@ -28,18 +29,39 @@ interface UpdateTenantDto {
   email?: string | null;
   supportEmail?: string | null;
   phone?: string | null;
+  telephone?: string | null;
   address?: string | null;
   logoUrl?: string | null;
 }
 
-interface BranchDto {
-  branchId: number;
-  isActive: boolean;
+interface SubscriptionCurrentDto {
+  tenantId: number;
+  planCode: string;
+  planName: string;
+  branchLimit?: number | null;
+  userLimit?: number | null;
+  usersPerBranchLimit: number;
+  activeBranches: number;
+  activeUsers: number;
+  status: string;
+  billingCycle: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  nextBillingDate?: string | null;
+  autoRenew: boolean;
+  canceledAt?: string | null;
+  isReadOnly: boolean;
+  latestInvoiceStatus?: string | null;
+  latestInvoiceDueAt?: string | null;
+  latestInvoiceAmountDue?: number | null;
+  latestPaymentStatus?: string | null;
+  latestPaidAt?: string | null;
+  paymentProvider?: string | null;
 }
 
-interface EmployeeDto {
-  employeeId: number;
-  isActive: boolean;
+interface CancelSubscriptionResponse {
+  message: string;
+  subscription: SubscriptionCurrentDto;
 }
 
 interface DevConnectionStatusDto {
@@ -77,44 +99,12 @@ export interface DevConnectionStatus {
 export interface CompanyProfileResult {
   profile: CompanyProfile;
   subscriptionTier: string;
+  subscription: CompanySubscriptionDetails;
 }
 
 export interface CompanyUtilizationCounts {
   activeBranches: number;
   activeStaff: number;
-}
-
-const PLAN_LIMITS: Record<string, { branchLimit: number; staffLimit: number }> = {
-  starter: { branchLimit: 3, staffLimit: 10 },
-  growth: { branchLimit: 20, staffLimit: 50 },
-  enterprise: { branchLimit: 100, staffLimit: 250 },
-};
-
-function normalizeTier(subscriptionTier?: string): string {
-  const normalized = subscriptionTier?.trim().toLowerCase();
-  if (!normalized) {
-    return 'starter';
-  }
-
-  if (normalized in PLAN_LIMITS) {
-    return normalized;
-  }
-
-  return 'starter';
-}
-
-function toPlanName(subscriptionTier: string): string {
-  const normalized = normalizeTier(subscriptionTier);
-
-  if (normalized === 'enterprise') {
-    return 'Enterprise Plan';
-  }
-
-  if (normalized === 'growth') {
-    return 'Growth Plan';
-  }
-
-  return 'Starter Plan';
 }
 
 function toNullable(value: string): string | null {
@@ -139,7 +129,52 @@ function resolveHeadquartersCity(address?: string | null): string {
   return segments[0] ?? 'Not Set';
 }
 
-function toRenewalDate(tenant: TenantDto): string {
+function toIsoOrNull(value?: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.toISOString();
+}
+
+function toSubscriptionDetails(dto: SubscriptionCurrentDto): CompanySubscriptionDetails {
+  const billingCycle = dto.billingCycle?.toLowerCase() === 'yearly' ? 'Yearly' : 'Monthly';
+
+  return {
+    planCode: dto.planCode,
+    planName: dto.planName,
+    branchLimit: dto.branchLimit ?? 0,
+    userLimit: dto.userLimit ?? 0,
+    usersPerBranchLimit: dto.usersPerBranchLimit || 5,
+    status: dto.status,
+    billingCycle,
+    nextBillingDate: toIsoOrNull(dto.nextBillingDate),
+    periodStart: toIsoOrNull(dto.periodStart),
+    periodEnd: toIsoOrNull(dto.periodEnd),
+    autoRenew: dto.autoRenew,
+    canceledAt: toIsoOrNull(dto.canceledAt),
+    isReadOnly: dto.isReadOnly,
+    latestInvoiceStatus: dto.latestInvoiceStatus ?? null,
+    latestInvoiceDueAt: toIsoOrNull(dto.latestInvoiceDueAt),
+    latestInvoiceAmountDue: dto.latestInvoiceAmountDue ?? null,
+    latestPaymentStatus: dto.latestPaymentStatus ?? null,
+    latestPaidAt: toIsoOrNull(dto.latestPaidAt),
+    paymentProvider: dto.paymentProvider ?? 'PayMongo',
+    activeBranches: dto.activeBranches,
+    activeUsers: dto.activeUsers,
+  };
+}
+
+function toRenewalDate(tenant: TenantDto, subscription: CompanySubscriptionDetails): string {
+  if (subscription.nextBillingDate) {
+    return subscription.nextBillingDate;
+  }
+
   if (tenant.subscriptionPeriodEnd && !Number.isNaN(new Date(tenant.subscriptionPeriodEnd).getTime())) {
     return new Date(tenant.subscriptionPeriodEnd).toISOString();
   }
@@ -153,27 +188,7 @@ function toRenewalDate(tenant: TenantDto): string {
   return new Date().toISOString();
 }
 
-async function fetchActiveBranchesCount(): Promise<number> {
-  try {
-    const response = await api.get<BranchDto[]>('/api/branches');
-    return response.data.filter((branch) => branch.isActive).length;
-  } catch {
-    return 0;
-  }
-}
-
-async function fetchActiveStaffCount(): Promise<number> {
-  try {
-    const response = await api.get<EmployeeDto[]>('/api/employees');
-    return response.data.filter((employee) => employee.isActive).length;
-  } catch {
-    return 0;
-  }
-}
-
-function toCompanyProfile(tenant: TenantDto, activeBranches: number, activeStaff: number): CompanyProfile {
-  const normalizedTier = normalizeTier(tenant.subscriptionTier);
-  const limits = PLAN_LIMITS[normalizedTier];
+function toCompanyProfile(tenant: TenantDto, subscription: CompanySubscriptionDetails): CompanyProfile {
   const billingEmail = tenant.email?.trim() ?? '';
   const supportEmail = tenant.supportEmail?.trim() ?? billingEmail;
   const headquartersAddress = tenant.address?.trim() || 'Not Set';
@@ -182,57 +197,66 @@ function toCompanyProfile(tenant: TenantDto, activeBranches: number, activeStaff
     name: tenant.name,
     legalName: tenant.legalName?.trim() ?? tenant.name,
     organizationId: `TEN-${String(tenant.tenantId).padStart(5, '0')}`,
-    planName: toPlanName(tenant.subscriptionTier),
+    planName: `${subscription.planName} Plan`,
     headquartersCity: resolveHeadquartersCity(tenant.address),
     headquartersAddress,
     billingEmail,
     supportEmail,
     phoneContact: tenant.phone?.trim() ?? '',
+    telephone: tenant.telephone?.trim() ?? '',
     website: tenant.website?.trim() ?? '',
     taxId: tenant.taxId?.trim() ?? 'N/A',
-    activeBranches,
-    branchLimit: limits.branchLimit,
-    activeStaff,
-    staffLimit: limits.staffLimit,
-    contractRenewalDate: toRenewalDate(tenant),
+    activeBranches: subscription.activeBranches,
+    branchLimit: subscription.branchLimit,
+    activeStaff: subscription.activeUsers,
+    staffLimit: subscription.userLimit,
+    contractRenewalDate: toRenewalDate(tenant, subscription),
     logoUrl: tenant.logoUrl ?? null,
   };
 }
 
-export async function fetchCompanyProfile(): Promise<CompanyProfileResult> {
-  const core = await fetchCompanyProfileCore();
-  const counts = await fetchCompanyUtilizationCounts();
+export async function fetchCurrentSubscription(): Promise<CompanySubscriptionDetails> {
+  const response = await api.get<SubscriptionCurrentDto>('/api/subscription/current');
+  return toSubscriptionDetails(response.data);
+}
 
+export async function fetchCompanyProfile(): Promise<CompanyProfileResult> {
+  const [tenantResponse, subscription] = await Promise.all([
+    api.get<TenantDto>('/api/tenants/me'),
+    fetchCurrentSubscription(),
+  ]);
+
+  const tenant = tenantResponse.data;
   return {
-    subscriptionTier: core.subscriptionTier,
-    profile: {
-      ...core.profile,
-      activeBranches: counts.activeBranches,
-      activeStaff: counts.activeStaff,
-    },
+    subscriptionTier: tenant.subscriptionTier,
+    subscription,
+    profile: toCompanyProfile(tenant, subscription),
   };
 }
 
 export async function fetchCompanyProfileCore(): Promise<CompanyProfileResult> {
-  const tenantResponse = await api.get<TenantDto>('/api/tenants/me');
-  const tenant = tenantResponse.data;
-
-  return {
-    profile: toCompanyProfile(tenant, 0, 0),
-    subscriptionTier: tenant.subscriptionTier,
-  };
+  return fetchCompanyProfile();
 }
 
 export async function fetchCompanyUtilizationCounts(): Promise<CompanyUtilizationCounts> {
-  const [activeBranches, activeStaff] = await Promise.all([
-    fetchActiveBranchesCount(),
-    fetchActiveStaffCount(),
-  ]);
-
+  const subscription = await fetchCurrentSubscription();
   return {
-    activeBranches,
-    activeStaff,
+    activeBranches: subscription.activeBranches,
+    activeStaff: subscription.activeUsers,
   };
+}
+
+export async function updateBillingCycle(billingCycle: 'Monthly' | 'Yearly'): Promise<CompanySubscriptionDetails> {
+  const response = await api.patch<SubscriptionCurrentDto>('/api/subscription/billing-cycle', {
+    billingCycle: billingCycle === 'Yearly' ? 1 : 0,
+  });
+
+  return toSubscriptionDetails(response.data);
+}
+
+export async function cancelSubscription(): Promise<CompanySubscriptionDetails> {
+  const response = await api.post<CancelSubscriptionResponse>('/api/subscription/cancel');
+  return toSubscriptionDetails(response.data.subscription);
 }
 
 export async function updateCompanyProfile(
@@ -248,6 +272,7 @@ export async function updateCompanyProfile(
     email: toNullable(formData.billingEmail),
     supportEmail: toNullable(formData.supportEmail),
     phone: toNullable(formData.phoneContact),
+    telephone: toNullable(formData.telephone ?? ''),
     address: toNullable(formData.headquartersAddress),
     logoUrl: toNullable(formData.logoUrl || ''),
   };
@@ -275,3 +300,4 @@ export async function fetchDevConnectionStatus(): Promise<DevConnectionStatus> {
     error: row.error ?? undefined,
   };
 }
+

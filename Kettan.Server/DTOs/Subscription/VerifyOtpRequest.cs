@@ -6,7 +6,7 @@ public class VerifyOtpRequest
 {
     [Required]
     [EmailAddress]
-    [MaxLength(255)]
+    [MaxLength(254)]
     public required string Email { get; set; }
 
     [Required]

@@ -28,10 +28,9 @@ public class SubscriptionCheckMiddleware
             }
         }
 
-        // Always allow auth and tenant endpoints to pass through so users can log in, check their session, log out, and manage their subscription
+        // Always allow auth and subscription endpoints to pass through so users can log in and manage billing state.
         var path = context.Request.Path.Value ?? string.Empty;
         if (path.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/api/tenants", StringComparison.OrdinalIgnoreCase) ||
             path.StartsWith("/api/subscription", StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);
@@ -68,11 +67,27 @@ public class SubscriptionCheckMiddleware
             return;
         }
 
-        if (tenant.SubscriptionStatus != SubscriptionStatus.Active && tenant.SubscriptionStatus != SubscriptionStatus.PendingPayment)
+        var isWritableSubscription =
+            tenant.SubscriptionStatus == SubscriptionStatus.Active
+            || tenant.SubscriptionStatus == SubscriptionStatus.PendingPayment
+            || tenant.SubscriptionStatus == SubscriptionStatus.Trialing;
+
+        if (!isWritableSubscription)
         {
-            context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
-            await context.Response.WriteAsJsonAsync(new { message = "Your subscription is not active. Please renew your plan." });
-            return;
+            var method = context.Request.Method;
+            var isSafeMethod = HttpMethods.IsGet(method)
+                               || HttpMethods.IsHead(method)
+                               || HttpMethods.IsOptions(method);
+
+            if (!isSafeMethod)
+            {
+                context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "Your subscription is in read-only mode. Transactions are disabled until your subscription is reactivated."
+                });
+                return;
+            }
         }
 
         await _next(context);

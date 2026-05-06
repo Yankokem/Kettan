@@ -17,6 +17,7 @@ interface CompanyProfileEditModalProps {
 }
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^\+?[0-9\s\-()]+$/;
 
 function isValidUrl(url: string): boolean {
   if (!url.trim()) {
@@ -83,6 +84,12 @@ export function CompanyProfileEditModal({ open, formData, onClose, onSave }: Com
 
     if (!draft.phoneContact.trim()) {
       nextErrors.phoneContact = 'Phone contact is required.';
+    } else if (!phoneRegex.test(draft.phoneContact.trim())) {
+      nextErrors.phoneContact = 'Enter a valid phone contact number.';
+    }
+
+    if (draft.telephone.trim() && !phoneRegex.test(draft.telephone.trim())) {
+      nextErrors.telephone = 'Enter a valid telephone number.';
     }
 
     if (!isValidUrl(draft.website)) {
@@ -111,6 +118,7 @@ export function CompanyProfileEditModal({ open, formData, onClose, onSave }: Com
       billingEmail: draft.billingEmail.trim(),
       supportEmail: draft.supportEmail.trim(),
       phoneContact: draft.phoneContact.trim(),
+      telephone: draft.telephone.trim(),
       website: draft.website.trim(),
       taxId: draft.taxId.trim(),
     });
@@ -230,6 +238,16 @@ export function CompanyProfileEditModal({ open, formData, onClose, onSave }: Com
               onChange={(event) => updateField('phoneContact', event.target.value)}
             />
             {renderError(errors.phoneContact)}
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary', mb: 0.8 }}>Telephone (Optional)</Typography>
+            <TextField
+              value={draft.telephone}
+              placeholder="Landline number"
+              onChange={(event) => updateField('telephone', event.target.value)}
+            />
+            {renderError(errors.telephone)}
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>

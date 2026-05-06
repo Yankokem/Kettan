@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Box, Tabs, Tab } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Box, Tabs, Tab, Grid, Skeleton } from '@mui/material';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import { Button } from '../../components/UI/Button';
 import { Dropdown } from '../../components/UI/Dropdown';
@@ -15,11 +15,14 @@ import { HqConsumptionAnalyticsTab } from './components/HqConsumptionAnalyticsTa
 import { HqReturnsLossTab } from './components/HqReturnsLossTab';
 
 // ── Branch Tabs ───────────────────────────────────────────────────────────────
-import { BranchOverviewTab } from './components/BranchOverviewTab';
-import { BranchInventoryTab } from './components/BranchInventoryTab';
-import { HqConsumptionAnalyticsTab as BranchConsumptionTab } from './components/HqConsumptionAnalyticsTab';
-import { BranchSupplyHistoryTab } from './components/BranchSupplyHistoryTab';
-import { BranchMyPerformanceTab } from './components/BranchMyPerformanceTab';
+import { BranchPerformanceTab } from './components/BranchPerformanceTab';
+import { InventoryAnalyticsTab } from './components/InventoryAnalyticsTab';
+import { fetchBranchOverview, type BranchOverviewDto } from './reportsApi';
+import { StatCard } from '../../components/UI/StatCard';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
+import DeleteSweepRoundedIcon from '@mui/icons-material/DeleteSweepRounded';
+import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 
 // ── Shared tab styles ─────────────────────────────────────────────────────────
 
@@ -121,7 +124,16 @@ function HqReportsView({
 
 // ── Branch View ───────────────────────────────────────────────────────────────
 
-type BranchTab = 'overview' | 'inventory' | 'consumption' | 'supply' | 'performance';
+type BranchTab = 'performance' | 'inventory';
+
+function toPeso(v: number) {
+  return `₱${v.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+const EMPTY_OVERVIEW: BranchOverviewDto = {
+  inventoryValue: 0, totalSkus: 0, totalSupplySpendReceived: 0,
+  wastageLoss: 0, performanceScore: 0, rankInChain: 0, totalBranchesInChain: 0,
+};
 
 function BranchReportsView({
   startDate, endDate, onStartDate, onEndDate,
@@ -131,12 +143,76 @@ function BranchReportsView({
   onStartDate: (v: string) => void; onEndDate: (v: string) => void;
   exportFormat: string; onExportFormat: (v: string) => void;
 }) {
-  const [tab, setTab] = useState<BranchTab>('overview');
+  const [tab, setTab] = useState<BranchTab>('performance');
+  const [overview, setOverview] = useState<BranchOverviewDto>(EMPTY_OVERVIEW);
+  const [loadingOverview, setLoadingOverview] = useState(true);
+
+  useEffect(() => {
+    setLoadingOverview(true);
+    fetchBranchOverview(startDate, endDate)
+      .then(setOverview)
+      .catch(() => setOverview(EMPTY_OVERVIEW))
+      .finally(() => setLoadingOverview(false));
+  }, [startDate, endDate]);
 
   return (
     <Box sx={{ pb: 3 }}>
-      {/* Top bar */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
+      {/* ── KPI Row (Toppest) ── */}
+      <Box sx={{ mb: 4, opacity: loadingOverview ? 0.7 : 1, transition: 'opacity 0.2s' }}>
+        <Grid container spacing={2.5}>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <StatCard
+              label="My Inventory Value"
+              value={loadingOverview ? <Skeleton width={100} /> : toPeso(overview.inventoryValue)}
+              trend="neutral"
+              trendValue={loadingOverview ? <Skeleton width={80} /> : `${overview.totalSkus} SKUs on hand`}
+              icon={<InventoryRoundedIcon />}
+              accentClass="stat-accent-gold"
+              iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <StatCard
+              label="Supply Spend Received"
+              value={loadingOverview ? <Skeleton width={100} /> : toPeso(overview.totalSupplySpendReceived)}
+              trend="neutral"
+              trendValue="Total HQ fulfillment cost"
+              icon={<MonetizationOnRoundedIcon />}
+              accentClass="stat-accent-brown"
+              iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <StatCard
+              label="Wastage Loss"
+              value={loadingOverview ? <Skeleton width={100} /> : toPeso(overview.wastageLoss)}
+              trend={overview.wastageLoss > 0 ? 'down' : 'neutral'}
+              trendValue="Adjustment write-offs"
+              icon={<DeleteSweepRoundedIcon />}
+              accentClass="stat-accent-sage"
+              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <StatCard
+              label="My Performance Score"
+              value={loadingOverview ? <Skeleton width={100} /> : `${overview.performanceScore.toFixed(1)} pts`}
+              trend={overview.rankInChain === 1 ? 'up' : 'neutral'}
+              trendValue={
+                loadingOverview ? <Skeleton width={120} /> : (overview.totalBranchesInChain > 0
+                  ? `Rank #${overview.rankInChain} of ${overview.totalBranchesInChain} branches`
+                  : 'No ranking data')
+              }
+              icon={<EmojiEventsRoundedIcon />}
+              accentClass="stat-accent-gold"
+              iconBg="linear-gradient(135deg, #C9A84C 0%, #E8D3A9 100%)"
+            />
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* ── Controls (Below KPIs) ── */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2.5, flexWrap: 'wrap', gap: 1.5 }}>
         <DateRangePicker
           startDate={startDate}
           endDate={endDate}
@@ -157,31 +233,17 @@ function BranchReportsView({
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={TAB_SX}>
-          <Tab label="Overview" value="overview" />
-          <Tab label="My Inventory" value="inventory" />
-          <Tab label="Consumption Analytics" value="consumption" />
-          <Tab label="Supply History" value="supply" />
-          <Tab label="My Performance" value="performance" />
+          <Tab label="Branch Performance" value="performance" />
+          <Tab label="Inventory & Stock Analytics" value="inventory" />
         </Tabs>
       </Box>
 
       {/* Tab content */}
-      {tab === 'overview' && (
-        <BranchOverviewTab startDate={startDate} endDate={endDate} />
+      {tab === 'performance' && (
+        <BranchPerformanceTab startDate={startDate} endDate={endDate} />
       )}
       {tab === 'inventory' && (
-        <BranchInventoryTab startDate={startDate} endDate={endDate} />
-      )}
-      {tab === 'consumption' && (
-        // Reusing HqConsumptionAnalyticsTab — it accepts an optional branchId.
-        // When called from branch view, no branchId needed — backend scopes by auth.
-        <BranchConsumptionTab startDate={startDate} endDate={endDate} />
-      )}
-      {tab === 'supply' && (
-        <BranchSupplyHistoryTab startDate={startDate} endDate={endDate} />
-      )}
-      {tab === 'performance' && (
-        <BranchMyPerformanceTab startDate={startDate} endDate={endDate} />
+        <InventoryAnalyticsTab startDate={startDate} endDate={endDate} />
       )}
     </Box>
   );

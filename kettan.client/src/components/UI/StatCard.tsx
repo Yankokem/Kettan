@@ -5,10 +5,10 @@ import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
 
 export interface StatCardProps {
   label: string;
-  value: string | number;
+  value: React.ReactNode;
   sub?: string;
   trend?: 'up' | 'down' | 'neutral' | null;
-  trendValue?: string;
+  trendValue?: React.ReactNode;
   icon: React.ReactNode;
   accentClass: string;
   iconBg: string;

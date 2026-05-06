@@ -12,9 +12,9 @@ public static class SubscriptionTenantSeeder
     {
         var seeds = new[]
         {
-            new SubscriptionPlanSeed("STARTER", "Starter", 999m, 1, 5),
-            new SubscriptionPlanSeed("GROWTH", "Growth", 2499m, 3, 15),
-            new SubscriptionPlanSeed("ENTERPRISE", "Enterprise", 4999m, 10, 50)
+            new SubscriptionPlanSeed("STARTER", "Starter", 2999m, 28800m, 5, 25),
+            new SubscriptionPlanSeed("GROWTH", "Growth", 7999m, 76800m, 10, 50),
+            new SubscriptionPlanSeed("ENTERPRISE", "Enterprise", 14999m, 143990m, 20, 100)
         };
 
         var planCodes = seeds.Select(s => s.PlanCode).ToList();
@@ -37,6 +37,7 @@ public static class SubscriptionTenantSeeder
                     PlanCode = seed.PlanCode,
                     Name = seed.Name,
                     PriceMonthly = seed.PriceMonthly,
+                    PriceYearly = seed.PriceYearly,
                     BranchLimit = seed.BranchLimit,
                     UserLimit = seed.UserLimit,
                     IsActive = true
@@ -48,6 +49,7 @@ public static class SubscriptionTenantSeeder
             {
                 plan.Name = seed.Name;
                 plan.PriceMonthly = seed.PriceMonthly;
+                plan.PriceYearly = seed.PriceYearly;
                 plan.BranchLimit = seed.BranchLimit;
                 plan.UserLimit = seed.UserLimit;
                 plan.IsActive = true;
@@ -79,9 +81,14 @@ public static class SubscriptionTenantSeeder
             tenant = new Tenant
             {
                 Name = SeedConstants.DummyTenantName,
+                LegalName = "Dummy Corp Philippines, Inc.",
                 Email = SeedConstants.DummyTenantEmail,
+                SupportEmail = "support@dummycorp.com",
                 Phone = "+639171234567",
+                Telephone = "+63281234567",
                 Address = "123 Coffee Ave, Manila",
+                TaxId = "000-123-456-000",
+                Website = "https://dummycorp.example",
                 LogoUrl = "https://example.com/dummycorp-logo.png",
                 SubscriptionTier = SubscriptionTier.Growth,
                 SubscriptionStatus = SubscriptionStatus.Active,
@@ -93,9 +100,14 @@ public static class SubscriptionTenantSeeder
         else
         {
             tenant.Name = SeedConstants.DummyTenantName;
+            tenant.LegalName = "Dummy Corp Philippines, Inc.";
             tenant.Email = SeedConstants.DummyTenantEmail;
+            tenant.SupportEmail = "support@dummycorp.com";
             tenant.Phone = "+639171234567";
+            tenant.Telephone = "+63281234567";
             tenant.Address = "123 Coffee Ave, Manila";
+            tenant.TaxId = "000-123-456-000";
+            tenant.Website = "https://dummycorp.example";
             tenant.LogoUrl = "https://example.com/dummycorp-logo.png";
             tenant.SubscriptionTier = SubscriptionTier.Growth;
             tenant.SubscriptionStatus = SubscriptionStatus.Active;
@@ -176,6 +188,7 @@ public static class SubscriptionTenantSeeder
         string PlanCode,
         string Name,
         decimal PriceMonthly,
+        decimal PriceYearly,
         int BranchLimit,
         int UserLimit);
 }

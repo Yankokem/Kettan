@@ -34,7 +34,7 @@ public class User
 
     [Required]
     [EmailAddress]
-    [MaxLength(50)]
+    [MaxLength(254)]
     public required string Email { get; set; }
 
     [Required]

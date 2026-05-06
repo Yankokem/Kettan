@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { StaticMotionDiv } from "./noMotion";
-import { ArrowLeft, Building2, Loader2, Lock, MapPinHouse, Phone, User } from "lucide-react";
+import { ArrowLeft, Building2, Globe, Landmark, Loader2, Lock, Mail, MapPinHouse, Phone, User } from "lucide-react";
 import axios from "axios";
 import { api } from "../../utils/api";
 import { MarketingAuthInput } from "./components/MarketingAuthInput";
@@ -44,8 +44,14 @@ export function RegisterOnboardingPage() {
 
   const [form, setForm] = useState({
     companyName: "",
+    legalName: "",
+    taxId: "",
+    website: "",
     fullName: "",
     phoneContact: "",
+    telephone: "",
+    billingEmail: email,
+    supportEmail: "",
     headquartersAddress: "",
     password: "",
     confirmPassword: "",
@@ -55,6 +61,19 @@ export function RegisterOnboardingPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const passwordStrength = useMemo(() => getPasswordStrength(form.password), [form.password]);
+
+  const isValidWebsite = (value: string) => {
+    if (!value.trim()) return true;
+    try {
+      const normalized = value.startsWith("http://") || value.startsWith("https://")
+        ? value
+        : `https://${value}`;
+      new URL(normalized);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
@@ -71,6 +90,18 @@ export function RegisterOnboardingPage() {
       nextErrors.companyName = "Company name must be at least 3 characters.";
     }
 
+    if (!form.legalName.trim() || form.legalName.trim().length < 3) {
+      nextErrors.legalName = "Legal name must be at least 3 characters.";
+    }
+
+    if (!form.taxId.trim()) {
+      nextErrors.taxId = "Tax ID is required.";
+    }
+
+    if (!isValidWebsite(form.website)) {
+      nextErrors.website = "Please enter a valid website URL.";
+    }
+
     if (!form.fullName.trim()) {
       nextErrors.fullName = "Full name is required.";
     }
@@ -81,6 +112,22 @@ export function RegisterOnboardingPage() {
       nextErrors.phoneContact = "Invalid phone number format.";
     } else if (form.phoneContact.replace(/\D/g, "").length < 7) {
       nextErrors.phoneContact = "Phone number must contain at least 7 digits.";
+    }
+
+    if (form.telephone.trim()) {
+      if (!/^\+?[0-9\s\-()]+$/.test(form.telephone)) {
+        nextErrors.telephone = "Invalid telephone number format.";
+      } else if (form.telephone.replace(/\D/g, "").length < 7) {
+        nextErrors.telephone = "Telephone must contain at least 7 digits.";
+      }
+    }
+
+    if (form.billingEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.billingEmail)) {
+      nextErrors.billingEmail = "Please enter a valid billing email.";
+    }
+
+    if (form.supportEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.supportEmail)) {
+      nextErrors.supportEmail = "Please enter a valid support email.";
     }
 
     if (!form.headquartersAddress.trim()) {
@@ -115,11 +162,17 @@ export function RegisterOnboardingPage() {
       const response = await api.post<RegisterResponse>("/api/subscription/register", {
         verificationToken,
         companyName: form.companyName.trim(),
+        legalName: form.legalName.trim(),
+        taxId: form.taxId.trim(),
+        website: form.website.trim() || null,
         fullName: form.fullName.trim(),
         email: email.trim(),
+        billingEmail: form.billingEmail.trim() || null,
+        supportEmail: form.supportEmail.trim() || null,
         password: form.password,
         planCode: planId.toUpperCase(),
         phoneContact: form.phoneContact.trim(),
+        telephone: form.telephone.trim() || null,
         headquartersAddress: form.headquartersAddress.trim(),
       });
 
@@ -195,8 +248,14 @@ export function RegisterOnboardingPage() {
             {errors.verificationToken ? <p style={{ fontSize: "12px", color: "#EF4444" }}>{errors.verificationToken}</p> : null}
 
             <MarketingAuthInput label="Company Name" icon={Building2} value={form.companyName} onChange={(value) => setForm({ ...form, companyName: value })} placeholder="e.g. Brewed & True Coffee Co." error={errors.companyName} maxLength={100} />
+            <MarketingAuthInput label="Legal Name" icon={Landmark} value={form.legalName} onChange={(value) => setForm({ ...form, legalName: value })} placeholder="Official registered business name" error={errors.legalName} maxLength={180} />
+            <MarketingAuthInput label="Tax ID" icon={Landmark} value={form.taxId} onChange={(value) => setForm({ ...form, taxId: value })} placeholder="e.g. 000-123-456-000" error={errors.taxId} maxLength={32} />
+            <MarketingAuthInput label="Business Website (Optional)" icon={Globe} value={form.website} onChange={(value) => setForm({ ...form, website: value })} placeholder="e.g. kettan.coffee" error={errors.website} maxLength={255} />
             <MarketingAuthInput label="Full Name" icon={User} value={form.fullName} onChange={(value) => setForm({ ...form, fullName: value })} placeholder="e.g. Juan dela Cruz" error={errors.fullName} maxLength={255} />
             <MarketingAuthInput label="Phone Contact" icon={Phone} value={form.phoneContact} onChange={(value) => setForm({ ...form, phoneContact: value })} placeholder="e.g. +63 2 8123 4567" error={errors.phoneContact} maxLength={50} />
+            <MarketingAuthInput label="Telephone (Optional)" icon={Phone} value={form.telephone} onChange={(value) => setForm({ ...form, telephone: value })} placeholder="Landline number" error={errors.telephone} maxLength={20} />
+            <MarketingAuthInput label="Billing Email (Optional)" icon={Mail} value={form.billingEmail} onChange={(value) => setForm({ ...form, billingEmail: value })} placeholder="finance@company.com" error={errors.billingEmail} maxLength={254} />
+            <MarketingAuthInput label="Support Email (Optional)" icon={Mail} value={form.supportEmail} onChange={(value) => setForm({ ...form, supportEmail: value })} placeholder="support@company.com" error={errors.supportEmail} maxLength={254} />
 
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2C1A0E", marginBottom: "6px" }}>

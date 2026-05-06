@@ -6,6 +6,6 @@ public class RequestOtpRequest
 {
     [Required]
     [EmailAddress]
-    [MaxLength(255)]
+    [MaxLength(254)]
     public required string Email { get; set; }
 }

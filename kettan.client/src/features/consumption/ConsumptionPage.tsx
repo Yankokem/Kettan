@@ -56,7 +56,8 @@ export function ConsumptionPage() {
 
   const role = user?.role ?? '';
   const isBranchManager = role === 'BranchManager';
-  const canViewPage = isBranchManager;
+  const isBranchOwner = role === 'BranchOwner';
+  const canViewPage = isBranchManager || isBranchOwner;
   const canCreateRequests = isBranchManager;
 
   const [logs, setLogs] = useState<ConsumptionLog[]>([]);
@@ -204,7 +205,7 @@ export function ConsumptionPage() {
         <Paper sx={{ p: 3, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
           <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.5 }}>Consumption Logging</Typography>
           <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
-            This module is available for Branch Managers only.
+            This module is available for Branch Manager and Branch Owner only.
           </Typography>
         </Paper>
       </Box>
@@ -315,9 +316,12 @@ export function ConsumptionPage() {
 
         <Button
           startIcon={<AddRoundedIcon />}
-          sx={{ flexShrink: 0, ml: 'auto' }}
           onClick={() => navigate({ to: '/consumption/new' })}
-          disabled={!canCreateRequests}
+          sx={{ 
+            flexShrink: 0, 
+            ml: 'auto',
+            display: canCreateRequests ? 'inline-flex' : 'none' 
+          }}
         >
           Add Consumption
         </Button>

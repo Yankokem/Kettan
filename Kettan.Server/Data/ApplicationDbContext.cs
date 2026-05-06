@@ -71,6 +71,12 @@ public class ApplicationDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
+        modelBuilder.Entity<User>()
+            .HasIndex(u => new { u.TenantId, u.BranchId, u.IsActive, u.IsDeleted });
+
+        modelBuilder.Entity<Branch>()
+            .HasIndex(b => new { b.TenantId, b.IsActive, b.IsDeleted });
+
         modelBuilder.Entity<RegistrationOtp>()
             .HasIndex(o => new { o.Email, o.IsUsed, o.ExpiresAtUtc });
 

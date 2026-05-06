@@ -13,7 +13,7 @@ public class RegistrationVerificationSession
 
     [Required]
     [EmailAddress]
-    [MaxLength(50)]
+    [MaxLength(254)]
     public required string Email { get; set; }
 
     public DateTime ExpiresAtUtc { get; set; }

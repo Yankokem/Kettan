@@ -10,6 +10,7 @@ public class TenantDto
     public string SubscriptionTier { get; set; } = "Starter";
     public string? Email { get; set; }
     public string? Phone { get; set; }
+    public string? Telephone { get; set; }
     public string? Address { get; set; }
     public string? SupportEmail { get; set; }
     public string SubscriptionStatus { get; set; } = "Active";
@@ -29,6 +30,7 @@ public class UpdateTenantDto
     public string? Email { get; set; }
     public string? SupportEmail { get; set; }
     public string? Phone { get; set; }
+    public string? Telephone { get; set; }
     public string? Address { get; set; }
     public string? LogoUrl { get; set; }
 }

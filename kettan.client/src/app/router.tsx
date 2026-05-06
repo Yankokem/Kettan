@@ -220,6 +220,12 @@ const companyProfileRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/company-profile',
   component: CompanyProfilePage,
+  beforeLoad: () => {
+    const role = useAuthStore.getState().user?.role;
+    if (!role || !canAccessModule(role, 'company-profile')) {
+      throw redirect({ to: '/' });
+    }
+  },
 });
 
 const settingsRoute = createRoute({
