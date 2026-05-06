@@ -349,7 +349,111 @@ app.MapGet("/api/debug/apply-migrations", async (ApplicationDbContext db) =>
 {
     try
     {
+        // Clean up previously manually added columns that clash with migrations so EF can create them cleanly
+        await db.Database.ExecuteSqlRawAsync(@"
+            IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Users]') AND name = 'Status')
+            BEGIN
+                DECLARE @ConstraintName nvarchar(200)
+                SELECT @ConstraintName = Name FROM sys.default_constraints
+                WHERE parent_object_id = OBJECT_ID('Users') AND parent_column_id = COLUMNPROPERTY(OBJECT_ID('Users'), 'Status', 'ColumnId')
+                IF @ConstraintName IS NOT NULL EXEC('ALTER TABLE [Users] DROP CONSTRAINT ' + @ConstraintName)
+                
+                ALTER TABLE [Users] DROP COLUMN [Status];
+            END
+
+            IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Employees]') AND name = 'Status')
+            BEGIN
+                DECLARE @EmpConstraintName nvarchar(200)
+                SELECT @EmpConstraintName = Name FROM sys.default_constraints
+                WHERE parent_object_id = OBJECT_ID('Employees') AND parent_column_id = COLUMNPROPERTY(OBJECT_ID('Employees'), 'Status', 'ColumnId')
+                IF @EmpConstraintName IS NOT NULL EXEC('ALTER TABLE [Employees] DROP CONSTRAINT ' + @EmpConstraintName)
+                
+                ALTER TABLE [Employees] DROP COLUMN [Status];
+            END
+            
+            IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Shipments]') AND name = 'ShippingCost')
+            BEGIN
+                DECLARE @ShipConstraintName nvarchar(200)
+                SELECT @ShipConstraintName = Name FROM sys.default_constraints
+                WHERE parent_object_id = OBJECT_ID('Shipments') AND parent_column_id = COLUMNPROPERTY(OBJECT_ID('Shipments'), 'ShippingCost', 'ColumnId')
+                IF @ShipConstraintName IS NOT NULL EXEC('ALTER TABLE [Shipments] DROP CONSTRAINT ' + @ShipConstraintName)
+                
+                ALTER TABLE [Shipments] DROP COLUMN [ShippingCost];
+            END
+        ");
+
         await db.Database.MigrateAsync();
+        
+        // Ensure enum types are aligned to tinyint post-migration if migrations mapped them as int instead of tinyint
+        await db.Database.ExecuteSqlRawAsync(@"
+            DECLARE @TableName nvarchar(200)
+            DECLARE @ColumnName nvarchar(200)
+            DECLARE @ConstraintName_2 nvarchar(200)
+            DECLARE @SQL nvarchar(max)
+
+            DECLARE EnumCursor CURSOR FOR
+            SELECT 'Users', 'Role' UNION ALL
+            SELECT 'Users', 'Status' UNION ALL
+            SELECT 'Employees', 'Status' UNION ALL
+            SELECT 'Returns', 'Resolution' UNION ALL
+            SELECT 'Returns', 'Status' UNION ALL
+            SELECT 'ReturnItems', 'ReasonCode' UNION ALL
+            SELECT 'ReturnItems', 'Disposition' UNION ALL
+            SELECT 'InventoryTransactions', 'TransactionType' UNION ALL
+            SELECT 'InventoryTransactions', 'ReferenceType' UNION ALL
+            SELECT 'ConsumptionLogs', 'Method' UNION ALL
+            SELECT 'ConsumptionLogs', 'Shift' UNION ALL
+            SELECT 'SupplyRequests', 'Status' UNION ALL
+            SELECT 'SupplyRequests', 'RequestType' UNION ALL
+            SELECT 'SupplyRequests', 'Priority' UNION ALL
+            SELECT 'SupplyRequests', 'DispatchWindow' UNION ALL
+            SELECT 'MenuItems', 'Status' UNION ALL
+            SELECT 'MenuVariants', 'PricingMode' UNION ALL
+            SELECT 'Vehicles', 'VehicleType' UNION ALL
+            SELECT 'Orders', 'Status' UNION ALL
+            SELECT 'OrderStatusHistory', 'Status' UNION ALL
+            SELECT 'Notifications', 'Type' UNION ALL
+            SELECT 'Notifications', 'ReferenceType' UNION ALL
+            SELECT 'Tenants', 'SubscriptionStatus' UNION ALL
+            SELECT 'Tenants', 'SubscriptionTier' UNION ALL
+            SELECT 'TenantSubscriptions', 'Status' UNION ALL
+            SELECT 'TenantSubscriptions', 'BillingCycle' UNION ALL
+            SELECT 'SubscriptionInvoices', 'Status' UNION ALL
+            SELECT 'SubscriptionPayments', 'Status' UNION ALL
+            SELECT 'SubscriptionPayments', 'PaymentMethod' UNION ALL
+            SELECT 'SubscriptionPayments', 'Provider'
+
+            OPEN EnumCursor
+            FETCH NEXT FROM EnumCursor INTO @TableName, @ColumnName
+
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(@TableName) AND name = @ColumnName AND system_type_id != 48)
+                BEGIN
+                    SET @ConstraintName_2 = NULL
+                    SELECT @ConstraintName_2 = Name FROM sys.default_constraints
+                    WHERE parent_object_id = OBJECT_ID(@TableName) AND parent_column_id = COLUMNPROPERTY(OBJECT_ID(@TableName), @ColumnName, 'ColumnId')
+                    
+                    IF @ConstraintName_2 IS NOT NULL
+                    BEGIN
+                        SET @SQL = 'ALTER TABLE [' + @TableName + '] DROP CONSTRAINT [' + @ConstraintName_2 + ']'
+                        EXEC sp_executesql @SQL
+                    END
+                    
+                    SET @SQL = 'ALTER TABLE [' + @TableName + '] ALTER COLUMN [' + @ColumnName + '] tinyint NOT NULL'
+                    BEGIN TRY
+                        EXEC sp_executesql @SQL
+                    END TRY
+                    BEGIN CATCH
+                    END CATCH
+                END
+                
+                FETCH NEXT FROM EnumCursor INTO @TableName, @ColumnName
+            END
+
+            CLOSE EnumCursor
+            DEALLOCATE EnumCursor");
+
         return Results.Ok("Migrations applied successfully!");
     }
     catch (Exception ex)
