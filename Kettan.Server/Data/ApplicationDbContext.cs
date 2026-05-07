@@ -8,6 +8,8 @@ namespace Kettan.Server.Data;
 public class ApplicationDbContext : DbContext
 {
     private readonly ICurrentUserService? _currentUserService;
+    private int? CurrentTenantId => _currentUserService?.IsAuthenticated == true ? _currentUserService.TenantId : null;
+    private bool IsTenantlessAuthenticatedContext => _currentUserService?.IsAuthenticated == true && !_currentUserService.TenantId.HasValue;
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
@@ -134,37 +136,43 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         // Models with IsDeleted AND ITenantEntity
-        modelBuilder.Entity<Branch>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<Item>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<SupplyRequest>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<Order>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<Shipment>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<Return>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<MenuItem>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
+        modelBuilder.Entity<Branch>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<Item>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<SupplyRequest>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<Order>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<Shipment>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<Return>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<MenuItem>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
 
-        modelBuilder.Entity<InventoryCategory>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<ItemCategory>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<BundleItem>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<Employee>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
+        modelBuilder.Entity<InventoryCategory>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<ItemCategory>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<BundleItem>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<Employee>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
 
-        modelBuilder.Entity<Vehicle>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<Supplier>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
+        modelBuilder.Entity<Vehicle>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<Supplier>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
 
         // ItemSupplier: one row per (Item, Supplier) pair — no global filter needed (filtered via parent)
         modelBuilder.Entity<ItemSupplier>()
             .HasIndex(e => new { e.ItemId, e.SupplierId })
             .IsUnique();
-        modelBuilder.Entity<MenuCategory>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
-        modelBuilder.Entity<MenuTag>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId));
+        modelBuilder.Entity<MenuCategory>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<MenuTag>().HasQueryFilter(e => !e.IsDeleted && CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
 
         // Models with ITenantEntity but NO IsDeleted
-        modelBuilder.Entity<Batch>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
-        modelBuilder.Entity<InventoryTransaction>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
-        modelBuilder.Entity<ConsumptionLog>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
-        modelBuilder.Entity<Notification>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
-        modelBuilder.Entity<OrderMessage>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
-        modelBuilder.Entity<ReturnMessage>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
-        modelBuilder.Entity<BranchItemSetting>().HasQueryFilter(e => !_currentUserService!.TenantId.HasValue || e.TenantId == _currentUserService.TenantId);
+        modelBuilder.Entity<Batch>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<InventoryTransaction>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<ConsumptionLog>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<ConsumptionLogItem>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<Notification>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<OrderMessage>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<ReturnMessage>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<OrderStatusHistory>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<OrderAllocation>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<SupplyRequestItem>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<ReturnItem>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<MenuItemIngredient>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
+        modelBuilder.Entity<BranchItemSetting>().HasQueryFilter(e => CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value);
 
         // Models with IsDeleted but NO ITenantEntity
         modelBuilder.Entity<Tenant>().HasQueryFilter(e => !e.IsDeleted);
@@ -173,11 +181,15 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<MenuVariant>().HasQueryFilter(e => !e.IsDeleted);
 
         // Custom User Filter
-        modelBuilder.Entity<User>().HasQueryFilter(e => !e.IsDeleted && (!_currentUserService!.TenantId.HasValue || e.TenantId == null || e.TenantId == _currentUserService.TenantId));
+        modelBuilder.Entity<User>().HasQueryFilter(e =>
+            !e.IsDeleted &&
+            (
+                (CurrentTenantId.HasValue && e.TenantId == CurrentTenantId.Value) ||
+                (IsTenantlessAuthenticatedContext && e.TenantId == null)
+            ));
 
-        // Note: Models without TenantId and IsDeleted (like OrderAllocation, SupplyRequestItem, MenuItemIngredient, ConsumptionLogItem, 
-        // OrderStatusHistory, ReturnItem, VariantIngredient, SubscriptionInvoice, SubscriptionPayment, AuditLog) 
-        // aren't filtered here directly, they're typically filtered implicitly by their parent entity when Queried.
+        // Note: Models without TenantId and IsDeleted (like VariantIngredient, SubscriptionInvoice,
+        // SubscriptionPayment, AuditLog) aren't filtered here directly.
 
         // ============================================================
         // Enum to tinyint conversions

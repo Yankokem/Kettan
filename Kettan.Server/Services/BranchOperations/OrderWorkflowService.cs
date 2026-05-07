@@ -32,6 +32,11 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<List<BranchOrderDto>> ListBranchOrdersAsync(string? status = null, int? branchId = null)
     {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            return [];
+        }
+
         var query = _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Branch)
@@ -44,6 +49,11 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         if (branchId.HasValue)
         {
+            if (IsBranchScopedUser() && branchId.Value != (_currentUser.BranchId ?? 0))
+            {
+                return [];
+            }
+
             query = query.Where(o => o.SupplyRequest != null && o.SupplyRequest.BranchId == branchId.Value);
         }
         else if (IsBranchScopedUser())
@@ -69,22 +79,18 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<OrderDetailDto> CreateHqOrderAsync(CreateOrderDto dto)
     {
-        if (!_currentUser.TenantId.HasValue || !_currentUser.UserId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        var tenantId = EnsureTenantContext();
+        var userId = EnsureUserContext();
 
-        await ValidateCreateOrderItemsAsync(dto.Items);
+        await ValidateCreateOrderItemsAsync(dto.Items, tenantId);
 
-        var branchExists = await _context.Branches.AnyAsync(b => b.BranchId == dto.BranchId && b.IsActive);
+        var branchExists = await _context.Branches.AnyAsync(b => b.BranchId == dto.BranchId && b.TenantId == tenantId && b.IsActive);
         if (!branchExists)
         {
             throw new InvalidOperationException("Target branch was not found.");
         }
 
         var now = DateTime.UtcNow;
-        var tenantId = _currentUser.TenantId.Value;
-        var userId = _currentUser.UserId.Value;
 
         await using var tx = await _context.Database.BeginTransactionAsync();
 
@@ -140,6 +146,13 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<OrderDetailDto?> GetOrderDetailAsync(int orderId)
     {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            return null;
+        }
+
+        var tenantId = _currentUser.TenantId.Value;
+
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Branch)
@@ -151,7 +164,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.Allocations)
                 .ThenInclude(a => a.Batch)
                     .ThenInclude(b => b!.Item)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order == null)
         {
@@ -209,10 +222,8 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<bool> ConfirmPackedAsync(int orderId, UpdateOrderStatusDto dto)
     {
-        if (!_currentUser.TenantId.HasValue || !_currentUser.UserId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        EnsureTenantContext();
+        EnsureUserContext();
 
         var order = await GetOrderForWorkflowAsync(orderId);
         if (order == null)
@@ -292,10 +303,8 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<bool> DispatchAsync(int orderId, DispatchOrderDto dto)
     {
-        if (!_currentUser.TenantId.HasValue || !_currentUser.UserId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        EnsureTenantContext();
+        EnsureUserContext();
 
         var order = await GetOrderForWorkflowAsync(orderId);
         if (order == null)
@@ -364,10 +373,8 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<bool> ConfirmDeliveryAsync(int orderId, ConfirmDeliveryDto dto)
     {
-        if (!_currentUser.TenantId.HasValue || !_currentUser.UserId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        EnsureTenantContext();
+        EnsureUserContext();
 
         var order = await GetOrderForWorkflowAsync(orderId);
         if (order == null)
@@ -426,10 +433,8 @@ public class OrderWorkflowService : IOrderWorkflowService
         string notificationTitle,
         string notificationType)
     {
-        if (!_currentUser.TenantId.HasValue || !_currentUser.UserId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        EnsureTenantContext();
+        EnsureUserContext();
 
         var order = await GetOrderForWorkflowAsync(orderId);
         if (order == null)
@@ -484,10 +489,17 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     private async Task<Order?> GetOrderForWorkflowAsync(int orderId)
     {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            return null;
+        }
+
+        var tenantId = _currentUser.TenantId.Value;
+
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Branch)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order == null)
         {
@@ -505,9 +517,16 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     private async Task<Order?> GetOrderForAccessCheckAsync(int orderId)
     {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            return null;
+        }
+
+        var tenantId = _currentUser.TenantId.Value;
+
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order == null)
         {
@@ -629,11 +648,13 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<List<PickingSuggestionDto>> GetPickingSuggestionsAsync(int orderId)
     {
+        var tenantId = EnsureTenantContext();
+
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order?.SupplyRequest == null) return [];
 
@@ -669,11 +690,13 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<OrderDetailDto?> SavePickingAsync(int orderId, PickingSubmitDto dto)
     {
+        var tenantId = EnsureTenantContext();
+
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order?.SupplyRequest == null) return null;
 
@@ -734,11 +757,13 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<OrderDetailDto?> SavePackingAsync(int orderId, PackingSubmitDto dto)
     {
+        var tenantId = EnsureTenantContext();
+
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order?.SupplyRequest == null) return null;
 
@@ -837,10 +862,12 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<OrderDetailDto?> SubmitDispatchAsync(int orderId, DispatchOrderDto dto)
     {
+        var tenantId = EnsureTenantContext();
+
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         _logger.LogInformation("Dispatching Order {OrderId}. Payload: Vehicle={VehicleId}, Tracking={Tracking}, Arrival={Arrival}", 
             orderId, dto.VehicleId, dto.TrackingNumber, dto.EstimatedArrival);
@@ -934,11 +961,17 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId)
     {
+        var tenantId = EnsureTenantContext();
+
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order == null) return null;
+        if (IsBranchScopedUser() && order.SupplyRequest?.BranchId != (_currentUser.BranchId ?? 0))
+        {
+            return null;
+        }
 
         var now = DateTime.UtcNow;
 
@@ -969,12 +1002,18 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<OrderDetailDto?> CompleteTransactionAsync(int orderId, BranchCheckSubmitDto dto)
     {
+        var tenantId = EnsureTenantContext();
+
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order?.SupplyRequest == null) return null;
+        if (IsBranchScopedUser() && order.SupplyRequest.BranchId != (_currentUser.BranchId ?? 0))
+        {
+            return null;
+        }
 
         if (order.Status == OrderStatus.Completed)
         {
@@ -1002,7 +1041,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .GroupBy(a => a.Batch!.ItemId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
-        var tenantId = order.TenantId;
+        var orderTenantId = order.TenantId;
         var userId = _currentUser.UserId!.Value;
         var branchId = order.SupplyRequest.BranchId;
 
@@ -1025,7 +1064,7 @@ public class OrderWorkflowService : IOrderWorkflowService
                     {
                         targetBatch = new Batch
                         {
-                            TenantId = tenantId,
+                            TenantId = orderTenantId,
                             ItemId = sourceBatch.ItemId,
                             BranchId = branchId,
                             BatchNumber = sourceBatch.BatchNumber,
@@ -1040,7 +1079,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
                     _context.InventoryTransactions.Add(new InventoryTransaction
                     {
-                        TenantId = tenantId,
+                        TenantId = orderTenantId,
                         Batch = targetBatch,
                         UserId = userId,
                         QuantityChange = alloc.QuantityPicked,
@@ -1095,6 +1134,8 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<OrderDetailDto?> CancelOrderAsync(int orderId, CancelOrderDto dto)
     {
+        var tenantId = EnsureTenantContext();
+
         if (!IsHqRole())
             throw new UnauthorizedAccessException("Only HQ users can cancel orders.");
 
@@ -1102,7 +1143,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.SupplyRequest)
             .Include(o => o.Allocations)
                 .ThenInclude(a => a.Batch)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order == null) return null;
 
@@ -1168,6 +1209,12 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     public async Task<List<OrderMessageDto>> GetMessagesAsync(int orderId)
     {
+        var order = await GetOrderForAccessCheckAsync(orderId);
+        if (order == null)
+        {
+            return [];
+        }
+
         var messages = await _context.OrderMessages
             .Include(m => m.SenderUser)
             .Where(m => m.OrderId == orderId)
@@ -1191,7 +1238,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         if (string.IsNullOrWhiteSpace(dto.Content))
             throw new InvalidOperationException("Message content cannot be empty.");
 
-        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
+        var order = await GetOrderForAccessCheckAsync(orderId);
         if (order == null) return null;
 
         var message = new OrderMessage
@@ -1222,7 +1269,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         };
     }
 
-    private async Task ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items)
+    private async Task ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items, int tenantId)
     {
         var rows = items.ToList();
         if (rows.Count == 0)
@@ -1242,7 +1289,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         }
 
         var validIds = await _context.Items
-            .Where(i => itemIds.Contains(i.ItemId))
+            .Where(i => i.TenantId == tenantId && itemIds.Contains(i.ItemId))
             .Select(i => i.ItemId)
             .ToListAsync();
 
@@ -1250,6 +1297,26 @@ public class OrderWorkflowService : IOrderWorkflowService
         {
             throw new InvalidOperationException("One or more requested items are invalid.");
         }
+    }
+
+    private int EnsureTenantContext()
+    {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            throw new InvalidOperationException("Authenticated tenant context is required.");
+        }
+
+        return _currentUser.TenantId.Value;
+    }
+
+    private int EnsureUserContext()
+    {
+        if (!_currentUser.UserId.HasValue)
+        {
+            throw new InvalidOperationException("Authenticated user context is required.");
+        }
+
+        return _currentUser.UserId.Value;
     }
 
     private bool IsBranchScopedUser()

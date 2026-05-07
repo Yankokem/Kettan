@@ -38,11 +38,7 @@ public class InventoryService : IInventoryService
             throw new InvalidOperationException("Batch number is required.");
         }
 
-        var item = await _context.Items.FirstOrDefaultAsync(i => i.ItemId == itemId);
-        if (item == null)
-        {
-            throw new InvalidOperationException("Item was not found.");
-        }
+        var item = await GetTenantItemAsync(itemId, tenantId);
 
         // --- Weighted Average Costing (WAC) Logic ---
         var currentStock = await GetStockLevelAsync(itemId, null);
@@ -63,6 +59,8 @@ public class InventoryService : IInventoryService
 
         if (supplierId.HasValue)
         {
+            await EnsureTenantSupplierAsync(supplierId.Value, tenantId);
+
             // Append supplier to the many-to-many list (ignore if already linked)
             var alreadyLinked = await _context.ItemSuppliers
                 .AnyAsync(s => s.ItemId == itemId && s.SupplierId == supplierId.Value);
@@ -159,11 +157,12 @@ public class InventoryService : IInventoryService
             throw new InvalidOperationException("Deduction quantity must be greater than zero.");
         }
 
-        var itemExists = await _context.Items.AnyAsync(i => i.ItemId == itemId);
-        if (!itemExists)
+        if (branchId.HasValue)
         {
-            throw new InvalidOperationException("Item was not found.");
+            await EnsureTenantBranchAsync(branchId.Value, tenantId);
         }
+
+        await GetTenantItemAsync(itemId, tenantId);
 
         var batchesQuery = _context.Batches
             .Where(b => b.ItemId == itemId && b.CurrentQuantity > 0);
@@ -234,7 +233,13 @@ public class InventoryService : IInventoryService
 
     public async Task<decimal> GetStockLevelAsync(int itemId, int? branchId = null)
     {
-        EnsureTenantContext();
+        var tenantId = EnsureTenantContext();
+        await GetTenantItemAsync(itemId, tenantId);
+
+        if (branchId.HasValue)
+        {
+            await EnsureTenantBranchAsync(branchId.Value, tenantId, requireActive: false);
+        }
 
         var query = _context.Batches
             .Where(b => b.ItemId == itemId);
@@ -251,11 +256,11 @@ public class InventoryService : IInventoryService
 
     public async Task<List<ThresholdAlertResult>> CheckThresholdsAsync(int? branchId = null)
     {
-        EnsureTenantContext();
+        var tenantId = EnsureTenantContext();
 
         if (branchId.HasValue)
         {
-            var branchExists = await _context.Branches.AnyAsync(b => b.BranchId == branchId.Value && b.IsActive);
+            var branchExists = await _context.Branches.AnyAsync(b => b.BranchId == branchId.Value && b.TenantId == tenantId && b.IsActive);
             if (!branchExists)
             {
                 throw new InvalidOperationException("Branch was not found.");
@@ -319,11 +324,7 @@ public class InventoryService : IInventoryService
             throw new InvalidOperationException("Transfer quantity must be greater than zero.");
         }
 
-        var sourceBatch = await _context.Batches.FirstOrDefaultAsync(b => b.BatchId == batchId);
-        if (sourceBatch == null)
-        {
-            throw new InvalidOperationException("Source batch was not found.");
-        }
+        var sourceBatch = await GetTenantBatchAsync(batchId, tenantId);
 
         if (sourceBatch.BranchId.HasValue)
         {
@@ -335,14 +336,11 @@ public class InventoryService : IInventoryService
             throw new InvalidOperationException("Transfer quantity exceeds source batch stock.");
         }
 
-        var branchExists = await _context.Branches.AnyAsync(b => b.BranchId == branchId && b.IsActive);
-        if (!branchExists)
-        {
-            throw new InvalidOperationException("Target branch was not found.");
-        }
+        await EnsureTenantBranchAsync(branchId, tenantId);
 
         var targetBatch = await _context.Batches
             .FirstOrDefaultAsync(b =>
+                b.TenantId == tenantId &&
                 b.ItemId == sourceBatch.ItemId &&
                 b.BranchId == branchId &&
                 b.BatchNumber == sourceBatch.BatchNumber &&
@@ -431,6 +429,49 @@ public class InventoryService : IInventoryService
         }
 
         return _currentUser.UserId.Value;
+    }
+
+    private async Task<Item> GetTenantItemAsync(int itemId, int tenantId)
+    {
+        var item = await _context.Items.FirstOrDefaultAsync(i => i.ItemId == itemId && i.TenantId == tenantId);
+        if (item == null)
+        {
+            throw new InvalidOperationException("Item was not found.");
+        }
+
+        return item;
+    }
+
+    private async Task<Batch> GetTenantBatchAsync(int batchId, int tenantId)
+    {
+        var batch = await _context.Batches.FirstOrDefaultAsync(b => b.BatchId == batchId && b.TenantId == tenantId);
+        if (batch == null)
+        {
+            throw new InvalidOperationException("Source batch was not found.");
+        }
+
+        return batch;
+    }
+
+    private async Task EnsureTenantSupplierAsync(int supplierId, int tenantId)
+    {
+        var supplierExists = await _context.Suppliers.AnyAsync(s => s.SupplierId == supplierId && s.TenantId == tenantId && s.IsActive);
+        if (!supplierExists)
+        {
+            throw new InvalidOperationException("Supplier was not found.");
+        }
+    }
+
+    private async Task EnsureTenantBranchAsync(int branchId, int tenantId, bool requireActive = true)
+    {
+        var branchExists = requireActive
+            ? await _context.Branches.AnyAsync(b => b.BranchId == branchId && b.TenantId == tenantId && b.IsActive)
+            : await _context.Branches.AnyAsync(b => b.BranchId == branchId && b.TenantId == tenantId);
+
+        if (!branchExists)
+        {
+            throw new InvalidOperationException("Branch was not found.");
+        }
     }
 
     private async Task CheckThresholdAndNotifyAsync(int itemId, int? branchId)

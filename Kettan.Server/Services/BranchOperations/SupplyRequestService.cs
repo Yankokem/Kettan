@@ -74,7 +74,13 @@ public class SupplyRequestService : ISupplyRequestService
 
     public async Task<SupplyRequestDto?> GetByIdAsync(int requestId)
     {
-        var request = await GetHydratedByIdAsync(requestId);
+        if (!_currentUser.TenantId.HasValue)
+        {
+            return null;
+        }
+
+        var tenantId = _currentUser.TenantId.Value;
+        var request = await GetHydratedByIdAsync(requestId, tenantId);
 
         if (request == null)
         {
@@ -109,13 +115,11 @@ public class SupplyRequestService : ISupplyRequestService
 
     public async Task<SupplyRequestDto> CreateDraftAsync(CreateSupplyRequestDto dto)
     {
-        if (!_currentUser.TenantId.HasValue || !_currentUser.UserId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        var tenantId = EnsureTenantContext();
+        var userId = EnsureUserContext();
 
-        var branchId = ResolveBranchId(dto.BranchId);
-        await ValidateItemsAsync(dto.Items);
+        var branchId = await ResolveBranchIdAsync(dto.BranchId, tenantId);
+        await ValidateItemsAsync(dto.Items, tenantId);
 
         var now = DateTime.UtcNow;
 
@@ -123,7 +127,7 @@ public class SupplyRequestService : ISupplyRequestService
         {
             TenantId = _currentUser.TenantId.Value,
             BranchId = branchId,
-            RequestedBy_UserId = _currentUser.UserId.Value,
+            RequestedBy_UserId = userId,
             Status = SupplyRequestStatus.Draft,
             RequestType = Enum.TryParse<RequestType>(dto.RequestType, true, out var reqType) ? reqType : RequestType.Manual,
             Priority = Enum.TryParse<Priority>(dto.Priority, true, out var priority) ? priority : Priority.Normal,
@@ -144,7 +148,7 @@ public class SupplyRequestService : ISupplyRequestService
         _context.SupplyRequests.Add(request);
         await _context.SaveChangesAsync();
 
-        var hydrated = await GetHydratedByIdAsync(request.RequestId);
+        var hydrated = await GetHydratedByIdAsync(request.RequestId, tenantId);
         if (hydrated == null)
         {
             throw new InvalidOperationException("Unable to load created request.");
@@ -155,16 +159,12 @@ public class SupplyRequestService : ISupplyRequestService
 
     public async Task<SupplyRequestDto?> UpdateDraftAsync(int requestId, UpdateSupplyRequestDto dto)
     {
-        if (!_currentUser.TenantId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
-
-        await ValidateItemsAsync(dto.Items);
+        var tenantId = EnsureTenantContext();
+        await ValidateItemsAsync(dto.Items, tenantId);
 
         var request = await _context.SupplyRequests
             .Include(r => r.Items)
-            .FirstOrDefaultAsync(r => r.RequestId == requestId);
+            .FirstOrDefaultAsync(r => r.RequestId == requestId && r.TenantId == tenantId);
 
         if (request == null)
         {
@@ -205,7 +205,7 @@ public class SupplyRequestService : ISupplyRequestService
 
         await _context.SaveChangesAsync();
 
-        var hydrated = await GetHydratedByIdAsync(request.RequestId);
+        var hydrated = await GetHydratedByIdAsync(request.RequestId, tenantId);
         if (hydrated == null)
         {
             throw new InvalidOperationException("Unable to load updated request.");
@@ -216,14 +216,12 @@ public class SupplyRequestService : ISupplyRequestService
 
     public async Task<bool> SubmitAsync(int requestId, string? notes = null)
     {
-        if (!_currentUser.UserId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated user is required.");
-        }
+        var tenantId = EnsureTenantContext();
+        EnsureUserContext();
 
         var request = await _context.SupplyRequests
             .Include(r => r.Branch)
-            .FirstOrDefaultAsync(r => r.RequestId == requestId);
+            .FirstOrDefaultAsync(r => r.RequestId == requestId && r.TenantId == tenantId);
 
         if (request == null)
         {
@@ -265,16 +263,14 @@ public class SupplyRequestService : ISupplyRequestService
 
     public async Task<SupplyRequestDto?> ApproveAsync(int requestId, ApproveSupplyRequestDto dto)
     {
-        if (!_currentUser.TenantId.HasValue || !_currentUser.UserId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        var tenantId = EnsureTenantContext();
+        var userId = EnsureUserContext();
 
         var request = await _context.SupplyRequests
             .Include(r => r.Branch)
             .Include(r => r.RequestedBy_User)
             .Include(r => r.Items)
-            .FirstOrDefaultAsync(r => r.RequestId == requestId);
+            .FirstOrDefaultAsync(r => r.RequestId == requestId && r.TenantId == tenantId);
 
         if (request == null)
         {
@@ -367,7 +363,7 @@ public class SupplyRequestService : ISupplyRequestService
             TenantId = request.TenantId,
             Order = order,
             Status = OrderStatus.Picking,
-            ChangedBy_UserId = _currentUser.UserId.Value,
+            ChangedBy_UserId = userId,
             Remarks = "Supply request approved and moved to picking.",
             Timestamp = now
         });
@@ -386,7 +382,7 @@ public class SupplyRequestService : ISupplyRequestService
             referenceType: nameof(SupplyRequest),
             referenceId: request.RequestId);
 
-        var hydrated = await GetHydratedByIdAsync(request.RequestId);
+        var hydrated = await GetHydratedByIdAsync(request.RequestId, tenantId);
         if (hydrated == null)
         {
             throw new InvalidOperationException("Unable to load approved request.");
@@ -397,14 +393,11 @@ public class SupplyRequestService : ISupplyRequestService
 
     public async Task<SupplyRequestDto?> RejectAsync(int requestId, RejectSupplyRequestDto dto)
     {
-        if (!_currentUser.TenantId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        var tenantId = EnsureTenantContext();
 
         var request = await _context.SupplyRequests
             .Include(r => r.Items)
-            .FirstOrDefaultAsync(r => r.RequestId == requestId);
+            .FirstOrDefaultAsync(r => r.RequestId == requestId && r.TenantId == tenantId);
 
         if (request == null)
         {
@@ -447,7 +440,7 @@ public class SupplyRequestService : ISupplyRequestService
             referenceType: nameof(SupplyRequest),
             referenceId: request.RequestId);
 
-        var hydrated = await GetHydratedByIdAsync(request.RequestId);
+        var hydrated = await GetHydratedByIdAsync(request.RequestId, tenantId);
         if (hydrated == null)
         {
             throw new InvalidOperationException("Unable to load rejected request.");
@@ -458,12 +451,12 @@ public class SupplyRequestService : ISupplyRequestService
 
     public async Task<SupplyRequestDto?> AutoDraftOnLowStockAsync(int branchId)
     {
-        if (!_currentUser.TenantId.HasValue || !_currentUser.UserId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        var tenantId = EnsureTenantContext();
+        var userId = EnsureUserContext();
 
-        var alerts = await _inventoryService.CheckThresholdsAsync(branchId);
+        var validatedBranchId = await ResolveBranchIdAsync(branchId, tenantId);
+
+        var alerts = await _inventoryService.CheckThresholdsAsync(validatedBranchId);
         
         var validAlerts = alerts.Where(a => a.Threshold - a.StockLevel > 0).ToList();
         if (validAlerts.Count == 0)
@@ -473,7 +466,8 @@ public class SupplyRequestService : ISupplyRequestService
 
         var existingDraft = await _context.SupplyRequests
             .Include(r => r.Items)
-            .FirstOrDefaultAsync(r => r.BranchId == branchId && 
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId &&
+                                     r.BranchId == validatedBranchId && 
                                      (r.Status == SupplyRequestStatus.Draft || r.Status == SupplyRequestStatus.AutoDrafted));
 
         var now = DateTime.UtcNow;
@@ -513,19 +507,19 @@ public class SupplyRequestService : ISupplyRequestService
                 "Auto-Draft Updated",
                 $"Your pending draft #{existingDraft.RequestId} was automatically updated with low stock items.",
                 type: "SupplyRequestAutoDrafted",
-                branchId: branchId,
+                branchId: validatedBranchId,
                 referenceType: nameof(SupplyRequest),
                 referenceId: existingDraft.RequestId);
 
-            var updatedHydrated = await GetHydratedByIdAsync(existingDraft.RequestId);
+            var updatedHydrated = await GetHydratedByIdAsync(existingDraft.RequestId, tenantId);
             return MapToDto(updatedHydrated!);
         }
 
         var newRequest = new SupplyRequest
         {
             TenantId = _currentUser.TenantId.Value,
-            BranchId = branchId,
-            RequestedBy_UserId = _currentUser.UserId.Value,
+            BranchId = validatedBranchId,
+            RequestedBy_UserId = userId,
             Status = SupplyRequestStatus.AutoDrafted,
             RequestType = RequestType.Auto,
             Priority = Priority.Normal,
@@ -546,27 +540,24 @@ public class SupplyRequestService : ISupplyRequestService
 
         await _notificationService.CreateForRolesAsync(
             ["BranchManager", "BranchOwner"],
-            "Automated Low Stock Draft",
-            $"A new draft #{newRequest.RequestId} was automatically created due to low stock.",
-            type: "SupplyRequestAutoDrafted",
-            branchId: branchId,
-            referenceType: nameof(SupplyRequest),
-            referenceId: newRequest.RequestId);
+                "Automated Low Stock Draft",
+                $"A new draft #{newRequest.RequestId} was automatically created due to low stock.",
+                type: "SupplyRequestAutoDrafted",
+                branchId: validatedBranchId,
+                referenceType: nameof(SupplyRequest),
+                referenceId: newRequest.RequestId);
 
-        var newHydrated = await GetHydratedByIdAsync(newRequest.RequestId);
+        var newHydrated = await GetHydratedByIdAsync(newRequest.RequestId, tenantId);
         return MapToDto(newHydrated!);
     }
 
     public async Task<SupplyRequestDto?> CancelAsync(int requestId, CancelSupplyRequestDto dto)
     {
-        if (!_currentUser.TenantId.HasValue)
-        {
-            throw new InvalidOperationException("Authenticated tenant user is required.");
-        }
+        var tenantId = EnsureTenantContext();
 
         var request = await _context.SupplyRequests
             .Include(r => r.Items)
-            .FirstOrDefaultAsync(r => r.RequestId == requestId);
+            .FirstOrDefaultAsync(r => r.RequestId == requestId && r.TenantId == tenantId);
 
         if (request == null)
         {
@@ -604,7 +595,7 @@ public class SupplyRequestService : ISupplyRequestService
             referenceType: nameof(SupplyRequest),
             referenceId: request.RequestId);
 
-        var hydrated = await GetHydratedByIdAsync(request.RequestId);
+        var hydrated = await GetHydratedByIdAsync(request.RequestId, tenantId);
         if (hydrated == null)
         {
             throw new InvalidOperationException("Unable to load cancelled request.");
@@ -646,22 +637,33 @@ public class SupplyRequestService : ISupplyRequestService
         return MapToDto(latestRequest);
     }
 
-    private int ResolveBranchId(int? dtoBranchId)
+    private async Task<int> ResolveBranchIdAsync(int? dtoBranchId, int tenantId)
     {
+        int branchId;
         if (IsBranchScopedUser())
         {
-            return _currentUser.BranchId ?? throw new InvalidOperationException("Branch context is required.");
+            branchId = _currentUser.BranchId ?? throw new InvalidOperationException("Branch context is required.");
         }
-
-        if (!dtoBranchId.HasValue)
+        else
         {
-            throw new InvalidOperationException("BranchId is required for HQ users.");
+            if (!dtoBranchId.HasValue)
+            {
+                throw new InvalidOperationException("BranchId is required for HQ users.");
+            }
+
+            branchId = dtoBranchId.Value;
         }
 
-        return dtoBranchId.Value;
+        var branchExists = await _context.Branches.AnyAsync(b => b.BranchId == branchId && b.TenantId == tenantId && b.IsActive);
+        if (!branchExists)
+        {
+            throw new InvalidOperationException("Branch was not found.");
+        }
+
+        return branchId;
     }
 
-    private async Task ValidateItemsAsync(IEnumerable<CreateSupplyRequestItemDto> items)
+    private async Task ValidateItemsAsync(IEnumerable<CreateSupplyRequestItemDto> items, int tenantId)
     {
         var itemRows = items.ToList();
 
@@ -683,7 +685,7 @@ public class SupplyRequestService : ISupplyRequestService
         }
 
         var validItems = await _context.Items
-            .Where(i => itemIds.Contains(i.ItemId))
+            .Where(i => i.TenantId == tenantId && itemIds.Contains(i.ItemId))
             .Select(i => i.ItemId)
             .ToListAsync();
 
@@ -693,7 +695,7 @@ public class SupplyRequestService : ISupplyRequestService
         }
     }
 
-    private async Task<SupplyRequest?> GetHydratedByIdAsync(int requestId)
+    private async Task<SupplyRequest?> GetHydratedByIdAsync(int requestId, int tenantId)
     {
         return await _context.SupplyRequests
             .Include(r => r.Branch)
@@ -704,7 +706,27 @@ public class SupplyRequestService : ISupplyRequestService
                 .ThenInclude(o => o.ArrivedConfirmedByUser)
             .Include(r => r.Orders)
                 .ThenInclude(o => o.CompletedByUser)
-            .FirstOrDefaultAsync(r => r.RequestId == requestId);
+            .FirstOrDefaultAsync(r => r.RequestId == requestId && r.TenantId == tenantId);
+    }
+
+    private int EnsureTenantContext()
+    {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            throw new InvalidOperationException("Authenticated tenant user is required.");
+        }
+
+        return _currentUser.TenantId.Value;
+    }
+
+    private int EnsureUserContext()
+    {
+        if (!_currentUser.UserId.HasValue)
+        {
+            throw new InvalidOperationException("Authenticated user is required.");
+        }
+
+        return _currentUser.UserId.Value;
     }
 
     private static string NormalizeOption(string? value, string fallback)

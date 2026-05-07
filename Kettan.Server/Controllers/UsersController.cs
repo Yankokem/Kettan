@@ -30,20 +30,25 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers([FromQuery] int? branchId = null)
     {
+        if (!_currentUserService.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var tenantId = _currentUserService.TenantId.Value;
         var usersQuery = _context.Users.AsQueryable();
 
-        // Filter users by Current Tenant if applicable
-        if (_currentUserService.TenantId.HasValue)
+        if (branchId.HasValue && !await _context.Branches.AnyAsync(b => b.BranchId == branchId.Value && b.TenantId == tenantId))
         {
-            usersQuery = usersQuery.Where(u => u.TenantId == _currentUserService.TenantId.Value);
+            return NotFound(new { message = "Branch was not found." });
         }
 
-        if (branchId.HasValue)
-        {
-            usersQuery = usersQuery.Where(u => u.BranchId == branchId.Value);
-        }
+        usersQuery = usersQuery.Where(u => u.TenantId == tenantId);
+
+        if (branchId.HasValue) usersQuery = usersQuery.Where(u => u.BranchId == branchId.Value);
 
         var users = await usersQuery
             .Include(u => u.Branch)
@@ -71,14 +76,17 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
     public async Task<ActionResult<UserDto>> GetUser(int id)
     {
-        var user = await _context.Users.Include(u => u.Branch).FirstOrDefaultAsync(u => u.UserId == id);
-        if (user == null) return NotFound();
-
-        // Enforce tenant isolation on User fetching
-        if (_currentUserService.TenantId.HasValue && user.TenantId != _currentUserService.TenantId.Value)
+        if (!_currentUserService.TenantId.HasValue)
+        {
             return Forbid();
+        }
+
+        var tenantId = _currentUserService.TenantId.Value;
+        var user = await _context.Users.Include(u => u.Branch).FirstOrDefaultAsync(u => u.UserId == id && u.TenantId == tenantId);
+        if (user == null) return NotFound();
 
         return Ok(new UserDto
         {
@@ -100,12 +108,15 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "TenantAdmin,HqManager")]
     public async Task<ActionResult<UserDto>> CreateUser(CreateUserDto dto, CancellationToken cancellationToken)
     {
         if (!_currentUserService.TenantId.HasValue)
         {
             return Forbid();
         }
+
+        var tenantId = _currentUserService.TenantId.Value;
 
         // First check if email already exists
         var existingUser = await _context.Users
@@ -134,11 +145,16 @@ public class UsersController : ControllerBase
             }
         }
 
+        if (!await EnsureBranchBelongsToTenantAsync(dto.BranchId, tenantId, cancellationToken))
+        {
+            return BadRequest(new { message = "Branch is invalid for this tenant." });
+        }
+
         var parsedRole = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.HqStaff;
 
         var user = new User
         {
-            TenantId = _currentUserService.TenantId,
+            TenantId = tenantId,
             BranchId = dto.BranchId,
             Email = dto.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
@@ -181,13 +197,22 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "TenantAdmin,HqManager")]
     public async Task<IActionResult> UpdateUser(int id, UpdateUserDto dto, CancellationToken cancellationToken)
     {
-        var user = await _context.Users.FindAsync([id], cancellationToken);
+        if (!_currentUserService.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var tenantId = _currentUserService.TenantId.Value;
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id && u.TenantId == tenantId, cancellationToken);
         if (user == null) return NotFound();
 
-        if (_currentUserService.TenantId.HasValue && user.TenantId != _currentUserService.TenantId.Value)
-            return Forbid();
+        if (!await EnsureBranchBelongsToTenantAsync(dto.BranchId, tenantId, cancellationToken))
+        {
+            return BadRequest(new { message = "Branch is invalid for this tenant." });
+        }
 
         var nextIsActive = dto.IsActive && dto.Status == EmployeeStatus.Active;
         if (nextIsActive && user.TenantId.HasValue)
@@ -229,13 +254,17 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "TenantAdmin,HqManager")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        var user = await _context.Users.FindAsync(id);
-        if (user == null) return NotFound();
-
-        if (_currentUserService.TenantId.HasValue && user.TenantId != _currentUserService.TenantId.Value)
+        if (!_currentUserService.TenantId.HasValue)
+        {
             return Forbid();
+        }
+
+        var tenantId = _currentUserService.TenantId.Value;
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id && u.TenantId == tenantId);
+        if (user == null) return NotFound();
 
         user.IsActive = false; // Soft delete
         user.Status = EmployeeStatus.Archived;
@@ -245,13 +274,17 @@ public class UsersController : ControllerBase
     }
 
     [HttpPatch("{id:int}/status")]
+    [Authorize(Roles = "TenantAdmin,HqManager")]
     public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] EmployeeStatus status, CancellationToken cancellationToken)
     {
-        var user = await _context.Users.FindAsync([id], cancellationToken);
-        if (user == null) return NotFound();
-
-        if (_currentUserService.TenantId.HasValue && user.TenantId != _currentUserService.TenantId.Value)
+        if (!_currentUserService.TenantId.HasValue)
+        {
             return Forbid();
+        }
+
+        var tenantId = _currentUserService.TenantId.Value;
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id && u.TenantId == tenantId, cancellationToken);
+        if (user == null) return NotFound();
 
         var nextIsActive = status == EmployeeStatus.Active;
         if (nextIsActive && user.TenantId.HasValue)
@@ -276,5 +309,17 @@ public class UsersController : ControllerBase
         await _context.SaveChangesAsync(cancellationToken);
 
         return NoContent();
+    }
+
+    private async Task<bool> EnsureBranchBelongsToTenantAsync(int? branchId, int tenantId, CancellationToken cancellationToken)
+    {
+        if (!branchId.HasValue)
+        {
+            return true;
+        }
+
+        return await _context.Branches.AnyAsync(
+            b => b.BranchId == branchId.Value && b.TenantId == tenantId && b.IsActive,
+            cancellationToken);
     }
 }

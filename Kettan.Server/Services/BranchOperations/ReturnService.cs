@@ -91,6 +91,7 @@ public class ReturnService : IReturnService
 
     public async Task<List<ReturnEligibleOrderDto>> GetEligibleOrdersAsync()
     {
+        var tenantId = EnsureTenantContext();
         var branchId = _currentUser.BranchId;
         bool isManager = _currentUser.Role == "TenantAdmin" || _currentUser.Role == "HqManager";
 
@@ -105,6 +106,7 @@ public class ReturnService : IReturnService
             .Include(o => o.SupplyRequest)
                 .ThenInclude(sr => sr!.Items)
                     .ThenInclude(i => i.Item)
+            .Where(o => o.TenantId == tenantId)
             .Where(o => o.SupplyRequest != null)
             .Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Completed);
 
@@ -115,6 +117,7 @@ public class ReturnService : IReturnService
 
         // Native filtering: exclude orders that already have an active return
         var ordersWithReturns = await _context.Returns
+            .Where(r => r.TenantId == tenantId)
             .Where(r => r.Status != ReturnStatus.Rejected)
             .Select(r => r.OrderId)
             .ToListAsync();
@@ -356,13 +359,13 @@ public class ReturnService : IReturnService
         }
 
         var vehicle = await _context.Vehicles
-            .FirstOrDefaultAsync(v => v.VehicleId == dto.VehicleId && v.IsActive);
+            .FirstOrDefaultAsync(v => v.VehicleId == dto.VehicleId && v.TenantId == returnEntry.TenantId && v.IsActive);
         if (vehicle == null)
         {
             throw new InvalidOperationException("Selected vehicle was not found or inactive.");
         }
 
-        var conflicts = await GetVehicleScheduleConflictsAsync(returnEntry.ReturnId, dto.VehicleId, dto.PickupScheduledAt);
+        var conflicts = await GetVehicleScheduleConflictsAsync(returnEntry.ReturnId, returnEntry.TenantId, dto.VehicleId, dto.PickupScheduledAt);
         if (conflicts.Count > 0 && !dto.AllowConflicts)
         {
             throw new InvalidOperationException("Selected vehicle already has a pickup schedule for that date.");
@@ -491,13 +494,13 @@ public class ReturnService : IReturnService
         }
 
         var vehicle = await _context.Vehicles
-            .FirstOrDefaultAsync(v => v.VehicleId == dto.VehicleId && v.IsActive);
+            .FirstOrDefaultAsync(v => v.VehicleId == dto.VehicleId && v.TenantId == returnEntry.TenantId && v.IsActive);
         if (vehicle == null)
         {
             throw new InvalidOperationException("Selected vehicle was not found or inactive.");
         }
 
-        var conflicts = await GetVehicleScheduleConflictsAsync(returnEntry.ReturnId, dto.VehicleId, dto.PickupScheduledAt);
+        var conflicts = await GetVehicleScheduleConflictsAsync(returnEntry.ReturnId, returnEntry.TenantId, dto.VehicleId, dto.PickupScheduledAt);
         if (conflicts.Count > 0 && !dto.AllowConflicts)
         {
             throw new InvalidOperationException("Selected vehicle already has a pickup schedule for that date.");
@@ -731,6 +734,7 @@ public class ReturnService : IReturnService
             {
                 var restockBatchExists = await _context.Batches.AnyAsync(b =>
                     b.BatchId == payload.RestockBatchId.Value &&
+                    b.TenantId == returnEntry.TenantId &&
                     b.ItemId == returnItem.ItemId &&
                     b.BranchId == null);
 
@@ -845,7 +849,8 @@ public class ReturnService : IReturnService
 
     public async Task<List<ReturnMessageDto>> GetMessagesAsync(int returnId)
     {
-        var returnEntry = await _context.Returns.FirstOrDefaultAsync(r => r.ReturnId == returnId);
+        var tenantId = EnsureTenantContext();
+        var returnEntry = await _context.Returns.FirstOrDefaultAsync(r => r.ReturnId == returnId && r.TenantId == tenantId);
         if (returnEntry == null || !CanAccessReturn(returnEntry))
         {
             return [];
@@ -863,12 +868,13 @@ public class ReturnService : IReturnService
     public async Task<ReturnMessageDto?> SendMessageAsync(int returnId, SendReturnMessageDto dto)
     {
         var userId = EnsureUserContext();
+        var tenantId = EnsureTenantContext();
         if (string.IsNullOrWhiteSpace(dto.Content))
         {
             throw new InvalidOperationException("Message content cannot be empty.");
         }
 
-        var returnEntry = await _context.Returns.FirstOrDefaultAsync(r => r.ReturnId == returnId);
+        var returnEntry = await _context.Returns.FirstOrDefaultAsync(r => r.ReturnId == returnId && r.TenantId == tenantId);
         if (returnEntry == null || !CanAccessReturn(returnEntry))
         {
             return null;
@@ -899,11 +905,13 @@ public class ReturnService : IReturnService
 
     private async Task<Order?> LoadOrderForReturnAsync(int orderId)
     {
+        var tenantId = EnsureTenantContext();
+
         return await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(sr => sr!.Items)
                     .ThenInclude(i => i.Item)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId);
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
     }
 
     private List<ReturnItem> BuildReturnItems(int tenantId, Order order, List<CreateReturnDraftItemDto> items)
@@ -990,12 +998,14 @@ public class ReturnService : IReturnService
 
     private async Task<Return> GetReturnForReadAsync(int returnId)
     {
+        var tenantId = EnsureTenantContext();
+
         var row = await _context.Returns
             .Include(r => r.Branch)
             .Include(r => r.PickupVehicle)
             .Include(r => r.Items)
                 .ThenInclude(i => i.Item)
-            .FirstOrDefaultAsync(r => r.ReturnId == returnId);
+            .FirstOrDefaultAsync(r => r.ReturnId == returnId && r.TenantId == tenantId);
 
         if (row == null)
         {
@@ -1007,6 +1017,8 @@ public class ReturnService : IReturnService
 
     private async Task<Return?> GetReturnForWorkflowAsync(int returnId)
     {
+        var tenantId = EnsureTenantContext();
+
         return await _context.Returns
             .Include(r => r.Branch)
             .Include(r => r.PickupVehicle)
@@ -1014,16 +1026,17 @@ public class ReturnService : IReturnService
                 .ThenInclude(i => i.Item)
             .Include(r => r.Order)
                 .ThenInclude(o => o!.SupplyRequest)
-            .FirstOrDefaultAsync(r => r.ReturnId == returnId);
+            .FirstOrDefaultAsync(r => r.ReturnId == returnId && r.TenantId == tenantId);
     }
 
-    private async Task<List<ReturnScheduleConflictDto>> GetVehicleScheduleConflictsAsync(int returnId, int vehicleId, DateTime pickupScheduledAt)
+    private async Task<List<ReturnScheduleConflictDto>> GetVehicleScheduleConflictsAsync(int returnId, int tenantId, int vehicleId, DateTime pickupScheduledAt)
     {
         var scheduleDate = pickupScheduledAt.Date;
 
         return await _context.Returns
             .Include(r => r.Branch)
             .Where(r => r.ReturnId != returnId)
+            .Where(r => r.TenantId == tenantId)
             .Where(r => r.PickupVehicleId == vehicleId)
             .Where(r => r.PickupScheduledAt.HasValue && r.PickupScheduledAt.Value.Date == scheduleDate)
             .Where(r => ActivePickupStatuses.Contains(r.Status))
@@ -1046,6 +1059,7 @@ public class ReturnService : IReturnService
         {
             targetBatch = await _context.Batches.FirstOrDefaultAsync(b =>
                 b.BatchId == item.RestockBatchId.Value &&
+                b.TenantId == returnEntry.TenantId &&
                 b.ItemId == item.ItemId &&
                 b.BranchId == null);
         }
@@ -1053,7 +1067,7 @@ public class ReturnService : IReturnService
         if (targetBatch == null)
         {
             targetBatch = await _context.Batches
-                .Where(b => b.ItemId == item.ItemId && b.BranchId == null)
+                .Where(b => b.TenantId == returnEntry.TenantId && b.ItemId == item.ItemId && b.BranchId == null)
                 .OrderBy(b => b.ExpiryDate)
                 .ThenBy(b => b.BatchId)
                 .FirstOrDefaultAsync();
@@ -1096,6 +1110,7 @@ public class ReturnService : IReturnService
         // Write-off lines should never increase HQ stock. We log against a zero-quantity ledger batch.
         var ledgerBatchNumber = $"RET-WO-{returnEntry.ReturnId}-{item.ItemId}";
         var ledgerBatch = await _context.Batches.FirstOrDefaultAsync(b =>
+            b.TenantId == returnEntry.TenantId &&
             b.ItemId == item.ItemId &&
             b.BranchId == null &&
             b.BatchNumber == ledgerBatchNumber);

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Kettan.Server.Data;
 using Kettan.Server.Entities;
@@ -11,6 +12,7 @@ namespace Kettan.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class BranchesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -28,9 +30,16 @@ public class BranchesController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager")]
     public async Task<ActionResult<IEnumerable<BranchDto>>> GetBranches()
     {
-        // Handled automatically by the global query filter based on _currentUserService.TenantId
+        if (!_currentUserService.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var tenantId = _currentUserService.TenantId.Value;
+
         var branches = await _context.Branches
             .OrderByDescending(b => b.CreatedAt)
             .Select(b => new BranchDto
@@ -54,10 +63,10 @@ public class BranchesController : ControllerBase
                     : (b.OwnerUser != null 
                         ? b.OwnerUser.FirstName + " " + b.OwnerUser.LastName + " (Owner)" 
                         : (_context.Users
-                            .Where(u => u.BranchId == b.BranchId && u.Role == UserRole.BranchOwner)
+                            .Where(u => u.TenantId == tenantId && u.BranchId == b.BranchId && u.Role == UserRole.BranchOwner)
                             .Select(u => u.FirstName + " " + u.LastName + " (Owner)")
                             .FirstOrDefault() ?? "Unassigned")),
-                StaffCount = _context.Users.Count(u => u.BranchId == b.BranchId && !u.IsDeleted && u.Role != UserRole.BranchOwner),
+                StaffCount = _context.Users.Count(u => u.TenantId == tenantId && u.BranchId == b.BranchId && !u.IsDeleted && u.Role != UserRole.BranchOwner),
                 TotalItems = _context.Batches.Where(batch => batch.BranchId == b.BranchId).Select(batch => batch.ItemId).Distinct().Count(),
                 LowStockItems = _context.Batches
                     .Where(batch => batch.BranchId == b.BranchId)
@@ -71,9 +80,16 @@ public class BranchesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager")]
     public async Task<ActionResult<BranchDto>> GetBranch(int id)
     {
-        var branch = await _context.Branches.FindAsync(id);
+        if (!_currentUserService.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var tenantId = _currentUserService.TenantId.Value;
+        var branch = await _context.Branches.FirstOrDefaultAsync(b => b.BranchId == id && b.TenantId == tenantId);
         if (branch == null) return NotFound();
 
         return Ok(new BranchDto
@@ -90,18 +106,21 @@ public class BranchesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "TenantAdmin,HqManager")]
     public async Task<ActionResult<BranchDto>> CreateBranch(CreateBranchDto dto, CancellationToken cancellationToken)
     {
         if (!_currentUserService.TenantId.HasValue) 
             return Forbid();
 
+        var tenantId = _currentUserService.TenantId.Value;
+
         try
         {
-            await _subscriptionLimitService.EnsureCanCreateBranchAsync(_currentUserService.TenantId.Value, cancellationToken);
+            await _subscriptionLimitService.EnsureCanCreateBranchAsync(tenantId, cancellationToken);
 
             var branch = new Branch
             {
-                TenantId = _currentUserService.TenantId.Value,
+                TenantId = tenantId,
                 Name = dto.Name,
                 Location = dto.Location,
                 CustomThresholds = dto.CustomThresholds,
@@ -132,13 +151,17 @@ public class BranchesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "TenantAdmin,HqManager")]
     public async Task<IActionResult> UpdateBranch(int id, UpdateBranchDto dto, CancellationToken cancellationToken)
     {
-        var branch = await _context.Branches.FindAsync([id], cancellationToken);
-        if (branch == null) return NotFound();
-
-        if (_currentUserService.TenantId.HasValue && branch.TenantId != _currentUserService.TenantId.Value)
+        if (!_currentUserService.TenantId.HasValue)
+        {
             return Forbid();
+        }
+
+        var tenantId = _currentUserService.TenantId.Value;
+        var branch = await _context.Branches.FirstOrDefaultAsync(b => b.BranchId == id && b.TenantId == tenantId, cancellationToken);
+        if (branch == null) return NotFound();
 
         if (dto.IsActive && !branch.IsActive)
         {
@@ -164,9 +187,16 @@ public class BranchesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "TenantAdmin,HqManager")]
     public async Task<IActionResult> DeleteBranch(int id)
     {
-        var branch = await _context.Branches.FindAsync(id);
+        if (!_currentUserService.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var tenantId = _currentUserService.TenantId.Value;
+        var branch = await _context.Branches.FirstOrDefaultAsync(b => b.BranchId == id && b.TenantId == tenantId);
         if (branch == null) return NotFound();
 
         branch.IsActive = false; // Soft delete

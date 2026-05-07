@@ -5,7 +5,7 @@ namespace Kettan.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[AllowAnonymous]
+[Authorize(Roles = "SuperAdmin")]
 public class DebugController : ControllerBase
 {
     private readonly IWebHostEnvironment _env;
@@ -18,6 +18,11 @@ public class DebugController : ControllerBase
     [HttpGet("error-log")]
     public IActionResult GetErrorLog()
     {
+        if (!_env.IsDevelopment())
+        {
+            return NotFound();
+        }
+
         var logPath = Path.Combine(_env.ContentRootPath, "seed_error.txt");
         if (!System.IO.File.Exists(logPath))
         {
@@ -31,6 +36,11 @@ public class DebugController : ControllerBase
     [HttpGet("clear-log")]
     public IActionResult ClearLog()
     {
+        if (!_env.IsDevelopment())
+        {
+            return NotFound();
+        }
+
         var logPath = Path.Combine(_env.ContentRootPath, "seed_error.txt");
         if (System.IO.File.Exists(logPath))
         {
