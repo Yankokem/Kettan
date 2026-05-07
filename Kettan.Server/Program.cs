@@ -333,7 +333,6 @@ if (app.Environment.IsDevelopment())
 
         // 3. Fix Shipments table
         await db.Database.ExecuteSqlRawAsync(@"
-            await db.Database.ExecuteSqlRawAsync(@"
             IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Shipments]') AND name = 'ShippingCost')
             BEGIN
                 ALTER TABLE [Shipments] ADD [ShippingCost] decimal(18,2) NOT NULL DEFAULT 0.0;
@@ -463,5 +462,6 @@ app.MapGet("/api/debug/apply-migrations", async (ApplicationDbContext db) =>
         return Results.Problem($"Failed to apply migrations: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}");
     }
 });
+}
 
 app.Run();
