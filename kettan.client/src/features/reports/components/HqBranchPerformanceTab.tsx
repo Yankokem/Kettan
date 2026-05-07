@@ -143,30 +143,6 @@ export function HqBranchPerformanceTab({ startDate, endDate }: Props) {
         </Box>
       </Card>
 
-      {/* Comparative bar chart */}
-      {rows.length > 0 && (
-        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <EmojiEventsRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
-            <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>Branch Score Comparison</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {rows.map((row) => (
-              <Box key={row.branchId} sx={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 1.5, alignItems: 'center' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: row.rank === 1 ? '#C9A84C' : 'text.secondary', minWidth: 24 }}>
-                    #{row.rank}
-                  </Typography>
-                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {row.branchName}
-                  </Typography>
-                </Box>
-                <ScoreBar value={row.weightedScore} max={maxScore} />
-              </Box>
-            ))}
-          </Box>
-        </Card>
-      )}
 
       {/* Full leaderboard table */}
       <DataTable

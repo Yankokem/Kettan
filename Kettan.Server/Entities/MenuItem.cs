@@ -41,4 +41,5 @@ public class MenuItem : ITenantEntity
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<MenuItemIngredient> Ingredients { get; set; } = [];
+    public ICollection<MenuVariant> Variants { get; set; } = [];
 }

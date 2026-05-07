@@ -4,15 +4,17 @@ import type { MenuItem } from '../types';
 
 interface Props {
   item: MenuItem;
+  isInsufficientStock?: boolean;
 }
 
-export function MenuItemCard({ item }: Props) {
+export function MenuItemCard({ item, isInsufficientStock }: Props) {
   const safeSellingPrice = Number.isFinite(Number(item.sellingPrice)) ? Number(item.sellingPrice) : 0;
 
   const getStatusText = (status: string) => {
+    if (isInsufficientStock) return 'Insufficient Stock';
     switch (status) {
-      case 'Active': return 'Available';
-      case 'Inactive': return 'Unavailable';
+      case 'Active': return 'Active';
+      case 'Inactive': return 'Inactive';
       case 'Out of Stock': return 'Out of Stock';
       default: return status;
     }
@@ -76,6 +78,30 @@ export function MenuItemCard({ item }: Props) {
               </Box>
             )}
 
+            {/* Insufficient Stock Overlay */}
+            {isInsufficientStock && (
+              <Box 
+                sx={{ 
+                  position: 'absolute', 
+                  top: 8, 
+                  left: 8, 
+                  zIndex: 20,
+                  bgcolor: '#DC2626',
+                  color: '#FFFFFF',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  px: 1.2,
+                  py: 0.5,
+                  borderRadius: 1.5,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
+                }}
+              >
+                Insufficient Stock
+              </Box>
+            )}
+
             {/* Variants stacked in top right corner */}
             <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-end' }}>
               {item.variants?.map((variant, idx) => (
@@ -85,12 +111,12 @@ export function MenuItemCard({ item }: Props) {
                   size="small"
                   sx={{
                     fontWeight: 700,
-                    fontSize: 11,
+                    fontSize: 10,
                     bgcolor: variantColors[idx % variantColors.length],
                     color: variantTextColors[idx % variantTextColors.length],
                     backdropFilter: 'blur(4px)',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    height: 22
+                    height: 20
                   }}
                 />
               ))}
@@ -119,7 +145,7 @@ export function MenuItemCard({ item }: Props) {
               }}
             />
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-              {item.variants.length} variant{item.variants.length !== 1 ? 's' : ''}{totalIngredients > 0 ? ` • ${totalIngredients} ingredient${totalIngredients !== 1 ? 's' : ''}` : ''}
+              {item.variants?.length || 0} variant{(item.variants?.length || 0) !== 1 ? 's' : ''}{totalIngredients > 0 ? ` • ${totalIngredients} ing.` : ''}
             </Typography>
           </Box>
 
@@ -131,14 +157,11 @@ export function MenuItemCard({ item }: Props) {
               sx={{
                 height: 22,
                 fontSize: 10,
-                fontWeight: 800,
-                bgcolor: item.status === 'Active' ? 'rgba(84,107,63,0.08)' : item.status === 'Out of Stock' ? 'rgba(220, 38, 38, 0.08)' : 'rgba(107,76,42,0.06)',
-                color: item.status === 'Active' ? '#546B3F' : item.status === 'Out of Stock' ? '#991B1B' : '#6B7280',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                fontWeight: 700,
+                bgcolor: isInsufficientStock ? '#DC2626' : item.status === 'Active' ? '#16A34A' : '#6B7280',
+                color: '#FFFFFF',
+                letterSpacing: '0.02em',
                 borderRadius: 1,
-                border: '1px solid',
-                borderColor: item.status === 'Active' ? 'rgba(84,107,63,0.15)' : item.status === 'Out of Stock' ? 'rgba(220, 38, 38, 0.15)' : 'rgba(107,76,42,0.1)',
               }}
             />
             <Typography sx={{ fontWeight: 800, color: 'text.primary' }}>

@@ -27,13 +27,11 @@ function getErrorMessage(error: unknown): string {
   return axiosError.response?.data?.message ?? axiosError.message ?? 'Something went wrong.';
 }
 
-type SortOption = 'newest' | 'oldest' | 'shift-asc' | 'shift-desc';
+type SortOption = 'newest' | 'oldest';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
-  { value: 'shift-asc', label: 'Shift A-Z' },
-  { value: 'shift-desc', label: 'Shift Z-A' },
 ];
 
 function defaultStartDate() {
@@ -64,7 +62,6 @@ export function ConsumptionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [shiftFilter, setShiftFilter] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
@@ -101,21 +98,18 @@ export function ConsumptionPage() {
       const occurredDate = new Date(log.logDate);
       const fromDate = new Date(`${startDate}T00:00:00`);
       const toDate = new Date(`${endDate}T23:59:59`);
-      const shift = log.shift ?? '';
 
-      const matchesShift = !shiftFilter || shift === shiftFilter;
       const matchesDateRange = occurredDate >= fromDate && occurredDate <= toDate;
       const matchesQuery =
         !query ||
         (
           log.consumptionLogId.toString().includes(query) ||
-          shift.toLowerCase().includes(query) ||
           (log.remarks ?? '').toLowerCase().includes(query)
         );
 
-      return matchesShift && matchesDateRange && matchesQuery;
+      return matchesDateRange && matchesQuery;
     });
-  }, [endDate, safeRows, search, shiftFilter, startDate]);
+  }, [endDate, safeRows, search, startDate]);
 
   const sortedRows = useMemo(() => {
     const copy = [...filteredRows];
@@ -123,14 +117,6 @@ export function ConsumptionPage() {
     copy.sort((left, right) => {
       if (sortBy === 'oldest') {
         return new Date(left.logDate).getTime() - new Date(right.logDate).getTime();
-      }
-
-      if (sortBy === 'shift-asc') {
-        return (left.shift ?? '').localeCompare(right.shift ?? '');
-      }
-
-      if (sortBy === 'shift-desc') {
-        return (right.shift ?? '').localeCompare(left.shift ?? '');
       }
 
       return new Date(right.logDate).getTime() - new Date(left.logDate).getTime();
@@ -172,12 +158,6 @@ export function ConsumptionPage() {
           />
         );
       },
-    },
-    {
-      key: 'shift',
-      label: 'Shift',
-      width: 100,
-      render: (row) => <Typography sx={{ fontSize: 13 }}>{row.shift ?? '--'}</Typography>,
     },
     {
       key: 'remarks',
@@ -242,11 +222,11 @@ export function ConsumptionPage() {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              label="Shifts Covered"
-              value={new Set(safeRows.map((row) => row.shift ?? '--')).size}
-              icon={<ScheduleRoundedIcon />}
-              trend="up"
-              trendValue="Coverage"
+              label="Items Logged"
+              value={isLoading ? '...' : 'Data Set'}
+              icon={<ScaleRoundedIcon />}
+              trend="neutral"
+              trendValue="Recorded"
               accentClass="stat-accent-sage"
               iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
             />
@@ -277,7 +257,7 @@ export function ConsumptionPage() {
         }}
       >
         <SearchInput
-          placeholder="Search log ID, shift, or remarks..."
+          placeholder="Search log ID or remarks..."
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           sx={{ minWidth: 300, maxWidth: 420, flexShrink: 0 }}
@@ -301,18 +281,6 @@ export function ConsumptionPage() {
           options={SORT_OPTIONS}
         />
 
-        <FilterDropdown
-          label="Shift"
-          icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-          value={shiftFilter}
-          onChange={setShiftFilter}
-          minWidth={165}
-          options={[
-            { value: 'Morning', label: 'Morning' },
-            { value: 'Afternoon', label: 'Afternoon' },
-            { value: 'Evening', label: 'Evening' },
-          ]}
-        />
 
         <Button
           startIcon={<AddRoundedIcon />}

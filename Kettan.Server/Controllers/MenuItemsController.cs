@@ -6,6 +6,8 @@ using Kettan.Server.DTOs.MenuItems;
 using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Enums;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Kettan.Server.Controllers;
 
@@ -33,6 +35,9 @@ public class MenuItemsController : ControllerBase
 
         var rows = await _context.MenuItems
             .Include(m => m.MenuCategory)
+            .Include(m => m.Ingredients)
+            .Include(m => m.Variants)
+                .ThenInclude(v => v.Ingredients)
             .OrderBy(m => m.Name)
             .Select(m => new MenuItemDto
             {
@@ -46,7 +51,25 @@ public class MenuItemsController : ControllerBase
                 BasePrice = m.BasePrice,
                 Status = m.Status.ToString(),
                 CreatedAt = m.CreatedAt,
-                UpdatedAt = m.UpdatedAt
+                UpdatedAt = m.UpdatedAt,
+                Ingredients = m.Ingredients.Select(i => new MenuIngredientDto
+                {
+                    MenuItemIngredientId = i.MenuItemIngredientId,
+                    ItemId = i.ItemId,
+                    ItemName = string.Empty, // Minimal info for list
+                    QuantityPerUnit = i.QuantityPerUnit
+                }).ToList(),
+                Variants = m.Variants.Select(v => new VariantDto
+                {
+                    VariantId = v.VariantId,
+                    Name = v.Name,
+                    Price = v.Price,
+                    Ingredients = v.Ingredients.Select(vi => new MenuVariantIngredientDto
+                    {
+                        ItemId = vi.ItemId,
+                        Quantity = vi.Quantity
+                    }).ToList()
+                }).ToList()
             })
             .ToListAsync();
 

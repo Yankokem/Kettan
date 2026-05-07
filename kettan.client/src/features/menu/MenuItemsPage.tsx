@@ -16,12 +16,62 @@ import type { MenuItem } from './types';
 import { MenuItemCard } from './components/MenuItemCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { fetchMenuItems, type MenuItemDto } from './menuItemsApi';
+import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
+import { useAuthStore } from '../../store/useAuthStore';
+import { isHqRole } from '../../utils/roleHelpers';
+import type { InventoryItem } from '../hq-inventory/types';
 
-function toMenuCardItem(dto: MenuItemDto): MenuItem {
+function toMenuCardItem(dto: MenuItemDto, inventory: InventoryItem[]): MenuItem & { isInsufficientStock: boolean } {
   const safePrice = Number(dto.basePrice);
-  const status = dto.status === 'Active' || dto.status === 'Inactive' || dto.status === 'Out of Stock'
-    ? dto.status
-    : 'Inactive';
+  
+  // Standardize status: If it's 'Active' in DB, we show 'Active'.
+  const status = dto.status === 'Active' ? 'Active' : 'Inactive';
+
+  // Support both variants and Variants (case-sensitivity safety)
+  const rawVariants = (dto as any).variants || (dto as any).Variants || [];
+  
+  const variants = rawVariants.map((variant: any) => ({
+    id: String(variant.variantId || variant.VariantId),
+    name: variant.name || variant.Name,
+    price: Number(variant.price || variant.Price) || 0,
+    ingredients: (variant.ingredients || variant.Ingredients || []).map((ingredient: any) => ({
+      id: String(ingredient.variantIngredientId || ingredient.VariantIngredientId),
+      itemId: String(ingredient.itemId || ingredient.ItemId),
+      itemName: ingredient.itemName || ingredient.ItemName,
+      qtyPerUnit: Number(ingredient.quantity || ingredient.Quantity) || 0,
+      uom: '',
+    })),
+  }));
+
+  // Check stock availability
+  let isInsufficientStock = false;
+  
+  // A menu item is insufficient if ANY of its variants' ingredients exceed branch stock
+  for (const variant of variants) {
+    for (const ingredient of variant.ingredients) {
+      const invItem = inventory.find(i => String(i.id) === String(ingredient.itemId));
+      const availableStock = invItem?.totalStock ?? 0;
+      if (ingredient.qtyPerUnit > availableStock) {
+        isInsufficientStock = true;
+        break;
+      }
+    }
+    if (isInsufficientStock) break;
+  }
+
+  // Also check base ingredients if any (though usually they are in variants)
+  const rawIngredients = (dto as any).ingredients || (dto as any).Ingredients || [];
+  if (!isInsufficientStock && rawIngredients.length > 0) {
+    for (const ing of rawIngredients) {
+      const invItem = inventory.find(i => String(i.id) === String(ing.itemId || ing.ItemId));
+      const availableStock = invItem?.totalStock ?? 0;
+      const qty = Number(ing.quantityPerUnit || ing.QuantityPerUnit || 0);
+      if (qty > availableStock) {
+        isInsufficientStock = true;
+        break;
+      }
+    }
+  }
 
   return {
     id: String(dto.menuItemId),
@@ -32,18 +82,8 @@ function toMenuCardItem(dto: MenuItemDto): MenuItem {
     status,
     image: dto.imageUrl ?? undefined,
     createdAt: dto.createdAt,
-    variants: (dto.variants ?? []).map((variant) => ({
-      id: String(variant.variantId),
-      name: variant.name,
-      price: Number(variant.price) || 0,
-      ingredients: (variant.ingredients ?? []).map((ingredient) => ({
-        id: String(ingredient.variantIngredientId),
-        itemId: String(ingredient.itemId),
-        itemName: ingredient.itemName,
-        qtyPerUnit: Number(ingredient.quantity) || 0,
-        uom: '',
-      })),
-    })),
+    variants,
+    isInsufficientStock
   };
 }
 
@@ -52,13 +92,28 @@ export function MenuItemsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuthStore();
+  const showAdminActions = user?.role ? isHqRole(user.role) : false;
+
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
   useEffect(() => {
-    setLoading(true);
-    fetchMenuItems()
-      .then(setMenuItems)
-      .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
-      .finally(() => setLoading(false));
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [menuRows, invRows] = await Promise.all([
+          fetchMenuItems(),
+          fetchInventoryItems(undefined, { hqOnly: false })
+        ]);
+        setMenuItems(menuRows);
+        setInventory(invRows);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setLoading(false);
+      }
+    };
+    void loadData();
   }, []);
 
   const filteredItems = menuItems.filter(item => {
@@ -143,14 +198,16 @@ export function MenuItemsPage() {
           label="Sort "
           icon={<SortRoundedIcon fontSize="small" />}
         />
-        <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-          <Link to="/menu/categories" style={{ textDecoration: 'none' }}>
-            <Button variant="outlined" startIcon={<CategoryRoundedIcon />}>Categories</Button>
-          </Link>
-          <Link to="/menu/add" style={{ textDecoration: 'none' }}>
-            <Button startIcon={<LocalCafeRoundedIcon />}>Add Menu Item</Button>
-          </Link>
-        </Box>
+        {showAdminActions && (
+          <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+            <Link to="/menu/categories" style={{ textDecoration: 'none' }}>
+              <Button variant="outlined" startIcon={<CategoryRoundedIcon />}>Categories</Button>
+            </Link>
+            <Link to="/menu/add" style={{ textDecoration: 'none' }}>
+              <Button startIcon={<LocalCafeRoundedIcon />}>Add Menu Item</Button>
+            </Link>
+          </Box>
+        )}
       </Box>
 
       <DataStateWrapper
@@ -162,11 +219,17 @@ export function MenuItemsPage() {
         emptyIcon={<LocalCafeRoundedIcon />}
       >
         <Grid container spacing={3} columns={60}>
-          {filteredItems.map(item => (
-            <Grid key={item.menuItemId} size={{ xs: 60, sm: 20, md: 20, lg: 12 }}>
-              <MenuItemCard item={toMenuCardItem(item)} />
-            </Grid>
-          ))}
+          {filteredItems.map(item => {
+            const cardItem = toMenuCardItem(item, inventory);
+            return (
+              <Grid key={item.menuItemId} size={{ xs: 60, sm: 20, md: 20, lg: 12 }}>
+                <MenuItemCard 
+                  item={cardItem} 
+                  isInsufficientStock={cardItem.isInsufficientStock}
+                />
+              </Grid>
+            );
+          })}
         </Grid>
       </DataStateWrapper>
     </Box>

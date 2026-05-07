@@ -32,4 +32,6 @@ public class MenuVariant
     public DateTime? DeletedAt { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public ICollection<VariantIngredient> Ingredients { get; set; } = [];
 }

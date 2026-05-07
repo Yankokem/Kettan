@@ -116,46 +116,6 @@ export function HqReturnsLossTab({ startDate, endDate }: Props) {
 
   return (
     <Box sx={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-      {/* KPI cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' }, gap: 2.5 }}>
-        <StatCard
-          label="Total Returns Filed"
-          value={overview.totalReturns}
-          trend="neutral"
-          trendValue={`${overview.averageReturnRate.toFixed(1)}% avg return rate`}
-          icon={<ReplayRoundedIcon />}
-          accentClass="stat-accent-brown"
-          iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
-        />
-        <StatCard
-          label="Total Money Lost"
-          value={toPeso(overview.totalMoneyLost)}
-          trend={overview.totalMoneyLost > 0 ? 'down' : 'neutral'}
-          trendValue={`${overview.creditedCount} credited returns`}
-          icon={<MonetizationOnRoundedIcon />}
-          accentClass="stat-accent-gold"
-          iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
-        />
-        <StatCard
-          label="Replaced Returns"
-          value={overview.replacedCount}
-          trend="neutral"
-          trendValue="Items resent to branch"
-          icon={<CheckCircleRoundedIcon />}
-          accentClass="stat-accent-sage"
-          iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
-        />
-        <StatCard
-          label="Rejected Returns"
-          value={overview.rejectedCount}
-          trend="neutral"
-          trendValue="Claims denied"
-          icon={<CancelRoundedIcon />}
-          accentClass="stat-accent-brown"
-          iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
-        />
-      </Box>
-
       {/* Resolution breakdown visual */}
       {overview.totalReturns > 0 && (
         <Box sx={{ display: 'flex', gap: 2, p: 2.5, borderRadius: '14px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>

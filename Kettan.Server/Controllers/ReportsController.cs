@@ -34,12 +34,11 @@ public class ReportsController : ControllerBase
         _currentUser = currentUser;
     }
 
-    // ── Existing endpoints (HQ-only) ─────────────────────────────────────────
+    // ── Data Endpoints ──────────────────────────────────────────────────────
 
     [HttpGet("inventory-summary")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<InventorySummaryDto>> GetInventorySummary(
-        [FromQuery] int? branchId = null)
+    public async Task<ActionResult<InventorySummaryDto>> GetInventorySummary([FromQuery] int? branchId = null)
     {
         try
         {
@@ -54,9 +53,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("order-fulfillment")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<OrderFulfillmentMetricsDto>> GetFulfillmentMetrics(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+    public async Task<ActionResult<OrderFulfillmentMetricsDto>> GetFulfillmentMetrics([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         try
         {
@@ -71,9 +68,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("consumption-trends")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<List<ConsumptionTrendDto>>> GetConsumptionTrends(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+    public async Task<ActionResult<List<ConsumptionTrendDto>>> GetConsumptionTrends([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var result = await _service.GetConsumptionTrendsAsync(startDate, endDate);
         return Ok(result);
@@ -81,36 +76,15 @@ public class ReportsController : ControllerBase
 
     [HttpGet("branch-scorecard")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager")]
-    public async Task<ActionResult<List<BranchScorecardDto>>> GetBranchScorecard(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+    public async Task<ActionResult<List<BranchScorecardDto>>> GetBranchScorecard([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var result = await _service.CalculateBranchScoresAsync(startDate, endDate);
         return Ok(result);
     }
 
-    [HttpGet("eoq/{itemId}")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<EoqResultDto>> GetEoq(int itemId)
-    {
-        try
-        {
-            var result = await _service.CalculateEOQAsync(itemId);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-    }
-
-    // ── New HQ endpoints ─────────────────────────────────────────────────────
-
     [HttpGet("hq/overview")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<HqOverviewDto>> GetHqOverview(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+    public async Task<ActionResult<HqOverviewDto>> GetHqOverview([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         try
         {
@@ -125,9 +99,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("hq/cost-trend")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<List<CostTrendPointDto>>> GetCostTrend(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+    public async Task<ActionResult<List<CostTrendPointDto>>> GetCostTrend([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var result = await _service.GetCostTrendAsync(startDate, endDate);
         return Ok(result);
@@ -135,9 +107,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("hq/branch-spend")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<List<BranchSpendDto>>> GetBranchSpend(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+    public async Task<ActionResult<List<BranchSpendDto>>> GetBranchSpend([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var result = await _service.GetBranchSpendAsync(startDate, endDate);
         return Ok(result);
@@ -153,28 +123,15 @@ public class ReportsController : ControllerBase
 
     [HttpGet("hq/wastage")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<List<WastageRecordDto>>> GetWastage(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate,
-        [FromQuery] int? branchId = null)
+    public async Task<ActionResult<List<WastageRecordDto>>> GetWastage([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? branchId = null)
     {
         var result = await _service.GetWastageRecordsAsync(startDate, endDate, branchId);
         return Ok(result);
     }
 
-    [HttpGet("hq/eoq-suggestions")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<List<EoqSuggestionDto>>> GetEoqSuggestions()
-    {
-        var result = await _service.GetEoqSuggestionsAsync();
-        return Ok(result);
-    }
-
     [HttpGet("hq/returns-overview")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<ReturnsLossOverviewDto>> GetReturnsOverview(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+    public async Task<ActionResult<ReturnsLossOverviewDto>> GetReturnsOverview([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var result = await _service.GetReturnsLossOverviewAsync(startDate, endDate);
         return Ok(result);
@@ -182,116 +139,9 @@ public class ReportsController : ControllerBase
 
     [HttpGet("hq/returns-records")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<List<ReturnLossRecordDto>>> GetReturnRecords(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+    public async Task<ActionResult<List<ReturnLossRecordDto>>> GetReturnRecords([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var result = await _service.GetReturnLossRecordsAsync(startDate, endDate);
-        return Ok(result);
-    }
-
-
-    // ── New Branch endpoints ──────────────────────────────────────────────────
-
-    [HttpGet("branch/overview")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
-    public async Task<ActionResult<BranchOverviewDto>> GetBranchOverview(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
-    {
-        var branchId = _currentUser.BranchId;
-        if (!branchId.HasValue)
-            return BadRequest(new { message = "Branch context required." });
-
-        try
-        {
-            var result = await _service.GetBranchOverviewAsync(branchId.Value, startDate, endDate);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
-
-    [HttpGet("branch/inventory-summary")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
-    public async Task<ActionResult<InventorySummaryDto>> GetBranchInventorySummary()
-    {
-        var branchId = _currentUser.BranchId;
-        if (!branchId.HasValue)
-            return BadRequest(new { message = "Branch context required." });
-
-        var result = await _service.GetInventorySummaryAsync(branchId.Value);
-        return Ok(result);
-    }
-
-    [HttpGet("branch/wastage")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
-    public async Task<ActionResult<List<WastageRecordDto>>> GetBranchWastage(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
-    {
-        var branchId = _currentUser.BranchId;
-        if (!branchId.HasValue)
-            return BadRequest(new { message = "Branch context required." });
-
-        var result = await _service.GetBranchWastageAsync(branchId.Value, startDate, endDate);
-        return Ok(result);
-    }
-
-    [HttpGet("branch/supply-history")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
-    public async Task<ActionResult<List<BranchSupplyHistoryDto>>> GetBranchSupplyHistory(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
-    {
-        var branchId = _currentUser.BranchId;
-        if (!branchId.HasValue)
-            return BadRequest(new { message = "Branch context required." });
-
-        var result = await _service.GetBranchSupplyHistoryAsync(branchId.Value, startDate, endDate);
-        return Ok(result);
-    }
-
-    [HttpGet("branch/performance")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
-    public async Task<ActionResult<BranchPerformanceDetailDto>> GetBranchPerformance(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
-    {
-        var branchId = _currentUser.BranchId;
-        if (!branchId.HasValue)
-            return BadRequest(new { message = "Branch context required." });
-
-        var result = await _service.GetBranchPerformanceDetailAsync(branchId.Value, startDate, endDate);
-        return Ok(result);
-    }
-
-
-    [HttpGet("branch/eoq-suggestions")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
-    public async Task<ActionResult<List<EoqSuggestionDto>>> GetBranchEoqSuggestions()
-    {
-        var branchId = _currentUser.BranchId;
-        if (!branchId.HasValue)
-            return BadRequest(new { message = "Branch context required." });
-
-        var result = await _service.GetEoqSuggestionsAsync(branchId.Value);
-        return Ok(result);
-    }
-
-    [HttpGet("branch/sales-trend")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
-    public async Task<ActionResult<List<TrendPointDto>>> GetBranchSalesTrend(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
-    {
-        var branchId = _currentUser.BranchId;
-        if (!branchId.HasValue)
-            return BadRequest(new { message = "Branch context required." });
-
-        var result = await _service.GetBranchSalesTrendAsync(branchId.Value, startDate, endDate);
         return Ok(result);
     }
 
@@ -311,111 +161,202 @@ public class ReportsController : ControllerBase
         return Ok(alerts);
     }
 
+    // ── Branch endpoints ──────────────────────────────────────────────────
+
+    [HttpGet("branch/overview")]
+    [Authorize(Roles = "BranchOwner,BranchManager")]
+    public async Task<ActionResult<BranchOverviewDto>> GetBranchOverview([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    {
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue) return BadRequest(new { message = "Branch context required." });
+        var result = await _service.GetBranchOverviewAsync(branchId.Value, startDate, endDate);
+        return Ok(result);
+    }
+
+    [HttpGet("branch/inventory-summary")]
+    [Authorize(Roles = "BranchOwner,BranchManager")]
+    public async Task<ActionResult<InventorySummaryDto>> GetBranchInventorySummary()
+    {
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue) return BadRequest(new { message = "Branch context required." });
+        var result = await _service.GetInventorySummaryAsync(branchId.Value);
+        return Ok(result);
+    }
+
+    [HttpGet("branch/wastage")]
+    [Authorize(Roles = "BranchOwner,BranchManager")]
+    public async Task<ActionResult<List<WastageRecordDto>>> GetBranchWastage([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    {
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue) return BadRequest(new { message = "Branch context required." });
+        var result = await _service.GetBranchWastageAsync(branchId.Value, startDate, endDate);
+        return Ok(result);
+    }
+
+    [HttpGet("branch/supply-history")]
+    [Authorize(Roles = "BranchOwner,BranchManager")]
+    public async Task<ActionResult<List<BranchSupplyHistoryDto>>> GetBranchSupplyHistory([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    {
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue) return BadRequest(new { message = "Branch context required." });
+        var result = await _service.GetBranchSupplyHistoryAsync(branchId.Value, startDate, endDate);
+        return Ok(result);
+    }
+
+    [HttpGet("branch/performance")]
+    [Authorize(Roles = "BranchOwner,BranchManager")]
+    public async Task<ActionResult<BranchPerformanceDetailDto>> GetBranchPerformance([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    {
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue) return BadRequest(new { message = "Branch context required." });
+        var result = await _service.GetBranchPerformanceDetailAsync(branchId.Value, startDate, endDate);
+        return Ok(result);
+    }
+
+    [HttpGet("branch/sales-trend")]
+    [Authorize(Roles = "BranchOwner,BranchManager")]
+    public async Task<ActionResult<List<TrendPointDto>>> GetBranchSalesTrend([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    {
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue) return BadRequest(new { message = "Branch context required." });
+        var result = await _service.GetBranchSalesTrendAsync(branchId.Value, startDate, endDate);
+        return Ok(result);
+    }
+
     [HttpGet("branch/low-stock")]
     [Authorize(Roles = "BranchOwner,BranchManager,BranchStaff")]
     public async Task<ActionResult<List<LowStockAlertDto>>> GetBranchLowStock()
     {
-        var branchId = int.Parse(User.FindFirst("BranchId")?.Value ?? "0");
-        if (branchId == 0) return Forbid();
-        
-        var alerts = await _service.GetLowStockAlertsAsync(branchId);
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue) return BadRequest(new { message = "Branch context required." });
+        var alerts = await _service.GetLowStockAlertsAsync(branchId.Value);
         return Ok(alerts);
     }
 
     // ── Export endpoints ─────────────────────────────────────────────────────
 
     [HttpGet("inventory/export")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<IActionResult> ExportInventory([FromQuery] string format = "csv")
+    public async Task<IActionResult> ExportInventory([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string format = "csv")
     {
-        var items = await _context.Items
-            .Include(i => i.InventoryCategory)
-            .Include(i => i.ItemCategory)
-            .Select(i => new
-            {
-                i.ItemId,
-                i.SKU,
-                i.Name,
-                i.Unit,
-                InventoryCategory = i.InventoryCategory != null ? i.InventoryCategory.Name : "",
-                ItemCategory = i.ItemCategory != null ? i.ItemCategory.Name : "",
-                i.DefaultThreshold,
-                i.UnitCost,
-                i.SellingPrice
-            })
-            .ToListAsync();
-
+        var data = await _service.GetAllBranchInventoryValuationsAsync();
         if (format.ToLower() == "pdf")
         {
-            var pdfBytes = _pdfExportService.ExportToPdf("Inventory Report", items);
-            return File(pdfBytes, "application/pdf", "inventory_report.pdf");
+            var pdfBytes = _pdfExportService.ExportToPdf("Inventory Valuation Report", data);
+            return File(pdfBytes, "application/pdf", "inventory_valuation.pdf");
         }
-        else
-        {
-            var csvBytes = _csvExportService.ExportToCsv(items);
-            return File(csvBytes, "text/csv", "inventory_report.csv");
-        }
+        var csvBytes = _csvExportService.ExportToCsv(data);
+        return File(csvBytes, "text/csv", "inventory_valuation.csv");
     }
 
     [HttpGet("orders/export")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<IActionResult> ExportOrders([FromQuery] string format = "csv")
+    public async Task<IActionResult> ExportOrders([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string format = "csv")
     {
-        var orders = await _context.Orders
-            .Include(o => o.SupplyRequest)
-                .ThenInclude(sr => sr != null ? sr.Branch : null)
+        var tenantId = _currentUser.TenantId;
+        var branchId = _currentUser.BranchId;
+
+        var query = _context.Orders
+            .Include(o => o.SupplyRequest).ThenInclude(sr => sr != null ? sr.Branch : null)
+            .Include(o => o.Allocations).ThenInclude(a => a.Batch).ThenInclude(b => b.Item)
+            .Where(o => o.TenantId == tenantId && o.PushedToFulfillmentAt >= startDate && o.PushedToFulfillmentAt <= endDate);
+
+        if (branchId.HasValue)
+            query = query.Where(o => o.SupplyRequest != null && o.SupplyRequest.BranchId == branchId.Value);
+
+        var orders = await query
+            .OrderByDescending(o => o.PushedToFulfillmentAt)
             .Select(o => new
             {
                 o.OrderId,
-                o.RequestId,
-                BranchName = o.SupplyRequest != null && o.SupplyRequest.Branch != null
-                    ? o.SupplyRequest.Branch.Name : "",
+                Date = o.PushedToFulfillmentAt,
+                Branch = o.SupplyRequest != null && o.SupplyRequest.Branch != null ? o.SupplyRequest.Branch.Name : "HQ",
                 o.Status,
-                o.PushedToFulfillmentAt
+                TotalValue = o.Allocations.Sum(a => a.QuantityPicked * (a.Batch != null ? a.Batch.Item.UnitCost : 0))
             })
-            .OrderByDescending(o => o.PushedToFulfillmentAt)
             .ToListAsync();
 
         if (format.ToLower() == "pdf")
         {
-            var pdfBytes = _pdfExportService.ExportToPdf("Orders Report", orders);
+            var pdfBytes = _pdfExportService.ExportToPdf("Sales & Orders Report", orders);
             return File(pdfBytes, "application/pdf", "orders_report.pdf");
         }
-        else
-        {
-            var csvBytes = _csvExportService.ExportToCsv(orders);
-            return File(csvBytes, "text/csv", "orders_report.csv");
-        }
+        var csvBytes = _csvExportService.ExportToCsv(orders);
+        return File(csvBytes, "text/csv", "orders_report.csv");
     }
 
     [HttpGet("returns/export")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<IActionResult> ExportReturns([FromQuery] string format = "csv")
+    public async Task<IActionResult> ExportReturns([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string format = "csv")
     {
-        var returns = await _context.Returns
-            .Include(r => r.Branch)
-            .Select(r => new
-            {
-                r.ReturnId,
-                r.OrderId,
-                BranchName = r.Branch != null ? r.Branch.Name : "",
-                r.Resolution,
-                r.Reason,
-                r.CreditAmount,
-                r.LoggedAt
-            })
-            .OrderByDescending(r => r.LoggedAt)
+        var data = await _service.GetReturnLossRecordsAsync(startDate, endDate);
+        if (format.ToLower() == "pdf")
+        {
+            var pdfBytes = _pdfExportService.ExportToPdf("Returns & Losses Report", data);
+            return File(pdfBytes, "application/pdf", "returns_report.pdf");
+        }
+        var csvBytes = _csvExportService.ExportToCsv(data);
+        return File(csvBytes, "text/csv", "returns_report.csv");
+    }
+
+    [HttpGet("staff/export")]
+    public async Task<IActionResult> ExportStaff([FromQuery] string format = "csv")
+    {
+        var tenantId = _currentUser.TenantId;
+        var branchId = _currentUser.BranchId;
+        var query = _context.Employees.Include(e => e.Branch).Where(e => e.TenantId == tenantId && !e.IsDeleted);
+        if (branchId.HasValue) query = query.Where(e => e.BranchId == branchId.Value);
+
+        var staff = await query.Select(e => new
+        {
+            FullName = e.FirstName + " " + e.LastName,
+            Role = e.Position,
+            Branch = e.Branch != null ? e.Branch.Name : "HQ",
+            e.Status,
+            JoinedAt = e.DateHired
+        }).ToListAsync();
+
+        if (format.ToLower() == "pdf")
+        {
+            var pdfBytes = _pdfExportService.ExportToPdf("Staff Report", staff);
+            return File(pdfBytes, "application/pdf", "staff_report.pdf");
+        }
+        var csvBytes = _csvExportService.ExportToCsv(staff);
+        return File(csvBytes, "text/csv", "staff_report.csv");
+    }
+
+    [HttpGet("audit-logs/export")]
+    public async Task<IActionResult> ExportAuditLogs([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string format = "csv")
+    {
+        var tenantId = _currentUser.TenantId;
+        var logs = await _context.AuditLogs.Include(l => l.User)
+            .Where(l => l.TenantId == tenantId && l.OccurredAt >= startDate && l.OccurredAt <= endDate)
+            .OrderByDescending(l => l.OccurredAt)
+            .Select(l => new { Timestamp = l.OccurredAt, User = l.User != null ? l.User.FullName : "System", l.Action, EntityType = l.EntityName, l.OldValues, l.NewValues })
             .ToListAsync();
 
         if (format.ToLower() == "pdf")
         {
-            var pdfBytes = _pdfExportService.ExportToPdf("Returns Report", returns);
-            return File(pdfBytes, "application/pdf", "returns_report.pdf");
+            var pdfBytes = _pdfExportService.ExportToPdf("System Audit Logs", logs);
+            return File(pdfBytes, "application/pdf", "audit_logs.pdf");
         }
-        else
+        var csvBytes = _csvExportService.ExportToCsv(logs);
+        return File(csvBytes, "text/csv", "audit_logs.csv");
+    }
+
+    [HttpGet("consumption/export")]
+    public async Task<IActionResult> ExportConsumption([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string format = "csv")
+    {
+        var branchId = _currentUser.BranchId;
+        if (!branchId.HasValue) return BadRequest(new { message = "Branch context required." });
+        var logs = await _context.ConsumptionLogItems.Include(i => i.ConsumptionLog).Include(i => i.Item)
+            .Where(i => i.ConsumptionLog != null && i.ConsumptionLog.BranchId == branchId.Value && i.ConsumptionLog.LogDate >= startDate && i.ConsumptionLog.LogDate <= endDate)
+            .Select(i => new { Date = i.ConsumptionLog!.LogDate, Item = i.Item != null ? i.Item.Name : "Unknown", i.Quantity, Unit = i.Item != null ? i.Item.Unit : "", i.ConsumptionLog.Method, i.ConsumptionLog.Remarks })
+            .ToListAsync();
+
+        if (format.ToLower() == "pdf")
         {
-            var csvBytes = _csvExportService.ExportToCsv(returns);
-            return File(csvBytes, "text/csv", "returns_report.csv");
+            var pdfBytes = _pdfExportService.ExportToPdf("Branch Consumption Report", logs);
+            return File(pdfBytes, "application/pdf", "consumption_report.pdf");
         }
+        var csvBytes = _csvExportService.ExportToCsv(logs);
+        return File(csvBytes, "text/csv", "consumption_report.csv");
     }
 }

@@ -273,7 +273,8 @@ public class AnalyticsService : IAnalyticsService
                     .ThenInclude(b => b.Item)
             .Include(o => o.Shipment)
             .Where(o => o.TenantId == tenantId
-                && o.Status == OrderStatus.Delivered
+                && o.Status >= OrderStatus.Dispatched
+                && o.Status != OrderStatus.Cancelled
                 && o.PushedToFulfillmentAt >= startDate
                 && o.PushedToFulfillmentAt <= endDate)
             .ToListAsync();
@@ -310,7 +311,8 @@ public class AnalyticsService : IAnalyticsService
                 .ThenInclude(a => a.Batch)
                     .ThenInclude(b => b.Item)
             .Where(o => o.TenantId == tenantId
-                && o.Status == OrderStatus.Delivered
+                && o.Status >= OrderStatus.Dispatched
+                && o.Status != OrderStatus.Cancelled
                 && o.PushedToFulfillmentAt >= startDate
                 && o.PushedToFulfillmentAt <= endDate)
             .ToListAsync();
