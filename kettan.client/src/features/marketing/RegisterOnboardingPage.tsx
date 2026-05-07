@@ -203,7 +203,7 @@ export function RegisterOnboardingPage() {
         background: "linear-gradient(135deg, #FDFAF5 0%, #F5EDD8 50%, #EDE0C4 100%)",
       }}
     >
-      <StaticMotionDiv className="w-full max-w-md px-6 py-12" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <StaticMotionDiv className="w-full max-w-6xl px-6 py-12" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Link
           to={`/market/register/otp?email=${encodeURIComponent(email)}&plan=${encodeURIComponent(planId)}` as any}
           className="inline-flex items-center gap-1.5 mb-7 text-sm"
@@ -213,124 +213,176 @@ export function RegisterOnboardingPage() {
           Back to OTP step
         </Link>
 
-        <h1 style={{ fontSize: "1.7rem", fontWeight: 800, color: "#2C1A0E", marginBottom: "6px", letterSpacing: "-0.02em" }}>
-          Complete registration
-        </h1>
-        <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "18px" }}>
-          Verified email: <span style={{ fontWeight: 700 }}>{email || "-"}</span>
-        </p>
-
-        <div
-          className="flex items-center justify-between px-4 py-3 rounded-xl mb-6"
-          style={{
-            backgroundColor: planInfo.bg,
-            border: `1.5px solid ${planInfo.color}30`,
-            boxShadow: "0 2px 12px rgba(107,76,42,0.08)",
-          }}
-        >
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <p style={{ fontSize: "11px", color: planInfo.color, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Selected Plan
+            <h1 style={{ fontSize: "2rem", fontWeight: 800, color: "#2C1A0E", marginBottom: "4px", letterSpacing: "-0.02em" }}>
+              Complete registration
+            </h1>
+            <p style={{ fontSize: "15px", color: "#5C4A37" }}>
+              Setting up your workspace for <span style={{ fontWeight: 700 }}>{email || "-"}</span>
             </p>
-            <p style={{ fontSize: "14px", fontWeight: 700, color: planInfo.color }}>{planInfo.label}</p>
           </div>
-          <div style={{ fontSize: "14px", fontWeight: 700, color: planInfo.color }}>{planInfo.price}</div>
+
+          <div
+            className="flex items-center gap-4 px-5 py-3 rounded-2xl"
+            style={{
+              backgroundColor: planInfo.bg,
+              border: `1.5px solid ${planInfo.color}30`,
+              boxShadow: "0 4px 15px rgba(107,76,42,0.06)",
+            }}
+          >
+            <div>
+              <p style={{ fontSize: "10px", color: planInfo.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>
+                Selected Plan
+              </p>
+              <p style={{ fontSize: "16px", fontWeight: 800, color: planInfo.color }}>{planInfo.label}</p>
+            </div>
+            <div className="h-8 w-px bg-current opacity-10" />
+            <div style={{ fontSize: "16px", fontWeight: 800, color: planInfo.color }}>{planInfo.price}</div>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit}>
             {submitError ? (
-              <div className="rounded-lg px-3 py-2" style={{ backgroundColor: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}>
-                <p style={{ fontSize: "12px", color: "#B91C1C", fontWeight: 600 }}>{submitError}</p>
+              <div className="rounded-xl px-4 py-3 mb-8" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1.5px solid rgba(239,68,68,0.2)" }}>
+                <p style={{ fontSize: "13px", color: "#B91C1C", fontWeight: 600 }}>{submitError}</p>
               </div>
             ) : null}
 
-            {errors.email ? <p style={{ fontSize: "12px", color: "#EF4444" }}>{errors.email}</p> : null}
-            {errors.verificationToken ? <p style={{ fontSize: "12px", color: "#EF4444" }}>{errors.verificationToken}</p> : null}
-
-            <MarketingAuthInput label="Company Name" icon={Building2} value={form.companyName} onChange={(value) => setForm({ ...form, companyName: value })} placeholder="e.g. Brewed & True Coffee Co." error={errors.companyName} maxLength={100} />
-            <MarketingAuthInput label="Legal Name" icon={Landmark} value={form.legalName} onChange={(value) => setForm({ ...form, legalName: value })} placeholder="Official registered business name" error={errors.legalName} maxLength={180} />
-            <MarketingAuthInput label="Tax ID" icon={Landmark} value={form.taxId} onChange={(value) => setForm({ ...form, taxId: value })} placeholder="e.g. 000-123-456-000" error={errors.taxId} maxLength={32} />
-            <MarketingAuthInput label="Business Website (Optional)" icon={Globe} value={form.website} onChange={(value) => setForm({ ...form, website: value })} placeholder="e.g. kettan.coffee" error={errors.website} maxLength={255} />
-            <MarketingAuthInput label="Full Name" icon={User} value={form.fullName} onChange={(value) => setForm({ ...form, fullName: value })} placeholder="e.g. Juan dela Cruz" error={errors.fullName} maxLength={255} />
-            <MarketingAuthInput label="Phone Contact" icon={Phone} value={form.phoneContact} onChange={(value) => setForm({ ...form, phoneContact: value })} placeholder="e.g. +63 2 8123 4567" error={errors.phoneContact} maxLength={50} />
-            <MarketingAuthInput label="Telephone (Optional)" icon={Phone} value={form.telephone} onChange={(value) => setForm({ ...form, telephone: value })} placeholder="Landline number" error={errors.telephone} maxLength={20} />
-            <MarketingAuthInput label="Billing Email (Optional)" icon={Mail} value={form.billingEmail} onChange={(value) => setForm({ ...form, billingEmail: value })} placeholder="finance@company.com" error={errors.billingEmail} maxLength={254} />
-            <MarketingAuthInput label="Support Email (Optional)" icon={Mail} value={form.supportEmail} onChange={(value) => setForm({ ...form, supportEmail: value })} placeholder="support@company.com" error={errors.supportEmail} maxLength={254} />
-
-            <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2C1A0E", marginBottom: "6px" }}>
-                Headquarters Address
-              </label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-4 pointer-events-none">
-                  <MapPinHouse size={16} style={{ color: "#8C6B43" }} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-10">
+              {/* Section 1: Business Identity */}
+              <div className="space-y-6 bg-white/40 backdrop-blur-sm p-6 rounded-3xl border border-[#6B4C2A15] shadow-sm">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-[#6B4C2A10] flex items-center justify-center">
+                    <Building2 size={18} style={{ color: "#6B4C2A" }} />
+                  </div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#2C1A0E" }}>Business Identity</h3>
                 </div>
-                <textarea
-                  value={form.headquartersAddress}
-                  onChange={(event) => setForm({ ...form, headquartersAddress: event.target.value })}
-                  placeholder="Full company address"
-                  maxLength={500}
-                  rows={3}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl outline-none transition-all duration-200"
-                  style={{
-                    border: errors.headquartersAddress ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.2)",
-                    backgroundColor: "#FDFAF5",
-                    fontSize: "14px",
-                    color: "#2C1A0E",
-                    resize: "vertical",
-                    boxShadow: "0 2px 8px rgba(107,76,42,0.06)",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08), 0 4px 12px rgba(107,76,42,0.12)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = "0 2px 8px rgba(107,76,42,0.06)";
-                  }}
-                />
+
+                <div className="space-y-4">
+                  <MarketingAuthInput label="Company Name" icon={Building2} value={form.companyName} onChange={(value) => setForm({ ...form, companyName: value })} placeholder="e.g. Brewed & True Coffee Co." error={errors.companyName} maxLength={100} />
+                  <MarketingAuthInput label="Legal Name" icon={Landmark} value={form.legalName} onChange={(value) => setForm({ ...form, legalName: value })} placeholder="Official business name" error={errors.legalName} maxLength={180} />
+                  <MarketingAuthInput label="Tax ID" icon={Landmark} value={form.taxId} onChange={(value) => setForm({ ...form, taxId: value })} placeholder="e.g. 000-123-456-000" error={errors.taxId} maxLength={32} />
+                  <MarketingAuthInput label="Business Website (Optional)" icon={Globe} value={form.website} onChange={(value) => setForm({ ...form, website: value })} placeholder="e.g. kettan.coffee" error={errors.website} maxLength={255} />
+                  
+                  <div>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2C1A0E", marginBottom: "6px" }}>
+                      Headquarters Address
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-3.5 top-4 pointer-events-none">
+                        <MapPinHouse size={16} style={{ color: "#8C6B43" }} />
+                      </div>
+                      <textarea
+                        value={form.headquartersAddress}
+                        onChange={(event) => setForm({ ...form, headquartersAddress: event.target.value })}
+                        placeholder="Full company address"
+                        maxLength={500}
+                        rows={3}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl outline-none transition-all duration-200"
+                        style={{
+                          border: errors.headquartersAddress ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.2)",
+                          backgroundColor: "#FDFAF5",
+                          fontSize: "14px",
+                          color: "#2C1A0E",
+                          resize: "none",
+                          boxShadow: "0 2px 8px rgba(107,76,42,0.06)",
+                        }}
+                      />
+                    </div>
+                    {errors.headquartersAddress ? <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "4px" }}>{errors.headquartersAddress}</p> : null}
+                  </div>
+                </div>
               </div>
-              {errors.headquartersAddress ? <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "4px" }}>{errors.headquartersAddress}</p> : null}
+
+              {/* Section 2: Contact Details */}
+              <div className="space-y-6 bg-white/40 backdrop-blur-sm p-6 rounded-3xl border border-[#6B4C2A15] shadow-sm">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-[#6B4C2A10] flex items-center justify-center">
+                    <User size={18} style={{ color: "#6B4C2A" }} />
+                  </div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#2C1A0E" }}>Contact Details</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <MarketingAuthInput label="Owner Full Name" icon={User} value={form.fullName} onChange={(value) => setForm({ ...form, fullName: value })} placeholder="e.g. Juan dela Cruz" error={errors.fullName} maxLength={255} />
+                  <MarketingAuthInput label="Mobile Phone" icon={Phone} value={form.phoneContact} onChange={(value) => setForm({ ...form, phoneContact: value })} placeholder="e.g. +63 2 8123 4567" error={errors.phoneContact} maxLength={50} />
+                  <MarketingAuthInput label="Landline (Optional)" icon={Phone} value={form.telephone} onChange={(value) => setForm({ ...form, telephone: value })} placeholder="Landline number" error={errors.telephone} maxLength={20} />
+                  <MarketingAuthInput label="Billing Email (Optional)" icon={Mail} value={form.billingEmail} onChange={(value) => setForm({ ...form, billingEmail: value })} placeholder="finance@company.com" error={errors.billingEmail} maxLength={254} />
+                  <MarketingAuthInput label="Support Email (Optional)" icon={Mail} value={form.supportEmail} onChange={(value) => setForm({ ...form, supportEmail: value })} placeholder="support@company.com" error={errors.supportEmail} maxLength={254} />
+                </div>
+              </div>
+
+              {/* Section 3: Account Credentials */}
+              <div className="space-y-6 bg-white/40 backdrop-blur-sm p-6 rounded-3xl border border-[#6B4C2A15] shadow-sm">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-[#6B4C2A10] flex items-center justify-center">
+                    <Lock size={18} style={{ color: "#6B4C2A" }} />
+                  </div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#2C1A0E" }}>Account Access</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <MarketingAuthInput 
+                    label="Login Email" 
+                    icon={Mail} 
+                    value={email} 
+                    onChange={() => {}} 
+                    placeholder="Verified email" 
+                    disabled={true} 
+                  />
+                  
+                  <MarketingAuthInput label="Password" icon={Lock} type="password" value={form.password} onChange={(value) => setForm({ ...form, password: value })} placeholder="Minimum 8 characters" autoComplete="new-password" error={errors.password} maxLength={100} />
+
+                  {form.password ? (
+                    <div className="-mt-2">
+                      <div className="flex gap-1 mb-1">
+                        {[1, 2, 3, 4].map((step) => (
+                          <div key={step} className="flex-1 h-1 rounded-full transition-all duration-300" style={{ backgroundColor: passwordStrength.score >= step ? passwordStrength.color : "#E5E7EB" }} />
+                        ))}
+                      </div>
+                      {passwordStrength.label ? (
+                        <p style={{ fontSize: "11px", color: passwordStrength.color, fontWeight: 600 }}>
+                          {passwordStrength.label} password
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <MarketingAuthInput label="Confirm Password" icon={Lock} type="password" value={form.confirmPassword} onChange={(value) => setForm({ ...form, confirmPassword: value })} placeholder="Repeat your password" autoComplete="new-password" error={errors.confirmPassword} maxLength={100} />
+                </div>
+
+                <div className="mt-8 p-4 rounded-2xl" style={{ backgroundColor: "rgba(107,76,42,0.05)" }}>
+                  <p style={{ fontSize: "12px", color: "#5C4A37", lineHeight: "1.5" }}>
+                    <strong>Note:</strong> These credentials will be used to access your Kettan dashboard after registration is complete.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <MarketingAuthInput label="Password" icon={Lock} type="password" value={form.password} onChange={(value) => setForm({ ...form, password: value })} placeholder="Minimum 8 characters" autoComplete="new-password" error={errors.password} maxLength={100} />
-
-            {form.password ? (
-              <div className="-mt-2">
-                <div className="flex gap-1 mb-1">
-                  {[1, 2, 3, 4].map((step) => (
-                    <div key={step} className="flex-1 h-1 rounded-full transition-all duration-300" style={{ backgroundColor: passwordStrength.score >= step ? passwordStrength.color : "#E5E7EB" }} />
-                  ))}
-                </div>
-                {passwordStrength.label ? (
-                  <p style={{ fontSize: "11px", color: passwordStrength.color, fontWeight: 600 }}>
-                    {passwordStrength.label} password
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            <MarketingAuthInput label="Confirm Password" icon={Lock} type="password" value={form.confirmPassword} onChange={(value) => setForm({ ...form, confirmPassword: value })} placeholder="Repeat your password" autoComplete="new-password" error={errors.confirmPassword} maxLength={100} />
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white transition-all duration-200 mt-2"
-              style={{
-                backgroundColor: loading ? "#8C6B43" : "#6B4C2A",
-                fontWeight: 700,
-                fontSize: "15px",
-                boxShadow: loading ? "none" : "0 4px 16px rgba(107,76,42,0.3)",
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Completing registration...
-                </>
-              ) : (
-                "Complete registration"
-              )}
-            </button>
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full max-w-md flex items-center justify-center gap-3 py-4 rounded-2xl text-white transition-all duration-300 transform active:scale-95"
+                style={{
+                  backgroundColor: loading ? "#8C6B43" : "#6B4C2A",
+                  fontWeight: 800,
+                  fontSize: "16px",
+                  boxShadow: loading ? "none" : "0 8px 30px rgba(107,76,42,0.25)",
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    Completing registration...
+                  </>
+                ) : (
+                  "Complete registration"
+                )}
+              </button>
+            </div>
           </form>
       </StaticMotionDiv>
     </div>

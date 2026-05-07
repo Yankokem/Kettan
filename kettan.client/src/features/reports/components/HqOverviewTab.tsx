@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Box, Card, Typography } from '@mui/material';
-import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
-import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
-import DeleteSweepRoundedIcon from '@mui/icons-material/DeleteSweepRounded';
-import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 
-import { StatCard } from '../../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import { EmptyState } from '../../../components/UI/EmptyState';
 import {

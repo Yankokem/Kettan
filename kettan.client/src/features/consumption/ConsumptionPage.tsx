@@ -4,9 +4,7 @@ import ScaleRoundedIcon from '@mui/icons-material/ScaleRounded';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import TodayRoundedIcon from '@mui/icons-material/TodayRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded';
 import type { AxiosError } from 'axios';
 import { useNavigate } from '@tanstack/react-router';
 

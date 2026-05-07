@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Box, Paper, Typography, CircularProgress, Grid } from '@mui/material';
+import { Box, Paper, Typography, Grid } from '@mui/material';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import TagRoundedIcon from '@mui/icons-material/TagRounded';
 import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
@@ -57,12 +56,10 @@ export function ConsumptionCreatePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [menuItems, setMenuItems] = useState<SoldMenuItemOption[]>([]);
-  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
 
   useEffect(() => {
     const loadMenu = async () => {
       try {
-        setIsLoadingMenu(true);
         const items = await fetchMenuItems();
         const mapped: SoldMenuItemOption[] = items.map(m => ({
           id: String(m.menuItemId),
@@ -74,7 +71,7 @@ export function ConsumptionCreatePage() {
       } catch (err) {
         setError('Failed to load menu items from HQ.');
       } finally {
-        setIsLoadingMenu(false);
+        // isLoadingMenu removed
       }
     };
     void loadMenu();

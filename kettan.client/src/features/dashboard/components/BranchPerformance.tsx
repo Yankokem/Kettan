@@ -4,6 +4,7 @@ import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import { useNavigate } from '@tanstack/react-router';
 import { fetchBranchScorecard } from '../../reports/reportsApi';
+import { EmptyState } from '../../../components/UI/EmptyState';
 
 interface BranchScore {
   id: string;
@@ -87,12 +88,12 @@ export function BranchPerformance() {
             <CircularProgress size={20} sx={{ color: '#6B4C2A' }} />
           </Box>
         ) : branches.length === 0 ? (
-          <Box sx={{ p: 3, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px dashed', borderColor: 'divider' }}>
-            <TrendingUpRoundedIcon sx={{ color: 'text.disabled', fontSize: 32, mb: 1, opacity: 0.5 }} />
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-              No performance data yet
-            </Typography>
-          </Box>
+          <EmptyState
+            title="No performance data"
+            message="No performance records available for this period."
+            icon={<TrendingUpRoundedIcon />}
+            minHeight={200}
+          />
         ) : (
           <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 1, py: 1 }}>
             {branches.map((branch, index) => (

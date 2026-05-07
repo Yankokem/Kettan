@@ -20,25 +20,6 @@ interface LeaderboardRow {
   weightedScore: number;
 }
 
-// ── Horizontal Bar for comparative chart ─────────────────────────────────────
-
-function ScoreBar({ value, max }: { value: number; max: number }) {
-  const pct = max > 0 ? (value / max) * 100 : 0;
-  const color = value >= 75 ? '#546B3F' : value >= 50 ? '#C9A84C' : '#DC2626';
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      <Box sx={{ flex: 1, height: 8, borderRadius: 4, bgcolor: 'divider', overflow: 'hidden' }}>
-        <Box sx={{
-          height: '100%', borderRadius: 4, width: `${pct}%`,
-          bgcolor: color, transition: 'width 0.5s ease',
-        }} />
-      </Box>
-      <Typography sx={{ fontSize: 12, fontWeight: 700, color, minWidth: 36, textAlign: 'right' }}>
-        {value.toFixed(1)}
-      </Typography>
-    </Box>
-  );
-}
 
 export function HqBranchPerformanceTab({ startDate, endDate }: Props) {
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
@@ -66,7 +47,6 @@ export function HqBranchPerformanceTab({ startDate, endDate }: Props) {
       .finally(() => setLoading(false));
   }, [startDate, endDate]);
 
-  const maxScore = rows.length > 0 ? Math.max(...rows.map(r => r.weightedScore)) : 100;
 
   const columns: ColumnDef<LeaderboardRow>[] = [
     {

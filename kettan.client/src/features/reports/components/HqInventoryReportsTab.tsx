@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Box, Card, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import DeleteSweepRoundedIcon from '@mui/icons-material/DeleteSweepRounded';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
-import { StatCard } from '../../../components/UI/StatCard';
 import {
-  fetchInventorySummary,
   fetchBranchValuations,
   fetchWastageRecords,
   type BranchInventoryValuationDto,
@@ -26,7 +24,6 @@ interface Props {
 }
 
 export function HqInventoryReportsTab({ startDate, endDate }: Props) {
-  const [hqSummary, setHqSummary] = useState({ totalSkus: 0, totalVolume: 0, totalValuation: 0 });
   const [branchValuations, setBranchValuations] = useState<BranchInventoryValuationDto[]>([]);
   const [wastage, setWastage] = useState<WastageRecordDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,12 +31,10 @@ export function HqInventoryReportsTab({ startDate, endDate }: Props) {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetchInventorySummary(),
       fetchBranchValuations(),
       fetchWastageRecords(startDate, endDate),
     ])
-      .then(([hq, bv, w]) => {
-        setHqSummary(hq);
+      .then(([bv, w]) => {
         setBranchValuations(bv);
         setWastage(w);
       })
@@ -47,9 +42,6 @@ export function HqInventoryReportsTab({ startDate, endDate }: Props) {
       .finally(() => setLoading(false));
   }, [startDate, endDate]);
 
-  const totalChainValue = hqSummary.totalValuation +
-    branchValuations.reduce((s, b) => s + b.totalValuation, 0);
-  const totalWastageLoss = wastage.reduce((s, w) => s + w.totalLoss, 0);
 
   // Branch valuation columns
   const branchValCols: ColumnDef<BranchInventoryValuationDto>[] = [

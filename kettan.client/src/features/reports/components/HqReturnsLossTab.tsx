@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
-import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
-import { StatCard } from '../../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import {
   fetchReturnsLossOverview,

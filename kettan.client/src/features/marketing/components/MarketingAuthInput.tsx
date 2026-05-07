@@ -11,6 +11,8 @@ interface MarketingAuthInputProps {
   suffix?: ReactElement;
   autoComplete?: string;
   maxLength?: number;
+  disabled?: boolean;
+  readOnly?: boolean;
 }
 
 export function MarketingAuthInput({
@@ -24,6 +26,8 @@ export function MarketingAuthInput({
   suffix,
   autoComplete,
   maxLength,
+  disabled,
+  readOnly,
 }: MarketingAuthInputProps) {
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(event.target.value);
@@ -45,10 +49,12 @@ export function MarketingAuthInput({
           placeholder={placeholder}
           autoComplete={autoComplete}
           maxLength={maxLength}
-          className="w-full pl-10 pr-10 py-3 rounded-xl outline-none transition-all duration-200"
+          disabled={disabled}
+          readOnly={readOnly}
+          className={`w-full pl-10 pr-10 py-3 rounded-xl outline-none transition-all duration-200 ${disabled ? "cursor-not-allowed opacity-70" : ""}`}
           style={{
             border: error ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.2)",
-            backgroundColor: "#FDFAF5",
+            backgroundColor: disabled ? "#F3F4F6" : "#FDFAF5",
             fontSize: "14px",
             color: "#2C1A0E",
           }}

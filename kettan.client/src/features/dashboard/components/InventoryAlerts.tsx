@@ -5,6 +5,7 @@ import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { api } from '../../../utils/api';
+import { EmptyState } from '../../../components/UI/EmptyState';
 
 interface LowStockAlert {
   itemId: number;
@@ -81,12 +82,12 @@ export function InventoryAlerts() {
             <CircularProgress size={20} sx={{ color: '#6B4C2A' }} />
           </Box>
         ) : alerts.length === 0 ? (
-          <Box sx={{ p: 3, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px dashed', borderColor: 'divider' }}>
-            <Inventory2RoundedIcon sx={{ color: 'text.disabled', fontSize: 32, mb: 1, opacity: 0.5 }} />
-            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-              All items in stock
-            </Typography>
-          </Box>
+          <EmptyState
+            title="No inventory alerts"
+            message="All items are currently above their thresholds."
+            icon={<Inventory2RoundedIcon />}
+            minHeight={200}
+          />
         ) : (
           <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 1, py: 1 }}>
             {alerts.map((alert, idx) => (

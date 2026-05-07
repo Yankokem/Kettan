@@ -69,7 +69,7 @@ builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
 builder.Services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
 builder.Services.AddScoped<IReturnService, ReturnService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
-builder.Services.AddHttpClient<IEmailService, MailtrapEmailService>();
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<ISubscriptionLimitService, SubscriptionLimitService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();

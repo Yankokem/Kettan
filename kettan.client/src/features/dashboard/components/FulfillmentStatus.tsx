@@ -5,6 +5,7 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
 import { useNavigate } from '@tanstack/react-router';
 import { fetchLatestOngoingSupplyRequest, type SupplyRequest } from '../../branch-operations/api';
+import { EmptyState } from '../../../components/UI/EmptyState';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   Draft: { label: 'Drafting', color: '#6B4C2A', bg: 'rgba(107,76,42,0.1)' },
@@ -57,15 +58,14 @@ export function FulfillmentStatus() {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          textAlign: 'center',
-          gap: 1.5
         }}
       >
-        <ListAltRoundedIcon sx={{ fontSize: 40, color: 'text.disabled', opacity: 0.5 }} />
-        <Box>
-          <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>No Active Requests</Typography>
-          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Your branch is all caught up with supplies.</Typography>
-        </Box>
+        <EmptyState
+          title="No Active Requests"
+          message="Your branch is all caught up with supplies."
+          icon={<ListAltRoundedIcon />}
+          minHeight={200}
+        />
         <Button 
           variant="outlined" 
           size="small" 

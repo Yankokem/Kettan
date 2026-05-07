@@ -1158,7 +1158,6 @@ public class OrderWorkflowService : IOrderWorkflowService
         // Revert inventory allocations
         if (order.Allocations.Any())
         {
-            var tenantId = order.TenantId;
             var userId = _currentUser.UserId!.Value;
 
             foreach (var alloc in order.Allocations)
