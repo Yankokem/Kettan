@@ -4,17 +4,17 @@ import { useNavigate } from '@tanstack/react-router';
 
 export interface BackButtonProps {
   to: string;
+  size?: 'small' | 'medium';
 }
 
-export function BackButton({ to }: BackButtonProps) {
+export function BackButton({ to, size = 'medium' }: BackButtonProps) {
   const navigate = useNavigate();
   return (
     <IconButton
-      
       onClick={() => navigate({ to })}
       sx={{ 
-        width: 40, 
-        height: 40,
+        width: size === 'small' ? 32 : 40, 
+        height: size === 'small' ? 32 : 40,
         border: '1px solid',
         borderColor: 'rgba(201, 168, 77, 0.3)',
         color: '#6B4C2A',
@@ -26,7 +26,7 @@ export function BackButton({ to }: BackButtonProps) {
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      <ArrowBackRoundedIcon sx={{ fontSize: 18 }} />
+      <ArrowBackRoundedIcon sx={{ fontSize: size === 'small' ? 16 : 18 }} />
     </IconButton>
   );
 }

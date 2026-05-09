@@ -38,6 +38,7 @@ export interface SupplyRequestDetailItem {
   pickingRejectionReason?: string | null;
   isPacked?: boolean;
   isBranchChecked?: boolean;
+  branchStock?: number;
 }
 
 export interface SupplyRequestTimelineEntry {

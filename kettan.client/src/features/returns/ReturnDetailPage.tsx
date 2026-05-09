@@ -43,6 +43,7 @@ import { api } from '../../utils/api';
 
 import { ReturnTrackerStepper } from './components/ReturnTrackerStepper';
 import { SharedFloatingChat } from '../shared/components/SharedFloatingChat';
+import { WorkflowStatusBanner } from '../shared/components/WorkflowStatusBanner';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -85,6 +86,8 @@ function statusStyle(status: string): StatusStyle {
     case 'Rejected':    return { bg: '#FFEBEE', color: '#B71C1C', label: 'Rejected' };
     case 'Credited':    return { bg: '#E8F5E9', color: '#2E7D32', label: 'Stock Return' };
     case 'Replaced':    return { bg: '#E3F2FD', color: '#1565C0', label: 'Replaced' };
+    case 'Restock':     return { bg: '#E8F5E9', color: '#16a34a', label: 'Restock' };
+    case 'WriteOff':    return { bg: '#FFEBEE', color: '#B91C1C', label: 'Write-off' };
     case 'Pending':     return { bg: '#FFF8E1', color: '#F57F17', label: 'Pending' };
     default:            return { bg: '#F5F5F5', color: '#616161', label: status };
   }
@@ -341,28 +344,29 @@ function ReturnItemTableRow({
 
   const showEditControls = isHq && isInspecting;
   const isDirty = (qty !== item.quantityInspected) || (disp !== item.disposition);
+  const dispStyle = statusStyle(item.disposition);
 
   return (
     <>
       <TableRow>
-        <TableCell sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
+        <TableCell sx={{ borderBottom: '1px dashed', borderColor: alpha('#8C6B43', 0.2), pb: err ? 0 : undefined }}>
           <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{item.itemName}</Typography>
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontFamily: 'monospace' }}>{item.itemSku}</Typography>
+          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>{item.itemSku}</Typography>
         </TableCell>
-        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#8C6B43', 0.2), pb: err ? 0 : undefined }}>
           <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{item.quantityReturned}</Typography>
         </TableCell>
-        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#8C6B43', 0.2), pb: err ? 0 : undefined }}>
           {showEditControls ? (
             <TextField type="number" size="small" sx={{ width: 80 }} inputProps={{ style: { padding: '4px 8px' } }} value={qty} onChange={(e) => setQty(Number(e.target.value))} disabled={isSaving} />
           ) : (
             <Typography sx={{ fontSize: 13.5 }}>{item.quantityInspected ?? '—'}</Typography>
           )}
         </TableCell>
-        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#8C6B43', 0.2), pb: err ? 0 : undefined }}>
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{item.reasonCode}</Typography>
         </TableCell>
-        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#8C6B43', 0.2), pb: err ? 0 : undefined }}>
           {showEditControls ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Select size="small" value={disp} onChange={(e) => setDisp(e.target.value)} disabled={isSaving} sx={{ fontSize: 12.5 }}>
@@ -374,20 +378,22 @@ function ReturnItemTableRow({
               </Button>
             </Box>
           ) : (
-            <StatusChip status={item.disposition} />
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: dispStyle.color }}>
+              {dispStyle.label}
+            </Typography>
           )}
         </TableCell>
       </TableRow>
       {err && (
         <TableRow>
-          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2) }}>
+          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: alpha('#8C6B43', 0.2) }}>
             <Alert severity="error" sx={{ py: 0, px: 2, fontSize: 13, '& .MuiAlert-icon': { py: 0.5 } }}>{err}</Alert>
           </TableCell>
         </TableRow>
       )}
       {!err && isInspecting && isDamagedOrExpired && disp === 'Restock' && (
         <TableRow>
-          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2) }}>
+          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: alpha('#8C6B43', 0.2) }}>
             <Alert severity="warning" sx={{ py: 0, px: 2, fontSize: 13, '& .MuiAlert-icon': { py: 0.5 } }}>
               Careful: This item was flagged as Damaged/Expired by the branch.
             </Alert>
@@ -513,13 +519,17 @@ export function ReturnDetailPage() {
       <Box sx={{ pb: 3, display: 'grid', gap: 2.2 }}>
       {/* Header Area */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-          <BackButton to="/returns" />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <BackButton to="/returns" size="small" />
           <Box>
-            <Typography sx={{ fontSize: 17, fontWeight: 800 }}>Return RT-{row.returnId}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+              <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>#{row.returnId}</Typography>
+              <StatusChip status={row.status} />
+            </Box>
+            <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>
+              Reverse logistics management, quality inspection, and item disposition for <strong>{row.branchName}</strong>.
+            </Typography>
           </Box>
-          <StatusChip status={row.status} />
-          <StatusChip status={row.resolution} />
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
           {/* HQ: Submitted -> Acknowledge / Reject */}
@@ -527,13 +537,14 @@ export function ReturnDetailPage() {
             <>
               <Button 
                 variant="outlined" 
-                sx={{ color: 'error.main', borderColor: 'error.main' }} 
+                color="error"
                 onClick={() => setDialog('reject')}
                 startIcon={<CancelRoundedIcon />}
               >
                 Reject
               </Button>
               <Button 
+                color="success"
                 onClick={() => setDialog('acknowledge')}
                 startIcon={<AssignmentTurnedInRoundedIcon />}
               >
@@ -556,6 +567,7 @@ export function ReturnDetailPage() {
           {/* Branch: Acknowledged -> Confirm Dispatch */}
           {isBranch && row.status === 'Acknowledged' && (
             <Button 
+              color="success"
               onClick={() => setDialog('dispatch')}
               startIcon={<LocalShippingRoundedIcon />}
             >
@@ -566,6 +578,7 @@ export function ReturnDetailPage() {
           {/* HQ: Dispatched -> Confirm Arrival */}
           {isHq && row.status === 'Dispatched' && (
             <Button 
+              color="success"
               onClick={() => setDialog('arrival')}
               startIcon={<DownloadDoneRoundedIcon />}
             >
@@ -576,6 +589,7 @@ export function ReturnDetailPage() {
           {/* HQ: Arrived -> Start Inspection */}
           {isHq && row.status === 'Arrived' && (
             <Button 
+              color="success"
               onClick={() => setDialog('startInspect')}
               startIcon={<FactCheckRoundedIcon />}
             >
@@ -586,6 +600,7 @@ export function ReturnDetailPage() {
           {/* HQ: Inspecting -> Complete */}
           {isHq && row.status === 'Inspecting' && (
             <Button
+              color="success"
               disabled={row.items.some((i) => i.disposition === 'Pending')}
               onClick={() => setDialog('complete')}
               startIcon={<CheckCircleRoundedIcon />}
@@ -639,9 +654,24 @@ export function ReturnDetailPage() {
       
       {/* Rejection Alert */}
       {row.status === 'Rejected' && row.rejectionReason && (
-        <Alert severity="error" sx={{ fontSize: 12.5 }}>
-          <strong>Rejection reason:</strong> {row.rejectionReason}
-        </Alert>
+        <WorkflowStatusBanner
+          variant="error"
+          icon={<CancelRoundedIcon sx={{ fontSize: 22 }} />}
+          title="Return Request Rejected"
+          description={
+            <>
+              <strong>Reason:</strong> {row.rejectionReason}
+            </>
+          }
+        />
+      )}
+
+      {row.status === 'Completed' && (
+        <WorkflowStatusBanner
+          icon={<CheckCircleRoundedIcon sx={{ fontSize: 22, color: 'success.main' }} />}
+          title="Return Process Completed"
+          description="The items have been inspected and dispositioned. The return transaction is now finalized."
+        />
       )}
 
       {/* Tracker Stepper */}

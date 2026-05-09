@@ -17,7 +17,7 @@ import {
 } from '../../branch-operations/api';
 
 // --- Types ---
-type ChatContextType = 'order' | 'return';
+type ChatContextType = 'order' | 'return' | 'supply-request';
 
 interface SharedMessage {
     messageId: number;
@@ -221,16 +221,22 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
 
         connection.start()
             .then(() => {
-                const groupName = contextType === 'return' ? 'JoinReturnGroup' : 'JoinOrdersList';
-                void connection.invoke(groupName, id);
+                let methodName = 'JoinOrder';
+                if (contextType === 'return') methodName = 'JoinReturn';
+                if (contextType === 'supply-request') methodName = 'JoinSupplyRequest';
+                
+                void connection.invoke(methodName, Number(id));
             })
             .catch(err => console.error('SignalR Chat Error: ', err));
 
         return () => {
             if (connection.state === signalR.HubConnectionState.Connected) {
-                const leaveGroupName = contextType === 'return' ? 'LeaveReturnGroup' : 'LeaveGroup';
-                const leaveArg = contextType === 'return' ? id : `Order_${id}`;
-                void connection.invoke(leaveGroupName, leaveArg).finally(() => void connection.stop());
+                let leaveMethod = 'LeaveGroup';
+                let groupName = `Order_${id}`;
+                if (contextType === 'return') groupName = `Return_${id}`;
+                if (contextType === 'supply-request') groupName = `SupplyRequest_${id}`;
+                
+                void connection.invoke(leaveMethod, groupName).finally(() => void connection.stop());
             }
         };
     }, [id, contextType, token]);
@@ -327,16 +333,17 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                         ref={anchorRef}
                         onClick={open ? () => setOpen(false) : handleOpen} 
                         sx={{ 
-                            bgcolor: open ? '#FFFFFF' : '#C9A84C', 
-                            color: open ? '#C9A84C' : 'white',
+                            bgcolor: open ? '#FFFFFF' : '#FAF5EF', 
+                            color: '#8C6B43',
                             zIndex: 1300,
-                            border: open ? '1px solid' : 'none',
-                            borderColor: 'rgba(201,168,76,0.3)',
-                            boxShadow: open ? '0 4px 20px rgba(0,0,0,0.1)' : '0 8px 30px rgba(201, 168, 76, 0.4)',
+                            border: '1px solid',
+                            borderColor: 'rgba(201, 168, 76, 0.2)',
+                            boxShadow: open ? '0 4px 20px rgba(0,0,0,0.1)' : '0 8px 30px rgba(107, 76, 42, 0.12)',
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             '&:hover': { 
-                                bgcolor: open ? '#FDFCFB' : '#B8963D',
-                                transform: 'scale(1.05)'
+                                bgcolor: open ? '#FDFCFB' : '#F5E6B3',
+                                transform: 'scale(1.05)',
+                                borderColor: 'rgba(201, 168, 76, 0.4)',
                             },
                             width: 60, height: 60
                         }}
@@ -426,9 +433,9 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                                         <Box sx={{
                                             maxWidth: '85%', px: 1.8, py: 1.2,
                                             borderRadius: isOwn ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                                            bgcolor: isOwn ? '#6B4C2A' : '#FFFFFF',
-                                            color: isOwn ? '#FFFFFF' : 'text.primary',
-                                            boxShadow: isOwn ? '0 8px 20px rgba(107, 76, 42, 0.15)' : '0 2px 8px rgba(0,0,0,0.05)',
+                                            bgcolor: isOwn ? '#F0E6D3' : '#FFFFFF',
+                                            color: isOwn ? '#6B4C2A' : 'text.primary',
+                                            boxShadow: isOwn ? '0 4px 12px rgba(107, 76, 42, 0.08)' : '0 2px 8px rgba(0,0,0,0.05)',
                                             border: isOwn ? 'none' : '1px solid',
                                             borderColor: 'divider',
                                             position: 'relative'

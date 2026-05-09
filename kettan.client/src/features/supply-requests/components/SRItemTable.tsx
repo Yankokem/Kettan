@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Chip,
   alpha,
 } from '@mui/material';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
@@ -29,9 +28,10 @@ interface SRItemTableProps {
   mode: SRTableMode;
   suggestions?: PickingSuggestion[];
   onItemsChange?: (items: SupplyRequestDetailItem[]) => void;
+  title?: React.ReactNode;
 }
 
-export default function SRItemTable({ items, mode, suggestions = [], onItemsChange }: SRItemTableProps) {
+export default function SRItemTable({ items, mode, suggestions = [], onItemsChange, title }: SRItemTableProps) {
   const [rejectItem, setRejectItem] = useState<SupplyRequestDetailItem | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [viewRejectItem, setViewRejectItem] = useState<SupplyRequestDetailItem | null>(null);
@@ -118,19 +118,15 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
       label: 'Item',
       render: (row: SupplyRequestDetailItem) => (
         <Box>
-          <Typography
-            variant="body2"
-            fontWeight={500}
-            color={row.isRejectedDuringPicking ? 'text.secondary' : 'text.primary'}
-          >
+          <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: row.isRejectedDuringPicking ? 'text.secondary' : 'text.primary' }}>
             {row.name}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
             SKU: {row.sku}
           </Typography>
         </Box>
       ),
-      width: '1fr',
+      width: '4fr',
     },
     {
       key: 'requested',
@@ -143,28 +139,13 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
           {row.requestedQty}
         </Typography>
       ),
-      width: 60,
+      width: '1fr',
       align: 'center',
     }
   );
 
   // ── Approved + HQ Stock (readonly and picking modes) ──
   if (mode === 'readonly' || mode === 'picking') {
-    columns.push({
-      key: 'approved',
-      label: 'Approved',
-      render: (row: SupplyRequestDetailItem) => (
-        <Typography
-          variant="body2"
-          color={row.isRejectedDuringPicking ? 'text.secondary' : 'text.primary'}
-        >
-          {row.approvedQty !== null ? row.approvedQty : '-'}
-        </Typography>
-      ),
-      width: 70,
-      align: 'center',
-    });
-
     columns.push({
       key: 'hqStock',
       label: 'HQ Stock',
@@ -176,7 +157,25 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
           {row.hqStock}
         </Typography>
       ),
-      width: 70,
+      width: '1.2fr',
+      align: 'center',
+    });
+
+    columns.push({
+      key: 'branchStock',
+      label: 'Branch Stock',
+      render: (row: SupplyRequestDetailItem) => {
+        const suggestion = suggestions.find((s) => s.requestItemId.toString() === row.id);
+        return (
+          <Typography
+            variant="body2"
+            color={row.isRejectedDuringPicking ? 'text.secondary' : 'text.primary'}
+          >
+            {suggestion ? suggestion.branchCurrentStock : '—'}
+          </Typography>
+        );
+      },
+      width: '1.2fr',
       align: 'center',
     });
   }
@@ -189,31 +188,35 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
       render: (row: SupplyRequestDetailItem) => {
         if (row.isRejectedDuringPicking) {
           return (
-            <Chip
-              label="Rejected"
-              size="small"
-              color="error"
-              variant="outlined"
-              sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
-            />
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'error.main' }}>
+              Rejected
+            </Typography>
           );
         }
         const suggestion = suggestions.find((s) => s.requestItemId.toString() === row.id);
         if (!suggestion) return <Typography variant="body2" color="text.secondary">-</Typography>;
         return (
           <Tooltip title={`Branch Stock: ${suggestion.branchCurrentStock} | Threshold: ${suggestion.branchThreshold}`}>
-            <Chip
-              icon={<LightbulbCircleRoundedIcon />}
-              label={suggestion.suggestedSendQty}
-              size="small"
-              color="primary"
-              variant="outlined"
-              sx={{ borderRadius: 1, height: 24, '& .MuiChip-label': { px: 0.8 } }}
-            />
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1,
+                py: 0.25,
+                borderRadius: 1,
+                bgcolor: alpha('#8C6B43', 0.08),
+                color: '#8C6B43',
+                border: `1px solid ${alpha('#8C6B43', 0.25)}`,
+              }}
+            >
+              <LightbulbCircleRoundedIcon sx={{ fontSize: 14 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 700 }}>{suggestion.suggestedSendQty}</Typography>
+            </Box>
           </Tooltip>
         );
       },
-      width: 100,
+      width: '1.4fr',
       align: 'center',
     });
 
@@ -245,11 +248,11 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
             }}
             onClick={(e) => e.stopPropagation()}
             inputProps={{ min: 0 }}
-            sx={{ width: 70, '& .MuiInputBase-root': { height: 32, fontSize: 13 } }}
+            sx={{ width: '100%', maxWidth: 70, '& .MuiInputBase-root': { height: 32, fontSize: 13 } }}
           />
         );
       },
-      width: 90,
+      width: '1.2fr',
       align: 'center',
     });
 
@@ -323,13 +326,27 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
           </Box>
         );
       },
-      width: 110,
+      width: '1.4fr',
       align: 'right',
     });
   }
 
   // ── Packing / branch-check: send qty static + checkbox action ──
   if (mode === 'packing' || mode === 'branch-check' || mode === 'readonly-packed') {
+    if (mode === 'branch-check') {
+      columns.push({
+        key: 'branchStock',
+        label: 'Current',
+        render: (row: SupplyRequestDetailItem) => (
+          <Typography variant="body2" color="text.secondary">
+            {row.branchStock ?? 0}
+          </Typography>
+        ),
+        width: '1fr',
+        align: 'center',
+      });
+    }
+
     columns.push({
       key: 'sendQtyStatic',
       label: 'Send Qty',
@@ -339,11 +356,30 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
           fontWeight={600}
           color={row.isRejectedDuringPicking ? 'text.secondary' : 'text.primary'}
         >
-          {row.sendQuantity !== null ? row.sendQuantity : (row.approvedQty ?? row.requestedQty)}
+          {row.sendQuantity ?? row.approvedQty ?? row.requestedQty}
         </Typography>
       ),
-      width: '15%',
+      width: '1fr',
+      align: 'center',
     });
+
+    if (mode === 'branch-check') {
+      columns.push({
+        key: 'newQty',
+        label: 'New Qty',
+        render: (row: SupplyRequestDetailItem) => {
+          const sent = row.sendQuantity ?? row.approvedQty ?? row.requestedQty;
+          const current = row.branchStock ?? 0;
+          return (
+            <Typography variant="body2" fontWeight={700} color="primary.main">
+              {current + (row.isBranchChecked ? sent : 0)}
+            </Typography>
+          );
+        },
+        width: '1.2fr',
+        align: 'center',
+      });
+    }
   }
 
   if (mode === 'packing' || mode === 'branch-check') {
@@ -394,7 +430,7 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
           </Box>
         );
       },
-      width: 80,
+      width: '10%',
       align: 'right',
     });
   }
@@ -405,16 +441,13 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
       key: 'availability',
       label: 'Availability',
       render: (row: SupplyRequestDetailItem) => {
-        let color: 'success' | 'warning' | 'error' = 'success';
-        if (row.availability === 'Low Stock') color = 'warning';
-        if (row.availability === 'Out of Stock') color = 'error';
+        let color = '#16a34a';
+        if (row.availability === 'Low Stock') color = '#ca8a04';
+        if (row.availability === 'Out of Stock') color = '#dc2626';
         return (
-          <Chip
-            label={row.availability}
-            size="small"
-            color={color}
-            sx={{ height: 24, fontSize: '0.75rem', fontWeight: 500 }}
-          />
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color }}>
+            {row.availability}
+          </Typography>
         );
       },
       width: '15%',
@@ -442,7 +475,7 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
             </Tooltip>
           );
         },
-        width: 50,
+        width: '10%',
         align: 'center',
       });
     }
@@ -493,6 +526,8 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
         keyExtractor={(row: SupplyRequestDetailItem) => row.id}
         onRowClick={handleRowClick}
         rowSx={getRowSx}
+        fulfillment
+        title={title}
       />
 
       {/* Reject Item Modal */}

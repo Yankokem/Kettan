@@ -11,6 +11,7 @@ import QuestionAnswerRoundedIcon from '@mui/icons-material/QuestionAnswerRounded
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
+import { WorkflowStatusBanner } from '../shared/components/WorkflowStatusBanner';
 
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -19,7 +20,7 @@ import { Button } from '../../components/UI/Button';
 
 import { OrderFulfillmentStepper } from './components/OrderFulfillmentStepper';
 import { OrderDetailsPanel } from './components/OrderDetailsPanel';
-import DispatchAssignmentCard from './components/DispatchAssignmentCard';
+import { DispatchDialog } from './components/DispatchDialog';
 import {
   fetchOrderById,
   submitPicking,
@@ -74,6 +75,7 @@ export function OrderDetailPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [pickingModalOpen, setPickingModalOpen] = useState(false);
   const [packingModalOpen, setPackingModalOpen] = useState(false);
+  const [dispatchModalOpen, setDispatchModalOpen] = useState(false);
 
   // Track whether user has made local changes (to avoid blowing them away during poll)
   const hasPendingChanges = useRef(false);
@@ -97,8 +99,9 @@ export function OrderDetailPage() {
         setLocalItems(mapOrderItemsToViewModel(row.requestedItems));
       }
 
-      // Fetch picking suggestions when in picking stage
+      // Fetch picking suggestions when in picking stage (HQ only)
       if (
+        isHq &&
         (row.status === 'Processing' || row.status === 'Picking' || row.status === 'Allocated') &&
         suggestions.length === 0
       ) {
@@ -212,6 +215,7 @@ export function OrderDetailPage() {
 
       if (action === 'save-pick') setPickingModalOpen(false);
       if (action === 'save-pack') setPackingModalOpen(false);
+      if (action === 'dispatch') setDispatchModalOpen(false);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to update order workflow.');
     } finally {
@@ -307,17 +311,24 @@ export function OrderDetailPage() {
         </Alert>
       )}
 
+      {/* ── Dispatch Order Modal ── */}
+      <DispatchDialog 
+        open={dispatchModalOpen}
+        isSaving={isSaving}
+        onClose={() => setDispatchModalOpen(false)}
+        onConfirm={(data) => void handleWorkflowAction('dispatch', data)}
+      />
+
       {/* ── Header ── */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <BackButton to="/orders" />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <BackButton to="/orders" size="small" />
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
               <Typography
-                variant="h5"
-                sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}
+                sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}
               >
-                ORD-{order.orderId}
+                #{order.orderId}
               </Typography>
               <Chip
                 label={orderStatus.replace(/([A-Z])/g, ' $1').trim()}
@@ -328,8 +339,8 @@ export function OrderDetailPage() {
                 }
                 size="small"
                 sx={{
-                  fontSize: 12,
-                  fontWeight: 600,
+                  fontSize: 11,
+                  fontWeight: 700,
                   bgcolor:
                     orderStatus === 'Cancelled'
                       ? 'rgba(185,28,28,0.1)'
@@ -352,13 +363,8 @@ export function OrderDetailPage() {
                 }}
               />
             </Box>
-            <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
-              Requested by <strong>{order.branchName}</strong> on{' '}
-              {new Date(order.pushedToFulfillmentAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
+            <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>
+              Workflow management for order fulfillment, picking, and dispatch to <strong>{order.branchName}</strong>.
             </Typography>
           </Box>
         </Box>
@@ -366,15 +372,7 @@ export function OrderDetailPage() {
         {/* ── Header Actions ── */}
         <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
 
-          {/* Messages button — always visible */}
-          <Button
-            variant="outlined"
-            startIcon={<QuestionAnswerRoundedIcon />}
-            onClick={() => setChatOpen(true)}
-            sx={{ bgcolor: 'white' }}
-          >
-            Messages
-          </Button>
+
 
           {/* Cancel Order — HQ only, cancellable statuses only */}
           {isHq && ['Processing', 'Picking', 'Packing', 'Packed'].includes(orderStatus) && (
@@ -383,7 +381,6 @@ export function OrderDetailPage() {
               color="error"
               startIcon={<CancelRoundedIcon />}
               onClick={() => setCancelModalOpen(true)}
-              sx={{ bgcolor: 'white' }}
             >
               Cancel Order
             </Button>
@@ -403,6 +400,7 @@ export function OrderDetailPage() {
               <span>
                 <Button
                   startIcon={<InventoryRoundedIcon />}
+                  color="success"
                   onClick={() => setPickingModalOpen(true)}
                   disabled={
                     isSaving ||
@@ -427,6 +425,7 @@ export function OrderDetailPage() {
               <span>
                 <Button
                   startIcon={<BackpackRoundedIcon />}
+                  color="success"
                   onClick={() => setPackingModalOpen(true)}
                   disabled={
                     isSaving ||
@@ -440,27 +439,25 @@ export function OrderDetailPage() {
             </Tooltip>
           )}
 
-          {/* Awaiting branch confirmation — plain chip, NOT a button */}
-          {orderStatus === 'Dispatched' && isHq && (
-            <Chip
-              label="Awaiting Branch Delivery Confirmation"
-              variant="outlined"
-              icon={<LocalShippingRoundedIcon sx={{ fontSize: 16 }} />}
-              sx={{
-                fontWeight: 600,
-                color: 'text.secondary',
-                borderColor: 'divider',
-                bgcolor: 'background.paper',
-                px: 0.5,
-                pointerEvents: 'none', // absolutely not a button
-              }}
-            />
+          {/* Dispatch Order — only once items are confirmed packed (Packed status) */}
+          {isHq && orderStatus === 'Packed' && (
+            <Button
+              startIcon={<LocalShippingRoundedIcon />}
+              color="success"
+              onClick={() => setDispatchModalOpen(true)}
+              disabled={isSaving}
+            >
+              Prepare Dispatch
+            </Button>
           )}
+
+
 
           {/* Package Arrived — branch only, dispatched status */}
           {orderStatus === 'Dispatched' && isBranch && (
             <Button
               startIcon={<CheckCircleRoundedIcon />}
+              color="success"
               onClick={() => void handleConfirmArrival()}
               loading={isSaving}
               disabled={isSaving}
@@ -473,6 +470,7 @@ export function OrderDetailPage() {
           {orderStatus === 'Arrived' && isBranch && localItems.every((i) => i.isBranchChecked) && (
             <Button
               startIcon={<CheckCircleRoundedIcon />}
+              color="success"
               onClick={() => void handleCompleteTransaction()}
               loading={isSaving}
               disabled={isSaving}
@@ -492,6 +490,37 @@ export function OrderDetailPage() {
           )}
         </Box>
       </Box>
+
+      {/* ── Status Banners (Passive Wait States) ── */}
+      {orderStatus === 'Dispatched' && isHq && (
+        <WorkflowStatusBanner
+          icon={<LocalShippingRoundedIcon sx={{ fontSize: 22 }} />}
+          title="In Transit to Branch"
+          description={
+            <>
+              The package has been dispatched and is currently on its way to <strong>{order.branchName}</strong>. 
+              We are awaiting confirmation from the branch upon arrival.
+            </>
+          }
+        />
+      )}
+
+      {orderStatus === 'Completed' && (
+        <WorkflowStatusBanner
+          icon={<CheckCircleRoundedIcon sx={{ fontSize: 22, color: 'success.main' }} />}
+          title="Order Fulfillment Completed"
+          description="The items have been successfully delivered and checked by the branch. The transaction is now complete."
+        />
+      )}
+
+      {orderStatus === 'Cancelled' && (
+        <WorkflowStatusBanner
+          variant="error"
+          icon={<CancelRoundedIcon sx={{ fontSize: 22 }} />}
+          title="Order Cancelled"
+          description="This order has been cancelled. Any allocated inventory has been returned to HQ stock."
+        />
+      )}
 
       {/* ── Threshold Warning Banner ── */}
       {thresholdWarnings.length > 0 && tableMode === 'picking' && (
@@ -516,57 +545,7 @@ export function OrderDetailPage() {
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {/* Dispatch Assignment Card (only when Packed) */}
-          {orderStatus === 'Packed' && isHq && (
-            <Box>
-              <DispatchAssignmentCard
-                isLoading={isSaving}
-                onDispatch={(data) => void handleWorkflowAction('dispatch', data)}
-              />
-            </Box>
-          )}
-
           {/* Item Reconciliation Table */}
-          <Box
-            sx={{
-              bgcolor: 'background.paper',
-              borderRadius: '14px',
-              border: '1px solid',
-              borderColor: 'divider',
-              overflow: 'hidden',
-            }}
-          >
-            <Box
-              sx={{
-                p: 2,
-                background: 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)',
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.2,
-              }}
-            >
-              <FactCheckRoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
-              <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Item Reconciliation
-              </Typography>
-              {tableMode !== 'readonly' && tableMode !== 'readonly-packed' && (
-                <Typography variant="caption" color="text.secondary">
-                  {
-                    localItems.filter((i) =>
-                      tableMode === 'picking'
-                        ? i.isPicked
-                        : tableMode === 'packing'
-                        ? i.isPacked
-                        : i.isBranchChecked
-                    ).length
-                  }{' '}
-                  /{' '}
-                  {localItems.filter((i) => !i.isRejectedDuringPicking).length} Processed
-                </Typography>
-              )}
-            </Box>
             <SRItemTable
               items={localItems}
               mode={tableMode}
@@ -577,8 +556,30 @@ export function OrderDetailPage() {
                   ? handleItemsChange
                   : undefined
               }
+              title={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                  <FactCheckRoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Item Reconciliation
+                  </Typography>
+                  {tableMode !== 'readonly' && tableMode !== 'readonly-packed' && (
+                    <Typography variant="caption" color="text.secondary">
+                      {
+                        localItems.filter((i) =>
+                          tableMode === 'picking'
+                            ? i.isPicked
+                            : tableMode === 'packing'
+                            ? i.isPacked
+                            : i.isBranchChecked
+                        ).length
+                      }{' '}
+                      /{' '}
+                      {localItems.filter((i) => !i.isRejectedDuringPicking).length} Processed
+                    </Typography>
+                  )}
+                </Box>
+              }
             />
-          </Box>
         </Box>
       </Box>
 

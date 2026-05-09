@@ -657,6 +657,10 @@ public class OrderWorkflowService : IOrderWorkflowService
             .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order?.SupplyRequest == null) return [];
+        if (IsBranchScopedUser() && order.SupplyRequest.BranchId != (_currentUser.BranchId ?? 0))
+        {
+            return [];
+        }
 
         var branchId = order.SupplyRequest.BranchId;
         var suggestions = new List<PickingSuggestionDto>();

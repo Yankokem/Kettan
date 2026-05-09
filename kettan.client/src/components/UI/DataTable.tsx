@@ -44,6 +44,7 @@ export interface DataTableProps<T> {
   className?: string;
   rowSx?: (row: T, index: number) => any;
   isLoading?: boolean;
+  fulfillment?: boolean;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -71,6 +72,7 @@ export function DataTable<T>({
   className,
   rowSx,
   isLoading = false,
+  fulfillment = false,
 }: DataTableProps<T>) {
   const effectiveDefaultPageSize = defaultRowsPerPage ?? defaultPageSize;
   const effectivePageSizes = rowsPerPageOptions ?? pageSizes;
@@ -243,36 +245,52 @@ export function DataTable<T>({
       {toolbar ? <Box sx={{ mb: 2.5 }}>{toolbar}</Box> : null}
 
       <Box
-        className={className || 'glass-card'}
+        className={fulfillment ? undefined : (className || 'glass-card')}
         sx={{
-          height: '100%',
+          height: fulfillment ? 'auto' : '100%',
           display: 'flex',
           flexDirection: 'column',
           borderRadius: '14px',
           overflow: 'hidden',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          boxShadow: fulfillment ? 'none' : '0 1px 2px rgba(0,0,0,0.05)',
+          border: fulfillment ? '1px solid' : undefined,
+          borderColor: fulfillment ? 'divider' : undefined,
+          bgcolor: 'background.paper',
+          pb: fulfillment ? 2 : 0,
         }}
       >
       {/* Header */}
       {title ? (
         <Box
           sx={{
-            px: 3,
-            py: 2.25,
+            px: fulfillment ? 2 : 3,
+            py: fulfillment ? 2 : 2.25,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: (theme) =>
-              theme.palette.mode === 'dark'
-                ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.96) 0%, rgba(58, 39, 24, 0.92) 100%)'
-                : 'linear-gradient(170deg, rgba(250, 245, 239, 0.98) 0%, rgba(240, 230, 211, 0.98) 100%)',
+            background: fulfillment 
+              ? 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)'
+              : (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.96) 0%, rgba(58, 39, 24, 0.92) 100%)'
+                    : 'linear-gradient(170deg, rgba(250, 245, 239, 0.98) 0%, rgba(240, 230, 211, 0.98) 100%)',
             borderBottom: 1,
             borderColor: 'divider',
           }}
         >
-          <Typography sx={{ fontSize: 15, fontWeight: 700, color: (theme) => (theme.palette.mode === 'dark' ? '#E8D3A9' : '#2E1F0C'), letterSpacing: '-0.01em' }}>
-            {title}
-          </Typography>
+          {typeof title === 'string' ? (
+            <Typography sx={{ 
+              fontSize: fulfillment ? 12 : 15, 
+              fontWeight: 700, 
+              color: fulfillment ? '#6B4C2A' : (theme) => (theme.palette.mode === 'dark' ? '#E8D3A9' : '#2E1F0C'), 
+              letterSpacing: fulfillment ? '0.05em' : '-0.01em',
+              textTransform: fulfillment ? 'uppercase' : 'none'
+            }}>
+              {title}
+            </Typography>
+          ) : (
+            title
+          )}
         </Box>
       ) : null}
 
@@ -341,14 +359,32 @@ export function DataTable<T>({
           display: 'grid',
           gridTemplateColumns,
           columnGap: 2,
-          px: 3,
-          py: 1.5,
-          background: (theme) =>
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.9) 0%, rgba(58, 39, 24, 0.86) 100%)'
-              : 'linear-gradient(170deg, rgba(250, 245, 239, 0.94) 0%, rgba(240, 230, 211, 0.94) 100%)',
-          borderBottom: '2px solid',
-          borderColor: alpha('#C9A84C', 0.3),
+          px: fulfillment ? 2.5 : 3,
+          py: fulfillment ? 1.5 : 1.3,
+          position: 'relative',
+          background: fulfillment 
+            ? 'transparent'
+            : (theme) =>
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.9) 0%, rgba(58, 39, 24, 0.86) 100%)'
+                  : 'linear-gradient(170deg, rgba(250, 245, 239, 0.94) 0%, rgba(240, 230, 211, 0.94) 100%)',
+          '&::after': fulfillment ? {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: 20,
+            right: 20,
+            height: '2px',
+            bgcolor: alpha('#C9A84C', 0.45),
+          } : {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '1px',
+            bgcolor: 'divider',
+          }
         }}
       >
         {columns.map((col) => (
@@ -364,7 +400,7 @@ export function DataTable<T>({
               color: (theme) =>
                 sortKey === col.key
                   ? theme.palette.primary.main
-                  : '#6B4C2A',
+                  : fulfillment ? '#6B4C2A' : (theme.palette.mode === 'dark' ? 'rgba(232,211,169,0.74)' : 'text.secondary'),
               textAlign: col.align || 'left',
               userSelect: 'none',
               cursor: col.sortable ? 'pointer' : 'default',
@@ -392,8 +428,8 @@ export function DataTable<T>({
               columnGap: 2,
               px: 3,
               py: 2,
-              borderBottom: '1px dashed',
-              borderColor: alpha('#C9A84C', 0.2),
+              borderBottom: fulfillment ? '1px dashed' : 1,
+              borderColor: fulfillment ? alpha('#C9A84C', 0.4) : 'divider',
             }}
           >
             {columns.map((col) => (
@@ -413,15 +449,23 @@ export function DataTable<T>({
               display: 'grid',
               gridTemplateColumns,
               columnGap: 2,
-              px: 3,
-              py: 1.75,
+              px: fulfillment ? 2.5 : 3,
+              py: fulfillment ? 1.75 : 1.75,
               alignItems: 'center',
+              position: 'relative',
               bgcolor: striped && rowIndex % 2 === 1 ? 'rgba(0,0,0,0.015)' : 'transparent',
-              borderBottom: '1px dashed',
-              borderColor: alpha('#C9A84C', 0.2),
-              cursor: onRowClick ? 'pointer' : 'default',
               '&:hover': { bgcolor: 'action.hover' },
               ...(rowSx ? rowSx(row, rowIndex) : {}),
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: 0,
+                left: fulfillment ? 20 : 0,
+                right: fulfillment ? 20 : 0,
+                height: '1px',
+                borderBottom: fulfillment ? '1px dashed' : '1px solid',
+                borderColor: fulfillment ? alpha('#C9A84C', 0.4) : 'divider',
+              }
             }}
           >
             {columns.map((col) => (
@@ -441,7 +485,7 @@ export function DataTable<T>({
       )}
 
       {/* Pagination component from MUI */}
-      {showPagination ? (
+      {showPagination && !fulfillment ? (
         <TablePagination
           component="div"
           count={sortedData.length}

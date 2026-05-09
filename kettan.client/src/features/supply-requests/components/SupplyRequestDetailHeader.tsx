@@ -6,7 +6,6 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
-import QuestionAnswerRoundedIcon from '@mui/icons-material/QuestionAnswerRounded';
 import { useNavigate } from '@tanstack/react-router';
 
 import { BackButton } from '../../../components/UI/BackButton';
@@ -31,13 +30,10 @@ export interface SupplyRequestDetailHeaderProps {
   onFileReturn?: () => void;
   onConfirmArrival?: () => void;
   onCompleteTransaction?: () => void;
-  onMessagesClick?: () => void;
-  hasLinkedOrder?: boolean;
 }
 
 export function SupplyRequestDetailHeader({
   requestId,
-  requestNumber,
   status,
   branchName,
   role,
@@ -49,8 +45,6 @@ export function SupplyRequestDetailHeader({
   onFileReturn,
   onConfirmArrival,
   onCompleteTransaction,
-  onMessagesClick,
-  hasLinkedOrder,
 }: SupplyRequestDetailHeaderProps) {
   const navigate = useNavigate();
   const statusColor = SUPPLY_REQUEST_STATUS_COLORS[status] || { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };
@@ -60,20 +54,20 @@ export function SupplyRequestDetailHeader({
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, gap: 2, flexWrap: 'wrap' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <BackButton to="/supply-requests" />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <BackButton to="/supply-requests" size="small" />
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-            <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontFamily: 'monospace' }}>
-              {requestNumber}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+              #{requestId}
             </Typography>
             <Chip
               label={getSupplyRequestStatusLabel(status)}
               icon={status === 'PendingApproval' ? <AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} /> : undefined}
               size="small"
               sx={{
-                fontSize: 12,
-                fontWeight: 600,
+                fontSize: 11,
+                fontWeight: 700,
                 bgcolor: statusColor.bg,
                 color: statusColor.color,
                 border: `1px solid ${statusColor.color}28`,
@@ -88,25 +82,15 @@ export function SupplyRequestDetailHeader({
               }}
             />
           </Box>
-          <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.3 }}>
-            Requested by <strong>{branchName}</strong>
+          <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>
+            Manage request lifecycle and item reconciliation for <strong>{branchName}</strong>.
           </Typography>
         </Box>
       </Box>
 
       <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
         
-        {/* Messages Button (visible if there's a linked order) */}
-        {hasLinkedOrder && (
-          <Button
-            variant="outlined"
-            startIcon={<QuestionAnswerRoundedIcon />}
-            onClick={onMessagesClick}
-            sx={{ bgcolor: 'white' }}
-          >
-            Messages
-          </Button>
-        )}
+
 
         {/* Branch: Draft Actions */}
         {(status === 'Draft' || status === 'AutoDrafted') && isBranch && (
@@ -127,12 +111,9 @@ export function SupplyRequestDetailHeader({
 
         {/* Pending Approval */}
         {status === 'PendingApproval' && isBranch && (
-          <>
-            <Button variant="outlined" color="error" startIcon={<CancelRoundedIcon />} onClick={onCancel} disabled={isSubmitting}>
-              Cancel Request
-            </Button>
-            <Chip label="Awaiting HQ Review" variant="outlined" sx={{ fontWeight: 600, color: 'text.secondary' }} />
-          </>
+          <Button variant="outlined" color="error" startIcon={<CancelRoundedIcon />} onClick={onCancel} disabled={isSubmitting}>
+            Cancel Request
+          </Button>
         )}
         {status === 'PendingApproval' && isHq && (
           <>
@@ -154,14 +135,14 @@ export function SupplyRequestDetailHeader({
 
         {/* Package Arrived button for branch users when status is Dispatched */}
         {status === 'Dispatched' && isBranch && (
-          <Button startIcon={<CheckCircleRoundedIcon />} onClick={onConfirmArrival} loading={isSubmitting} disabled={isSubmitting}>
+          <Button color="success" startIcon={<CheckCircleRoundedIcon />} onClick={onConfirmArrival} loading={isSubmitting} disabled={isSubmitting}>
             Package Arrived
           </Button>
         )}
 
         {/* Complete Transaction button for branch users when status is Arrived */}
         {status === 'Arrived' && isBranch && (
-          <Button startIcon={<CheckCircleRoundedIcon />} onClick={onCompleteTransaction} loading={isSubmitting} disabled={isSubmitting}>
+          <Button color="success" startIcon={<CheckCircleRoundedIcon />} onClick={onCompleteTransaction} loading={isSubmitting} disabled={isSubmitting}>
             Complete Transaction
           </Button>
         )}

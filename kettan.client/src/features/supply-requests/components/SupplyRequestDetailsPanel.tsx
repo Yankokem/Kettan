@@ -2,20 +2,12 @@ import type { ReactNode } from 'react';
 import { Box, Card, Chip, Typography } from '@mui/material';
 import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
 import EventRoundedIcon from '@mui/icons-material/EventRounded';
-import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
-import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import StickyNote2RoundedIcon from '@mui/icons-material/StickyNote2Rounded';
 import PriorityHighRoundedIcon from '@mui/icons-material/PriorityHighRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded';
-import LinkRoundedIcon from '@mui/icons-material/LinkRounded';
-import TagRoundedIcon from '@mui/icons-material/TagRounded';
 
-import {
-  getSupplyRequestStatusLabel,
-  SUPPLY_REQUEST_STATUS_COLORS,
-} from './SupplyRequestDetail.constants';
 import type { SupplyRequestDetailViewModel } from './SupplyRequestDetail.types';
 
 interface SupplyRequestDetailsPanelProps {

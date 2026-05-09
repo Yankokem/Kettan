@@ -6,6 +6,7 @@ import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import WhereToVoteRoundedIcon from '@mui/icons-material/WhereToVoteRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import type { SupplyRequestTimelineEntry } from '../../supply-requests/components/SupplyRequestDetail.types';
 
 const STEPS = [
@@ -52,6 +53,8 @@ export interface OrderFulfillmentStepperProps {
 export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = [] }: OrderFulfillmentStepperProps) {
   const resolvedIndex = activeStepIndex ?? (status ? getStepIndex(status) : 0);
   const isRejected = status === 'Rejected';
+  const isCancelled = status === 'Cancelled';
+  const isCompleted = status === 'Completed' || status === 'Fulfilled';
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 5 }}>
@@ -60,8 +63,14 @@ export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = []
         const isPast = idx < resolvedIndex;
         const isFuture = idx > resolvedIndex;
 
-        const activeColor = isRejected && idx === 0 ? '#B91C1C' : '#C9A84C';
-        const itemColor = isFuture ? 'text.disabled' : activeColor;
+        let activeColor = '#8C6B43'; // Default tan
+        if (isRejected || isCancelled) {
+          activeColor = '#B91C1C'; // Error red
+        } else if (isCompleted) {
+          activeColor = '#16a34a'; // Success green
+        }
+
+        const itemColor = isFuture ? 'rgba(140, 107, 67, 0.25)' : activeColor;
 
         const event = timeline.find(t => {
            if (isRejected && idx === 0 && t.status === 'Rejected') return true;
@@ -71,7 +80,7 @@ export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = []
         const tooltipTitle = event ? (
           <Box sx={{ p: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
-              {isRejected && idx === 0 ? 'Rejected' : step.label}
+              {isRejected && idx === 0 ? 'Rejected' : isCancelled && idx === resolvedIndex ? 'Cancelled' : step.label}
             </Typography>
             <Typography sx={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
               {new Date(event.timestamp).toLocaleString()}
@@ -117,14 +126,14 @@ export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = []
                     ...(isActive && !isRejected && {
                       animation: 'pulse 1.5s infinite',
                       '@keyframes pulse': {
-                        '0%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
-                        '50%': { transform: 'scale(1.15)', filter: 'drop-shadow(0px 0px 12px rgba(201,168,76,1))' },
-                        '100%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
+                        '0%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(140, 107, 67, 0.6))' },
+                        '50%': { transform: 'scale(1.15)', filter: 'drop-shadow(0px 0px 12px rgba(140, 107, 67, 1))' },
+                        '100%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(140, 107, 67, 0.6))' },
                       },
                     }),
                   }}
                 >
-                  {step.icon}
+                  {isRejected && idx === 0 ? <CancelRoundedIcon sx={{ fontSize: 30 }} /> : step.icon}
                 </Box>
                 <Typography
                   sx={{
@@ -134,7 +143,7 @@ export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = []
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {isRejected && idx === 0 ? 'Rejected' : step.label}
+                  {isRejected && idx === 0 ? 'Rejected' : isCancelled && idx === resolvedIndex ? 'Cancelled' : step.label}
                 </Typography>
               </Box>
             </Tooltip>
@@ -146,10 +155,10 @@ export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = []
                   height: 3,
                   mx: 1.5,
                   mt: 1.75,
-                  backgroundColor: isPast ? activeColor : 'divider',
+                  backgroundColor: isPast ? activeColor : 'rgba(140, 107, 67, 0.15)',
                   borderRadius: 2,
                   ...(isActive && !isRejected && {
-                    background: 'linear-gradient(90deg, #C9A84C 0%, #F5E6B3 50%, #C9A84C 100%)',
+                    background: 'linear-gradient(90deg, #8C6B43 0%, #F5E6B3 50%, #8C6B43 100%)',
                     backgroundSize: '200% 100%',
                     animation: 'movingLine 1s linear infinite',
                     '@keyframes movingLine': {

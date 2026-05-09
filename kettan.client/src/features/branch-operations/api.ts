@@ -14,6 +14,7 @@ export interface SupplyRequestItem {
   isPacked: boolean;
   isBranchChecked: boolean;
   hqStock?: number;
+  branchStock?: number;
 }
 
 export interface SupplyRequest {

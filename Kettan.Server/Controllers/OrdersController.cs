@@ -142,7 +142,7 @@ public class OrdersController : ControllerBase
     // ── SR WORKFLOW ENDPOINTS ──
 
     [HttpGet("{id:int}/picking-suggestions")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchManager,BranchOwner")]
     public async Task<ActionResult<List<PickingSuggestionDto>>> GetPickingSuggestions(int id)
     {
         var suggestions = await _service.GetPickingSuggestionsAsync(id);

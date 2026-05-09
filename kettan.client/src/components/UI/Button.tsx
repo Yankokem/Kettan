@@ -5,9 +5,23 @@ interface ButtonProps extends MuiButtonProps {
   loading?: boolean;
 }
 
-export function Button({ variant = 'contained', sx, loading, disabled, children, startIcon, ...props }: ButtonProps) {
+export function Button({ variant = 'contained', color = 'primary', sx, loading, disabled, children, startIcon, ...props }: ButtonProps) {
   const getStyles = () => {
     if (variant === 'contained') {
+      if (color === 'error') {
+        return {
+          bgcolor: 'error.main',
+          color: '#fff',
+          '&:hover': { bgcolor: 'error.dark' },
+        };
+      }
+      if (color === 'success') {
+        return {
+          bgcolor: 'success.main',
+          color: '#fff',
+          '&:hover': { bgcolor: 'success.dark' },
+        };
+      }
       return {
         bgcolor: '#2E1F14',
         color: '#fff',
@@ -16,6 +30,20 @@ export function Button({ variant = 'contained', sx, loading, disabled, children,
       };
     }
     if (variant === 'outlined') {
+      if (color === 'error') {
+        return {
+          color: 'error.main',
+          borderColor: 'error.main',
+          '&:hover': { borderColor: 'error.dark', bgcolor: 'error.main', color: '#fff' },
+        };
+      }
+      if (color === 'success') {
+        return {
+          color: 'success.main',
+          borderColor: 'success.main',
+          '&:hover': { borderColor: 'success.dark', bgcolor: 'success.main', color: '#fff' },
+        };
+      }
       return {
         color: '#6B4C2A',
         borderColor: 'rgba(107, 76, 42, 0.3)',
@@ -28,6 +56,7 @@ export function Button({ variant = 'contained', sx, loading, disabled, children,
   return (
     <MuiButton
       variant={variant}
+      color={color}
       disableElevation
       disabled={disabled || loading}
       startIcon={!loading ? startIcon : undefined}

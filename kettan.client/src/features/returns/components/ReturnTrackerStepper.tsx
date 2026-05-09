@@ -59,9 +59,10 @@ export function ReturnTrackerStepper({ status, timeline }: ReturnTrackerStepperP
         const matchedEvents = timeline.filter(t => t.status === step.key || (isRejected && idx === 1 && t.status === 'Rejected'));
         const event = matchedEvents[matchedEvents.length - 1];
 
-        const activeColor = (isRejected && idx === 1) ? '#B91C1C' : '#C9A84C';
+        const isCompleted = status === 'Completed';
+        const activeColor = isRejected ? '#B91C1C' : (isCompleted ? '#16a34a' : '#8C6B43');
         
-        const itemColor = isFuture ? 'text.disabled' : activeColor;
+        const itemColor = isFuture ? 'rgba(140, 107, 67, 0.2)' : activeColor;
 
         const tooltipTitle = event ? (
             <Box sx={{ p: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -112,9 +113,9 @@ export function ReturnTrackerStepper({ status, timeline }: ReturnTrackerStepperP
                     ...(isActive && !isRejected && {
                         animation: 'pulse 1.5s infinite',
                         '@keyframes pulse': {
-                          '0%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
-                          '50%': { transform: 'scale(1.15)', filter: 'drop-shadow(0px 0px 12px rgba(201,168,76,1))' },
-                          '100%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
+                          '0%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(140, 107, 67, 0.6))' },
+                          '50%': { transform: 'scale(1.15)', filter: 'drop-shadow(0px 0px 12px rgba(140, 107, 67, 1))' },
+                          '100%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(140, 107, 67, 0.6))' },
                         },
                     }),
                     }}
@@ -143,12 +144,12 @@ export function ReturnTrackerStepper({ status, timeline }: ReturnTrackerStepperP
                   height: 3,
                   mx: 1,
                   mt: 1.75,
-                  backgroundColor: isPast ? activeColor : 'divider',
+                  backgroundColor: isPast ? activeColor : 'rgba(140, 107, 67, 0.15)',
                   borderRadius: 2,
                   position: 'relative',
                   overflow: 'hidden',
                   ...(isActive && !isRejected && {
-                    background: 'linear-gradient(90deg, #C9A84C 0%, #F5E6B3 50%, #C9A84C 100%)',
+                    background: 'linear-gradient(90deg, #8C6B43 0%, #F5E6B3 50%, #8C6B43 100%)',
                     backgroundSize: '200% 100%',
                     animation: 'movingLine 1s linear infinite',
                     '@keyframes movingLine': {
