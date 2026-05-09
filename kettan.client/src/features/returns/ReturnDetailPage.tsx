@@ -17,8 +17,11 @@ import {
   TableHead,
   TableRow,
   Typography,
+  alpha,
 } from '@mui/material';
+import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
@@ -26,6 +29,7 @@ import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import EventRepeatRoundedIcon from '@mui/icons-material/EventRepeatRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import DownloadDoneRoundedIcon from '@mui/icons-material/DownloadDoneRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
@@ -341,24 +345,24 @@ function ReturnItemTableRow({
   return (
     <>
       <TableRow>
-        <TableCell sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+        <TableCell sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
           <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{item.itemName}</Typography>
           <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontFamily: 'monospace' }}>{item.itemSku}</Typography>
         </TableCell>
-        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
           <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{item.quantityReturned}</Typography>
         </TableCell>
-        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
           {showEditControls ? (
             <TextField type="number" size="small" sx={{ width: 80 }} inputProps={{ style: { padding: '4px 8px' } }} value={qty} onChange={(e) => setQty(Number(e.target.value))} disabled={isSaving} />
           ) : (
             <Typography sx={{ fontSize: 13.5 }}>{item.quantityInspected ?? '—'}</Typography>
           )}
         </TableCell>
-        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{item.reasonCode}</Typography>
         </TableCell>
-        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: 'divider', pb: err ? 0 : undefined }}>
+        <TableCell align="left" sx={{ borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2), pb: err ? 0 : undefined }}>
           {showEditControls ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Select size="small" value={disp} onChange={(e) => setDisp(e.target.value)} disabled={isSaving} sx={{ fontSize: 12.5 }}>
@@ -376,14 +380,14 @@ function ReturnItemTableRow({
       </TableRow>
       {err && (
         <TableRow>
-          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: 'divider' }}>
+          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2) }}>
             <Alert severity="error" sx={{ py: 0, px: 2, fontSize: 13, '& .MuiAlert-icon': { py: 0.5 } }}>{err}</Alert>
           </TableCell>
         </TableRow>
       )}
       {!err && isInspecting && isDamagedOrExpired && disp === 'Restock' && (
         <TableRow>
-          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: 'divider' }}>
+          <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: alpha('#C9A84C', 0.2) }}>
             <Alert severity="warning" sx={{ py: 0, px: 2, fontSize: 13, '& .MuiAlert-icon': { py: 0.5 } }}>
               Careful: This item was flagged as Damaged/Expired by the branch.
             </Alert>
@@ -643,88 +647,125 @@ export function ReturnDetailPage() {
       {/* Tracker Stepper */}
       <ReturnTrackerStepper status={row.status as any} timeline={timelineEvents} />
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '360px 1fr' }, gap: 2.2, alignItems: 'start' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: 2.5, alignItems: 'start' }}>
         {/* Info Column */}
         <Paper sx={{ p: 0, borderRadius: '14px', border: '1px solid', borderColor: 'divider', overflow: 'hidden' }} elevation={0}>
           {/* Order/Branch Header */}
-          <Box sx={{ p: 2, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography sx={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'text.secondary' }}>Return Details</Typography>
+          <Box sx={{ 
+              p: 2.2, 
+              background: 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)', 
+              borderBottom: '1px solid', 
+              borderColor: 'divider'
+          }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 1 }}>
+                  <AssignmentRoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Return Details</Typography>
               </Box>
-              <Typography sx={{ fontSize: 18, fontWeight: 800 }}>Order #{row.orderId}</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, color: 'text.secondary', mt: 0.5 }}>
-                  <StorefrontRoundedIcon sx={{ fontSize: 15 }} />
-                  <Typography sx={{ fontSize: 13 }}>{row.branchName}</Typography>
-              </Box>
+              <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Return RT-{row.returnId}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.secondary', mt: -0.5 }}>From Order #{row.orderId}</Typography>
           </Box>
 
-          <Box sx={{ p: 2, display: 'grid', gap: 2 }}>
-              {/* Timeline info */}
-              <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
-                      <EventAvailableRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                      <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Timeline</Typography>
-                  </Box>
-                  <Box sx={{ pl: 3 }}>
-                      <Typography sx={{ fontSize: 13, mb: 0.2 }}>
-                          <span style={{ color: '#757575', marginRight: 4 }}>Filed:</span> 
-                          {new Date(row.loggedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+
+          <Box sx={{ p: 2, display: 'grid', gap: 2.5 }}>
+              {/* Details Section */}
+                  <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
+                          <StorefrontRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+                          <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Branch</Typography>
+                      </Box>
+                      <Typography sx={{ pl: 3.2, fontSize: 14, fontWeight: 500, color: 'text.primary' }}>
+                          {row.branchName}
                       </Typography>
-                      {row.pickupScheduledAt && (
-                          <Typography sx={{ fontSize: 13 }}>
-                              <span style={{ color: '#757575', marginRight: 4 }}>Pickup:</span> 
-                              {new Date(row.pickupScheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                          </Typography>
-                      )}
-                      {row.pickupVehiclePlateNumber && (
-                          <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>
-                              Vehicle {row.pickupVehiclePlateNumber}
-                          </Typography>
-                      )}
                   </Box>
-              </Box>
 
               {row.creditAmount != null && (
                   <Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
-                          <ReceiptLongRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Amount</Typography>
+                          <ReceiptLongRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+                          <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Amount</Typography>
                       </Box>
-                      <Typography sx={{ pl: 3, fontSize: 14, fontWeight: 700, color: 'text.primary' }}>
+                      <Typography sx={{ pl: 3.2, fontSize: 14, fontWeight: 700, color: 'text.primary' }}>
                           {row.creditAmount.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
                       </Typography>
                   </Box>
               )}
 
-              {row.reason && (
+
+
+              {/* Workflow Section */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                   <Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
-                          <NotesRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Additional Notes</Typography>
+                          <PersonOutlineRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+                          <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filed By</Typography>
                       </Box>
-                      <Typography sx={{ pl: 3, fontSize: 13, color: 'text.secondary', lineHeight: 1.5 }}>
-                          {row.reason}
+                      <Typography sx={{ pl: 3.2, fontSize: 14, fontWeight: 500, color: 'text.primary' }}>
+                          {row.submittedByName || 'Branch Manager'} 
+                          <Typography component="span" sx={{ fontSize: 12, color: 'text.disabled', ml: 0.5 }}>
+                              (Branch Manager)
+                          </Typography>
                       </Typography>
                   </Box>
-              )}
+
+                  <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
+                          <EventAvailableRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+                          <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Timeline</Typography>
+                      </Box>
+                      <Box sx={{ pl: 3.2 }}>
+                          <Typography sx={{ fontSize: 13, mb: 0.2 }}>
+                              <span style={{ color: '#757575', marginRight: 4 }}>Filed:</span> 
+                              {new Date(row.loggedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </Typography>
+                          {row.pickupScheduledAt && (
+                              <Typography sx={{ fontSize: 13 }}>
+                                  <span style={{ color: '#757575', marginRight: 4 }}>Pickup:</span> 
+                                  {new Date(row.pickupScheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                              </Typography>
+                          )}
+                      </Box>
+                  </Box>
+              </Box>
+
+              <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <NotesRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+                      <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Additional Notes</Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, color: row.reason ? '#334155' : 'text.disabled', fontStyle: row.reason ? 'normal' : 'italic' }}>
+                      {row.reason || 'No additional notes.'}
+                  </Typography>
+              </Box>
           </Box>
         </Paper>
 
         {/* Right Column (Items Table + Inspection) */}
         <Box sx={{ display: 'grid', gap: 2.2 }}>
-          <Paper sx={{ p: 2.2, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }} elevation={0}>
-            <Typography sx={{ fontSize: 14, fontWeight: 800, mb: 1.5 }}>Returned Items</Typography>
+          <Paper sx={{ p: 0, borderRadius: '14px', border: '1px solid', borderColor: 'divider', overflow: 'hidden' }} elevation={0}>
+            <Box sx={{ 
+              p: 2, 
+              background: 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)', 
+              borderBottom: '1px solid', 
+              borderColor: 'divider',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.2
+            }}>
+              <Inventory2RoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Returned Items</Typography>
+            </Box>
+            <Box sx={{ p: 2.2 }}>
             {row.items.length === 0 ? (
               <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>No items on this return.</Typography>
             ) : (
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Item</TableCell>
-                    <TableCell align="left" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Returned</TableCell>
-                    <TableCell align="left" sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Inspected</TableCell>
-                    <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Reason</TableCell>
-                    <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: 'divider' }}>Disposition</TableCell>
+                    <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: alpha('#C9A84C', 0.3) }}>Item</TableCell>
+                    <TableCell align="left" sx={{ fontSize: 11.5, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: alpha('#C9A84C', 0.3) }}>Returned</TableCell>
+                    <TableCell align="left" sx={{ fontSize: 11.5, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: alpha('#C9A84C', 0.3) }}>Inspected</TableCell>
+                    <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: alpha('#C9A84C', 0.3) }}>Reason</TableCell>
+                    <TableCell sx={{ fontSize: 11.5, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '2px solid', borderColor: alpha('#C9A84C', 0.3) }}>Disposition</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -741,6 +782,7 @@ export function ReturnDetailPage() {
                 </TableBody>
               </Table>
             )}
+            </Box>
           </Paper>
         </Box>
       </Box>

@@ -77,8 +77,9 @@ function MessageContent({ content, onImageClick, isOwn }: { content: string; onI
                             borderRadius: 2,
                             overflow: 'hidden',
                             cursor: 'pointer',
-                            border: '2px solid',
-                            borderColor: isOwn ? 'rgba(255,255,255,0.2)' : 'divider',
+                            border: '1px solid',
+                            borderColor: isOwn ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                             '&:hover': { opacity: 0.9 }
                         }}
                     >
@@ -326,13 +327,15 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                         ref={anchorRef}
                         onClick={open ? () => setOpen(false) : handleOpen} 
                         sx={{ 
-                            bgcolor: open ? '#F4F1EA' : '#C9A84C', 
-                            color: open ? '#6B4C2A' : 'white',
+                            bgcolor: open ? '#FFFFFF' : '#C9A84C', 
+                            color: open ? '#C9A84C' : 'white',
                             zIndex: 1300,
-                            boxShadow: open ? 'none' : '0 8px 30px rgba(201, 168, 76, 0.4)',
+                            border: open ? '1px solid' : 'none',
+                            borderColor: 'rgba(201,168,76,0.3)',
+                            boxShadow: open ? '0 4px 20px rgba(0,0,0,0.1)' : '0 8px 30px rgba(201, 168, 76, 0.4)',
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             '&:hover': { 
-                                bgcolor: open ? '#EAE5D9' : '#B8963D',
+                                bgcolor: open ? '#FDFCFB' : '#B8963D',
                                 transform: 'scale(1.05)'
                             },
                             width: 60, height: 60
@@ -496,10 +499,10 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                                 onClick={() => void handleSend()}
                                 sx={{ 
                                     color: 'white', 
-                                    bgcolor: content.trim() || pendingImage ? '#6B4C2A' : '#D1BFA8',
+                                    bgcolor: content.trim() || pendingImage ? '#C9A84C' : '#EAE5D9',
                                     borderRadius: '12px',
-                                    '&:hover': { bgcolor: '#543B21' },
-                                    '&.Mui-disabled': { bgcolor: '#EAE5D9', color: 'rgba(0,0,0,0.2)' }
+                                    '&:hover': { bgcolor: '#B8963D' },
+                                    '&.Mui-disabled': { bgcolor: '#F4F1EA', color: 'rgba(0,0,0,0.12)' }
                                 }}
                             >
                                 {sending ? <CircularProgress size={20} color="inherit" /> : <SendRoundedIcon sx={{ fontSize: 20 }} />}

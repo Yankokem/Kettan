@@ -10,6 +10,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import QuestionAnswerRoundedIcon from '@mui/icons-material/QuestionAnswerRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -509,15 +510,15 @@ export function OrderDetailPage() {
       {/* ── Stepper ── */}
       <OrderFulfillmentStepper status={orderStatus} />
 
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 3.5 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '400px 1fr' }, gap: 3, alignItems: 'start' }}>
+        <Box>
           {order && <OrderDetailsPanel order={order} />}
-        </Grid>
+        </Box>
 
-        <Grid size={{ xs: 12, md: 8.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Dispatch Assignment Card (only when Packed) */}
           {orderStatus === 'Packed' && isHq && (
-            <Box sx={{ mt: 2 }}>
+            <Box>
               <DispatchAssignmentCard
                 isLoading={isSaving}
                 onDispatch={(data) => void handleWorkflowAction('dispatch', data)}
@@ -529,7 +530,7 @@ export function OrderDetailPage() {
           <Box
             sx={{
               bgcolor: 'background.paper',
-              borderRadius: 2,
+              borderRadius: '14px',
               border: '1px solid',
               borderColor: 'divider',
               overflow: 'hidden',
@@ -538,14 +539,16 @@ export function OrderDetailPage() {
             <Box
               sx={{
                 p: 2,
+                background: 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)',
                 borderBottom: '1px solid',
                 borderColor: 'divider',
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
+                gap: 1.2,
               }}
             >
-              <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>
+              <FactCheckRoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Item Reconciliation
               </Typography>
               {tableMode !== 'readonly' && tableMode !== 'readonly-packed' && (
@@ -576,8 +579,8 @@ export function OrderDetailPage() {
               }
             />
           </Box>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* ── Cancel Order Modal ── */}
       <Dialog open={cancelModalOpen} onClose={() => setCancelModalOpen(false)} maxWidth="sm" fullWidth>

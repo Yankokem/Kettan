@@ -38,7 +38,7 @@ function DetailField({
         <Typography
           sx={{
             fontSize: 11.5,
-            color: 'text.secondary',
+            color: '#6B4C2A',
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
@@ -53,94 +53,64 @@ function DetailField({
 }
 
 export function SupplyRequestDetailsPanel({ request }: SupplyRequestDetailsPanelProps) {
-  const statusColor = SUPPLY_REQUEST_STATUS_COLORS[request.status] || { color: '#6B7280', bg: 'rgba(107,114,128,0.12)' };
-
   return (
-    <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 2.5, bgcolor: '#f8fafc', borderBottom: '1px solid', borderColor: 'divider' }}>
-        <DescriptionRoundedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-        <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Request Details</Typography>
+    <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
+      <Box sx={{ 
+        p: 2.2, 
+        background: 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)', 
+        borderBottom: '1px solid', 
+        borderColor: 'divider' 
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 1 }}>
+          <DescriptionRoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Request Details</Typography>
+        </Box>
+        <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>{request.requestNumber}</Typography>
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.secondary', mt: -0.5 }}>{request.branchName}</Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', p: 2.5, gap: 2.5 }}>
-        <DetailField icon={<TagRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />} label="Request ID">
-          <Chip
-            label={request.requestNumber}
-            size="small"
-            sx={{ fontWeight: 700, fontFamily: 'monospace', bgcolor: '#e2e8f0', color: '#1e293b', borderRadius: 1 }}
-          />
-        </DetailField>
-
-        <DetailField icon={<StorefrontRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />} label="Branch">
-          <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{request.branchName}</Typography>
-        </DetailField>
-
-        <DetailField icon={<PriorityHighRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />} label="Priority">
-          <Chip label={request.priority} size="small" sx={{ fontSize: 11.5, fontWeight: 600 }} />
-        </DetailField>
-
-        <DetailField icon={<CategoryRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />} label="Request Type">
-          <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{request.requestType}</Typography>
-        </DetailField>
-
-        <DetailField icon={<ScheduleRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />} label="Dispatch Window">
-          <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{request.dispatchWindow}</Typography>
-        </DetailField>
-
-        <DetailField icon={<EventRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />} label="Submitted">
-          <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{request.submittedAtLabel}</Typography>
-        </DetailField>
-
-        <DetailField icon={<PersonOutlineRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />} label="Requested By">
-          <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
-            {request.requestedByName}
-            <Typography component="span" sx={{ fontSize: 13, color: 'text.disabled', ml: 0.5 }}>
-              ({request.requestedByRole})
-            </Typography>
-          </Typography>
-        </DetailField>
-
-        <DetailField icon={<InfoRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />} label="Status">
-          <Chip
-            label={getSupplyRequestStatusLabel(request.status)}
-            size="small"
-            sx={{
-              fontSize: 12,
-              fontWeight: 600,
-              bgcolor: statusColor.bg,
-              color: statusColor.color,
-              border: `1px solid ${statusColor.color}28`,
-            }}
-          />
-        </DetailField>
-
-        {request.linkedOrderId ? (
-          <DetailField icon={<LinkRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />} label="Linked Order">
-            <Chip
-              label={request.linkedOrderId}
-              size="small"
-              clickable
-              sx={{
-                fontWeight: 700,
-                fontFamily: 'monospace',
-                fontSize: 12,
-                bgcolor: 'rgba(37,99,235,0.1)',
-                color: '#2563EB',
-                border: '1px solid rgba(37,99,235,0.25)',
-                '&:hover': { bgcolor: 'rgba(37,99,235,0.18)' },
-              }}
-            />
+      <Box sx={{ display: 'flex', flexDirection: 'column', p: 2.5, gap: 3 }}>
+        {/* Details Section */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <DetailField icon={<PriorityHighRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />} label="Priority">
+            <Chip label={request.priority} size="small" sx={{ fontSize: 11.5, fontWeight: 600 }} />
           </DetailField>
-        ) : null}
 
-        <Box sx={{ bgcolor: 'rgba(241,245,249,0.6)', p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+          <DetailField icon={<CategoryRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />} label="Request Type">
+            <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{request.requestType}</Typography>
+          </DetailField>
+
+          <DetailField icon={<ScheduleRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />} label="Dispatch Window">
+            <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{request.dispatchWindow}</Typography>
+          </DetailField>
+        </Box>
+
+        {/* Workflow Section */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <DetailField icon={<PersonOutlineRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />} label="Requested By">
+            <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
+              {request.requestedByName}
+              <Typography component="span" sx={{ fontSize: 12, color: 'text.disabled', ml: 0.5 }}>
+                ({request.requestedByRole})
+              </Typography>
+            </Typography>
+          </DetailField>
+
+          <DetailField icon={<EventRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />} label="Submitted At">
+            <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{request.submittedAtLabel}</Typography>
+          </DetailField>
+        </Box>
+
+        <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <StickyNote2RoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <StickyNote2RoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+            <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Notes
             </Typography>
           </Box>
-          <Typography sx={{ fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, color: '#334155' }}>{request.notes}</Typography>
+          <Typography sx={{ fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, color: '#334155' }}>
+            {request.notes || 'No additional notes.'}
+          </Typography>
         </Box>
       </Box>
     </Card>

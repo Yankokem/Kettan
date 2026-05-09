@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, TablePagination, Typography } from '@mui/material';
+import { Box, Chip, TablePagination, Typography, alpha } from '@mui/material';
 import UnfoldMoreRoundedIcon from '@mui/icons-material/UnfoldMoreRounded';
 import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
@@ -342,13 +342,13 @@ export function DataTable<T>({
           gridTemplateColumns,
           columnGap: 2,
           px: 3,
-          py: 1.3,
+          py: 1.5,
           background: (theme) =>
             theme.palette.mode === 'dark'
               ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.9) 0%, rgba(58, 39, 24, 0.86) 100%)'
               : 'linear-gradient(170deg, rgba(250, 245, 239, 0.94) 0%, rgba(240, 230, 211, 0.94) 100%)',
-          borderBottom: 1,
-          borderColor: 'divider',
+          borderBottom: '2px solid',
+          borderColor: alpha('#C9A84C', 0.3),
         }}
       >
         {columns.map((col) => (
@@ -364,9 +364,7 @@ export function DataTable<T>({
               color: (theme) =>
                 sortKey === col.key
                   ? theme.palette.primary.main
-                  : theme.palette.mode === 'dark'
-                    ? 'rgba(232,211,169,0.74)'
-                    : '#6B4C2A',
+                  : '#6B4C2A',
               textAlign: col.align || 'left',
               userSelect: 'none',
               cursor: col.sortable ? 'pointer' : 'default',
@@ -394,8 +392,8 @@ export function DataTable<T>({
               columnGap: 2,
               px: 3,
               py: 2,
-              borderBottom: 1,
-              borderColor: 'divider',
+              borderBottom: '1px dashed',
+              borderColor: alpha('#C9A84C', 0.2),
             }}
           >
             {columns.map((col) => (
@@ -419,8 +417,8 @@ export function DataTable<T>({
               py: 1.75,
               alignItems: 'center',
               bgcolor: striped && rowIndex % 2 === 1 ? 'rgba(0,0,0,0.015)' : 'transparent',
-              borderBottom: 1,
-              borderColor: 'divider',
+              borderBottom: '1px dashed',
+              borderColor: alpha('#C9A84C', 0.2),
               cursor: onRowClick ? 'pointer' : 'default',
               '&:hover': { bgcolor: 'action.hover' },
               ...(rowSx ? rowSx(row, rowIndex) : {}),

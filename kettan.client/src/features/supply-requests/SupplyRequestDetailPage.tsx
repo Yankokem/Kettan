@@ -3,6 +3,7 @@ import { Box, Typography, Alert, CircularProgress, Dialog, DialogTitle, DialogCo
 import { useNavigate, useParams } from '@tanstack/react-router';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import { 
   fetchSupplyRequestById, 
   submitSupplyRequest,
@@ -21,7 +22,6 @@ import { OrderFulfillmentStepper } from '../orders/components/OrderFulfillmentSt
 import { SupplyRequestDetailHeader } from './components/SupplyRequestDetailHeader';
 import { SupplyRequestDetailsPanel } from './components/SupplyRequestDetailsPanel';
 import SRItemTable, { type SRTableMode } from './components/SRItemTable';
-import { SupplyRequestStatusTimeline } from './components/SupplyRequestStatusTimeline';
 import { SharedFloatingChat } from '../shared/components/SharedFloatingChat';
 import type { SupplyRequestDetailViewModel, SupplyRequestDetailItem, SupplyRequestTimelineEntry } from './components/SupplyRequestDetail.types';
 
@@ -292,15 +292,24 @@ export function SupplyRequestDetailPage() {
 
       {showStepper ? <OrderFulfillmentStepper status={request.status} timeline={request.timeline} /> : null}
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '3.5fr 8.5fr' }, gap: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '400px 1fr' }, gap: 3 }}>
         <Box>
           <SupplyRequestDetailsPanel request={request} />
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
-            <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2" fontWeight={700}>Requested Items</Typography>
+          <Box sx={{ bgcolor: 'background.paper', borderRadius: '14px', border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
+            <Box sx={{ 
+              p: 2, 
+              background: 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)', 
+              borderBottom: '1px solid', 
+              borderColor: 'divider', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1.2
+            }}>
+              <Inventory2RoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Requested Items</Typography>
               {tableMode === 'branch-check' && (
                 <Typography variant="caption" color="text.secondary">
                   {localItems.filter(i => i.isBranchChecked).length} / {localItems.filter(i => !i.isRejectedDuringPicking).length} Checked
@@ -314,7 +323,7 @@ export function SupplyRequestDetailPage() {
               onItemsChange={tableMode === 'branch-check' ? setLocalItems : undefined}
             />
           </Box>
-          <SupplyRequestStatusTimeline entries={request.timeline} />
+
         </Box>
       </Box>
 
