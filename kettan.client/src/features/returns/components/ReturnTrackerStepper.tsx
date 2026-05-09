@@ -59,8 +59,7 @@ export function ReturnTrackerStepper({ status, timeline }: ReturnTrackerStepperP
         const matchedEvents = timeline.filter(t => t.status === step.key || (isRejected && idx === 1 && t.status === 'Rejected'));
         const event = matchedEvents[matchedEvents.length - 1];
 
-        const activeColor = '#C9A84C'; 
-        if (isRejected && idx === 1) activeColor = '#B91C1C';
+        const activeColor = (isRejected && idx === 1) ? '#B91C1C' : '#C9A84C';
         
         const itemColor = isFuture ? 'text.disabled' : activeColor;
 

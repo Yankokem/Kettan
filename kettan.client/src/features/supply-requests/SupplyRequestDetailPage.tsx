@@ -22,7 +22,7 @@ import { SupplyRequestDetailHeader } from './components/SupplyRequestDetailHeade
 import { SupplyRequestDetailsPanel } from './components/SupplyRequestDetailsPanel';
 import SRItemTable, { type SRTableMode } from './components/SRItemTable';
 import { SupplyRequestStatusTimeline } from './components/SupplyRequestStatusTimeline';
-import { OrderMessagesModal } from '../orders/components/OrderMessagesModal';
+import { SharedFloatingChat } from '../shared/components/SharedFloatingChat';
 import type { SupplyRequestDetailViewModel, SupplyRequestDetailItem, SupplyRequestTimelineEntry } from './components/SupplyRequestDetail.types';
 
 // Poll interval for real-time status updates (ms)
@@ -474,10 +474,11 @@ export function SupplyRequestDetailPage() {
           immediately after approval (before the order is fully propagated), linkedOrderId
           may momentarily cause a 403 — passing null lets the modal show empty state
           instead of throwing an error at the page level. */}
-      <OrderMessagesModal 
-        open={chatOpen} 
-        onClose={() => setChatOpen(false)} 
-        orderId={linkedOrderIdNum}
+      <SharedFloatingChat 
+        contextType="order"
+        id={linkedOrderIdNum}
+        open={chatOpen}
+        onOpenChange={setChatOpen}
       />
     </Box>
   );

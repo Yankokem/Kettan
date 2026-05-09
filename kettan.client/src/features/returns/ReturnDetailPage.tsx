@@ -38,7 +38,7 @@ import { useParams } from '@tanstack/react-router';
 import { api } from '../../utils/api';
 
 import { ReturnTrackerStepper } from './components/ReturnTrackerStepper';
-import { ReturnFloatingChat } from './components/ReturnFloatingChat';
+import { SharedFloatingChat } from '../shared/components/SharedFloatingChat';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -746,7 +746,7 @@ export function ReturnDetailPage() {
       </Box>
 
       {/* Floating Chat Widget */}
-      <ReturnFloatingChat returnId={row.returnId} currentUserId={user ? Number(user.id) : undefined} />
+      <SharedFloatingChat contextType="return" id={Number(row.returnId)} />
 
       {/* ── Dialogs ── */}
       <AcknowledgeDialog

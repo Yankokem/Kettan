@@ -33,7 +33,7 @@ import {
 } from '../branch-operations/api';
 import SRItemTable, { type SRTableMode } from '../supply-requests/components/SRItemTable';
 import type { SupplyRequestDetailItem } from '../supply-requests/components/SupplyRequestDetail.types';
-import { OrderMessagesModal } from './components/OrderMessagesModal';
+import { SharedFloatingChat } from '../shared/components/SharedFloatingChat';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 
 // How often to silently re-fetch the order for status changes (ms)
@@ -697,7 +697,7 @@ export function OrderDetailPage() {
       </Dialog>
 
       {/* ── Order Messages Modal ── */}
-      <OrderMessagesModal open={chatOpen} onClose={() => setChatOpen(false)} orderId={Number(orderId)} />
+      <SharedFloatingChat contextType="order" id={Number(orderId)} open={chatOpen} onOpenChange={setChatOpen} />
     </Box>
   );
 }
