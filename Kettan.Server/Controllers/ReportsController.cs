@@ -359,4 +359,40 @@ public class ReportsController : ControllerBase
         var csvBytes = _csvExportService.ExportToCsv(logs);
         return File(csvBytes, "text/csv", "consumption_report.csv");
     }
+
+    [HttpGet("transactions/{referenceId:int}/export")]
+    public async Task<IActionResult> ExportTransactionGroup(int referenceId, [FromQuery] string format = "pdf")
+    {
+        var tenantId = _currentUser.TenantId;
+
+        var transactions = await _context.InventoryTransactions
+            .Include(t => t.Batch).ThenInclude(b => b!.Item)
+            .Include(t => t.User)
+            .Where(t => t.TenantId == tenantId && t.ReferenceId == referenceId)
+            .OrderByDescending(t => t.Timestamp)
+            .ToListAsync();
+
+        if (transactions.Count == 0) return NotFound();
+
+        var data = transactions.Select(t => new
+        {
+            t.Timestamp,
+            Item = t.Batch?.Item?.Name ?? "Unknown",
+            SKU = t.Batch?.Item?.SKU ?? "Unknown",
+            Batch = t.Batch?.BatchNumber ?? "N/A",
+            Quantity = t.QuantityChange,
+            Type = t.TransactionType.ToString(),
+            User = t.User != null ? $"{t.User.FirstName} {t.User.LastName}".Trim() : "System",
+            t.Remarks
+        }).ToList();
+
+        if (format.ToLower() == "pdf")
+        {
+            var pdfBytes = _pdfExportService.ExportToPdf($"Transaction Report - Ref {referenceId}", data);
+            return File(pdfBytes, "application/pdf", $"transaction_{referenceId}.pdf");
+        }
+
+        var csvBytes = _csvExportService.ExportToCsv(data);
+        return File(csvBytes, "text/csv", $"transaction_{referenceId}.csv");
+    }
 }

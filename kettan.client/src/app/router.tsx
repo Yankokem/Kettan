@@ -13,6 +13,7 @@ import { EditStaffPage } from '../features/staff/EditStaffPage';
 import { InventoryPage } from '../features/hq-inventory/InventoryPage';
 import { InventoryItemProfilePage } from '../features/hq-inventory/InventoryItemProfilePage';
 import InventoryTransactionPage from '../features/hq-inventory/InventoryTransactionPage';
+import TransactionDetailView from '../features/hq-inventory/TransactionDetailView';
 import { CompanyProfilePage } from '../features/company/CompanyProfilePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
@@ -221,6 +222,12 @@ const inventoryProfileRoute = createRoute({
   component: InventoryItemProfilePage,
 });
 
+const transactionDetailRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/hq-inventory/transactions/$transactionId',
+  component: TransactionDetailView,
+});
+
 const companyProfileRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/company-profile',
@@ -426,6 +433,7 @@ const routeTree = rootRoute.addChildren([
     suppliersRoute,
     vehiclesRoute,
     inventoryProfileRoute,
+    transactionDetailRoute,
     companyProfileRoute,
     settingsRoute,
     reportsRoute,

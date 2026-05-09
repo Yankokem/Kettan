@@ -98,6 +98,9 @@ public class TransactionDto
     public int TransactionId { get; set; }
     public int BatchId { get; set; }
     public string BatchNumber { get; set; } = string.Empty;
+    public int ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public string ItemSku { get; set; } = string.Empty;
     public int UserId { get; set; }
     public string UserName { get; set; } = string.Empty;
     public decimal QuantityChange { get; set; }

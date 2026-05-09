@@ -46,6 +46,9 @@ interface TransactionDto {
   transactionId: number;
   batchId: number;
   batchNumber: string;
+  itemId: number;
+  itemName: string;
+  itemSku: string;
   userId: number;
   userName: string;
   quantityChange: number;
@@ -253,7 +256,9 @@ function toTransaction(
           createdAt: row.timestamp,
         }
         : undefined),
-    itemId: item?.id ?? '',
+    itemId: String(row.itemId),
+    itemName: row.itemName,
+    itemSku: row.itemSku,
     item,
     userId: String(row.userId),
     userName: row.userName,
@@ -343,6 +348,22 @@ export async function fetchInventoryItemTransactions(
   const batchById = new Map((context?.batches ?? []).map((batch) => [batch.id, batch]));
 
   return response.data.map((row) => toTransaction(row, context?.item, batchById));
+}
+
+export async function fetchGlobalTransactions(options?: { branchId?: number }): Promise<InventoryTransaction[]> {
+  const params: Record<string, number> = {};
+  if (options?.branchId) params.branchId = options.branchId;
+
+  const response = await api.get<TransactionDto[]>('/api/items/transactions', {
+    params: Object.keys(params).length > 0 ? params : undefined,
+  });
+
+  return response.data.map((row) => toTransaction(row));
+}
+
+export async function fetchTransactionGroup(groupId: string): Promise<InventoryTransaction[]> {
+  const response = await api.get<TransactionDto[]>(`/api/items/transactions/group/${groupId}`);
+  return response.data.map((row) => toTransaction(row));
 }
 
 export async function updateInventoryItem(itemId: string, input: UpdateItemInput): Promise<void> {

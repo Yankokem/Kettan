@@ -10,6 +10,7 @@ import type { InventoryItem, InventoryTransaction } from './types';
 import {
   fetchInventoryItems,
   fetchInventoryItemTransactions,
+  fetchGlobalTransactions,
 } from './hqInventoryApi';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -34,23 +35,12 @@ export function InventoryPage() {
       );
       
       setItems(liveItems);
-
-      const transactionsByItem = await Promise.all(
-        liveItems.map(async (item) => {
-          try {
-            return await fetchInventoryItemTransactions(item.id, { item });
-          } catch {
-            return [];
-          }
-        })
+      
+      const globalTransactions = await fetchGlobalTransactions(
+        isBranchUser && branchId ? { branchId } : undefined
       );
 
-      const mergedTransactions = transactionsByItem
-        .flat()
-        .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
-        .slice(0, 300);
-
-      setTransactions(mergedTransactions);
+      setTransactions(globalTransactions);
     } catch {
       setItems([]);
       setTransactions([]);
@@ -147,6 +137,7 @@ export function InventoryPage() {
         transactions={transactions}
         isBranchView={isBranchUser}
         onRefresh={handleRefresh}
+        isLoading={isLoading}
       />
     </Box>
   );

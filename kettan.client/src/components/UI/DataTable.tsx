@@ -43,6 +43,7 @@ export interface DataTableProps<T> {
   striped?: boolean;
   className?: string;
   rowSx?: (row: T, index: number) => any;
+  isLoading?: boolean;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -69,6 +70,7 @@ export function DataTable<T>({
   striped = false,
   className,
   rowSx,
+  isLoading = false,
 }: DataTableProps<T>) {
   const effectiveDefaultPageSize = defaultRowsPerPage ?? defaultPageSize;
   const effectivePageSizes = rowsPerPageOptions ?? pageSizes;
@@ -382,7 +384,28 @@ export function DataTable<T>({
       </Box>
 
       {/* Rows */}
-      {paginatedData.length > 0 ? (
+      {isLoading ? (
+        Array.from({ length: effectiveDefaultPageSize }).map((_, idx) => (
+          <Box
+            key={`skeleton-${idx}`}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns,
+              columnGap: 2,
+              px: 3,
+              py: 2,
+              borderBottom: 1,
+              borderColor: 'divider',
+            }}
+          >
+            {columns.map((col) => (
+              <Box key={col.key} sx={{ px: 0.5 }}>
+                <Box className="skeleton" sx={{ height: 16, width: '80%', borderRadius: 1 }} />
+              </Box>
+            ))}
+          </Box>
+        ))
+      ) : paginatedData.length > 0 ? (
         paginatedData.map((row, rowIndex) => (
           <Box
             key={keyExtractor(row)}

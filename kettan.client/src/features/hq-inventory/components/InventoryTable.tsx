@@ -45,42 +45,128 @@ interface InventoryTableProps {
   transactions?: InventoryTransaction[];
   isBranchView?: boolean;
   onRefresh?: () => void;
+  isLoading?: boolean;
 }
 
 type ViewMode = 'default' | 'transactions';
 
-const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: string; color: string; bgcolor: string }> = {
+interface GroupedTransaction {
+  id: string;
+  referenceId?: string;
+  type: string;
+  timestamp: string;
+  userName: string;
+  itemsCount: number;
+  totalQuantity: number;
+  remarks?: string;
+  items: InventoryTransaction[];
+}
+
+const TYPE_CONFIG: Record<TransactionType, { icon: React.ReactNode; label: string; color: string }> = {
   Restock: {
     icon: <CallReceivedRoundedIcon sx={{ fontSize: 14 }} />,
-    label: 'Stock-In',
-    color: '#166534',
-    bgcolor: 'rgba(22, 163, 74, 0.08)',
+    label: 'Stock-in',
+    color: '#16A34A',
   },
   Consumption: {
     icon: <CallMadeRoundedIcon sx={{ fontSize: 14 }} />,
-    label: 'Stock-Out',
-    color: '#991B1B',
-    bgcolor: 'rgba(220, 38, 38, 0.08)',
+    label: 'Stock-out',
+    color: '#DC2626',
   },
   Sales_Auto: {
     icon: <ShoppingCartRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Sale',
-    color: '#1E40AF',
-    bgcolor: 'rgba(59, 130, 246, 0.08)',
+    color: '#3B82F6',
   },
   Adjustment: {
     icon: <TuneRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Adjust',
-    color: '#92400E',
-    bgcolor: 'rgba(217, 119, 6, 0.08)',
+    color: '#D97706',
   },
   Transfer: {
     icon: <SyncAltRoundedIcon sx={{ fontSize: 14 }} />,
     label: 'Transfer',
-    color: '#3D5029',
-    bgcolor: 'rgba(84,107,63,0.08)',
+    color: '#6B4C2A',
   },
 };
+
+function TransactionActionsMenu({ transaction }: { transaction: GroupedTransaction }) {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => setAnchorEl(null);
+
+  const handleExport = async () => {
+    handleClose();
+    try {
+      const ref = transaction.referenceId || transaction.id;
+      // If it's a numeric ref, we can use our new endpoint
+      const isNumeric = /^\d+$/.test(String(transaction.referenceId));
+      
+      const token = localStorage.getItem('token');
+      // For now, if it's not numeric, we might need a different approach, but we'll try the reference endpoint
+      const url = isNumeric 
+        ? `/api/reports/transactions/${transaction.referenceId}/export?format=pdf`
+        : `/api/reports/inventory/export?format=pdf`; // Fallback
+
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', `transaction_${ref}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (error) {
+      console.error('Export Error:', error);
+    }
+  };
+
+  return (
+    <>
+      <IconButton size="small" onClick={handleClick} sx={{ color: 'text.secondary' }}>
+        <MoreVertRoundedIcon fontSize="small" />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            mt: 0.5,
+            minWidth: 160,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+          }
+        }}
+      >
+        <MenuItem onClick={() => { handleClose(); navigate({ to: '/hq-inventory/transactions/$transactionId', params: { transactionId: transaction.id } }); }}>
+          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem onClick={handleExport}>
+          <ListItemIcon><ArchiveRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="Export to PDF" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+      </Menu>
+    </>
+  );
+}
 
 function ActionsMenu({ item, isBranchView, onThresholdEdit }: { item: InventoryItem, isBranchView?: boolean, onThresholdEdit: (item: InventoryItem) => void }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -141,7 +227,7 @@ function ActionsMenu({ item, isBranchView, onThresholdEdit }: { item: InventoryI
   );
 }
 
-export function InventoryTable({ items, transactions = [], isBranchView = false, onRefresh }: InventoryTableProps) {
+export function InventoryTable({ items, transactions = [], isBranchView = false, onRefresh, isLoading = false }: InventoryTableProps) {
   const navigate = useNavigate();
   const search = useSearch({ from: '/layout/hq-inventory' }) as { search?: string };
   const [viewMode, setViewMode] = useState<ViewMode>('default');
@@ -226,12 +312,61 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
     return result;
   }, [items, searchQuery, filterCategory, sortBy]);
 
-  const filteredTransactions = useMemo(() => {
-    if (!searchQuery) return transactions;
-    return transactions.filter(t =>
-      (t.item?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.batch?.batchNumber || '').toLowerCase().includes(searchQuery.toLowerCase())
+  const groupTransactions = (txs: InventoryTransaction[]): GroupedTransaction[] => {
+    const groups = new Map<string, GroupedTransaction>();
+
+    txs.forEach(t => {
+      // Grouping key: ReferenceId if available, otherwise try to extract from remarks (e.g. "Ref INV-123")
+      let ref = t.referenceId;
+      if (!ref && t.remarks?.startsWith('Ref ')) {
+        const match = t.remarks.match(/^Ref ([\w-]+)/);
+        if (match) ref = match[1];
+      }
+
+      const key = ref 
+        ? `REF-${ref}` 
+        : `TX-${t.timestamp}-${t.userId}-${t.transactionType}`;
+      
+      const existing = groups.get(key);
+      if (existing) {
+        existing.itemsCount += 1;
+        existing.totalQuantity += Math.abs(t.quantityChange);
+        existing.items.push(t);
+        // Take the longest remarks
+        if (t.remarks && (!existing.remarks || t.remarks.length > existing.remarks.length)) {
+          existing.remarks = t.remarks;
+        }
+      } else {
+        groups.set(key, {
+          id: key,
+          referenceId: t.referenceId,
+          type: t.transactionType,
+          timestamp: t.timestamp,
+          userName: t.userName || 'System',
+          itemsCount: 1,
+          totalQuantity: Math.abs(t.quantityChange),
+          remarks: t.remarks,
+          items: [t]
+        });
+      }
+    });
+
+    return Array.from(groups.values()).sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
+  };
+
+  const groupedTransactions = useMemo(() => {
+    const txs = searchQuery 
+      ? transactions.filter(t =>
+          (t.itemName || t.item?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (t.batch?.batchNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (t.referenceId || '').toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (t.remarks || '').toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : transactions;
+
+    return groupTransactions(txs);
   }, [transactions, searchQuery]);
 
 
@@ -359,11 +494,78 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
   ];
 
 
-  const transactionColumns: ColumnDef<InventoryTransaction>[] = [
+  const transactionColumns: ColumnDef<GroupedTransaction>[] = [
+    {
+      key: 'id',
+      label: 'ID / REFERENCE',
+      width: '1.2fr',
+      render: (row) => (
+        <Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
+            {row.referenceId ? `REF-${row.referenceId}` : row.id.substring(0, 12)}
+          </Typography>
+          {row.remarks && (
+            <Typography noWrap sx={{ fontSize: 11, color: 'text.secondary', maxWidth: 180 }}>
+              {row.remarks.length > 30 ? row.remarks.substring(0, 30) + '...' : row.remarks}
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'TYPE',
+      width: '1fr',
+      render: (row) => {
+        const config = TYPE_CONFIG[row.type as TransactionType] || TYPE_CONFIG['Adjustment'];
+        let label = config.label;
+        const remarks = (row.remarks || '').toLowerCase();
+
+        if (row.type === 'Restock') {
+          if (remarks.includes('return')) label = 'Stock-in (Return)';
+          else label = 'Stock-in (Restock)';
+        } else if (row.type === 'Consumption') {
+          if (remarks.includes('order')) label = 'Stock-out (Order)';
+          else if (remarks.includes('waste') || remarks.includes('expire')) label = 'Stock-out (Wastage)';
+          else label = 'Stock-out';
+        } else if (row.type === 'Adjustment') {
+          if (remarks.includes('return')) label = 'Adjust (Return)';
+        }
+
+        return (
+          <Box sx={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: 1,
+            color: config.color
+          }}>
+            {config.icon}
+            <Typography sx={{ fontSize: 12, fontWeight: 700 }}>
+              {label}
+            </Typography>
+          </Box>
+        );
+      },
+    },
+    {
+      key: 'itemsCount',
+      label: 'ITEMS',
+      width: '1fr',
+      render: (row) => (
+        <Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>
+            {row.itemsCount} {row.itemsCount === 1 ? 'item' : 'items'}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+            Total: {row.totalQuantity.toFixed(row.totalQuantity % 1 === 0 ? 0 : 2)} units
+          </Typography>
+        </Box>
+      ),
+    },
     {
       key: 'timestamp',
       label: 'DATE AND TIME',
-      width: 140,
+      width: '1.2fr',
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
           {new Date(row.timestamp).toLocaleString('en-US', { 
@@ -377,70 +579,22 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
       ),
     },
     {
-      key: 'transactionType',
-      label: 'TYPE',
-      width: 110,
-      render: (row) => {
-        const config = TYPE_CONFIG[row.transactionType];
-        return (
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: config.color }}>
-            {config.label}
-          </Typography>
-        );
-      },
-    },
-    {
-      key: 'item',
-      label: 'ITEM',
-      render: (row) => (
-        <Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>
-            {row.item?.name || 'Unknown Item'}
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary', fontFamily: 'monospace', fontWeight: 500 }}>
-            {row.batch?.batchNumber || ''}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      key: 'quantityChange',
-      label: 'QTY',
-      align: 'right',
-      width: 100,
-      render: (row) => {
-        const isPositive = row.quantityChange > 0;
-        return (
-          <Typography
-            sx={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: isPositive ? '#166534' : '#B91C1C',
-            }}
-          >
-            {formatQuantity(row.quantityChange, row.item?.unit)}
-          </Typography>
-        );
-      },
-    },
-    {
       key: 'userName',
       label: 'BY',
-      width: 110,
+      width: '1fr',
       render: (row) => (
-        <Typography sx={{ fontSize: 13, fontWeight: 500, color: row.userName === 'Auto' ? '#0288D1' : 'text.primary' }}>
-          {row.userName || 'Unknown'}
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>
+          {row.userName}
         </Typography>
       ),
     },
     {
-      key: 'referenceId',
-      label: 'REFERENCE',
-      width: 120,
+      key: 'actions',
+      label: 'ACTIONS',
+      align: 'right',
+      width: 80,
       render: (row) => (
-        <Typography sx={{ fontSize: 12, color: 'text.secondary', fontFamily: 'monospace', fontWeight: 500 }}>
-          {row.referenceId || row.remarks?.substring(0, 20) || '-'}
-        </Typography>
+        <TransactionActionsMenu transaction={row} />
       ),
     },
   ];
@@ -522,7 +676,8 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
     return (
       <DataTable
         columns={transactionColumns}
-        data={filteredTransactions}
+        data={groupedTransactions}
+        isLoading={isLoading}
         keyExtractor={(row) => row.id}
         toolbar={toolbar}
         emptyTitle="No transactions found"
@@ -539,6 +694,7 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
       <DataTable
         columns={defaultColumns}
         data={filteredItems}
+        isLoading={isLoading}
         keyExtractor={(row) => row.id.toString()}
         toolbar={toolbar}
         emptyTitle="No items found"

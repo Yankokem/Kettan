@@ -23,7 +23,7 @@ import { SupplyRequestDetailsPanel } from './components/SupplyRequestDetailsPane
 import SRItemTable, { type SRTableMode } from './components/SRItemTable';
 import { SupplyRequestStatusTimeline } from './components/SupplyRequestStatusTimeline';
 import { OrderMessagesModal } from '../orders/components/OrderMessagesModal';
-import type { SupplyRequestDetailViewModel, SupplyRequestDetailItem } from './components/SupplyRequestDetail.types';
+import type { SupplyRequestDetailViewModel, SupplyRequestDetailItem, SupplyRequestTimelineEntry } from './components/SupplyRequestDetail.types';
 
 // Poll interval for real-time status updates (ms)
 const POLL_INTERVAL_MS = 10_000;
@@ -65,14 +65,24 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
       isPacked: item.isPacked,
       isBranchChecked: item.isBranchChecked,
     })),
-    timeline: [
+    timeline: ([
       {
-        status: request.status as SupplyRequestDetailViewModel['status'],
-        timestamp: request.updatedAt,
+        status: 'PendingApproval' as const,
+        timestamp: request.createdAt,
         actor: request.requestedByName,
         remarks: request.notes ?? undefined,
       },
-    ],
+      ...(request.arrivedAt ? [{ 
+        status: 'Arrived' as const, 
+        timestamp: request.arrivedAt, 
+        actor: request.arrivedConfirmedByName || 'System' 
+      }] : []),
+      ...(request.completedAt ? [{ 
+        status: 'Completed' as const, 
+        timestamp: request.completedAt, 
+        actor: request.completedByName || 'System' 
+      }] : []),
+    ] as SupplyRequestTimelineEntry[]).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
     arrivedAt: request.arrivedAt,
     arrivedConfirmedByName: request.arrivedConfirmedByName,
     completedAt: request.completedAt,
@@ -280,7 +290,7 @@ export function SupplyRequestDetailPage() {
         </Box>
       )}
 
-      {showStepper ? <OrderFulfillmentStepper status={request.status} /> : null}
+      {showStepper ? <OrderFulfillmentStepper status={request.status} timeline={request.timeline} /> : null}
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '3.5fr 8.5fr' }, gap: 3 }}>
         <Box>

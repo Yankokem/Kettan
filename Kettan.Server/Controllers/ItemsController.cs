@@ -452,6 +452,116 @@ public class ItemsController : ControllerBase
             TransactionId = t.TransactionId,
             BatchId = t.BatchId,
             BatchNumber = t.Batch?.BatchNumber ?? string.Empty,
+            ItemId = t.Batch?.ItemId ?? 0,
+            ItemName = t.Batch?.Item?.Name ?? string.Empty,
+            ItemSku = t.Batch?.Item?.SKU ?? string.Empty,
+            UserId = t.UserId,
+            UserName = t.User == null
+                ? string.Empty
+                : $"{t.User.FirstName} {t.User.LastName}".Trim(),
+            QuantityChange = t.QuantityChange,
+            TransactionType = t.TransactionType.ToString(),
+            ReferenceType = t.ReferenceType?.ToString(),
+            ReferenceId = t.ReferenceId,
+            Remarks = t.Remarks,
+            Timestamp = t.Timestamp
+        }).ToList();
+
+        return Ok(rows);
+    }
+
+    [HttpGet("transactions")]
+    public async Task<ActionResult<List<TransactionDto>>> GetTransactions([FromQuery] int? branchId = null)
+    {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var query = _context.InventoryTransactions
+            .Include(t => t.Batch).ThenInclude(b => b!.Item)
+            .Include(t => t.User)
+            .AsQueryable();
+
+        if (branchId.HasValue)
+        {
+            query = query.Where(t => t.Batch != null && t.Batch.BranchId == branchId.Value);
+        }
+        else if (_currentUser.BranchId.HasValue)
+        {
+            query = query.Where(t => t.Batch != null && t.Batch.BranchId == _currentUser.BranchId.Value);
+        }
+        else
+        {
+            // HQ view: only show HQ transactions
+            query = query.Where(t => t.Batch != null && t.Batch.BranchId == null);
+        }
+
+        var transactions = await query
+            .OrderByDescending(t => t.Timestamp)
+            .Take(500)
+            .ToListAsync();
+
+        var rows = transactions.Select(t => new TransactionDto
+        {
+            TransactionId = t.TransactionId,
+            BatchId = t.BatchId,
+            BatchNumber = t.Batch?.BatchNumber ?? string.Empty,
+            ItemId = t.Batch?.ItemId ?? 0,
+            ItemName = t.Batch?.Item?.Name ?? string.Empty,
+            ItemSku = t.Batch?.Item?.SKU ?? string.Empty,
+            UserId = t.UserId,
+            UserName = t.User == null
+                ? string.Empty
+                : $"{t.User.FirstName} {t.User.LastName}".Trim(),
+            QuantityChange = t.QuantityChange,
+            TransactionType = t.TransactionType.ToString(),
+            ReferenceType = t.ReferenceType?.ToString(),
+            ReferenceId = t.ReferenceId,
+            Remarks = t.Remarks,
+            Timestamp = t.Timestamp
+        }).ToList();
+
+        return Ok(rows);
+    }
+
+    [HttpGet("transactions/group/{id}")]
+    public async Task<ActionResult<List<TransactionDto>>> GetTransactionGroup(string id)
+    {
+        if (!_currentUser.TenantId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var query = _context.InventoryTransactions
+            .Include(t => t.Batch).ThenInclude(b => b!.Item)
+            .Include(t => t.User)
+            .AsQueryable();
+
+        if (id.StartsWith("REF-"))
+        {
+            if (int.TryParse(id.Substring(4), out int refId))
+            {
+                query = query.Where(t => t.ReferenceId == refId);
+            }
+        }
+        else if (int.TryParse(id, out int txId))
+        {
+            query = query.Where(t => t.TransactionId == txId);
+        }
+
+        var transactions = await query
+            .OrderByDescending(t => t.Timestamp)
+            .ToListAsync();
+
+        var rows = transactions.Select(t => new TransactionDto
+        {
+            TransactionId = t.TransactionId,
+            BatchId = t.BatchId,
+            BatchNumber = t.Batch?.BatchNumber ?? string.Empty,
+            ItemId = t.Batch?.ItemId ?? 0,
+            ItemName = t.Batch?.Item?.Name ?? string.Empty,
+            ItemSku = t.Batch?.Item?.SKU ?? string.Empty,
             UserId = t.UserId,
             UserName = t.User == null
                 ? string.Empty

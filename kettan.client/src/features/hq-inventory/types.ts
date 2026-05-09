@@ -117,6 +117,8 @@ export interface InventoryTransaction {
   batch?: Batch;
   itemId: string;
   item?: InventoryItem;
+  itemName?: string;
+  itemSku?: string;
   userId: string;
   userName?: string;
   quantityChange: number;

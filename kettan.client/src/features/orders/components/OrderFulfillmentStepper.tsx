@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Tooltip, Fade } from '@mui/material';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
@@ -6,6 +6,7 @@ import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import WhereToVoteRoundedIcon from '@mui/icons-material/WhereToVoteRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
+import type { SupplyRequestTimelineEntry } from '../../supply-requests/components/SupplyRequestDetail.types';
 
 const STEPS = [
   { key: 'PendingApproval', label: 'Requested', icon: <AccessTimeFilledRoundedIcon sx={{ fontSize: 30 }} /> },
@@ -19,7 +20,6 @@ const STEPS = [
 
 /** Maps any order/supply-request status to the corresponding stepper index */
 function getStepIndex(status: string): number {
-  // Handle statuses that map between named steps
   const mapping: Record<string, number> = {
     Draft: -1,
     AutoDrafted: -1,
@@ -35,21 +35,21 @@ function getStepIndex(status: string): number {
     Arrived: 5,
     Delivered: 5,
     Completed: 6,
-    Rejected: 0,      // stays at first step (request was rejected)
-    Returned: 6,       // delivered then returned
+    Rejected: 0,
+    Returned: 6,
     PartiallyApproved: 1,
+    Fulfilled: 6,
   };
   return mapping[status] ?? 0;
 }
 
 export interface OrderFulfillmentStepperProps {
-  /** Current status string — drives which step is highlighted */
   status?: string;
-  /** Legacy: explicit step index (overrides status if provided) */
   activeStepIndex?: number;
+  timeline?: SupplyRequestTimelineEntry[];
 }
 
-export function OrderFulfillmentStepper({ status, activeStepIndex }: OrderFulfillmentStepperProps) {
+export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = [] }: OrderFulfillmentStepperProps) {
   const resolvedIndex = activeStepIndex ?? (status ? getStepIndex(status) : 0);
   const isRejected = status === 'Rejected';
 
@@ -60,43 +60,84 @@ export function OrderFulfillmentStepper({ status, activeStepIndex }: OrderFulfil
         const isPast = idx < resolvedIndex;
         const isFuture = idx > resolvedIndex;
 
-        // If order was rejected, show red on the first step
         const activeColor = isRejected && idx === 0 ? '#B91C1C' : '#C9A84C';
         const itemColor = isFuture ? 'text.disabled' : activeColor;
 
+        const event = timeline.find(t => {
+           if (isRejected && idx === 0 && t.status === 'Rejected') return true;
+           return getStepIndex(t.status) === idx;
+        });
+
+        const tooltipTitle = event ? (
+          <Box sx={{ p: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+              {isRejected && idx === 0 ? 'Rejected' : step.label}
+            </Typography>
+            <Typography sx={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
+              {new Date(event.timestamp).toLocaleString()}
+            </Typography>
+            {event.actor && (
+              <Typography sx={{ fontSize: 11, color: '#F5E6B3' }}>
+                By {event.actor}
+              </Typography>
+            )}
+          </Box>
+        ) : '';
+
         return (
           <Box key={step.key} sx={{ display: 'flex', alignItems: 'flex-start', flex: idx < STEPS.length - 1 ? 1 : 0 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: 30,
-                  color: itemColor,
-                  ...(isActive && !isRejected && {
-                    animation: 'pulse 1.5s infinite',
-                    '@keyframes pulse': {
-                      '0%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
-                      '50%': { transform: 'scale(1.15)', filter: 'drop-shadow(0px 0px 12px rgba(201,168,76,1))' },
-                      '100%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
-                    },
-                  }),
-                }}
-              >
-                {step.icon}
+            <Tooltip
+              title={tooltipTitle}
+              arrow
+              placement="top"
+              TransitionComponent={Fade}
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: '#2C1810',
+                    borderRadius: 2,
+                    boxShadow: 4,
+                  },
+                },
+                arrow: {
+                  sx: {
+                    color: '#2C1810',
+                  },
+                },
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, cursor: event ? 'pointer' : 'default' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: 30,
+                    color: itemColor,
+                    ...(isActive && !isRejected && {
+                      animation: 'pulse 1.5s infinite',
+                      '@keyframes pulse': {
+                        '0%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
+                        '50%': { transform: 'scale(1.15)', filter: 'drop-shadow(0px 0px 12px rgba(201,168,76,1))' },
+                        '100%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
+                      },
+                    }),
+                  }}
+                >
+                  {step.icon}
+                </Box>
+                <Typography
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: isActive ? 700 : 600,
+                    color: isFuture ? 'text.disabled' : 'text.primary',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {isRejected && idx === 0 ? 'Rejected' : step.label}
+                </Typography>
               </Box>
-              <Typography
-                sx={{
-                  fontSize: 12,
-                  fontWeight: isActive ? 700 : 600,
-                  color: isFuture ? 'text.disabled' : 'text.primary',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {isRejected && idx === 0 ? 'Rejected' : step.label}
-              </Typography>
-            </Box>
+            </Tooltip>
 
             {idx < STEPS.length - 1 && (
               <Box

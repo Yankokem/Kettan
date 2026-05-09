@@ -17,13 +17,13 @@ interface TimelineEvent {
 }
 
 const STEPS = [
-  { key: 'Draft', label: 'Draft', icon: <AssignmentRoundedIcon sx={{ fontSize: 24 }} /> },
-  { key: 'Submitted', label: 'Submitted', icon: <OutboxRoundedIcon sx={{ fontSize: 24 }} /> },
-  { key: 'Acknowledged', label: 'Acknowledged', icon: <ThumbUpAltRoundedIcon sx={{ fontSize: 24 }} /> },
-  { key: 'Dispatched', label: 'Dispatched', icon: <LocalShippingRoundedIcon sx={{ fontSize: 24 }} /> },
-  { key: 'Arrived', label: 'Arrived', icon: <WhereToVoteRoundedIcon sx={{ fontSize: 24 }} /> },
-  { key: 'Inspecting', label: 'Inspecting', icon: <SearchRoundedIcon sx={{ fontSize: 24 }} /> },
-  { key: 'Completed', label: 'Completed', icon: <TaskAltRoundedIcon sx={{ fontSize: 24 }} /> },
+  { key: 'Draft', label: 'Draft', icon: <AssignmentRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Submitted', label: 'Submitted', icon: <OutboxRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Acknowledged', label: 'Acknowledged', icon: <ThumbUpAltRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Dispatched', label: 'Dispatched', icon: <LocalShippingRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Arrived', label: 'Arrived', icon: <WhereToVoteRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Inspecting', label: 'Inspecting', icon: <SearchRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Completed', label: 'Completed', icon: <TaskAltRoundedIcon sx={{ fontSize: 30 }} /> },
 ];
 
 function getStepIndex(status: string): number {
@@ -56,18 +56,15 @@ export function ReturnTrackerStepper({ status, timeline }: ReturnTrackerStepperP
         const isPast = idx < resolvedIndex || (isRejected && idx <= resolvedIndex);
         const isFuture = idx > resolvedIndex && !isRejected;
         
-        // Find matching timeline event
-        // If multiple events for the same status, use the latest
         const matchedEvents = timeline.filter(t => t.status === step.key || (isRejected && idx === 1 && t.status === 'Rejected'));
         const event = matchedEvents[matchedEvents.length - 1];
 
-        // Colors
-        let activeColor = '#6B4C2A'; // Kettan Brown
+        const activeColor = '#C9A84C'; 
         if (isRejected && idx === 1) activeColor = '#B91C1C';
         
         const itemColor = isFuture ? 'text.disabled' : activeColor;
 
-        const TooltipContent = event ? (
+        const tooltipTitle = event ? (
             <Box sx={{ p: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
                     {isRejected && idx === 1 ? 'Rejected' : step.label}
@@ -81,18 +78,28 @@ export function ReturnTrackerStepper({ status, timeline }: ReturnTrackerStepperP
                     </Typography>
                 )}
             </Box>
-        ) : null;
+        ) : '';
 
         return (
           <Box key={step.key} sx={{ display: 'flex', alignItems: 'flex-start', flex: idx < STEPS.length - 1 ? 1 : 0 }}>
             <Tooltip 
-                title={TooltipContent || ''} 
+                title={tooltipTitle} 
                 arrow 
                 placement="top"
                 TransitionComponent={Fade}
-                componentsProps={{
-                    tooltip: { sx: { bgcolor: '#2C1810', borderRadius: 2, boxShadow: 4 } },
-                    arrow: { sx: { color: '#2C1810' } }
+                slotProps={{
+                    tooltip: {
+                        sx: {
+                            bgcolor: '#2C1810',
+                            borderRadius: 2,
+                            boxShadow: 4,
+                        },
+                    },
+                    arrow: {
+                        sx: {
+                            color: '#2C1810',
+                        },
+                    },
                 }}
             >
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, minWidth: 60, cursor: event ? 'pointer' : 'default' }}>
@@ -101,19 +108,19 @@ export function ReturnTrackerStepper({ status, timeline }: ReturnTrackerStepperP
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    height: 24, // slightly smaller 
+                    height: 30, 
                     color: itemColor,
                     ...(isActive && !isRejected && {
                         animation: 'pulse 1.5s infinite',
                         '@keyframes pulse': {
-                        '0%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(107,76,42,0.5))' },
-                        '50%': { transform: 'scale(1.15)', filter: 'drop-shadow(0px 0px 10px rgba(107,76,42,0.8))' },
-                        '100%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(107,76,42,0.5))' },
+                          '0%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
+                          '50%': { transform: 'scale(1.15)', filter: 'drop-shadow(0px 0px 12px rgba(201,168,76,1))' },
+                          '100%': { transform: 'scale(1)', filter: 'drop-shadow(0px 0px 4px rgba(201,168,76,0.6))' },
                         },
                     }),
                     }}
                 >
-                    {isRejected && idx === 1 ? <CancelRoundedIcon sx={{ fontSize: 24 }} /> : step.icon}
+                    {isRejected && idx === 1 ? <CancelRoundedIcon sx={{ fontSize: 30 }} /> : step.icon}
                 </Box>
                 <Typography
                     sx={{
@@ -136,23 +143,19 @@ export function ReturnTrackerStepper({ status, timeline }: ReturnTrackerStepperP
                   flex: 1,
                   height: 3,
                   mx: 1,
-                  mt: 1.5,
+                  mt: 1.75,
                   backgroundColor: isPast ? activeColor : 'divider',
                   borderRadius: 2,
                   position: 'relative',
                   overflow: 'hidden',
                   ...(isActive && !isRejected && {
-                    '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        background: 'linear-gradient(90deg, transparent, rgba(107,76,42,0.6), transparent)',
-                        animation: 'shimmer 1.5s linear infinite',
-                        '@keyframes shimmer': {
-                            '0%': { transform: 'translateX(-100%)' },
-                            '100%': { transform: 'translateX(100%)' },
-                        }
-                    }
+                    background: 'linear-gradient(90deg, #C9A84C 0%, #F5E6B3 50%, #C9A84C 100%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'movingLine 1s linear infinite',
+                    '@keyframes movingLine': {
+                      '0%': { backgroundPosition: '100% 0' },
+                      '100%': { backgroundPosition: '-100% 0' },
+                    },
                   }),
                 }}
               />
