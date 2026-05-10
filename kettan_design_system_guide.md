@@ -17,9 +17,10 @@ The brand identity is anchored in a professional, muted tan and cream palette.
 | **Text (Secondary)** | `text.secondary` | Muted descriptions and captions. |
 
 ### 🚫 Colors & Styles to AVOID
-*   **NO Gold**: Do not use bright yellows or "Gold" hex codes (e.g., `#C9A84C`).
-*   **NO Dark Brown**: Avoid muddy or dark brown gradients (e.g., `#2C1810`).
+*   **NO Gold**: Do not use bright yellows or "Gold" hex codes (e.g., `#C9A84C`) as primary elements.
+*   **NO Muddiness**: Avoid muddy or dark brown gradients that lack professional contrast.
 *   **NO Encapsulation**: Do not wrap status trackers or headers in extra boxes/containers with backgrounds unless specified. They should feel integrated into the page.
+*   **MANDATORY Icons**: All title headers, main labels, and child labels **must** be accompanied by a relevant icon.
 
 ---
 
@@ -49,10 +50,16 @@ Consistency in text sizing and weight is critical for a "premium" feel.
 *   **Section Headers**: Use semi-bold or bold (`600` - `700`) for column headers and section titles.
 *   **Body Text**: Always use normal weight (`400` - `500`) for descriptions and data values.
 
-### 2. Document Headers
-*   **Reference ID**:
-    *   **Format**: `#{ID}` (e.g., `#27`). **NEVER** use prefixes (ORD-, SR-).
-    *   **Style**: `fontSize: 18`, `fontWeight: 800`, `letterSpacing: '-0.02em'`, `color: 'text.primary'`.
+### 2. Document Headers & Page Sections
+*   **Gradient Headers**: Use the "Kettan Surface" gradient for main page banners: `linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)`.
+*   **Section Title Headers**: 
+    *   **Color**: Kettan Brown (`#6B4C2A`).
+    *   **Icons**: Must have a leading icon and a vertical accent bar.
+    *   **Style**: `fontSize: 14`, `fontWeight: 700`, `display: 'flex'`, `alignItems: 'center'`, `gap: 1`.
+*   **Main & Child Labels**:
+    *   **Color**: Kettan Tan (`#8C6B43`).
+    *   **Icons**: Must have a leading icon (size `13-14px`).
+    *   **Style**: `textTransform: 'uppercase'`, `letterSpacing: '0.08em'`, `fontSize: 10.5`.
 
 ---
 

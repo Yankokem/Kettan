@@ -20,7 +20,7 @@ export function TextField({ multiline = false, sx, ...props }: MuiTextFieldProps
             : {
                 height: 40,
               }),
-          borderRadius: 2,
+          borderRadius: '14px',
           bgcolor: 'background.paper',
           '& fieldset': {
             borderColor: 'divider',

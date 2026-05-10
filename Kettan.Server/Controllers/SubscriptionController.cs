@@ -216,36 +216,6 @@ public class SubscriptionController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "TenantAdmin")]
-    [HttpPatch("billing-cycle")]
-    public async Task<ActionResult<CurrentSubscriptionResponse>> UpdateBillingCycle(
-        [FromServices] Kettan.Server.Services.Common.ICurrentUserService currentUserService,
-        [FromBody] UpdateBillingCycleRequest request,
-        CancellationToken cancellationToken)
-    {
-        if (!currentUserService.TenantId.HasValue)
-        {
-            return Forbid();
-        }
-
-        if (!ModelState.IsValid)
-        {
-            return ValidationProblem(ModelState);
-        }
-
-        try
-        {
-            var response = await _subscriptionService.UpdateBillingCycleAsync(
-                currentUserService.TenantId.Value,
-                request.BillingCycle,
-                cancellationToken);
-            return Ok(response);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
 
     [Authorize(Roles = "TenantAdmin")]
     [HttpPost("cancel")]

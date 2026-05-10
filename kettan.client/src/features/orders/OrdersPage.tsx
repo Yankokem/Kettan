@@ -70,11 +70,11 @@ const STATUS_MAP: Record<string, { color: string; bg: string }> = {
 type DatasetMode = 'active' | 'history';
 type FlowTab = 'inbound' | 'outbound';
 type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
-type ActiveStatusTab = 'Approved' | 'Processing' | 'Picking' | 'Packed';
+type ActiveStatusTab = 'All' | 'Approved' | 'Processing' | 'Picking' | 'Packed';
 
 const ACTIVE_STATUSES: OrderActionStatus[] = ['Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Allocated', 'Packing', 'Packed'];
 const HISTORY_STATUSES: OrderActionStatus[] = ['Dispatched', 'InTransit', 'Delivered', 'Rejected', 'Returned'];
-const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['Approved', 'Processing', 'Picking', 'Packed'];
+const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['All', 'Approved', 'Processing', 'Picking', 'Packed'];
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
@@ -85,7 +85,8 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'items-low', label: 'Least Items' },
 ];
 
-function getStatusDisplayLabel(status: OrderActionStatus): string {
+function getStatusDisplayLabel(status: OrderActionStatus | 'All'): string {
+  if (status === 'All') return 'Show All';
   if (status === 'PendingApproval') {
     return 'Pending Approval';
   }
@@ -97,12 +98,8 @@ function getStatusDisplayLabel(status: OrderActionStatus): string {
   return status;
 }
 
-function getDefaultActiveStatusByRole(role?: string): ActiveStatusTab {
-  if (role === 'HqManager' || role === 'TenantAdmin' || role === 'HqStaff') {
-    return 'Picking';
-  }
-
-  return 'Approved';
+function getDefaultActiveStatusByRole(_role?: string): ActiveStatusTab {
+  return 'All';
 }
 
 function getColumns(
@@ -130,6 +127,7 @@ function getColumns(
     {
       key: 'id',
       label: 'Order ID',
+      width: 120,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
           {row.id.startsWith('SR-') ? row.id : `ORD-${row.id}`}
@@ -139,9 +137,10 @@ function getColumns(
     {
       key: 'date',
       label: 'Date Requested',
+      width: 180,
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
           {new Date(row.date).toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric', 
@@ -155,6 +154,7 @@ function getColumns(
     {
       key: 'branch',
       label: 'Branch',
+      width: 160,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
           {row.branch}
@@ -165,7 +165,7 @@ function getColumns(
       key: 'subject',
       label: 'Subject',
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
           {row.subject || '—'}
         </Typography>
       ),
@@ -173,6 +173,7 @@ function getColumns(
     {
       key: 'itemsCount',
       label: 'Items',
+      width: 100,
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
@@ -183,12 +184,13 @@ function getColumns(
     {
       key: 'status',
       label: 'Status',
+      width: 140,
       render: (row) => {
         const st = STATUS_MAP[row.status] || { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
         const displayLabel = getStatusDisplayLabel(row.status);
         return (
           <Typography sx={{ 
-            fontSize: 12, 
+            fontSize: 13, 
             fontWeight: 700, 
             color: st.color,
             textTransform: 'lowercase',
@@ -202,8 +204,9 @@ function getColumns(
     {
       key: 'dispatchScheduleStatus',
       label: 'Dispatch SLA',
+      width: 140,
       render: (row) => (
-        <Typography sx={{ fontSize: 12, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
+        <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
           {formatScheduleStatus(row.dispatchScheduleStatus)}
         </Typography>
       ),
@@ -211,10 +214,12 @@ function getColumns(
     {
       key: 'totalCost',
       label: 'Fulfilled Value',
+      width: 150,
+      align: 'right',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 700 }}>
-          {row.totalCost > 0 ? `₱${row.totalCost.toFixed(2)}` : '--'}
+        <Typography sx={{ fontSize: 13, color: '#6B4C2A', fontWeight: 700 }}>
+          {row.totalCost > 0 ? `₱${row.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '--'}
         </Typography>
       ),
     },
@@ -242,15 +247,10 @@ export function OrdersPage() {
 
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
-  const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
   const [searchQuery, setSearchQuery] = useState('');
-
   const [activeStatusTab, setActiveStatusTab] = useState<ActiveStatusTab>(() => getDefaultActiveStatusByRole(user?.role));
-  const [historyStatusFilter, setHistoryStatusFilter] = useState<OrderActionStatus | ''>('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [orders, setOrders] = useState<OrderItem[]>([]);
-  const [outboundOrders, setOutboundOrders] = useState<OrderItem[]>([]);
-  const [flowTab, setFlowTab] = useState<FlowTab>('inbound');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -309,12 +309,11 @@ export function OrdersPage() {
           }));
 
         const finalMerged = [...mappedRequests, ...mappedOrders];
-        setOrders(finalMerged);
-
-        // Also fetch outbound (HQ dispatches)
+        
+        // Also fetch outbound (HQ dispatches) and merge
         try {
           const dispatchRows = await fetchHqDispatches();
-          setOutboundOrders(dispatchRows.map((row: BranchOrder) => ({
+          const mappedOutbound = dispatchRows.map((row: BranchOrder) => ({
             id: String(row.orderId),
             branch: row.branchName || `Branch ${row.branchId}`,
             subject: row.subject || row.dispatchReason || '',
@@ -329,9 +328,10 @@ export function OrdersPage() {
             requestId: row.requestId,
             isHqInitiated: true,
             dispatchReason: row.dispatchReason,
-          })));
+          }));
+          setOrders([...finalMerged, ...mappedOutbound]);
         } catch {
-          // Outbound tab data is non-critical
+          setOrders(finalMerged);
         }
       } catch (err) {
         console.error('Failed to load orders/requests:', err);
@@ -374,14 +374,7 @@ export function OrdersPage() {
     };
   }, []);
 
-  const activeData = flowTab === 'outbound' ? outboundOrders : orders;
-
-  const source = activeData.filter((order) => {
-    const statuses = datasetMode === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES;
-    return statuses.includes(order.status);
-  });
-
-  const filtered = source.filter((order) => {
+  const filtered = orders.filter((order) => {
     const query = searchQuery.trim().toLowerCase();
     const matchesQuery =
       query.length === 0 ||
@@ -389,15 +382,14 @@ export function OrdersPage() {
       order.branch.toLowerCase().includes(query) ||
       order.subject.toLowerCase().includes(query) ||
       (order.actionedBy || '').toLowerCase().includes(query);
-    const matchesStatus = datasetMode === 'active'
-      ? (
-          order.status === activeStatusTab || 
-          (activeStatusTab === 'Approved' && order.status === 'PartiallyApproved') ||
-          (activeStatusTab === 'Picking' && (order.status === 'Allocated' || order.status === 'Packing'))
-        )
-      : !historyStatusFilter || order.status === historyStatusFilter;
+
+    const matchesStatus =
+      !activeStatusTab || 
+      activeStatusTab === 'All' ||
+      order.status === activeStatusTab || 
+      (activeStatusTab === 'Approved' && order.status === 'PartiallyApproved') ||
+      (activeStatusTab === 'Picking' && (order.status === 'Allocated' || order.status === 'Packing'));
     
-    // Check date filtering
     const orderDateOnly = order.date ? order.date.slice(0, 10) : '';
     const inRange = orderDateOnly >= startDate && orderDateOnly <= endDate;
     
@@ -443,13 +435,6 @@ export function OrdersPage() {
 
   const handleReject = (id: string) => {
     openDetails(id);
-  };
-
-  const handleDatasetModeChange = (nextMode: DatasetMode) => {
-    setDatasetMode(nextMode);
-    if (nextMode === 'history') {
-      setHistoryStatusFilter('');
-    }
   };
 
   const columns = getColumns(openDetails, handleApprove, handleReject);
@@ -547,28 +532,24 @@ export function OrdersPage() {
           options={SORT_OPTIONS}
         />
 
-        {datasetMode === 'active' ? (
-          <FilterDropdown
-            label="Status"
-            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-            value={activeStatusTab}
-            onChange={(value) => setActiveStatusTab(value as ActiveStatusTab)}
-            minWidth={160}
-            options={ACTIVE_STATUS_TABS.map((status) => ({
-              value: status,
-              label: getStatusDisplayLabel(status),
-            }))}
-          />
-        ) : (
-          <FilterDropdown
-            label="Status"
-            icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-            value={historyStatusFilter}
-            onChange={(value) => setHistoryStatusFilter(value as OrderActionStatus | '')}
-            minWidth={120}
-            options={historyStatusOptions}
-          />
-        )}
+        <FilterDropdown
+          label="Status"
+          icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={activeStatusTab}
+          onChange={(value) => setActiveStatusTab(value as ActiveStatusTab)}
+          minWidth={170}
+          options={[
+            { value: 'All', label: 'All Statuses' },
+            { value: 'Approved', label: 'Approved' },
+            { value: 'Processing', label: 'Processing' },
+            { value: 'Picking', label: 'Picking' },
+            { value: 'Packed', label: 'Packed' },
+            { value: 'Dispatched', label: 'In Transit' },
+            { value: 'Completed', label: 'Completed' },
+            { value: 'Rejected', label: 'Rejected' },
+            { value: 'Cancelled', label: 'Cancelled' },
+          ]}
+        />
 
         <Box 
           sx={{ 
@@ -578,77 +559,17 @@ export function OrdersPage() {
             gap: 1.2,
           }}
         >
-          <Tooltip title="Active Orders">
-            <ToggleButtonGroup
-              value={datasetMode}
-              exclusive
-              onChange={(_event, value: DatasetMode | null) => {
-                if (value) {
-                  handleDatasetModeChange(value);
-                }
-              }}
-              size="small"
-              sx={{
-                height: 40,
-                borderRadius: 2,
-                '& .MuiToggleButton-root': {
-                  px: 1.4,
-                  color: '#6B4C2A',
-                  borderColor: 'rgba(107, 76, 42, 0.3)',
-                  '&.Mui-selected': {
-                    bgcolor: 'rgba(107, 76, 42, 0.12)',
-                    color: '#4A3424',
-                  },
-                },
-              }}
-            >
-              <ToggleButton value="active" aria-label="Active Orders">
-                <PendingActionsRoundedIcon sx={{ fontSize: 16 }} />
-              </ToggleButton>
-              <ToggleButton value="history" aria-label="History">
-                <HistoryRoundedIcon sx={{ fontSize: 16 }} />
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Tooltip>
-
           <Button
             startIcon={<LocalMallRoundedIcon />}
             onClick={() => navigate({ to: '/orders/new' })}
             sx={{ whiteSpace: 'nowrap' }}
           >
-            {flowTab === 'outbound' ? 'New Dispatch' : 'New Request'}
+            Supply Push
           </Button>
         </Box>
       </Box>
 
-      {/* Inbound / Outbound Flow Tabs */}
-      {isHqUser && (
-        <Box sx={{ display: 'flex', gap: 0.5, mb: 2.5 }}>
-          {(['inbound', 'outbound'] as FlowTab[]).map((tab) => (
-            <Box
-              key={tab}
-              onClick={() => setFlowTab(tab)}
-              sx={{
-                px: 2.5,
-                py: 1,
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: 13,
-                textTransform: 'capitalize',
-                color: flowTab === tab ? '#6B4C2A' : 'text.secondary',
-                bgcolor: flowTab === tab ? 'rgba(107,76,42,0.1)' : 'transparent',
-                border: '1px solid',
-                borderColor: flowTab === tab ? 'rgba(107,76,42,0.2)' : 'transparent',
-                transition: 'all 0.2s ease',
-                '&:hover': { bgcolor: 'rgba(107,76,42,0.06)' },
-              }}
-            >
-              {tab === 'inbound' ? '📥 Inbound (Branch Requests)' : '📤 Outbound (HQ Dispatches)'}
-            </Box>
-          ))}
-        </Box>
-      )}
+
 
       {error ? (
         <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1.2 }}>{error}</Typography>
@@ -660,7 +581,6 @@ export function OrdersPage() {
         keyExtractor={(row) => row.id}
         defaultRowsPerPage={10}
         rowsPerPageOptions={[10, 25, 50]}
-        onRowClick={(row) => openDetails(row.id)}
         emptyTitle="No orders found"
         emptyMessage={isLoading ? 'Loading orders...' : 'No orders match the selected filters.'}
         emptyIcon={<Inventory2RoundedIcon />}

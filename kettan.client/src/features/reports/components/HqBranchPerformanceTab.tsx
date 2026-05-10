@@ -104,7 +104,7 @@ export function HqBranchPerformanceTab({ startDate, endDate }: Props) {
   return (
     <Box sx={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       {/* Score weight legend */}
-      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper' }}>
+      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, background: (theme) => theme.custom.gradients.card }}>
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mb: 1.5 }}>
           Weighted Score Breakdown
         </Typography>

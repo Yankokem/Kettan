@@ -58,7 +58,7 @@ const MAIN_NAV: NavItem[] = [
   { text: 'Order Processing',   icon: <CategoryRoundedIcon />,            path: '/orders', module: 'order-processing' },
   { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', module: 'returns' },
   { text: 'Branches',           icon: <StoreRoundedIcon />,            path: '/branches', module: 'branches' },
-  { text: 'Company Profile',    icon: <StoreRoundedIcon />,            path: '/company-profile', module: 'company-profile' },
+
   { text: 'Branch Profile',     icon: <StoreRoundedIcon />,            path: '/branch-profile', module: 'branch-profile' },
   { text: 'Inventory',          icon: <Inventory2RoundedIcon />,       path: '/hq-inventory', module: 'hq-inventory' },
   { text: 'Menu & Recipes',     icon: <LocalCafeRoundedIcon />,        path: '/menu', module: 'menu' },

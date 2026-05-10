@@ -23,10 +23,10 @@ export function Button({ variant = 'contained', color = 'primary', sx, loading, 
         };
       }
       return {
-        bgcolor: '#2E1F14',
+        bgcolor: '#6B4C2A',
         color: '#fff',
         border: '1px solid transparent',
-        '&:hover': { bgcolor: '#4A3424' },
+        '&:hover': { bgcolor: '#4D3823' },
       };
     }
     if (variant === 'outlined') {
@@ -64,7 +64,7 @@ export function Button({ variant = 'contained', color = 'primary', sx, loading, 
         height: 40,
         textTransform: 'none',
         fontWeight: 600,
-        borderRadius: 2,
+        borderRadius: '14px',
         px: 2.5,
         ...getStyles(),
         ...sx,

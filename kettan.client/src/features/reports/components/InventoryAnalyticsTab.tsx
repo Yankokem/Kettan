@@ -106,7 +106,7 @@ export function InventoryAnalyticsTab({ startDate, endDate }: Props) {
   return (
     <Box sx={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Wastage Table */}
-      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper' }}>
+      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, background: (theme) => theme.custom.gradients.card }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <DeleteSweepRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
           <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>Wastage & Spoilage Log</Typography>
@@ -121,7 +121,7 @@ export function InventoryAnalyticsTab({ startDate, endDate }: Props) {
       </Card>
 
       {/* EOQ Table */}
-      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper' }}>
+      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, background: (theme) => theme.custom.gradients.card }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.6 }}>
           <AutoFixHighRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
           <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>EOQ Reorder Suggestions</Typography>

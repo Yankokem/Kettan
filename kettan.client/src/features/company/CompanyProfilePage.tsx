@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Avatar, Box, Chip, Grid, Paper, Typography, Skeleton } from '@mui/material';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
+import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
 import BuildRoundedIcon from '@mui/icons-material/BuildRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import MapRoundedIcon from '@mui/icons-material/MapRounded';
@@ -8,6 +9,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
 import CallRoundedIcon from '@mui/icons-material/CallRounded';
 import PublicRoundedIcon from '@mui/icons-material/PublicRounded';
 import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
@@ -20,7 +22,7 @@ import type { CompanyProfile, CompanySubscriptionDetails } from './types';
 import { toCompanyProfileFormData, type CompanyProfileFormData } from './types';
 import { api } from '../../utils/api';
 import { useAuthStore } from '../../store/useAuthStore';
-import { cancelSubscription, fetchCompanyProfile, updateBillingCycle, updateCompanyProfile } from './companyProfileApi';
+import { cancelSubscription, fetchCompanyProfile, updateCompanyProfile } from './companyProfileApi';
 
 
 const COMPANY_PROFILE_MOCK: CompanyProfile = {
@@ -72,14 +74,14 @@ function DetailRow({ label, value, icon: Icon }: { label: string; value: string;
   return (
     <Box sx={{ py: 1.1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.45 }}>
-        <Icon sx={{ fontSize: 13, color: 'text.secondary' }} />
+        <Icon sx={{ fontSize: 13, color: '#8C6B43' }} />
         <Typography
           sx={{
             fontSize: 10.5,
-            fontWeight: 500,
+            fontWeight: 700,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            color: 'text.secondary',
+            color: '#8C6B43',
           }}
         >
           {label}
@@ -97,11 +99,13 @@ function UtilizationMeter({
   current,
   limit,
   tone,
+  icon: Icon,
 }: {
   label: string;
   current: number;
   limit: number;
   tone: 'gold' | 'sage';
+  icon: React.ElementType;
 }) {
   const pct = Math.max(0, Math.min(100, Math.round((current / limit) * 100)));
 
@@ -123,7 +127,10 @@ function UtilizationMeter({
   return (
     <Box sx={{ p: 1.75, borderRadius: '14px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{label}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+          <Icon sx={{ fontSize: 16, color: '#8C6B43' }} />
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{label}</Typography>
+        </Box>
         <Chip
           label={`${pct}%`}
           size="small"
@@ -157,7 +164,6 @@ export function CompanyProfilePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showSavedNotice, setShowSavedNotice] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUpdatingBilling, setIsUpdatingBilling] = useState(false);
   const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('Standard');
@@ -262,24 +268,7 @@ export function CompanyProfilePage() {
     }
   };
 
-  const handleChangeBillingCycle = async () => {
-    const nextCycle = subscription.billingCycle === 'Monthly' ? 'Yearly' : 'Monthly';
-    setSaveError(null);
-    setIsUpdatingBilling(true);
-    try {
-      const updated = await updateBillingCycle(nextCycle);
-      setSubscription(updated);
-      const refreshed = await fetchCompanyProfile();
-      setProfile(refreshed.profile);
-      setSubscriptionTier(refreshed.subscriptionTier);
-      setSubscription(refreshed.subscription);
-    } catch (err) {
-      console.error('Failed to update billing cycle:', err);
-      setSaveError('Unable to update billing cycle right now.');
-    } finally {
-      setIsUpdatingBilling(false);
-    }
-  };
+
 
   const handleCancelSubscription = async () => {
     if (!window.confirm('Cancel subscription and switch your tenant to read-only mode?')) {
@@ -303,14 +292,12 @@ export function CompanyProfilePage() {
     }
   };
 
-  const isBusy = isSaving || isUpdatingBilling || isCancellingSubscription;
+  const isBusy = isSaving || isCancellingSubscription;
   const busyLabel = isSaving
     ? 'Saving...'
-    : isUpdatingBilling
-      ? 'Updating billing cycle...'
-      : isCancellingSubscription
-        ? 'Cancelling subscription...'
-        : 'Processing...';
+    : isCancellingSubscription
+      ? 'Cancelling subscription...'
+      : 'Processing...';
 
   return (
     <Box sx={{ pb: 5 }}>
@@ -328,7 +315,7 @@ export function CompanyProfilePage() {
           sx={{
             position: 'relative',
             height: 140,
-            background: 'linear-gradient(135deg, #6A4120 0%, #8C5F2B 34%, #B78644 68%, #E1C26F 100%)',
+            background: 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)',
           }}
         >
           <Box
@@ -355,8 +342,7 @@ export function CompanyProfilePage() {
                 fontWeight: 800,
                 letterSpacing: '-0.02em',
                 lineHeight: 1.1,
-                color: '#FAF5EF',
-                textShadow: '0 1px 6px rgba(0,0,0,0.3)',
+                color: '#2C1A0E',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -374,6 +360,7 @@ export function CompanyProfilePage() {
             ) : (
               <Avatar
                 variant="rounded"
+                src={profile.logoUrl ?? undefined}
                 sx={{
                   width: 132,
                   height: 132,
@@ -388,7 +375,7 @@ export function CompanyProfilePage() {
                   fontWeight: 800
                 }}
               >
-                <BusinessRoundedIcon sx={{ fontSize: 54 }} />
+                {!profile.logoUrl && <BusinessRoundedIcon sx={{ fontSize: 54 }} />}
               </Avatar>
             )}
 
@@ -530,86 +517,14 @@ export function CompanyProfilePage() {
         </Box>
       </Paper>
 
-      <Paper
-        id="subscription-billing-section"
-        elevation={0}
-        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 }, mb: 3 }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
-          <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
-          <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Subscription & Billing</Typography>
-        </Box>
 
-        <Grid container spacing={2.2}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <DetailRow label="Plan" value={subscription.planName} icon={BuildRoundedIcon} />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <DetailRow label="Billing Cycle" value={subscription.billingCycle} icon={CalendarMonthRoundedIcon} />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <DetailRow
-              label="Next Billing"
-              value={subscription.nextBillingDate ? new Date(subscription.nextBillingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not available'}
-              icon={CalendarMonthRoundedIcon}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <DetailRow label="Status" value={subscription.status} icon={CheckCircleRoundedIcon} />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <DetailRow label="Payment Provider" value={subscription.paymentProvider} icon={DescriptionRoundedIcon} />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <DetailRow
-              label="Latest Invoice"
-              value={subscription.latestInvoiceStatus ?? 'No invoices yet'}
-              icon={DescriptionRoundedIcon}
-            />
-          </Grid>
-        </Grid>
 
-        <Box sx={{ mt: 2.3, display: 'flex', gap: 1.1, flexWrap: 'wrap', alignItems: 'center' }}>
-          {subscription.isReadOnly ? (
-            <Chip
-              label="Read-only mode: transactions are disabled, exports remain available."
-              sx={{ borderRadius: 999, bgcolor: 'warning.light', color: 'warning.dark', fontWeight: 700 }}
-            />
-          ) : null}
-
-          {isTenantAdmin ? (
-            <>
-              <Button
-                variant="outlined"
-                onClick={handleChangeBillingCycle}
-                disabled={isUpdatingBilling || isCancellingSubscription || subscription.isReadOnly}
-              >
-                {isUpdatingBilling ? 'Updating billing cycle...' : `Switch to ${subscription.billingCycle === 'Monthly' ? 'Yearly' : 'Monthly'} Billing`}
-              </Button>
-
-              <Button
-                variant="outlined"
-                onClick={handleCancelSubscription}
-                disabled={isCancellingSubscription || isUpdatingBilling || !subscription.autoRenew}
-                sx={{ borderColor: 'error.main', color: 'error.main' }}
-              >
-                {isCancellingSubscription ? 'Cancelling subscription...' : 'Cancel Subscription'}
-              </Button>
-            </>
-          ) : (
-            <Chip
-              label="Only Tenant Admin can manage subscription actions."
-              sx={{ borderRadius: 999, bgcolor: 'info.light', color: 'info.dark', fontWeight: 700 }}
-            />
-          )}
-        </Box>
-      </Paper>
-
-      <Grid container spacing={4}>
+      <Grid container spacing={4} sx={{ alignItems: 'stretch' }}>
         <Grid size={{ xs: 12, md: 8 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 } }}>
+          <Paper elevation={0} sx={{ height: '100%', border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
               <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
+              <BusinessRoundedIcon sx={{ fontSize: 18 }} />
               <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Organization Details</Typography>
             </Box>
 
@@ -643,26 +558,111 @@ export function CompanyProfilePage() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
-              <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Plan Utilization</Typography>
-            </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, height: '100%' }}>
+            <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: { xs: 2.5, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
+                <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
+                <BarChartRoundedIcon sx={{ fontSize: 18 }} />
+                <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Plan Utilization</Typography>
+              </Box>
 
-            <Box sx={{ display: 'grid', gap: 1.4 }}>
-              {loading ? (
-                <>
-                  <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
-                  <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
-                </>
-              ) : (
-                <>
-                  <UtilizationMeter label="Active Branches" current={profile.activeBranches} limit={profile.branchLimit} tone="gold" />
-                  <UtilizationMeter label="Staff Licenses" current={profile.activeStaff} limit={profile.staffLimit} tone="sage" />
-                </>
-              )}
-            </Box>
-          </Paper>
+              <Box sx={{ display: 'grid', gap: 1.4 }}>
+                {loading ? (
+                  <>
+                    <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
+                    <Skeleton variant="rectangular" height={90} sx={{ borderRadius: '14px' }} />
+                  </>
+                ) : (
+                  <>
+                    <UtilizationMeter label="Active Branches" current={profile.activeBranches} limit={profile.branchLimit} tone="gold" icon={StoreRoundedIcon} />
+                    <UtilizationMeter label="Staff Licenses" current={profile.activeStaff} limit={profile.staffLimit} tone="sage" icon={BadgeRoundedIcon} />
+                  </>
+                )}
+              </Box>
+            </Paper>
+
+            <Paper
+              id="subscription-billing-section"
+              elevation={0}
+              sx={{ 
+                flex: 1,
+                border: '1px solid', 
+                borderColor: 'divider', 
+                borderRadius: '14px', 
+                p: { xs: 2.5, sm: 3 },
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.2, color: '#6B4C2A' }}>
+                <Box sx={{ width: 3, height: 20, borderRadius: 999, bgcolor: '#6B4C2A' }} />
+                <DescriptionRoundedIcon sx={{ fontSize: 18 }} />
+                <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Subscription & Billing</Typography>
+              </Box>
+
+              <Box sx={{ flex: 1 }}>
+                <Grid container spacing={1}>
+                  <Grid size={{ xs: 6 }}>
+                    <DetailRow label="Plan" value={subscription.planName} icon={BuildRoundedIcon} />
+                  </Grid>
+
+                  <Grid size={{ xs: 6 }}>
+                    <DetailRow
+                      label="Next Billing"
+                      value={subscription.nextBillingDate ? new Date(subscription.nextBillingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not available'}
+                      icon={CalendarMonthRoundedIcon}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <DetailRow label="Status" value={subscription.status} icon={CheckCircleRoundedIcon} />
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <DetailRow label="Payment Provider" value={subscription.paymentProvider} icon={DescriptionRoundedIcon} />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <DetailRow
+                      label="Latest Invoice"
+                      value={subscription.latestInvoiceStatus ?? 'No invoices yet'}
+                      icon={DescriptionRoundedIcon}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Box sx={{ mt: 'auto', pt: 2, display: 'flex', gap: 1.1, flexWrap: 'wrap', alignItems: 'center' }}>
+                {subscription.isReadOnly ? (
+                  <Chip
+                    label="Read-only mode"
+                    size="small"
+                    sx={{ borderRadius: 999, bgcolor: 'warning.light', color: 'warning.dark', fontWeight: 700, fontSize: 10 }}
+                  />
+                ) : null}
+
+                {isTenantAdmin ? (
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={handleCancelSubscription}
+                    disabled={isCancellingSubscription || !subscription.autoRenew}
+                    sx={{ 
+                      borderColor: 'error.main', 
+                      color: 'error.main',
+                      fontSize: 12,
+                      py: 0.8
+                    }}
+                  >
+                    {isCancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
+                  </Button>
+                ) : (
+                  <Chip
+                    label="Admin Only"
+                    size="small"
+                    sx={{ borderRadius: 999, bgcolor: 'info.light', color: 'info.dark', fontWeight: 700, fontSize: 10 }}
+                  />
+                )}
+              </Box>
+            </Paper>
+          </Box>
         </Grid>
       </Grid>
 

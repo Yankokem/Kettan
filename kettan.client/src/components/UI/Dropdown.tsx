@@ -15,7 +15,7 @@ export function Dropdown({ options, sx, ...props }: DropdownProps) {
         IconComponent={KeyboardArrowDownRoundedIcon}
         sx={{
           height: 40, // Height matching Button and Searchbar strictly
-          borderRadius: 3,
+          borderRadius: '14px',
           fontSize: 14,
           fontWeight: 500,
           bgcolor: 'background.paper',

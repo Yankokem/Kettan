@@ -41,7 +41,7 @@ export function MenuItemCard({ item, isInsufficientStock }: Props) {
           border: '1px solid',
           borderColor: 'divider',
           transition: 'all 0.2s',
-          bgcolor: 'background.paper',
+          background: (theme) => theme.custom.gradients.card,
           '&:hover': {
             borderColor: 'primary.main',
             boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
@@ -52,7 +52,14 @@ export function MenuItemCard({ item, isInsufficientStock }: Props) {
       >
         {/* Top container with padding and image box */}
         <Box sx={{ position: 'relative', p: 1.5, pb: 0 }}>
-          <Box sx={{ position: 'relative', width: '100%', paddingTop: '100%', bgcolor: '#FAF5EF', borderRadius: '11px', overflow: 'hidden' }}>
+          <Box sx={{ 
+            position: 'relative', 
+            width: '100%', 
+            paddingTop: '100%', 
+            background: (theme) => theme.custom.gradients.card,
+            borderRadius: '12px', 
+            overflow: 'hidden' 
+          }}>
             {/* Image with fade-in */}
             <Box
               component="img"

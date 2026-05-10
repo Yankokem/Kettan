@@ -12,9 +12,9 @@ public static class SubscriptionTenantSeeder
     {
         var seeds = new[]
         {
-            new SubscriptionPlanSeed("STARTER", "Starter", 2999m, 28800m, 5, 25),
-            new SubscriptionPlanSeed("GROWTH", "Growth", 7999m, 76800m, 10, 50),
-            new SubscriptionPlanSeed("ENTERPRISE", "Enterprise", 14999m, 143990m, 20, 100)
+            new SubscriptionPlanSeed("STARTER", "Starter", 2999m, 5, 25),
+            new SubscriptionPlanSeed("GROWTH", "Growth", 7999m, 10, 50),
+            new SubscriptionPlanSeed("ENTERPRISE", "Enterprise", 14999m, 20, 100)
         };
 
         var planCodes = seeds.Select(s => s.PlanCode).ToList();
@@ -37,7 +37,6 @@ public static class SubscriptionTenantSeeder
                     PlanCode = seed.PlanCode,
                     Name = seed.Name,
                     PriceMonthly = seed.PriceMonthly,
-                    PriceYearly = seed.PriceYearly,
                     BranchLimit = seed.BranchLimit,
                     UserLimit = seed.UserLimit,
                     IsActive = true
@@ -49,7 +48,6 @@ public static class SubscriptionTenantSeeder
             {
                 plan.Name = seed.Name;
                 plan.PriceMonthly = seed.PriceMonthly;
-                plan.PriceYearly = seed.PriceYearly;
                 plan.BranchLimit = seed.BranchLimit;
                 plan.UserLimit = seed.UserLimit;
                 plan.IsActive = true;
@@ -188,7 +186,6 @@ public static class SubscriptionTenantSeeder
         string PlanCode,
         string Name,
         decimal PriceMonthly,
-        decimal PriceYearly,
         int BranchLimit,
         int UserLimit);
 }

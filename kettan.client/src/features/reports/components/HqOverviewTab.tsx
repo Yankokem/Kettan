@@ -64,7 +64,7 @@ export function HqOverviewTab({ startDate, endDate }: Props) {
     <Box sx={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       {/* Top Row: Performance Leader & Metrics */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2.5 }}>
-        <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid', borderColor: 'divider', background: (theme) => theme.custom.gradients.card, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
             <EmojiEventsRoundedIcon sx={{ color: '#C9A84C' }} />
             <Typography sx={{ fontSize: 16, fontWeight: 700 }}>Chain Performance Leader</Typography>
@@ -85,7 +85,7 @@ export function HqOverviewTab({ startDate, endDate }: Props) {
           </Box>
         </Card>
 
-        <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid', borderColor: 'divider', background: (theme) => theme.custom.gradients.card, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
             <CategoryRoundedIcon sx={{ color: '#6B4C2A' }} />
             <Typography sx={{ fontSize: 16, fontWeight: 700 }}>Order Fulfillment Metrics</Typography>
@@ -113,7 +113,7 @@ export function HqOverviewTab({ startDate, endDate }: Props) {
           defaultRowsPerPage={5}
         />
 
-        <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid', borderColor: 'divider' }}>
+        <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid', borderColor: 'divider', background: (theme) => theme.custom.gradients.card }}>
           <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>Monthly Fulfillment Cost Trend</Typography>
           
           {costTrend.length === 0 ? (
@@ -131,9 +131,11 @@ export function HqOverviewTab({ startDate, endDate }: Props) {
                   <Box key={i} sx={{ 
                     flex: costTrend.length > 6 ? 1 : 'none', 
                     width: costTrend.length <= 6 ? 60 : 'auto',
+                    height: '100%',
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: 'center', 
+                    justifyContent: 'flex-end',
                     gap: 1 
                   }}>
                     <Box sx={{ 

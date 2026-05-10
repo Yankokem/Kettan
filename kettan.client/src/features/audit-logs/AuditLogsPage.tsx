@@ -252,8 +252,8 @@ export function AuditLogsPage() {
   ).length;
 
   return (
-    <Box sx={{ px: { xs: 2, md: 3 }, pb: 5 }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, gap: 2.5, mb: 4, px: { md: 1 } }}>
+    <Box sx={{ pb: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, gap: 2.5, mb: 4 }}>
         <StatCard
           label="Total Events"
           value={totalCount}

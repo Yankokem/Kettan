@@ -43,7 +43,13 @@ export function OrderListCard({ order, datasetMode, onOpen, onApprove, onReject 
   const dateLabel = datasetMode === 'history' ? 'Completed' : 'Requested';
 
   return (
-    <Card sx={{ borderRadius: '14px', border: '1px solid', borderColor: 'divider', position: 'relative' }}>
+    <Card sx={{ 
+      borderRadius: '14px', 
+      border: '1px solid', 
+      borderColor: 'divider', 
+      position: 'relative',
+      background: (theme) => theme.custom.gradients.card
+    }}>
       <Box sx={{ position: 'absolute', top: 18, right: 18, zIndex: 2 }}>
         <OrderRowActionsMenu
           orderId={order.id}

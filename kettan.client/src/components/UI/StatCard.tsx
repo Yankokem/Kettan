@@ -20,6 +20,7 @@ export function StatCard({ label, value, sub, trend, trendValue, icon, accentCla
       className={`hover-lift glass-card ${accentClass}`}
       sx={{
         borderRadius: '14px',
+        background: (theme) => theme.custom.gradients.card,
         p: 3,
         display: 'flex',
         flexDirection: 'column',
@@ -68,7 +69,7 @@ export function StatCard({ label, value, sub, trend, trendValue, icon, accentCla
           sx={{
             width: 44,
             height: 44,
-            borderRadius: '11px',
+            borderRadius: '12px',
             background: iconBg,
             display: 'flex',
             alignItems: 'center',

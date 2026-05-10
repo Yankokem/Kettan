@@ -375,7 +375,7 @@ export function DataTable<T>({
             left: 20,
             right: 20,
             height: '2px',
-            bgcolor: alpha('#C9A84C', 0.45),
+            bgcolor: alpha('#6B4C2A', 0.5),
           } : {
             content: '""',
             position: 'absolute',
@@ -383,7 +383,7 @@ export function DataTable<T>({
             left: 0,
             right: 0,
             height: '1px',
-            bgcolor: 'divider',
+            bgcolor: alpha('#6B4C2A', 0.12),
           }
         }}
       >
@@ -400,7 +400,7 @@ export function DataTable<T>({
               color: (theme) =>
                 sortKey === col.key
                   ? theme.palette.primary.main
-                  : fulfillment ? '#6B4C2A' : (theme.palette.mode === 'dark' ? 'rgba(232,211,169,0.74)' : 'text.secondary'),
+                  : '#6B4C2A',
               textAlign: col.align || 'left',
               userSelect: 'none',
               cursor: col.sortable ? 'pointer' : 'default',
@@ -464,7 +464,7 @@ export function DataTable<T>({
                 right: fulfillment ? 20 : 0,
                 height: '1px',
                 borderBottom: fulfillment ? '1px dashed' : '1px solid',
-                borderColor: fulfillment ? alpha('#C9A84C', 0.4) : 'divider',
+                borderColor: alpha('#6B4C2A', 0.1),
               }
             }}
           >
@@ -494,7 +494,27 @@ export function DataTable<T>({
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           rowsPerPageOptions={effectivePageSizes}
-          sx={{ borderTop: '1px solid', borderColor: 'divider' }}
+          sx={{ 
+            borderTop: '1px solid', 
+            borderColor: alpha('#6B4C2A', 0.12),
+            color: '#6B4C2A',
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              fontSize: 13.5,
+              fontWeight: 600,
+              color: '#6B4C2A',
+            },
+            '& .MuiTablePagination-select': {
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: '#6B4C2A',
+            },
+            '& .MuiIconButton-root': {
+              color: '#6B4C2A',
+            },
+            '& .MuiIconButton-root.Mui-disabled': {
+              color: alpha('#6B4C2A', 0.3),
+            },
+          }}
         />
       ) : null}
       </Box>

@@ -22,9 +22,6 @@ public class SubscriptionPlan
     [Column(TypeName = "decimal(18,2)")]
     public decimal PriceMonthly { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? PriceYearly { get; set; }
-
     public int? BranchLimit { get; set; }
     public int? UserLimit { get; set; }
 

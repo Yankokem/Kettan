@@ -55,7 +55,7 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
         border: '1px solid',
         borderColor: theme.palette.mode === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
         background: theme.custom.gradients.card,
-        borderRadius: '16px',
+        borderRadius: '14px',
         display: 'flex',
         flexDirection: 'column',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',

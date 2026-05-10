@@ -22,7 +22,7 @@ export function InventoryCard({ item }: InventoryCardProps) {
         p: 2.5,
         border: '1px solid',
         borderColor: isLowStock ? 'rgba(220, 38, 38, 0.2)' : 'divider',
-        bgcolor: isLowStock ? 'rgba(220, 38, 38, 0.02)' : 'background.paper',
+        background: (theme) => isLowStock ? 'rgba(220, 38, 38, 0.02)' : theme.custom.gradients.card,
         borderRadius: '14px',
         display: 'flex',
         flexDirection: 'column',

@@ -246,13 +246,7 @@ export async function fetchCompanyUtilizationCounts(): Promise<CompanyUtilizatio
   };
 }
 
-export async function updateBillingCycle(billingCycle: 'Monthly' | 'Yearly'): Promise<CompanySubscriptionDetails> {
-  const response = await api.patch<SubscriptionCurrentDto>('/api/subscription/billing-cycle', {
-    billingCycle: billingCycle === 'Yearly' ? 1 : 0,
-  });
 
-  return toSubscriptionDetails(response.data);
-}
 
 export async function cancelSubscription(): Promise<CompanySubscriptionDetails> {
   const response = await api.post<CancelSubscriptionResponse>('/api/subscription/cancel');

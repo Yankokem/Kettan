@@ -110,6 +110,30 @@ public class SmtpEmailService : IEmailService
         await SendEmailAsync(email, "Kettan Password Reset", htmlContent, cancellationToken);
     }
 
+    public async Task SendInvoicePaidEmailAsync(
+        string email,
+        string tenantName,
+        decimal amount,
+        string invoiceNumber,
+        CancellationToken cancellationToken = default)
+    {
+        var htmlContent = $@"
+            <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;'>
+                <h2>Subscription Renewed Successfully</h2>
+                <p>Hi {tenantName},</p>
+                <p>Your Kettan monthly subscription has been automatically renewed.</p>
+                <div style='background-color: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                    <p style='margin: 5px 0;'><strong>Invoice Number:</strong> {invoiceNumber}</p>
+                    <p style='margin: 5px 0;'><strong>Amount Paid:</strong> ₱{amount:N2}</p>
+                    <p style='margin: 5px 0;'><strong>Date:</strong> {DateTime.UtcNow:MMMM dd, yyyy}</p>
+                </div>
+                <p>Thank you for continuing to use Kettan.</p>
+                <p>Regards,<br>The Kettan Team</p>
+            </div>";
+
+        await SendEmailAsync(email, "Kettan Subscription Receipt", htmlContent, cancellationToken);
+    }
+
     private async Task SendEmailAsync(string toEmail, string subject, string htmlContent, CancellationToken cancellationToken)
     {
         try

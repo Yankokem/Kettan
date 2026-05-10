@@ -29,4 +29,11 @@ public interface IEmailService
         string email,
         string resetToken,
         CancellationToken cancellationToken = default);
+
+    Task SendInvoicePaidEmailAsync(
+        string email,
+        string tenantName,
+        decimal amount,
+        string invoiceNumber,
+        CancellationToken cancellationToken = default);
 }

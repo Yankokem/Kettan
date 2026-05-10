@@ -12,15 +12,15 @@ export function SearchInput({ sx, ...props }: InputBaseProps) {
         px: 2,
         height: 40, // Uniform height constraint
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: 'rgba(107, 76, 42, 0.3)',
         borderRadius: '14px',
-        bgcolor: 'background.paper',
+        bgcolor: 'transparent',
         boxShadow: 'none',
         flex: 1,
         ...sx,
       }}
     >
-      <SearchRoundedIcon sx={{ color: 'text.disabled', mr: 1, fontSize: 20 }} />
+      <SearchRoundedIcon sx={{ color: '#6B4C2A', mr: 1, fontSize: 20 }} />
       <InputBase
         {...props}
         sx={{ flex: 1, fontSize: 14, fontWeight: 500 }}

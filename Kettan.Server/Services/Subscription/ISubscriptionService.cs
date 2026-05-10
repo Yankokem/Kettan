@@ -18,6 +18,5 @@ public interface ISubscriptionService
 
     Task<CheckoutSessionResponse> CreateCheckoutSessionAsync(CreateCheckoutSessionRequest request, CancellationToken cancellationToken = default);
     Task<CurrentSubscriptionResponse> GetCurrentSubscriptionAsync(int tenantId, CancellationToken cancellationToken = default);
-    Task<CurrentSubscriptionResponse> UpdateBillingCycleAsync(int tenantId, BillingCycle billingCycle, CancellationToken cancellationToken = default);
     Task CancelSubscriptionAsync(int tenantId, CancellationToken cancellationToken = default);
 }

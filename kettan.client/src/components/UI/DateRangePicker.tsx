@@ -38,20 +38,20 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
     <>
       <Button
         variant="outlined"
-        startIcon={<CalendarMonthRoundedIcon sx={{ fontSize: 20, color: 'text.secondary' }} />}
+        startIcon={<CalendarMonthRoundedIcon sx={{ fontSize: 20, color: '#6B4C2A' }} />}
         onClick={handleClick}
         sx={{
           minWidth: 220,
           justifyContent: 'flex-start',
-          bgcolor: 'background.paper',
-          color: 'text.primary',
-          borderColor: 'divider',
-          fontWeight: 500,
+          bgcolor: 'transparent',
+          color: '#6B4C2A',
+          fontWeight: 600,
           fontSize: 13,
           px: 2,
+          borderColor: 'rgba(107, 76, 42, 0.3)',
           '&:hover': {
-            borderColor: 'rgba(107, 76, 42, 0.4)',
-            bgcolor: 'background.paper'
+            bgcolor: 'rgba(107, 76, 42, 0.04)',
+            borderColor: '#6B4C2A',
           }
         }}
       >
@@ -77,7 +77,8 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
             p: 2.5, 
             border: '1px solid', 
             borderColor: 'divider', 
-            borderRadius: 3, 
+            borderRadius: '14px',
+            bgcolor: '#FAF5EF', 
             display: 'flex', 
             flexDirection: 'column', 
             gap: 2, 
@@ -98,7 +99,7 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
             onChange={(e) => onChange(e.target.value, endDate)}
             InputLabelProps={{ shrink: true, sx: { fontSize: 13, fontWeight: 500 } }}
             inputProps={{ sx: { fontSize: 13, fontWeight: 500 } }}
-            sx={{ flex: 1, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider', borderRadius: 2 } }}
+            sx={{ flex: 1, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider', borderRadius: '14px' } }}
           />
           <TextField
             id="end-date"
@@ -110,7 +111,7 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
             onChange={(e) => onChange(startDate, e.target.value)}
             InputLabelProps={{ shrink: true, sx: { fontSize: 13, fontWeight: 500 } }}
             inputProps={{ sx: { fontSize: 13, fontWeight: 500 } }}
-            sx={{ flex: 1, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider', borderRadius: 2 } }}
+            sx={{ flex: 1, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider', borderRadius: '14px' } }}
           />
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>

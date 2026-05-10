@@ -292,9 +292,9 @@ public class SubscriptionService : ISubscriptionService
             Address = request.HeadquartersAddress.Trim(),
             IsActive = true,
             SubscriptionTier = Enum.TryParse<SubscriptionTier>(plan.Name, true, out var tier) ? tier : SubscriptionTier.Starter,
-            SubscriptionStatus = SubscriptionStatus.PendingPayment,
-            SubscriptionPeriodStart = null,
-            SubscriptionPeriodEnd = null,
+            SubscriptionStatus = SubscriptionStatus.Active,
+            SubscriptionPeriodStart = nowUtc,
+            SubscriptionPeriodEnd = periodEnd,
         };
 
         var (firstName, lastName) = SplitFullName(request.FullName);
@@ -320,7 +320,7 @@ public class SubscriptionService : ISubscriptionService
         {
             TenantId = tenant.TenantId,
             PlanId = plan.PlanId,
-            Status = SubscriptionStatus.PendingPayment,
+            Status = SubscriptionStatus.Active,
             BillingCycle = BillingCycle.Monthly,
             StartDate = nowUtc,
             PeriodStart = nowUtc,
@@ -379,7 +379,6 @@ public class SubscriptionService : ISubscriptionService
                 Name = p.Name,
                 Description = p.Description,
                 PriceMonthly = p.PriceMonthly,
-                PriceYearly = p.PriceYearly,
                 BranchLimit = p.BranchLimit,
                 UserLimit = p.UserLimit,
             })
@@ -478,9 +477,7 @@ public class SubscriptionService : ISubscriptionService
             {
                 tenantSubscription.Status = SubscriptionStatus.Active;
                 tenantSubscription.PeriodStart = paidAt;
-                tenantSubscription.PeriodEnd = tenantSubscription.BillingCycle == BillingCycle.Yearly
-                    ? paidAt.AddYears(1)
-                    : paidAt.AddMonths(1);
+                tenantSubscription.PeriodEnd = paidAt.AddMonths(1);
                 tenantSubscription.UpdatedAt = DateTime.UtcNow;
 
                 var tenant = tenantSubscription.Tenant;
@@ -642,51 +639,7 @@ public class SubscriptionService : ISubscriptionService
         };
     }
 
-    public async Task<CurrentSubscriptionResponse> UpdateBillingCycleAsync(
-        int tenantId,
-        BillingCycle billingCycle,
-        CancellationToken cancellationToken = default)
-    {
-        var tenant = await _context.Tenants
-            .IgnoreQueryFilters()
-            .Include(t => t.CurrentSubscription)
-            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted, cancellationToken);
 
-        if (tenant == null)
-        {
-            throw new InvalidOperationException("Tenant not found.");
-        }
-
-        if (tenant.CurrentSubscription == null)
-        {
-            throw new InvalidOperationException("No active tenant subscription was found.");
-        }
-
-        if (IsReadOnlyStatus(tenant.SubscriptionStatus))
-        {
-            throw new InvalidOperationException("Billing cycle cannot be changed while subscription is in read-only status.");
-        }
-
-        var nowUtc = DateTime.UtcNow;
-        tenant.CurrentSubscription.BillingCycle = billingCycle;
-        tenant.CurrentSubscription.UpdatedAt = nowUtc;
-
-        if (tenant.CurrentSubscription.PeriodStart == default)
-        {
-            tenant.CurrentSubscription.PeriodStart = nowUtc;
-        }
-
-        var periodStart = tenant.CurrentSubscription.PeriodStart;
-        tenant.CurrentSubscription.PeriodEnd = billingCycle == BillingCycle.Yearly
-            ? periodStart.AddYears(1)
-            : periodStart.AddMonths(1);
-
-        tenant.SubscriptionPeriodStart = tenant.CurrentSubscription.PeriodStart;
-        tenant.SubscriptionPeriodEnd = tenant.CurrentSubscription.PeriodEnd;
-
-        await _context.SaveChangesAsync(cancellationToken);
-        return await GetCurrentSubscriptionAsync(tenantId, cancellationToken);
-    }
 
     private async Task<CheckoutSessionResponse> GeneratePayMongoCheckoutAsync(
         SubscriptionPlan plan,

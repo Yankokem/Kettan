@@ -76,6 +76,7 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<ICsvExportService, CsvExportService>();
 builder.Services.AddScoped<IPdfExportService, PdfExportService>();
 builder.Services.AddScoped<IImageService, CloudinaryService>();
+builder.Services.AddHostedService<MonthlyBillingBackgroundService>();
 builder.Services.AddSignalR();
 
 builder.Services.AddRateLimiter(options =>

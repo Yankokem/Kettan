@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
-import { Box, Typography, Card } from '@mui/material';
+import { Box, Typography, Card, Chip } from '@mui/material';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
@@ -106,13 +106,21 @@ function scheduleColor(status?: string | null): string {
   return '#6B7280';
 }
 
-function ActionsMenu({ row }: { row: SupplyRequest }) {
+function ActionsMenu({ row, type }: { row: any; type: 'Request' | 'Dispatch' }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const open = Boolean(anchorEl);
 
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
   const handleClose = () => setAnchorEl(null);
+
+  const viewPath = type === 'Request' ? '/supply-requests/$requestId' : '/orders/$orderId';
+  const viewParams = type === 'Request' 
+    ? { requestId: String(row.requestId) } 
+    : { orderId: String(row.orderId) };
 
   return (
     <>
@@ -136,20 +144,24 @@ function ActionsMenu({ row }: { row: SupplyRequest }) {
           }
         }}
       >
-        <MenuItem onClick={() => { handleClose(); navigate({ to: '/supply-requests/$requestId', params: { requestId: String(row.requestId) } }); }}>
+        <MenuItem onClick={() => { handleClose(); navigate({ to: viewPath, params: viewParams }); }}>
           <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
           <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
         </MenuItem>
-        <MenuItem onClick={() => { handleClose(); navigate({ to: '/branches/$branchId', params: { branchId: String(row.branchId) } }); }}>
-          <ListItemIcon><StoreRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="View Branch" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
-        </MenuItem>
+        
+        {type === 'Request' && (
+          <MenuItem onClick={() => { handleClose(); navigate({ to: '/branches/$branchId', params: { branchId: String(row.branchId) } }); }}>
+            <ListItemIcon><StoreRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+            <ListItemText primary="View Branch" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          </MenuItem>
+        )}
+
         <MenuItem onClick={() => { handleClose(); }}>
           <ListItemIcon><ChatBubbleOutlineRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
           <ListItemText primary="Quick Message" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
         </MenuItem>
         <Divider sx={{ my: 1 }} />
-        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(`SR-${row.requestId}`); }}>
+        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(type === 'Request' ? `SR-${row.requestId}` : `SD-${row.orderId}`); }}>
           <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
           <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
         </MenuItem>
@@ -235,83 +247,114 @@ export function SupplyRequestsPage() {
     };
   }, []);
 
-  const safeRows = useMemo(() => {
-    return Array.isArray(rows) ? rows : [];
-  }, [rows]);
+  const combinedRows = useMemo(() => {
+    const requests = Array.isArray(rows) ? rows.map(r => ({
+      ...r,
+      id: `SR-${r.requestId}`,
+      type: 'Request' as const,
+      displayId: `SR-${r.requestId}`,
+      date: r.updatedAt,
+      itemsCount: r.items.length,
+      filedBy: r.requestedByName || `User ${r.requestedByUserId}`,
+      value: r.totalFulfilledValue ?? r.totalRequestedValue ?? 0,
+      sla: r.dispatchScheduleStatus,
+      raw: r
+    })) : [];
+
+    const dispatches = Array.isArray(incomingShipments) ? incomingShipments.map(o => ({
+      ...o,
+      id: `SD-${o.orderId}`,
+      type: 'Dispatch' as const,
+      displayId: `SD-${o.orderId}`,
+      date: o.pushedToFulfillmentAt,
+      itemsCount: o.itemsCount,
+      filedBy: 'HQ Dispatch',
+      value: o.totalFulfilledValue || o.fulfillmentCost || 0,
+      sla: o.dispatchScheduleStatus,
+      raw: o
+    })) : [];
+
+    return [...requests, ...dispatches];
+  }, [rows, incomingShipments]);
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return safeRows.filter((row) => {
-      // 1. Filter by dataset mode (Active vs History)
-      const isHistorical = HISTORY_STATUSES.includes(row.status);
-      if (datasetMode === 'active' && isHistorical) return false;
-      if (datasetMode === 'history' && !isHistorical) return false;
-
-      const occurredDate = new Date(row.updatedAt);
+    return combinedRows.filter((row) => {
+      const occurredDate = new Date(row.date);
       const fromDate = new Date(`${startDate}T00:00:00`);
       const toDate = new Date(`${endDate}T23:59:59`);
 
-      const branchName = row.branchName?.toLowerCase() ?? '';
-      const requestedBy = row.requestedByName?.toLowerCase() ?? '';
+      const branchName = (row.raw as any).branchName?.toLowerCase() ?? '';
+      const subject = row.subject?.toLowerCase() ?? '';
+      const filedBy = row.filedBy?.toLowerCase() ?? '';
       const status = row.status?.toLowerCase() ?? '';
 
       const matchesQuery =
         !query ||
-        row.requestId.toString().includes(query) ||
+        row.displayId.toLowerCase().includes(query) ||
         branchName.includes(query) ||
-        requestedBy.includes(query) ||
+        subject.includes(query) ||
+        filedBy.includes(query) ||
         status.includes(query);
 
-      const matchesStatus = !statusFilter || 
-        row.status === statusFilter || 
-        (statusFilter === 'Completed' && row.status === 'Fulfilled') ||
-        (statusFilter === 'Fulfilled' && row.status === 'Completed');
+      const matchesStatus = !statusFilter || row.status === statusFilter;
       const matchesDateRange = occurredDate >= fromDate && occurredDate <= toDate;
 
       return matchesQuery && matchesStatus && matchesDateRange;
     });
-  }, [endDate, safeRows, search, startDate, statusFilter, datasetMode]);
+  }, [combinedRows, search, startDate, endDate, statusFilter]);
 
   const sortedRows = useMemo(() => {
     const copy = [...filteredRows];
     copy.sort((left, right) => {
       if (sortBy === 'oldest') {
-        return new Date(left.updatedAt).getTime() - new Date(right.updatedAt).getTime();
+        return new Date(left.date).getTime() - new Date(right.date).getTime();
       }
-
-      if (sortBy === 'branch-asc') {
-        return left.branchName.localeCompare(right.branchName);
-      }
-
-      if (sortBy === 'branch-desc') {
-        return right.branchName.localeCompare(left.branchName);
-      }
-
-      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+      return new Date(right.date).getTime() - new Date(left.date).getTime();
     });
 
     return copy;
   }, [filteredRows, sortBy]);
 
-  const columns: ColumnDef<SupplyRequest>[] = [
+  const columns: ColumnDef<any>[] = [
     {
-      key: 'requestId',
-      label: 'REQUEST ID',
+      key: 'displayId',
+      label: 'ID',
+      width: 100,
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          SR-{row.requestId}
+          {row.displayId}
+        </Typography>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'TYPE',
+      width: 100,
+      sortable: true,
+      render: (row) => (
+        <Typography 
+          sx={{ 
+            fontSize: 13, 
+            fontWeight: 700, 
+            color: row.type === 'Request' ? '#6B4C2A' : '#546B3F',
+            letterSpacing: '0.02em'
+          }} 
+        >
+          {row.type}
         </Typography>
       ),
     },
     {
       key: 'branchName',
       label: 'BRANCH',
+      width: 160,
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
-          {row.branchName || `Branch ${row.branchId}`}
+          {row.raw.branchName || `Branch ${row.raw.branchId || ''}`}
         </Typography>
       ),
     },
@@ -320,45 +363,43 @@ export function SupplyRequestsPage() {
       label: 'SUBJECT',
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-          {row.subject || '—'}
+          {row.subject || (row.type === 'Dispatch' ? 'HQ Dispatch' : '—')}
         </Typography>
       ),
     },
     {
-      key: 'requestedByName',
+      key: 'filedBy',
       label: 'FILED BY',
+      width: 160,
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
-          {row.requestedByName || `User ${row.requestedByUserId}`}
+          {row.filedBy}
         </Typography>
       ),
     },
     {
-      key: 'items',
+      key: 'itemsCount',
       label: 'ITEMS',
+      width: 80,
       align: 'center',
       sortable: true,
-      sortAccessor: (row) => row.items.length,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-          {row.items.length}
+          {row.itemsCount}
         </Typography>
       ),
     },
     {
-      key: 'totalFulfilledValue',
-      label: 'VALUES',
+      key: 'value',
+      label: 'VALUE',
+      width: 120,
+      align: 'right',
       sortable: true,
       render: (row) => (
-        <Box>
-          <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: '#6B4C2A' }}>
-            Req {formatPeso(row.totalRequestedValue ?? 0)}
-          </Typography>
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-            App {formatPeso(row.totalApprovedValue ?? 0)} • Ful {formatPeso(row.totalFulfilledValue ?? 0)}
-          </Typography>
-        </Box>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>
+          {formatPeso(row.value)}
+        </Typography>
       ),
     },
     {
@@ -372,23 +413,22 @@ export function SupplyRequestsPage() {
       ),
     },
     {
-      key: 'dispatchScheduleStatus',
-      label: 'DISPATCH SLA',
+      key: 'sla',
+      label: 'SLA',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
-          {formatScheduleStatus(row.dispatchScheduleStatus)}
+        <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: scheduleColor(row.sla) }}>
+          {formatScheduleStatus(row.sla)}
         </Typography>
       ),
     },
     {
-      key: 'updatedAt',
-      label: 'DATE AND TIME',
+      key: 'date',
+      label: 'DATE',
       sortable: true,
-      sortAccessor: (row) => new Date(row.updatedAt).getTime(),
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-          {new Date(row.updatedAt).toLocaleString('en-US', { 
+          {new Date(row.date).toLocaleString('en-US', { 
             month: 'short', 
             day: 'numeric', 
             year: 'numeric',
@@ -402,7 +442,7 @@ export function SupplyRequestsPage() {
       key: 'actions',
       label: 'ACTIONS',
       align: 'right',
-      render: (row) => <ActionsMenu row={row} />,
+      render: (row) => <ActionsMenu row={row.raw} type={row.type} />,
     },
   ];
 
@@ -423,17 +463,17 @@ export function SupplyRequestsPage() {
     <Box sx={{ pb: 3 }}>
       <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
         <StatCard
-          label="Filed Requests"
-          value={safeRows.length}
+          label="Total Records"
+          value={combinedRows.length}
           icon={<AssignmentTurnedInRoundedIcon />}
           trend="up"
-          trendValue="Queue"
+          trendValue="Active Pool"
           accentClass="stat-accent-brown"
           iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
         />
         <StatCard
           label="Pending Review"
-          value={safeRows.filter((row) => ['Draft', 'AutoDrafted', 'PendingApproval'].includes(row.status)).length}
+          value={combinedRows.filter((row) => ['Draft', 'AutoDrafted', 'PendingApproval'].includes(row.status)).length}
           icon={<PendingActionsRoundedIcon />}
           trend="up"
           trendValue="Needs action"
@@ -442,7 +482,7 @@ export function SupplyRequestsPage() {
         />
         <StatCard
           label="Approved"
-          value={safeRows.filter((row) => ['Approved', 'PartiallyApproved'].includes(row.status)).length}
+          value={combinedRows.filter((row) => ['Approved', 'PartiallyApproved'].includes(row.status)).length}
           icon={<TaskAltRoundedIcon />}
           trend="up"
           trendValue="Processed"
@@ -451,7 +491,7 @@ export function SupplyRequestsPage() {
         />
         <StatCard
           label="Rejected"
-          value={safeRows.filter((row) => row.status === 'Rejected').length}
+          value={combinedRows.filter((row) => row.status === 'Rejected').length}
           icon={<HighlightOffRoundedIcon />}
           trend="up"
           trendValue="Needs review"
@@ -504,7 +544,7 @@ export function SupplyRequestsPage() {
           value={statusFilter}
           onChange={setStatusFilter}
           minWidth={170}
-          options={datasetMode === 'active' ? [
+          options={[
             { value: '', label: 'All Statuses' },
             { value: 'Draft', label: 'Draft' },
             { value: 'AutoDrafted', label: 'Auto-Drafted' },
@@ -514,48 +554,12 @@ export function SupplyRequestsPage() {
             { value: 'Packing', label: 'Packing' },
             { value: 'Dispatched', label: 'In Transit' },
             { value: 'Arrived', label: 'Arrived' },
-          ] : [
-            { value: '', label: 'All Statuses' },
             { value: 'Completed', label: 'Completed' },
             { value: 'Rejected', label: 'Rejected' },
             { value: 'Cancelled', label: 'Cancelled' },
             { value: 'Returned', label: 'Returned' },
           ]}
         />
-
-        <Tooltip title={datasetMode === 'active' ? "Active Requests" : "History"}>
-          <ToggleButtonGroup
-            value={datasetMode}
-            exclusive
-            onChange={(_event, value: DatasetMode | null) => {
-              if (value) {
-                setDatasetMode(value);
-                setStatusFilter('');
-              }
-            }}
-            size="small"
-            sx={{
-              height: 40,
-              borderRadius: '14px',
-              '& .MuiToggleButton-root': {
-                px: 1.4,
-                color: '#6B4C2A',
-                borderColor: 'rgba(107, 76, 42, 0.3)',
-                '&.Mui-selected': {
-                  bgcolor: 'rgba(107, 76, 42, 0.12)',
-                  color: '#4A3424',
-                },
-              },
-            }}
-          >
-            <ToggleButton value="active" aria-label="Active">
-              <ListAltRoundedIcon sx={{ fontSize: 16 }} />
-            </ToggleButton>
-            <ToggleButton value="history" aria-label="History">
-              <HistoryRoundedIcon sx={{ fontSize: 16 }} />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Tooltip>
 
         <Box sx={{ ml: { xs: 0, lg: 'auto' }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
           {canCreateRequests && (
@@ -564,7 +568,7 @@ export function SupplyRequestsPage() {
               sx={{ whiteSpace: 'nowrap' }}
               onClick={() => navigate({ to: '/supply-requests/new' })}
             >
-              Request Supply
+              Supply Push
             </Button>
           )}
 
@@ -579,122 +583,20 @@ export function SupplyRequestsPage() {
         </Box>
       </Box>
 
-      {/* Branch: My Requests / Incoming Shipments tabs */}
-      {isBranch && (
-        <Box sx={{ display: 'flex', gap: 0.5, mb: 2.5 }}>
-          {(['my-requests', 'incoming'] as BranchViewTab[]).map((tab) => (
-            <Box
-              key={tab}
-              onClick={() => setBranchViewTab(tab)}
-              sx={{
-                px: 2.5,
-                py: 1,
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: 13,
-                color: branchViewTab === tab ? '#6B4C2A' : 'text.secondary',
-                bgcolor: branchViewTab === tab ? 'rgba(107,76,42,0.1)' : 'transparent',
-                border: '1px solid',
-                borderColor: branchViewTab === tab ? 'rgba(107,76,42,0.2)' : 'transparent',
-                transition: 'all 0.2s ease',
-                '&:hover': { bgcolor: 'rgba(107,76,42,0.06)' },
-              }}
-            >
-              {tab === 'my-requests' ? '📋 My Requests' : `📦 Incoming Shipments (${incomingShipments.length})`}
-            </Box>
-          ))}
-        </Box>
-      )}
-
       {error ? (
         <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1.2 }}>{error}</Typography>
       ) : null}
 
-      {branchViewTab === 'incoming' && isBranch ? (
-        <DataTable
-          data={incomingShipments}
-          columns={[
-            {
-              key: 'orderId',
-              label: 'DISPATCH ID',
-              render: (row: BranchOrder) => (
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>SD-{row.orderId}</Typography>
-              ),
-            },
-            {
-              key: 'status',
-              label: 'STATUS',
-              render: (row: BranchOrder) => (
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: statusColor(row.status) }}>{formatStatusLabel(row.status)}</Typography>
-              ),
-            },
-            {
-              key: 'itemsCount',
-              label: 'ITEMS',
-              align: 'center' as const,
-              render: (row: BranchOrder) => (
-                <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>{row.itemsCount}</Typography>
-              ),
-            },
-            {
-              key: 'subject',
-              label: 'SUBJECT',
-              render: (row: BranchOrder) => (
-                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
-                  {row.subject || row.dispatchReason || 'HQ Dispatch'}
-                </Typography>
-              ),
-            },
-            {
-              key: 'totalFulfilledValue',
-              label: 'VALUE',
-              align: 'right' as const,
-              render: (row: BranchOrder) => (
-                <Typography sx={{ fontSize: 12.5, color: '#6B4C2A', fontWeight: 700 }}>
-                  {formatPeso(row.totalFulfilledValue || row.fulfillmentCost || 0)}
-                </Typography>
-              ),
-            },
-            {
-              key: 'dispatchScheduleStatus',
-              label: 'DISPATCH SLA',
-              render: (row: BranchOrder) => (
-                <Typography sx={{ fontSize: 12, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
-                  {formatScheduleStatus(row.dispatchScheduleStatus)}
-                </Typography>
-              ),
-            },
-            {
-              key: 'pushedToFulfillmentAt',
-              label: 'DATE',
-              render: (row: BranchOrder) => (
-                <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-                  {new Date(row.pushedToFulfillmentAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                </Typography>
-              ),
-            },
-          ]}
-          keyExtractor={(row: BranchOrder) => String(row.orderId)}
-          onRowClick={(row: BranchOrder) => navigate({ to: '/orders/$orderId', params: { orderId: String(row.orderId) } })}
-          emptyTitle="No incoming shipments"
-          emptyMessage="No HQ-initiated dispatches for your branch yet."
-          emptyIcon={<LocalShippingRoundedIcon />}
-          defaultRowsPerPage={10}
-          pageSizes={[10, 25, 50]}
-        />
-      ) : (
-        <DataTable
-          data={sortedRows}
-          columns={columns}
-          keyExtractor={(row) => row.requestId.toString()}
-          emptyTitle={search ? 'No matches found' : 'No supply requests yet'}
-          emptyMessage={isLoading ? 'Loading supply requests...' : search ? 'We couldn\'t find any supply requests matching your search.' : 'There are no supply requests logged for your branch.'}
-          emptyIcon={<AddShoppingCartRoundedIcon />}
-          defaultRowsPerPage={10}
-          pageSizes={[10, 25, 50]}
-        />
-      )}
+      <DataTable
+        data={sortedRows}
+        columns={columns}
+        keyExtractor={(row) => row.id}
+        emptyTitle={search ? 'No matches found' : 'No supply requests yet'}
+        emptyMessage={isLoading ? 'Loading records...' : search ? 'We couldn\'t find any matching records.' : 'There are no records logged yet.'}
+        emptyIcon={<AddShoppingCartRoundedIcon />}
+        defaultRowsPerPage={10}
+        pageSizes={[10, 25, 50]}
+      />
     </Box>
   );
 }

@@ -98,7 +98,7 @@ export function BranchPerformanceTab({ startDate, endDate }: Props) {
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, lg: 4 }}>
           {/* Gauge card */}
-          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, background: (theme) => theme.custom.gradients.card, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <SpeedRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
               <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>My Performance Score</Typography>
@@ -120,7 +120,7 @@ export function BranchPerformanceTab({ startDate, endDate }: Props) {
 
         <Grid size={{ xs: 12, lg: 8 }}>
           {/* Metric breakdown */}
-          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, bgcolor: 'background.paper', height: '100%' }}>
+          <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, background: (theme) => theme.custom.gradients.card, height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
               <EmojiEventsRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
               <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary' }}>Score Breakdown</Typography>

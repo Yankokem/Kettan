@@ -57,14 +57,14 @@ const baseOptions: ThemeOptions = {
     body2: { lineHeight: 1.6 },
   },
   shape: {
-    borderRadius: 10,
+    borderRadius: 14,
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 8,
+          borderRadius: 14,
           fontWeight: 600,
           letterSpacing: '0.01em',
           boxShadow: 'none',
@@ -74,12 +74,16 @@ const baseOptions: ThemeOptions = {
     },
     MuiPaper: {
       styleOverrides: {
-        rounded: { borderRadius: 12 },
+        rounded: { 
+          borderRadius: 14,
+        },
       },
     },
     MuiCard: {
       styleOverrides: {
-        root: { borderRadius: 14 },
+        root: { 
+          borderRadius: 14,
+        },
       },
     },
     MuiChip: {
@@ -95,7 +99,7 @@ const baseOptions: ThemeOptions = {
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 14,
           '&.Mui-selected': { fontWeight: 600 },
         },
       },

@@ -435,16 +435,9 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
       align: 'right',
       sortable: true,
       render: (row) => (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-            {row.defaultThreshold} {row.unit}
-          </Typography>
-          {row.isBranchThreshold && (
-            <Typography sx={{ fontSize: 10, color: '#B08B5A', fontWeight: 700, letterSpacing: 0.5, mt: -0.5 }}>
-              BRANCH OVERRIDE
-            </Typography>
-          )}
-        </Box>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+          {row.defaultThreshold} {row.unit}
+        </Typography>
       ),
     },
     {

@@ -49,4 +49,15 @@ public class ConsoleEmailService : IEmailService
         Console.WriteLine($"[EMAIL][PASSWORD_RESET] To: {email} | Token: {resetToken}");
         return Task.CompletedTask;
     }
+
+    public Task SendInvoicePaidEmailAsync(
+        string email,
+        string tenantName,
+        decimal amount,
+        string invoiceNumber,
+        CancellationToken cancellationToken = default)
+    {
+        Console.WriteLine($"[EMAIL][INVOICE_PAID] To: {email} | Tenant: {tenantName} | Amount: {amount} | Invoice: {invoiceNumber}");
+        return Task.CompletedTask;
+    }
 }

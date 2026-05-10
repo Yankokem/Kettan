@@ -30,7 +30,7 @@ export function MenuVariantCard({
         border: '1px solid',
         borderColor: 'divider',
         borderRadius: '14px',
-        bgcolor: 'background.paper',
+        background: (theme) => theme.custom.gradients.card,
         p: 2.25,
         display: 'flex',
         flexDirection: 'column',

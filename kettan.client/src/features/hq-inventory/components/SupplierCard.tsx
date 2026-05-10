@@ -23,7 +23,7 @@ export function SupplierCard({ supplier, selected, onSelect, onDelete }: Supplie
         borderRadius: '14px',
         border: '1px solid',
         borderColor: selected ? 'primary.main' : 'divider',
-        bgcolor: selected ? 'rgba(201, 168, 77, 0.08)' : 'background.paper',
+        background: (theme) => selected ? 'rgba(201, 168, 77, 0.08)' : theme.custom.gradients.card,
         cursor: 'pointer',
         transition: 'all 0.18s ease',
         '&:hover': {

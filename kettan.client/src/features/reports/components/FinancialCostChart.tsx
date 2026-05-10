@@ -104,14 +104,14 @@ export function FinancialCostChart({ fulfillmentCostHistory, shippingCostHistory
 
   if (!data.length) {
     return (
-      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, p: 2.5, bgcolor: 'background.paper' }}>
+      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', p: 2.5, background: (theme) => theme.custom.gradients.card }}>
         <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>No chart data available.</Typography>
       </Card>
     );
   }
 
   return (
-    <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, height: '100%', p: 2.5, bgcolor: 'background.paper', display: 'flex', flexDirection: 'column' }}>
+    <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', height: '100%', p: 2.5, background: (theme) => theme.custom.gradients.card, display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <SsidChartRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />

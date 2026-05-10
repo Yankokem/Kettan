@@ -28,7 +28,7 @@ export function FilterDropdown({ value, onChange, options, label, icon, minWidth
         IconComponent={KeyboardArrowDownRoundedIcon}
         sx={{
           height: compact ? 28 : 40,
-          borderRadius: compact ? '8px' : 2,
+          borderRadius: compact ? '8px' : '14px',
           fontSize: 14,
           fontWeight: 600,
           color: '#6B4C2A',
