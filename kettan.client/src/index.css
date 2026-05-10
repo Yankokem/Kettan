@@ -65,13 +65,17 @@ body {
 ::-webkit-scrollbar-thumb      { background: #c9a87d; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover{ background: #8c6b43; }
 
-/* ─── Sidebar gradient ──────────────────────────────────────────────── */
+/* ─── Sidebar depth & gradient ──────────────────────────────────────── */
 .sidebar-bg {
   background: linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%);
+  border-right: 1px solid rgba(107, 76, 42, 0.1);
+  box-shadow: 4px 0 20px rgba(46, 31, 12, 0.03);
 }
 
 .dark .sidebar-bg {
   background: linear-gradient(170deg, #3D2B16 0%, #251409 100%);
+  border-right: 1px solid rgba(201, 168, 77, 0.08);
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.2);
 }
 
 /* ─── Sidebar active indicator ──────────────────────────────────────── */

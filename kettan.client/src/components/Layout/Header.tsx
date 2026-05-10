@@ -1,9 +1,6 @@
 import { useState } from 'react';
-import { AppBar, IconButton, Toolbar, Box, Avatar, Tooltip, Typography, InputBase, Menu, MenuItem } from '@mui/material';
+import { AppBar, IconButton, Toolbar, Box, Avatar, Typography, Menu, MenuItem } from '@mui/material';
 import MenuIcon          from '@mui/icons-material/Menu';
-import DarkModeRoundedIcon   from '@mui/icons-material/DarkModeRounded';
-import LightModeRoundedIcon  from '@mui/icons-material/LightModeRounded';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
@@ -69,7 +66,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
 export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   const user = useAuthStore((state) => state.user);
   const { logout } = useAuthStore();
-  const { mode, toggleTheme } = useThemeStore();
+  const { mode } = useThemeStore();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -131,13 +128,15 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
         background: 'rgba(250, 245, 239, 0.85)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #E5E7EB',
+        borderBottom: '1px solid rgba(107, 76, 42, 0.1)',
+        boxShadow: '0 4px 20px rgba(46, 31, 12, 0.03)',
         color: 'text.primary',
         transition: 'margin-left 220ms cubic-bezier(0.4,0,0.2,1), width 220ms cubic-bezier(0.4,0,0.2,1)',
         '.dark &': {
           background: 'rgba(46, 31, 20, 0.85)',
           color: '#E8D3A9',
-          borderBottomColor: 'rgba(201,168,77,0.15)',
+          borderBottomColor: 'rgba(201,168,77,0.08)',
+          boxShadow: '0 4px 25px rgba(0, 0, 0, 0.2)',
         },
       }}
     >
@@ -166,7 +165,7 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
             <Box>
               <Typography
                 sx={{
-                  fontSize: 17,
+                  fontSize: 13.5,
                   fontWeight: 700,
                   color: '#2E1F0C',
                   letterSpacing: '-0.01em',
@@ -179,7 +178,7 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
               <Typography
                 sx={{
                   fontSize: 12,
-                  color: '#8C6B43',
+                  color: '#7A5B37',
                   letterSpacing: '0.01em',
                   '.dark &': { color: 'rgba(201,168,77,0.55)' },
                 }}
@@ -193,65 +192,11 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
         {/* Right side */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 
-          {/* Search bar */}
-          <Box
-            sx={{
-              display: { xs: 'none', md: 'flex' },
-              alignItems: 'center',
-              gap: 1,
-              background: 'rgba(74,52,24,0.07)',
-              border: '1px solid rgba(201,168,77,0.2)',
-              borderRadius: '8px',
-              px: 1.5,
-              py: 0.6,
-              mr: 0.5,
-              '.dark &': {
-                background: 'rgba(201,168,77,0.07)',
-                borderColor: 'rgba(201,168,77,0.12)',
-              },
-              '&:focus-within': {
-                borderColor: '#C9A84C',
-                background: 'rgba(201,168,77,0.1)',
-              },
-              transition: 'border-color 160ms, background 160ms',
-            }}
-          >
-            <SearchRoundedIcon sx={{ fontSize: 16, color: '#8C6B43', flexShrink: 0 }} />
-            <InputBase
-              placeholder="Search…"
-              inputProps={{ 'aria-label': 'search' }}
-              sx={{
-                fontSize: 13,
-                color: '#2E1F0C',
-                width: 160,
-                '.dark &': { color: '#E8D3A9' },
-                '& ::placeholder': { color: '#B08B5A', opacity: 1 },
-              }}
-            />
-          </Box>
-
           {/* Notifications */}
           <NotificationBell />
 
-          {/* Theme toggle */}
-          <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>
-            <IconButton
-              onClick={toggleTheme}
-              sx={{
-                color: '#8C6B43',
-                '&:hover': { background: 'rgba(201,168,77,0.1)', color: '#6B4C2A' },
-                transition: 'background 160ms, color 160ms',
-              }}
-            >
-              {mode === 'dark'
-                ? <LightModeRoundedIcon sx={{ fontSize: 19 }} />
-                : <DarkModeRoundedIcon  sx={{ fontSize: 19 }} />
-              }
-            </IconButton>
-          </Tooltip>
-
           {/* Divider */}
-          <Box sx={{ width: '1px', height: 24, background: 'rgba(201,168,77,0.15)', mx: 1 }} />
+          <Box sx={{ width: '3px', height: 24, background: '#6B4C2A', opacity: 0.4, mx: 1.5 }} />
 
           {/* Account Group */}
           <Box 

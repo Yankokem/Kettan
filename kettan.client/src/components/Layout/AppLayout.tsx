@@ -7,7 +7,9 @@ import { PageTransitionWrapper } from './PageTransitionWrapper';
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -30,7 +32,11 @@ export function AppLayout() {
         mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
         collapsed={collapsed}
-        onCollapseToggle={() => setCollapsed(!collapsed)}
+        onCollapseToggle={() => {
+          const newState = !collapsed;
+          setCollapsed(newState);
+          localStorage.setItem('sidebar_collapsed', String(newState));
+        }}
       />
 
       <Box

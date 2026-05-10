@@ -130,17 +130,11 @@ export function NotificationBell() {
       <IconButton 
         onClick={handleClick}
         sx={{
-          color: '#6B4C2A',
-          bgcolor: '#FAF5EF',
-          border: '1px solid',
-          borderColor: 'rgba(201, 168, 77, 0.2)',
-          borderRadius: '12px',
-          width: 38,
-          height: 38,
+          color: '#8C6B43',
+          p: 0.5,
           '&:hover': { 
-            bgcolor: '#F5E6B3', 
-            borderColor: 'rgba(201, 168, 77, 0.4)',
-            color: '#4A3418' 
+            color: '#6B4C2A',
+            bgcolor: 'transparent'
           },
           transition: 'all 0.2s ease',
         }}
@@ -152,11 +146,14 @@ export function NotificationBell() {
           sx={{ 
             '& .MuiBadge-badge': { 
               border: '2px solid white',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              fontSize: '10px',
+              height: '18px',
+              minWidth: '18px',
             } 
           }}
         >
-          <NotificationsRoundedIcon sx={{ fontSize: 18, color: '#8C6B43' }} />
+          <NotificationsRoundedIcon sx={{ fontSize: 26 }} />
         </Badge>
       </IconButton>
       <Popover

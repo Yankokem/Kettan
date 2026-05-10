@@ -30,9 +30,9 @@ import ScaleRoundedIcon             from '@mui/icons-material/ScaleRounded';
 import AnalyticsRoundedIcon         from '@mui/icons-material/AnalyticsRounded';
 import LocalCafeRoundedIcon         from '@mui/icons-material/LocalCafeRounded';
 import FeedRoundedIcon              from '@mui/icons-material/FeedRounded';
+import ChevronRightRoundedIcon      from '@mui/icons-material/ChevronRightRounded';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../../store/useAuthStore';
-import { IconButton } from '@mui/material';
 import { canAccessModule } from '../../utils/roleHelpers';
 
 const DRAWER_WIDTH = 268;
@@ -127,7 +127,7 @@ function NavLink({
         sx={{
           minWidth: collapsed ? 0 : 36,
           mr: collapsed ? 0 : 1,
-          color: isActive ? 'primary.main' : 'text.secondary',
+          color: isActive ? 'primary.main' : '#7A5B37',
           transition: 'color 160ms',
           '& svg': { fontSize: 20 },
         }}
@@ -142,7 +142,7 @@ function NavLink({
             primaryTypographyProps={{
               fontSize: 13.5,
               fontWeight: isActive ? 600 : 500,
-              color: isActive ? 'primary.main' : 'text.primary',
+              color: isActive ? 'primary.main' : '#1B1207',
               letterSpacing: '0.01em',
               whiteSpace: 'nowrap',
             }}
@@ -286,8 +286,17 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
           sx={{
             px: 2,
             py: 1.5,
-            borderTop: 1,
-            borderColor: 'divider',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 20,
+              right: 20,
+              height: '2px',
+              background: '#6B4C2A',
+              opacity: 0.4
+            },
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
@@ -346,11 +355,12 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
               sx={{ 
                 fontSize: 13.5, 
                 fontWeight: 700, 
-                color: 'text.primary', 
-                lineHeight: 1,
-                letterSpacing: '-0.02em',
+                color: '#1B1207', 
+                lineHeight: 1.2,
+                letterSpacing: '-0.01em',
                 display: 'block',
-                mb: 0.2 // Minimal gap
+                mb: 0.1,
+                '.dark &': { color: '#E8D3A9' }
               }}
             >
               {user?.tenant?.name || 'Kettan'}
@@ -359,24 +369,46 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
               variant="caption" 
               sx={{ 
                 fontSize: 10.5, 
-                color: 'text.secondary', 
+                color: '#7A5B37', 
                 fontWeight: 600,
                 letterSpacing: '0.02em',
                 opacity: 0.8,
-                lineHeight: 1
+                lineHeight: 1,
+                '.dark &': { color: 'rgba(201,168,77,0.7)' }
               }}
             >
               Company
             </Typography>
           </Box>
+
+          {/* Chevron - Hidden for SuperAdmin */}
+          {!isSuperAdmin && (
+            <ChevronRightRoundedIcon 
+              sx={{ 
+                fontSize: 18, 
+                color: '#7A5B37', 
+                opacity: 0.6,
+                ml: 'auto'
+              }} 
+            />
+          )}
         </Box>
       )}
       {collapsed && (
         <Box 
           sx={{ 
             p: 1.5, 
-            borderTop: 1, 
-            borderColor: 'divider', 
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 12,
+              right: 12,
+              height: '2px',
+              background: '#6B4C2A',
+              opacity: 0.4
+            },
             display: 'flex', 
             justifyContent: 'center',
           }}
@@ -388,26 +420,37 @@ export function Sidebar({ mobileOpen, onDrawerToggle, collapsed, onCollapseToggl
                 src={user.tenant.logoUrl}
                 alt="Company Logo"
                 sx={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: '6px',
+                  width: 36,
+                  height: 36,
+                  borderRadius: '10px',
                   objectFit: 'cover',
                   cursor: 'pointer',
                   border: '1px solid rgba(201,168,77,0.2)',
+                  transition: 'transform 160ms',
+                  '&:hover': { transform: 'scale(1.08)' }
                 }}
                 onClick={() => navigate({ to: '/company-profile' })}
               />
             ) : (
-              <IconButton 
-                size="small" 
+              <Box
                 onClick={() => navigate({ to: '/company-profile' })}
-                sx={{ 
-                  color: 'text.secondary',
-                  '&:hover': { background: 'rgba(201,168,77,0.15)' }
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #6B4C2A, #C9A84C)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  cursor: 'pointer',
+                  border: '1px solid rgba(201,168,77,0.2)',
+                  transition: 'transform 160ms',
+                  '&:hover': { transform: 'scale(1.08)' }
                 }}
               >
-                <StoreRoundedIcon fontSize="small" />
-              </IconButton>
+                <StoreRoundedIcon sx={{ fontSize: 18, color: '#FAF5EF' }} />
+              </Box>
             )}
           </Tooltip>
         </Box>
