@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
-import { Box, Typography, Card, Chip } from '@mui/material';
+import { Box, Typography, Card } from '@mui/material';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
@@ -9,12 +9,7 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRounded';
 import { useNavigate } from '@tanstack/react-router';
-import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
-import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
 import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
-import Tooltip from '@mui/material/Tooltip';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -37,11 +32,7 @@ import { StatCard } from '../../components/UI/StatCard';
 import { useAuthStore } from '../../store/useAuthStore';
 import { fetchSupplyRequests, fetchIncomingShipments, type SupplyRequest, type BranchOrder } from '../branch-operations/api';
 
-type DatasetMode = 'active' | 'history';
-type BranchViewTab = 'my-requests' | 'incoming';
 type SortOption = 'newest' | 'oldest' | 'branch-asc' | 'branch-desc';
-
-const HISTORY_STATUSES = ['Completed', 'Delivered', 'Rejected', 'Cancelled', 'Returned', 'Fulfilled'];
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
@@ -182,7 +173,6 @@ export function SupplyRequestsPage() {
   const canCreateRequests = isBranch;
 
   const [rows, setRows] = useState<SupplyRequest[]>([]);
-  const [datasetMode, setDatasetMode] = useState<DatasetMode>('active');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -190,7 +180,6 @@ export function SupplyRequestsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
-  const [branchViewTab, setBranchViewTab] = useState<BranchViewTab>('my-requests');
   const [incomingShipments, setIncomingShipments] = useState<BranchOrder[]>([]);
 
   const loadRows = async () => {

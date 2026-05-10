@@ -1,8 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Box, Chip, Typography, Card, Grid, Avatar, Paper } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Box, Chip, Typography, Grid, Avatar, Paper } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
-import GroupRoundedIcon from '@mui/icons-material/GroupRounded';
 import PaymentRoundedIcon from '@mui/icons-material/PaymentRounded';
 import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
@@ -16,11 +15,9 @@ import ContactSupportRoundedIcon from '@mui/icons-material/ContactSupportRounded
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import BuildRoundedIcon from '@mui/icons-material/BuildRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 
 import { BackButton } from '../../components/UI/BackButton';
-import { Button } from '../../components/UI/Button';
-import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
+import { DataTable } from '../../components/UI/DataTable';
 import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
 import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
 import { fetchTenantDetail, toggleTenantStatus, type TenantDetail } from './tenantsApi';
@@ -151,20 +148,6 @@ export function TenantProfilePage() {
       setConfirmOpen(false);
     }
   };
-
-  const paymentColumns: ColumnDef<(typeof payments)[0]>[] = [
-    { key: 'paidAt', label: 'Date', width: 160, sortable: true, render: (row) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.paidAt ? new Date(row.paidAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</Typography> },
-    { key: 'amount', label: 'Amount', width: 140, align: 'right', render: (row) => <Typography sx={{ fontSize: 13, fontWeight: 600 }}>₱{row.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Typography> },
-    { key: 'paymentMethod', label: 'Method', width: 130, render: (row) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.paymentMethod || '—'}</Typography> },
-    {
-      key: 'status', label: 'Status', width: 120, align: 'center',
-      render: (row) => (
-        <Box sx={{ fontSize: 11.5, fontWeight: 700, color: row.status === 'Paid' ? '#047857' : '#B45309', bgcolor: row.status === 'Paid' ? 'rgba(4,120,87,0.12)' : 'rgba(180,83,9,0.12)', px: 1.5, py: 0.5, borderRadius: 1, display: 'inline-block' }}>
-          {row.status}
-        </Box>
-      ),
-    },
-  ];
 
   return (
     <Box sx={{ pb: 5 }}>

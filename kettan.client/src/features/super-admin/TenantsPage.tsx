@@ -10,7 +10,6 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
-import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
@@ -89,7 +88,6 @@ function ActionsMenu({ row, onRefresh }: { row: TenantRow; onRefresh: () => void
 }
 
 export function TenantsPage() {
-  const navigate = useNavigate();
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);

@@ -1,4 +1,4 @@
-import { Box, Grid, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
+import { Box, Grid, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { useNavigate } from '@tanstack/react-router';
@@ -10,8 +10,6 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
-import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
-import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 
 
@@ -67,14 +65,9 @@ const STATUS_MAP: Record<string, { color: string; bg: string }> = {
   Cancelled: { color: '#DC2626', bg: 'rgba(220,38,38,0.12)' }
 };
 
-type DatasetMode = 'active' | 'history';
-type FlowTab = 'inbound' | 'outbound';
 type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
 type ActiveStatusTab = 'All' | 'Approved' | 'Processing' | 'Picking' | 'Packed';
 
-const ACTIVE_STATUSES: OrderActionStatus[] = ['Approved', 'PartiallyApproved', 'Processing', 'Picking', 'Allocated', 'Packing', 'Packed'];
-const HISTORY_STATUSES: OrderActionStatus[] = ['Dispatched', 'InTransit', 'Delivered', 'Rejected', 'Returned'];
-const ACTIVE_STATUS_TABS: ActiveStatusTab[] = ['All', 'Approved', 'Processing', 'Picking', 'Packed'];
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
@@ -413,11 +406,6 @@ export function OrdersPage() {
         return b.date.localeCompare(a.date);
     }
   });
-
-  const historyStatusOptions = HISTORY_STATUSES.map((status) => ({
-    value: status,
-    label: getStatusDisplayLabel(status),
-  }));
 
   const openDetails = (id: string) => {
     if (id.startsWith('SR-')) {

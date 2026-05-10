@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../utils/api';
 import { Box, Typography, Card, Grid } from '@mui/material';
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, Legend,
+  AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
 } from 'recharts';
 import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded';
@@ -16,7 +16,6 @@ import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
 import { Dropdown } from '../../components/UI/Dropdown';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const PIE_COLORS = ['#6B4C2A', '#047857', '#B08B5A', '#2563EB', '#7C3AED'];
 
 interface AnalyticsData {
   revenueTrend: { year: number; month: number; revenue: number }[];
@@ -96,11 +95,6 @@ export function AnalyticsPage() {
   };
 
   const growthChartData = generateGrowthData(rangeFilter === '6months' ? 6 : 12);
-
-  const pieData = data.planDistribution.map(p => ({
-    name: p.planName,
-    value: p.count,
-  }));
 
   const topTenantColumns: ColumnDef<(typeof data.topTenants)[0]>[] = [
     {
