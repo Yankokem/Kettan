@@ -3,8 +3,10 @@ import { api } from '../../../utils/api';
 import { Box, Typography, Card } from '@mui/material';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import GroupRoundedIcon from '@mui/icons-material/GroupRounded';
+import GroupAddRoundedIcon from '@mui/icons-material/GroupAddRounded';
 import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceWalletRounded';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import PieChartRoundedIcon from '@mui/icons-material/PieChartRounded';
 import { useNavigate } from '@tanstack/react-router';
 import {
   Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -14,6 +16,7 @@ import {
 import { StatCard } from '../../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
 import { LoadingOverlay } from '../../../components/UI/LoadingOverlay';
+import { SubscriberTrendChart } from './SubscriberTrendChart';
 
 
 const PIE_COLORS = ['#6B4C2A', '#047857', '#B08B5A', '#2563EB', '#7C3AED'];
@@ -27,6 +30,7 @@ interface DashboardData {
   monthlyRecurringRevenue: number;
   planDistribution: { planName: string; count: number; revenue: number }[];
   recentSignups: { tenantId: number; name: string; subscriptionTier: string; subscriptionStatus: string; createdAt: string }[];
+  subscriberTrend: { year: number; month: number; planName: string; count: number }[];
 }
 
 async function fetchDashboard(): Promise<DashboardData> {
@@ -39,6 +43,7 @@ export function SuperAdminDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [timeScope, setTimeScope] = useState('monthly');
 
   useEffect(() => {
     fetchDashboard()
@@ -67,12 +72,21 @@ export function SuperAdminDashboard() {
 
   const signupColumns: ColumnDef<(typeof data.recentSignups)[0]>[] = [
     {
+      key: 'tenantId',
+      label: 'Tenant ID',
+      width: 100,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+          #{row.tenantId}
+        </Typography>
+      ),
+    },
+    {
       key: 'name',
       label: 'Tenant Name',
       render: (row) => (
         <Box>
           <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{row.name}</Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary', fontFamily: 'monospace', mt: 0.2 }}>ID: {row.tenantId}</Typography>
         </Box>
       ),
     },
@@ -101,16 +115,14 @@ export function SuperAdminDashboard() {
       render: (row) => {
         const isActive = row.subscriptionStatus === 'Active';
         return (
-          <Box
+          <Typography
             sx={{
-              fontSize: 11.5, fontWeight: 700,
+              fontSize: 13, fontWeight: 700,
               color: isActive ? '#047857' : '#B45309',
-              bgcolor: isActive ? 'rgba(4,120,87,0.12)' : 'rgba(180,83,9,0.12)',
-              px: 1.5, py: 0.5, borderRadius: 1, display: 'inline-block',
             }}
           >
             {row.subscriptionStatus}
-          </Box>
+          </Typography>
         );
       },
     },
@@ -128,14 +140,13 @@ export function SuperAdminDashboard() {
   ];
 
   return (
-    <Box sx={{ pb: 3 }}>
+    <Box sx={{ pb: 3, display: 'flex', flexDirection: 'column', gap: 4 }}>
       {/* ── KPI Cards ── */}
       <Box
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', lg: 'repeat(4,1fr)' },
           gap: 2.5,
-          mb: 3.5,
         }}
       >
         <StatCard
@@ -173,13 +184,26 @@ export function SuperAdminDashboard() {
       </Box>
 
       {/* ── Charts Row ── */}
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, mb: 3.5 }}>
-        {/* Plan Distribution Donut */}
-        <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', width: { xs: '100%', lg: 380 }, flexShrink: 0 }}>
-          <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 1 }}>Plan Distribution</Typography>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 2 }}>Subscribers per plan tier</Typography>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3 }}>
+        
+        {/* Subscriber Trend (New Chart) */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <SubscriberTrendChart 
+            data={data.subscriberTrend || []} 
+            timeScope={timeScope}
+            onTimeScopeChange={setTimeScope}
+          />
+        </Box>
+
+        {/* Plan Distribution (Moved to Right) */}
+        <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', width: { xs: '100%', lg: 340 }, flexShrink: 0, bgcolor: '#fff' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 3 }}>
+            <PieChartRoundedIcon sx={{ color: '#6B4C2A', fontSize: 22 }} />
+            <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#3E2723' }}>Plan Distribution</Typography>
+          </Box>
+          
           {pieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -187,79 +211,53 @@ export function SuperAdminDashboard() {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={4}
-                  strokeWidth={2}
-                  stroke="#fff"
+                  innerRadius={65}
+                  outerRadius={95}
+                  paddingAngle={5}
+                  strokeWidth={0}
                 >
                   {pieData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Legend
-                  verticalAlign="bottom"
-                  iconSize={10}
-                  formatter={(value: string) => <span style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>{value}</span>}
-                />
                 <RechartsTooltip
                   formatter={(value: unknown, name: unknown) => [`${value} subscribers`, String(name)]}
-                  contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: '10px' }}
+                  itemStyle={{ fontSize: 12, fontWeight: 600 }}
                 />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
-              <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>No active subscriptions yet</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240 }}>
+              <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>No active subscriptions</Typography>
             </Box>
           )}
-        </Card>
 
-        {/* Revenue per Plan Breakdown */}
-        <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', flex: 1 }}>
-          <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 1 }}>Revenue by Plan</Typography>
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 3 }}>Monthly recurring revenue per subscription tier</Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {data.planDistribution.map((plan, i) => {
-              const maxRevenue = Math.max(...data.planDistribution.map(p => p.revenue), 1);
-              const pct = (plan.revenue / maxRevenue) * 100;
-              return (
-                <Box key={plan.planName}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{plan.planName}</Typography>
-                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: PIE_COLORS[i % PIE_COLORS.length] }}>
-                      ₱{plan.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ height: 8, bgcolor: 'rgba(0,0,0,0.06)', borderRadius: 4, overflow: 'hidden' }}>
-                    <Box
-                      sx={{
-                        height: '100%',
-                        width: `${pct}%`,
-                        bgcolor: PIE_COLORS[i % PIE_COLORS.length],
-                        borderRadius: 4,
-                        transition: 'width 0.6s ease',
-                      }}
-                    />
-                  </Box>
-                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.3 }}>
-                    {plan.count} subscriber{plan.count !== 1 ? 's' : ''}
-                  </Typography>
+          {/* Custom Legend for Pie */}
+          <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {pieData.map((p, i) => (
+              <Box key={p.name} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#3E2723' }}>{p.name}</Typography>
                 </Box>
-              );
-            })}
-            {data.planDistribution.length === 0 && (
-              <Typography sx={{ color: 'text.secondary', fontSize: 13, textAlign: 'center', py: 4 }}>
-                No subscription data available
-              </Typography>
-            )}
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: PIE_COLORS[i % PIE_COLORS.length] }}>
+                  {p.value}
+                </Typography>
+              </Box>
+            ))}
           </Box>
         </Card>
       </Box>
 
       {/* ── Recent Signups Table ── */}
       <DataTable
-        title="Recent Tenant Signups"
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+            <GroupAddRoundedIcon sx={{ color: '#6B4C2A', fontSize: 22 }} />
+            <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#3E2723' }}>Recent Tenant Signups</Typography>
+          </Box>
+        }
         data={data.recentSignups}
         columns={signupColumns}
         keyExtractor={(row) => String(row.tenantId)}

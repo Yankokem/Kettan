@@ -1,17 +1,90 @@
-import { useEffect, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { useEffect, useState, useMemo } from 'react';
+import { Box, Typography, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-
-import { DataTable, type ColumnDef, type QuickFilter } from '../../components/UI/DataTable';
-import { SearchInput } from '../../components/UI/SearchInput';
-import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
-import { StatCard } from '../../components/UI/StatCard';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import PaymentRoundedIcon from '@mui/icons-material/PaymentRounded';
 import GroupRoundedIcon from '@mui/icons-material/GroupRounded';
-import { fetchTenants, type TenantRow } from './tenantsApi';
+import SortRoundedIcon from '@mui/icons-material/SortRounded';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+
+import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
+import { SearchInput } from '../../components/UI/SearchInput';
+import { FilterDropdown } from '../../components/UI/FilterAndSort';
+import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
+import { StatCard } from '../../components/UI/StatCard';
+import { fetchTenants, toggleTenantStatus, type TenantRow } from './tenantsApi';
 import { api } from '../../utils/api';
+
+function ActionsMenu({ row, onRefresh }: { row: TenantRow; onRefresh: () => void }) {
+  const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+
+  const handleToggleStatus = async () => {
+    try {
+      await toggleTenantStatus(String(row.tenantId), !row.isActive);
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      handleClose();
+    }
+  };
+
+  return (
+    <>
+      <IconButton size="small" onClick={handleClick} sx={{ color: 'text.secondary' }}>
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            mt: 0.5,
+            minWidth: 160,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+          }
+        }}
+      >
+        <MenuItem onClick={() => { 
+          handleClose(); 
+          navigate({ to: '/tenants/$tenantId', params: { tenantId: String(row.tenantId) } });
+        }}>
+          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+        </MenuItem>
+        <MenuItem onClick={handleToggleStatus}>
+          <ListItemIcon>
+            {row.isActive ? 
+              <BlockRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /> : 
+              <CheckCircleRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+            }
+          </ListItemIcon>
+          <ListItemText 
+            primary={row.isActive ? "Deactivate Tenant" : "Activate Tenant"} 
+            primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} 
+          />
+        </MenuItem>
+      </Menu>
+    </>
+  );
+}
 
 export function TenantsPage() {
   const navigate = useNavigate();
@@ -20,11 +93,13 @@ export function TenantsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [planFilter, setPlanFilter] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
 
-  useEffect(() => {
+  const loadData = () => {
     setLoading(true);
     Promise.all([
-      fetchTenants(searchQuery, statusFilter),
+      fetchTenants(),
       api.get('/api/admin/dashboard').then(res => res.data)
     ])
       .then(([tenantData, dashboardData]) => {
@@ -33,18 +108,70 @@ export function TenantsPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [searchQuery, statusFilter]);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const filteredAndSortedTenants = useMemo(() => {
+    let result = [...tenants];
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(t => 
+        t.name.toLowerCase().includes(q) ||
+        (t.email && t.email.toLowerCase().includes(q)) ||
+        t.tenantId.toString().includes(q)
+      );
+    }
+
+    if (statusFilter) {
+      result = result.filter(t => t.subscriptionStatus === statusFilter);
+    }
+
+    if (planFilter) {
+      result = result.filter(t => t.subscriptionTier === planFilter);
+    }
+
+    result.sort((a, b) => {
+      if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+      if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return result;
+  }, [tenants, searchQuery, statusFilter, planFilter, sortBy]);
+
+  const PLAN_OPTIONS = useMemo(() => {
+    const plans = Array.from(new Set(tenants.map(t => t.subscriptionTier))).filter(Boolean).sort();
+    return [
+      { value: '', label: 'All Plans' },
+      ...plans.map(p => ({ value: p, label: p }))
+    ];
+  }, [tenants]);
 
   const columns: ColumnDef<TenantRow>[] = [
     {
+      key: 'tenantId',
+      label: 'Tenant ID',
+      width: 100,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', letterSpacing: '-0.02em' }}>
+          #{row.tenantId}
+        </Typography>
+      ),
+    },
+    {
       key: 'name',
       label: 'Tenant Name',
-      sortable: true,
+      gridWidth: '1.5fr',
       render: (row) => (
         <Box>
           <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{row.name}</Typography>
-          <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontFamily: 'monospace', mt: 0.2 }}>
-            {row.email || `Tenant #${row.tenantId}`}
+          <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.2 }}>
+            {row.email || 'No email provided'}
           </Typography>
         </Box>
       ),
@@ -52,80 +179,69 @@ export function TenantsPage() {
     {
       key: 'subscriptionTier',
       label: 'Plan',
-      sortable: true,
-      width: 130,
+      gridWidth: '1fr',
       render: (row) => (
-        <Box
-          sx={{
-            fontSize: 11.5, fontWeight: 700,
-            color: '#6B4C2A', bgcolor: 'rgba(107,76,42,0.12)',
-            px: 1.5, py: 0.5, borderRadius: 1, display: 'inline-block',
-            border: '1px solid rgba(107,76,42,0.28)',
-          }}
-        >
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#6B4C2A' }}>
           {row.subscriptionTier}
-        </Box>
+        </Typography>
       ),
     },
     {
       key: 'branchCount',
       label: 'Branches',
-      sortable: true,
-      width: 100,
-      align: 'right',
-      render: (row) => <Typography sx={{ fontSize: 13 }}>{row.branchCount}</Typography>,
+      gridWidth: '0.8fr',
+      align: 'left',
+      render: (row) => <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{row.branchCount}</Typography>,
     },
     {
       key: 'userCount',
       label: 'Users',
-      sortable: true,
-      width: 90,
-      align: 'right',
-      render: (row) => <Typography sx={{ fontSize: 13 }}>{row.userCount}</Typography>,
-    },
-    {
-      key: 'createdAt',
-      label: 'Joined',
-      sortable: true,
-      width: 140,
-      align: 'right',
-      render: (row) => (
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-          {new Date(row.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-        </Typography>
-      ),
+      gridWidth: '0.8fr',
+      align: 'left',
+      render: (row) => <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{row.userCount}</Typography>,
     },
     {
       key: 'subscriptionStatus',
       label: 'Status',
-      width: 150,
-      align: 'center',
+      gridWidth: '1fr',
       render: (row) => {
-        const colors: Record<string, { color: string; bg: string }> = {
-          Active: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
-          PendingPayment: { color: '#B45309', bg: 'rgba(180,83,9,0.12)' },
-          Suspended: { color: '#B91C1C', bg: 'rgba(185,28,28,0.1)' },
+        const colors: Record<string, string> = {
+          Active: '#047857',
+          PendingPayment: '#B45309',
+          Suspended: '#B91C1C',
         };
-        const style = colors[row.subscriptionStatus] || { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };
+        const color = colors[row.subscriptionStatus] || '#64748B';
         return (
-          <Box
-            sx={{
-              fontSize: 11.5, fontWeight: 700,
-              color: style.color, bgcolor: style.bg,
-              px: 1.5, py: 0.5, borderRadius: 1, display: 'inline-block',
-            }}
-          >
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color }}>
             {row.subscriptionStatus}
-          </Box>
+          </Typography>
         );
       },
     },
-  ];
-
-  const quickFilters: QuickFilter[] = [
-    { label: 'Active', value: 'Active' },
-    { label: 'Pending Payment', value: 'PendingPayment' },
-    { label: 'Suspended', value: 'Suspended' },
+    {
+      key: 'createdAt',
+      label: 'DATE AND TIME JOINED',
+      gridWidth: '1.6fr',
+      align: 'left',
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+          {new Date(row.createdAt).toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          })}
+        </Typography>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      width: 60,
+      align: 'right',
+      render: (row) => <ActionsMenu row={row} onRefresh={loadData} />,
+    },
   ];
 
   return (
@@ -138,7 +254,7 @@ export function TenantsPage() {
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', lg: 'repeat(4,1fr)' },
             gap: 2.5,
-            mb: 1,
+            mb: 0.5,
           }}
         >
           <StatCard
@@ -176,27 +292,62 @@ export function TenantsPage() {
         </Box>
       )}
 
+      {/* Filter Row */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5, gap: 1.2, flexWrap: 'wrap' }}>
+        <SearchInput
+          placeholder="Search by name, email, or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ minWidth: { xs: '100%', sm: 240, md: 300 }, maxWidth: { sm: 420 }, flexShrink: 1 }}
+        />
+
+        <FilterDropdown
+          label="Sort"
+          icon={<SortRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={sortBy}
+          onChange={(v) => setSortBy(v as string)}
+          minWidth={160}
+          options={[
+            { value: 'newest', label: 'Newest First' },
+            { value: 'oldest', label: 'Oldest First' },
+            { value: 'name-asc', label: 'Name A-Z' },
+            { value: 'name-desc', label: 'Name Z-A' },
+          ]}
+        />
+
+        <FilterDropdown
+          label="Status"
+          icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={statusFilter}
+          onChange={setStatusFilter}
+          minWidth={160}
+          options={[
+            { value: '', label: 'All Statuses' },
+            { value: 'Active', label: 'Active' },
+            { value: 'PendingPayment', label: 'Pending Payment' },
+            { value: 'Suspended', label: 'Suspended' },
+          ]}
+        />
+
+        <FilterDropdown
+          label="Plan"
+          icon={<WorkspacePremiumRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+          value={planFilter}
+          onChange={setPlanFilter}
+          minWidth={160}
+          options={PLAN_OPTIONS}
+        />
+      </Box>
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <DataTable
-          data={tenants}
+          data={filteredAndSortedTenants}
           columns={columns}
           keyExtractor={(row) => String(row.tenantId)}
-          quickFilters={quickFilters}
-          activeQuickFilter={statusFilter}
-          onQuickFilterChange={setStatusFilter}
           onRowClick={(row) => navigate({ to: '/tenants/$tenantId', params: { tenantId: String(row.tenantId) } })}
           emptyMessage={loading ? ' ' : 'No tenants found.'}
-          toolbar={
-            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-              <SearchInput
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                sx={{ width: 300 }}
-              />
-            </Box>
-          }
+          defaultRowsPerPage={10}
+          pageSizes={[10, 25, 50]}
         />
       </Box>
     </Box>

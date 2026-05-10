@@ -165,7 +165,7 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
             <Box>
               <Typography
                 sx={{
-                  fontSize: 13.5,
+                  fontSize: 15,
                   fontWeight: 700,
                   color: '#2E1F0C',
                   letterSpacing: '-0.01em',

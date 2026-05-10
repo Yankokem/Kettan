@@ -93,6 +93,7 @@ export function ReturnCreatePage() {
   // Step 2 — item lines
   const [lines, setLines] = useState<ItemLine[]>([]);
   const [nextReturnId, setNextReturnId] = useState<number | null>(null);
+  const [subject, setSubject] = useState('');
   const [resolution, setResolution] = useState('Replaced');
   const [reason, setReason] = useState('');
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
@@ -215,6 +216,7 @@ export function ReturnCreatePage() {
 
   const buildDraftPayload = () => ({
     orderId: Number(selectedOrderId),
+    subject: subject.trim() || undefined,
     resolution,
     reason: reason.trim() || undefined,
     items: selectedLines.map((l) => ({
@@ -440,6 +442,20 @@ export function ReturnCreatePage() {
               </Box>
 
               <Divider sx={{ my: 3, opacity: 0.6 }} />
+
+              {/* Resolution Configuration */}
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>
+                  Subject / Title
+                </Typography>
+                <TextField
+                  placeholder="Example: Damaged delivery from morning shift"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  fullWidth
+                  slotProps={{ htmlInput: { maxLength: 80 } }}
+                />
+              </Box>
 
               {/* Resolution Configuration */}
               <Box sx={{ mb: 3 }}>

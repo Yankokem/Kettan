@@ -53,7 +53,7 @@ public class AdminController : ControllerBase
             .ToListAsync(ct);
 
         // Recent signups (last 5 tenants)
-        var recentSignups = await _context.Tenants.IgnoreQueryFilters()
+        var recentSignupsRaw = await _context.Tenants.IgnoreQueryFilters()
             .OrderByDescending(t => t.CreatedAt)
             .Take(5)
             .Select(t => new
@@ -66,6 +66,31 @@ public class AdminController : ControllerBase
             })
             .ToListAsync(ct);
 
+        var recentSignups = recentSignupsRaw.Select(t => new
+        {
+            t.TenantId,
+            t.Name,
+            SubscriptionTier = t.SubscriptionTier.ToString(),
+            SubscriptionStatus = t.SubscriptionStatus.ToString(),
+            t.CreatedAt
+        });
+
+        // Subscriber Trend (New Signups per Plan, last 6 months)
+        var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
+        var subscriberTrend = await _context.TenantSubscriptions.IgnoreQueryFilters()
+            .Where(ts => ts.StartDate >= sixMonthsAgo)
+            .Join(_context.SubscriptionPlans, ts => ts.PlanId, p => p.PlanId, (ts, p) => new { ts, p })
+            .GroupBy(x => new { x.ts.StartDate.Year, x.ts.StartDate.Month, PlanName = x.p.Name })
+            .Select(g => new
+            {
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                PlanName = g.Key.PlanName,
+                Count = g.Count()
+            })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync(ct);
+
         return Ok(new
         {
             totalTenants,
@@ -75,7 +100,8 @@ public class AdminController : ControllerBase
             totalUsers,
             monthlyRecurringRevenue = mrr,
             planDistribution,
-            recentSignups
+            recentSignups,
+            subscriberTrend
         });
     }
 
@@ -105,7 +131,7 @@ public class AdminController : ControllerBase
             }
         }
 
-        var tenants = await query
+        var tenantsRaw = await query
             .OrderByDescending(t => t.CreatedAt)
             .Select(t => new
             {
@@ -120,6 +146,19 @@ public class AdminController : ControllerBase
                 UserCount = _context.Users.IgnoreQueryFilters().Count(u => u.TenantId == t.TenantId)
             })
             .ToListAsync(ct);
+
+        var tenants = tenantsRaw.Select(t => new
+        {
+            t.TenantId,
+            t.Name,
+            t.Email,
+            SubscriptionTier = t.SubscriptionTier.ToString(),
+            SubscriptionStatus = t.SubscriptionStatus.ToString(),
+            t.IsActive,
+            t.CreatedAt,
+            t.BranchCount,
+            t.UserCount
+        });
 
         return Ok(tenants);
     }

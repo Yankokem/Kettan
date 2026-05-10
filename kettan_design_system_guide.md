@@ -97,6 +97,19 @@ Use these for **passive wait states** where the user is observing a process or w
 
 ---
 
+## 📊 Dashboard & Analytics Containers
+
+To maintain a clean and data-focused dashboard, follow these rules for information containers:
+
+### 1. Visual Standards
+*   **Background**: Always use white (`#fff`) for main dashboard cards and chart containers to ensure maximum contrast for data.
+*   **Descriptions**: **DO NOT** use secondary descriptions or instructional captions below titles. Data should speak for itself.
+*   **Icons**:
+    *   **Raw Placement**: Do not "encapsulate" or wrap icons in extra boxes, backgrounds, or rounded containers. Place the icon directly next to the title.
+    *   **Consistency**: Every major dashboard section (Trends, Distributions, etc.) must have a corresponding "raw" icon to maintain visual rhythm.
+
+---
+
 ## 🏷️ Pills vs. Plain Text Status
 
 To maintain a clean UI, we distinguish between high-level and low-level status indicators.
