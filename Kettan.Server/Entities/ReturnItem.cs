@@ -43,4 +43,9 @@ public class ReturnItem : ITenantEntity
 
     [MaxLength(500)]
     public string? InspectionRemarks { get; set; }
+
+    [MaxLength(1000)]
+    public string? Notes { get; set; }
+
+    public string? PhotoUrls { get; set; }
 }

@@ -10,20 +10,22 @@ interface ReturnMediaUploaderProps {
   onChange: (newFiles: File[]) => void;
   onRemoveExisting?: (url: string) => void;
   existingUrls?: string[];
+  onError?: (error: string | null) => void;
 }
 
-export function ReturnMediaUploader({ files, onChange, existingUrls = [], onRemoveExisting }: ReturnMediaUploaderProps) {
+export function ReturnMediaUploader({ files, onChange, existingUrls = [], onRemoveExisting, onError }: ReturnMediaUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const handleFileSelection = (newFiles: FileList) => {
+    onError?.(null);
     const fileArray = Array.from(newFiles).filter(file => {
         if (!file.type.startsWith('image/')) {
-            alert(`File ${file.name} is not an image.`);
+            onError?.(`File ${file.name} is not an image.`);
             return false;
         }
-        if (file.size > 10 * 1024 * 1024) {
-            alert(`File ${file.name} exceeds the 10MB limit.`);
+        if (file.size > 5 * 1024 * 1024) {
+            onError?.(`File size for ${file.name} exceeds the 5MB limit.`);
             return false;
         }
         return true;

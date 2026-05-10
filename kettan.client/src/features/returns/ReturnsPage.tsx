@@ -182,7 +182,7 @@ export function ReturnsPage() {
 
     return () => {
         if (connection.state === signalR.HubConnectionState.Connected) {
-            connection.invoke('LeaveGroup', 'Returns_All').finally(() => void connection.stop());
+            connection.invoke('LeaveReturnsList').finally(() => void connection.stop());
         }
     };
   }, []);

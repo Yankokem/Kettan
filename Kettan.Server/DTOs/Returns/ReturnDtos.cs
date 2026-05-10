@@ -31,6 +31,8 @@ public class ReturnItemDto
     public string Disposition { get; set; } = string.Empty;
     public int? RestockBatchId { get; set; }
     public string? InspectionRemarks { get; set; }
+    public string? Notes { get; set; }
+    public string? PhotoUrls { get; set; }
 }
 
 public class ReturnScheduleConflictDto
@@ -89,6 +91,8 @@ public class CreateReturnDraftItemDto
     public int ItemId { get; set; }
     public decimal QuantityReturned { get; set; }
     public string ReasonCode { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+    public string? PhotoUrls { get; set; }
 }
 
 public class CreateReturnDraftDto

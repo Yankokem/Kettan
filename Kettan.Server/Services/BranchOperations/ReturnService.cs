@@ -286,15 +286,8 @@ public class ReturnService : IReturnService
         // We should check the existing PhotoUrls and compare it to the payload if it were there.
         // Wait, dto is SubmitReturnDto. Does SubmitReturnDto have PhotoUrls? 
         // No, in previous code, the draft has the photos. 
-        if (!string.IsNullOrWhiteSpace(returnEntry.PhotoUrls))
-        {
-            if (messageLines.Count > 0) messageLines.Add(""); // spacer
-            var urls = returnEntry.PhotoUrls.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var url in urls)
-            {
-                messageLines.Add($"![Return Proof]({url.Trim()})");
-            }
-        }
+        // Legacy global photos are no longer added to messages upon submit
+
 
         if (messageLines.Count > 0)
         {
@@ -964,7 +957,9 @@ public class ReturnService : IReturnService
                 ItemId = line.ItemId,
                 QuantityReturned = line.QuantityReturned,
                 ReasonCode = reasonCode,
-                Disposition = ReturnItemDisposition.Pending
+                Disposition = ReturnItemDisposition.Pending,
+                Notes = NormalizeOptional(line.Notes),
+                PhotoUrls = NormalizeOptional(line.PhotoUrls)
             });
         }
 
@@ -1245,7 +1240,9 @@ public class ReturnService : IReturnService
                 ReasonCode = i.ReasonCode.ToString(),
                 Disposition = i.Disposition.ToString(),
                 RestockBatchId = i.RestockBatchId,
-                InspectionRemarks = i.InspectionRemarks
+                InspectionRemarks = i.InspectionRemarks,
+                Notes = i.Notes,
+                PhotoUrls = i.PhotoUrls
             }).ToList()
         };
     }
@@ -1320,10 +1317,8 @@ public class ReturnService : IReturnService
 
     private async Task BroadcastReturnUpdateAsync(int returnId)
     {
-        // Notify detail page
-        await _hubContext.Clients.Group($"Return_{returnId}").SendAsync("ReceiveStatusUpdate", returnId);
-        
-        // Notify list page
+        // Notify both detail and list subscribers via WorkflowHub
+        await _workflowHub.Clients.Group($"Return_{returnId}").SendAsync("ReceiveStatusUpdate", returnId);
         await _workflowHub.Clients.Group("Returns_All").SendAsync("ReceiveStatusUpdate", returnId);
     }
 }

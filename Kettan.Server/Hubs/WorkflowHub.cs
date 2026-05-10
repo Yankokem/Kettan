@@ -21,8 +21,16 @@ namespace Kettan.Server.Hubs
         public async Task JoinSupplyRequest(int requestId) => await JoinGroup($"SupplyRequest_{requestId}");
         public async Task JoinReturn(int returnId) => await JoinGroup($"Return_{returnId}");
         
+        public async Task LeaveOrder(int orderId) => await LeaveGroup($"Order_{orderId}");
+        public async Task LeaveSupplyRequest(int requestId) => await LeaveGroup($"SupplyRequest_{requestId}");
+        public async Task LeaveReturn(int returnId) => await LeaveGroup($"Return_{returnId}");
+
         public async Task JoinOrdersList() => await JoinGroup("Orders_All");
         public async Task JoinSupplyRequestsList() => await JoinGroup("SupplyRequests_All");
         public async Task JoinReturnsList() => await JoinGroup("Returns_All");
+
+        public async Task LeaveOrdersList() => await LeaveGroup("Orders_All");
+        public async Task LeaveSupplyRequestsList() => await LeaveGroup("SupplyRequests_All");
+        public async Task LeaveReturnsList() => await LeaveGroup("Returns_All");
     }
 }

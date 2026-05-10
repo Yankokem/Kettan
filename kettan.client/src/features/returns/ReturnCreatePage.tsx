@@ -17,8 +17,8 @@ import ShoppingBagRoundedIcon from '@mui/icons-material/ShoppingBagRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import TagRoundedIcon from '@mui/icons-material/TagRounded';
+import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -35,7 +35,6 @@ import {
   type ReturnRecord,
 } from '../branch-operations/api';
 import { ReturnItemTable } from './components/ReturnItemTable';
-import { ReturnMediaUploader } from './components/ReturnMediaUploader';
 import { useAuthStore } from '../../store/useAuthStore';
 
 function getErrorMessage(error: unknown): string {
@@ -64,6 +63,9 @@ interface ItemLine {
   selected: boolean;
   quantityReturned: string;
   reasonCode: string;
+  notes: string;
+  photoUrls: string;
+  imageFiles: File[];
 }
 
 export function ReturnCreatePage() {
@@ -93,10 +95,10 @@ export function ReturnCreatePage() {
   const [nextReturnId, setNextReturnId] = useState<number | null>(null);
   const [resolution, setResolution] = useState('Replaced');
   const [reason, setReason] = useState('');
-  const [photoUrls, setPhotoUrls] = useState('');
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [isSubmitting] = useState(false);
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
+
+  // We keep resolution and reason for general context, but not photoUrls
+  // since images are now per-item.
 
   // Draft tracking
   const [draftId] = useState<number | null>(null);
@@ -159,6 +161,9 @@ export function ReturnCreatePage() {
             selected: false,
             quantityReturned: '',
             reasonCode: 'Damaged',
+            notes: '',
+            photoUrls: '',
+            imageFiles: [],
           })),
         );
       } catch (err) {
@@ -172,6 +177,7 @@ export function ReturnCreatePage() {
   const selectedLines = lines.filter((l) => l.selected);
 
   const toggleLine = (itemId: number) => {
+    setError(null);
     setLines((prev) =>
       prev.map((l) =>
         l.itemId === itemId ? { ...l, selected: !l.selected, quantityReturned: l.selected ? '' : l.quantityReturned } : l,
@@ -179,8 +185,22 @@ export function ReturnCreatePage() {
     );
   };
 
-  const updateLine = (itemId: number, field: 'quantityReturned' | 'reasonCode', value: string) => {
-    setLines((prev) => prev.map((l) => (l.itemId === itemId ? { ...l, [field]: value } : l)));
+  const updateLine = (itemId: number, field: keyof ItemLine, value: any) => {
+    setError(null);
+    setLines((prev) => prev.map((l) => {
+      if (l.itemId === itemId) {
+        if (field === 'quantityReturned') {
+          const numValue = Number(value);
+          const maxAllowed = Math.min(l.quantityDelivered, l.branchStock);
+          if (numValue > maxAllowed) {
+            setError(`Quantity for ${l.itemName} exceeds allowed amount (${maxAllowed}).`);
+            return { ...l, [field]: maxAllowed.toString() };
+          }
+        }
+        return { ...l, [field]: value };
+      }
+      return l;
+    }));
   };
 
   const validateLines = (): string | null => {
@@ -197,11 +217,12 @@ export function ReturnCreatePage() {
     orderId: Number(selectedOrderId),
     resolution,
     reason: reason.trim() || undefined,
-    photoUrls: photoUrls.trim() || undefined,
     items: selectedLines.map((l) => ({
       itemId: l.itemId,
       quantityReturned: Number(l.quantityReturned),
       reasonCode: l.reasonCode,
+      notes: l.notes?.trim() || undefined,
+      photoUrls: l.photoUrls?.trim() || undefined,
     })),
   });
 
@@ -214,33 +235,33 @@ export function ReturnCreatePage() {
       setIsSaving(true);
       setError(null);
 
-      // 1. Upload local images to Cloudinary first
+      // 1. Upload local images to Cloudinary per item
       const nextId = nextReturnId ? `RET-${nextReturnId.toString().padStart(5, '0')}` : 'Returns';
       const folderPath = `Returns/${nextId}`;
-      let currentUrls = photoUrls ? photoUrls.split(',').filter(Boolean) : [];
       
-      if (imageFiles.length > 0) {
-        for (const file of imageFiles) {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('folder', folderPath);
-          
-          const uploadRes = await api.post('/api/uploads/image', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          
-          const url = uploadRes.data.url || uploadRes.data.Url;
-          if (url) {
-            currentUrls.push(url);
+      for (const line of selectedLines) {
+        if (line.imageFiles.length > 0) {
+          const currentUrls = line.photoUrls ? line.photoUrls.split(',').filter(Boolean) : [];
+          for (const file of line.imageFiles) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder', folderPath);
+            
+            const uploadRes = await api.post('/api/uploads/image', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            const url = uploadRes.data.url || uploadRes.data.Url;
+            if (url) {
+              currentUrls.push(url);
+            }
           }
+          line.photoUrls = currentUrls.join(',');
         }
       }
 
       // 2. Prepare payload with final URLs
-      const payload = {
-        ...buildDraftPayload(),
-        photoUrls: currentUrls.join(',')
-      };
+      const payload = buildDraftPayload();
 
       let id = draftId;
       if (id) {
@@ -276,10 +297,10 @@ export function ReturnCreatePage() {
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <BackButton to="/returns" />
         <Box>
-          <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
             File Return Request
           </Typography>
-          <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
             Create a return request linked to a delivered order.
           </Typography>
         </Box>
@@ -292,15 +313,23 @@ export function ReturnCreatePage() {
             <Paper 
               elevation={0} 
               sx={{ 
-                p: 3, 
                 borderRadius: '16px', 
                 border: '1px solid', 
                 borderColor: 'divider',
-                background: '#FFFFFF'
+                background: '#FFFFFF',
+                overflow: 'hidden'
               }}
             >
-              {/* Return Reference */}
-              <Box sx={{ mb: 4 }}>
+              <Box sx={{ p: 2, bgcolor: '#FAF7F2', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <AssignmentRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Return Configuration
+                </Typography>
+              </Box>
+              
+              <Box sx={{ p: 3 }}>
+                {/* Return Reference */}
+                <Box sx={{ mb: 4 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                   <TagRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
                   <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -452,25 +481,15 @@ export function ReturnCreatePage() {
                   fullWidth
                 />
               </Box>
+            </Box>
+          </Paper>
 
-              <Box>
-                <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ImageRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
-                  <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Proof / Photo Evidence
-                  </Typography>
-                </Box>
-                <ReturnMediaUploader 
-                  files={imageFiles}
-                  onChange={setImageFiles}
-                  existingUrls={photoUrls ? photoUrls.split(',').filter(Boolean) : []}
-                  onRemoveExisting={(url) => {
-                    setPhotoUrls(prev => prev.split(',').filter(u => u !== url).join(','));
-                  }}
-                />
-              </Box>
-            </Paper>
+          </Box>
+        </Grid>
 
+        {/* Right Container: Item Composer */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {error && (
               <Paper 
                 elevation={0} 
@@ -487,13 +506,8 @@ export function ReturnCreatePage() {
                 <Typography sx={{ fontSize: 13, color: 'error.dark', fontWeight: 500 }}>{error}</Typography>
               </Paper>
             )}
-          </Box>
-        </Grid>
-
-        {/* Right Container: Item Composer */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Paper 
-            elevation={0} 
+            <Paper 
+              elevation={0} 
             sx={{ 
               borderRadius: '16px', 
               border: '1px solid', 
@@ -504,12 +518,12 @@ export function ReturnCreatePage() {
               minHeight: 500
             }}
           >
-            <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ p: 2.5, bgcolor: '#FAF7F2', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Inventory2RoundedIcon sx={{ fontSize: 20, color: '#6B4C2A' }} />
                 <Box>
-                  <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Item Composer</Typography>
-                  <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
+                  <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#6B4C2A' }}>Item Composer</Typography>
+                  <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 500 }}>
                     {selectedOrderId ? `Items from Order #${selectedOrderId}` : 'Select an order to load items'}
                   </Typography>
                 </Box>
@@ -519,10 +533,12 @@ export function ReturnCreatePage() {
                   label={`${selectedLines.length} Selected`} 
                   size="small" 
                   sx={{ 
-                    bgcolor: 'rgba(107,76,42,0.05)', 
+                    bgcolor: 'rgba(107,76,42,0.1)', 
                     color: '#6B4C2A', 
                     fontWeight: 800, 
-                    fontSize: 11,
+                    fontSize: 10,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                     border: '1px solid rgba(107,76,42,0.1)'
                   }} 
                 />
@@ -546,6 +562,7 @@ export function ReturnCreatePage() {
                   onToggleLine={toggleLine} 
                   onUpdateLine={updateLine}
                   reasons={REASON_OPTIONS}
+                  onError={setError}
                 />
               )}
             </Box>
@@ -553,9 +570,9 @@ export function ReturnCreatePage() {
             <Box sx={{ p: 3, bgcolor: '#FAFAFA', borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
               <Button
                 variant="contained"
-                startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendRoundedIcon />}
+                startIcon={isSaving ? <CircularProgress size={20} color="inherit" /> : <SendRoundedIcon />}
                 onClick={handleSubmit}
-                disabled={!selectedOrderId || lines.filter(l => l.selected).length === 0 || isSubmitting}
+                disabled={!selectedOrderId || lines.filter(l => l.selected).length === 0 || isSaving}
                 sx={{ 
                   bgcolor: '#6B4C2A', 
                   color: 'white',
@@ -572,6 +589,7 @@ export function ReturnCreatePage() {
               </Button>
             </Box>
           </Paper>
+          </Box>
         </Grid>
       </Grid>
       <LoadingOverlay open={isSaving} />

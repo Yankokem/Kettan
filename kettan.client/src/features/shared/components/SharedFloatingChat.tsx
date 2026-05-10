@@ -333,17 +333,17 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                         ref={anchorRef}
                         onClick={open ? () => setOpen(false) : handleOpen} 
                         sx={{ 
-                            bgcolor: open ? '#FFFFFF' : '#FAF5EF', 
-                            color: '#8C6B43',
+                            bgcolor: open ? '#FFFFFF' : '#FAF7F2', 
+                            color: '#6B4C2A',
                             zIndex: 1300,
                             border: '1px solid',
-                            borderColor: 'rgba(201, 168, 76, 0.2)',
+                            borderColor: 'rgba(107, 76, 42, 0.15)',
                             boxShadow: open ? '0 4px 20px rgba(0,0,0,0.1)' : '0 8px 30px rgba(107, 76, 42, 0.12)',
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             '&:hover': { 
-                                bgcolor: open ? '#FDFCFB' : '#F5E6B3',
+                                bgcolor: open ? '#FDFCFB' : '#F5E6B3', // Kept gold hover for contrast or should I change to brown?
                                 transform: 'scale(1.05)',
-                                borderColor: 'rgba(201, 168, 76, 0.4)',
+                                borderColor: 'rgba(107, 76, 42, 0.3)',
                             },
                             width: 60, height: 60
                         }}
@@ -387,8 +387,9 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                             <Box sx={{ 
                                 width: 36, height: 36, borderRadius: '12px', 
-                                bgcolor: 'rgba(201, 168, 76, 0.12)', 
-                                color: '#C9A84C',
+                                bgcolor: '#FAF7F2', 
+                                color: '#6B4C2A',
+                                border: '1px solid rgba(107, 76, 42, 0.1)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center' 
                             }}>
                                 <ChatBubbleRoundedIcon sx={{ fontSize: 18 }} />
@@ -412,7 +413,7 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                     <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'grid', gap: 1.5, bgcolor: '#FDFCFB' }}>
                         {loading && messages.length === 0 ? (
                             <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: 1 }}>
-                                <CircularProgress size={24} sx={{ color: '#C9A84C' }} />
+                                <CircularProgress size={24} sx={{ color: '#6B4C2A' }} />
                                 <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 600 }}>Syncing messages...</Typography>
                             </Box>
                         ) : messages.length === 0 ? (
@@ -451,7 +452,7 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                     {/* Input Area */}
                     <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         {pendingImage && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, mb: 1.5, bgcolor: '#FDFCFB', border: '1px dashed', borderColor: '#C9A84C', borderRadius: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, mb: 1.5, bgcolor: '#FDFCFB', border: '1px dashed', borderColor: 'rgba(107, 76, 42, 0.3)', borderRadius: 2 }}>
                                 <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: '#F4F1EA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <AttachFileRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
                                 </Box>
@@ -495,8 +496,8 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                                         borderRadius: '12px',
                                         bgcolor: '#FDFCFB',
                                         fontSize: 13,
-                                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#C9A84C' },
-                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#C9A84C' }
+                                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' },
+                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' }
                                     } 
                                 }}
                             />
@@ -505,9 +506,9 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                                 onClick={() => void handleSend()}
                                 sx={{ 
                                     color: 'white', 
-                                    bgcolor: content.trim() || pendingImage ? '#C9A84C' : '#EAE5D9',
+                                    bgcolor: content.trim() || pendingImage ? '#6B4C2A' : '#EAE5D9',
                                     borderRadius: '12px',
-                                    '&:hover': { bgcolor: '#B8963D' },
+                                    '&:hover': { bgcolor: '#543B21' },
                                     '&.Mui-disabled': { bgcolor: '#F4F1EA', color: 'rgba(0,0,0,0.12)' }
                                 }}
                             >

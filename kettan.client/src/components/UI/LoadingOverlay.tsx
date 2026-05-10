@@ -15,7 +15,7 @@ const LoaderContainer = styled(Box)(() => ({
   boxSizing: 'border-box',
   display: 'grid',
   background: '#fff',
-  filter: 'blur(5px) contrast(10) hue-rotate(300deg)',
+  filter: 'blur(5px) contrast(10)',
   mixBlendMode: 'darken',
   position: 'relative',
   '&::before, &::after': {
@@ -24,11 +24,11 @@ const LoaderContainer = styled(Box)(() => ({
     width: 50,
     height: 50,
     borderRadius: '50%',
-    background: '#C9A84C', // Kettan Gold
+    background: '#FAF7F2', // Exact Kettan Cream
     animation: `${l7} 2s infinite`,
   },
   '&::after': {
-    background: '#6B4C2A', // Kettan Brown
+    background: '#6B4C2A', // Exact Kettan Brown
     animationDelay: '-1s',
   },
 }));

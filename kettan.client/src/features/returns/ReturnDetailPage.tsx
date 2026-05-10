@@ -7,7 +7,6 @@ import {
   Chip,
   Dialog,
   DialogContent,
-  DialogTitle,
   MenuItem,
   Paper,
   Select,
@@ -18,6 +17,8 @@ import {
   TableRow,
   Typography,
   alpha,
+  IconButton,
+  CircularProgress
 } from '@mui/material';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
@@ -36,6 +37,7 @@ import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import ForwardToInboxRoundedIcon from '@mui/icons-material/ForwardToInboxRounded';
+import WhereToVoteRoundedIcon from '@mui/icons-material/WhereToVoteRounded';
 
 import type { AxiosError } from 'axios';
 import { useParams } from '@tanstack/react-router';
@@ -63,6 +65,7 @@ import {
   type ReturnItemDto,
 } from '../branch-operations/api';
 import { listVehicles, type Vehicle } from '../hq-inventory/vehicleApi';
+import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string }>;
@@ -104,6 +107,14 @@ function StatusChip({ status }: { status: string }) {
   );
 }
 
+// --- Helper for vehicle icons ---
+const getVehicleIcon = (type: string) => {
+  const t = (type || '').toLowerCase();
+  if (t.includes('truck')) return <LocalShippingRoundedIcon sx={{ fontSize: 18 }} />;
+  if (t.includes('bike') || t.includes('motorcycle')) return <Box component="span" sx={{ fontSize: 18 }}>🏍️</Box>; // fallback if icon not in scope
+  return <LocalShippingRoundedIcon sx={{ fontSize: 18 }} />; // default to truck for now or localshipping
+};
+
 // ── Acknowledge Dialog ──
 function AcknowledgeDialog({
   open, isSaving, vehicles, onClose, onSubmit,
@@ -130,37 +141,117 @@ function AcknowledgeDialog({
   };
 
   return (
-    <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, border: '1px solid', borderColor: 'divider' }, elevation: 0 }}>
-      <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>Acknowledge Return</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'grid', gap: 1.4, mt: 0.4 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2 }}>
+    <Dialog 
+        open={open} 
+        onClose={isSaving ? undefined : onClose} 
+        maxWidth="sm" 
+        fullWidth 
+        PaperProps={{ 
+            sx: { 
+                borderRadius: '20px', 
+                overflow: 'hidden',
+                boxShadow: '0 20px 40px -12px rgba(107, 76, 42, 0.15)'
+            } 
+        }}
+    >
+      <Box sx={{ 
+          p: 2.5, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          bgcolor: '#FAF7F2',
+          borderBottom: '1px solid',
+          borderColor: 'rgba(107, 76, 42, 0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <AssignmentTurnedInRoundedIcon sx={{ fontSize: 24, color: '#6B4C2A' }} />
+          <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#3E2723', letterSpacing: '-0.01em' }}>
+            Acknowledge Return
+          </Typography>
+        </Box>
+        <IconButton onClick={onClose} disabled={isSaving} sx={{ color: '#6B4C2A' }}>
+            <CancelRoundedIcon sx={{ fontSize: 24 }} />
+        </IconButton>
+      </Box>
+
+      <DialogContent sx={{ p: 4 }}>
+        <Box sx={{ display: 'grid', gap: 3.5 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 2 }}>
             <Box>
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Vehicle</Typography>
-              <Select size="small" fullWidth value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} disabled={isSaving}>
+              <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>Vehicle</Typography>
+              <Select 
+                size="small" 
+                fullWidth 
+                value={vehicleId} 
+                onChange={(e) => setVehicleId(e.target.value)} 
+                disabled={isSaving}
+                sx={{ 
+                    borderRadius: '10px', 
+                    bgcolor: '#FDFCFB',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(107, 76, 42, 0.12)' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' }
+                }}
+              >
                 {vehicles.map((v) => (
-                  <MenuItem key={v.vehicleId} value={v.vehicleId}>
-                    {v.plateNumber} ({v.vehicleType}) {!v.isActive ? '[Inactive]' : ''}
+                  <MenuItem key={v.vehicleId} value={v.vehicleId} sx={{ py: 1, borderRadius: '8px', mx: 1, my: 0.2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                        {getVehicleIcon(v.vehicleType)}
+                        <Box>
+                            <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{v.plateNumber}</Typography>
+                            <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600 }}>{v.vehicleType}</Typography>
+                        </Box>
+                    </Box>
                   </MenuItem>
                 ))}
               </Select>
             </Box>
             <Box>
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Pickup Schedule</Typography>
-              <TextField type="datetime-local" size="small" fullWidth value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} disabled={isSaving} InputLabelProps={{ shrink: true }} />
+              <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>Pickup Date</Typography>
+              <TextField 
+                type="date" 
+                size="small" 
+                fullWidth 
+                value={pickupDate} 
+                onChange={(e) => setPickupDate(e.target.value)} 
+                disabled={isSaving} 
+                InputLabelProps={{ shrink: true }} 
+                sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                        borderRadius: '10px',
+                        bgcolor: '#FDFCFB',
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' }
+                    } 
+                }}
+              />
             </Box>
           </Box>
           <Box>
-            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Notes (Optional)</Typography>
-            <TextField size="small" fullWidth multiline rows={3} value={note} onChange={(e) => setNote(e.target.value)} disabled={isSaving} placeholder="Instructions for driver or branch..." />
+            <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>Notes (Optional)</Typography>
+            <TextField 
+                size="small" 
+                fullWidth 
+                multiline 
+                rows={3} 
+                value={note} 
+                onChange={(e) => setNote(e.target.value)} 
+                disabled={isSaving} 
+                placeholder="Instructions for driver or branch..." 
+                sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                        borderRadius: '10px',
+                        bgcolor: '#FDFCFB',
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' }
+                    } 
+                }}
+            />
           </Box>
-          {err && <Alert severity="error" sx={{ fontSize: 12.5 }}>{err}</Alert>}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-            <Button variant="outlined" onClick={onClose} disabled={isSaving}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isSaving}>{isSaving ? 'Saving...' : 'Acknowledge'}</Button>
-          </Box>
+          {err && <Alert severity="error" sx={{ borderRadius: '10px', fontSize: 12.5 }}>{err}</Alert>}
         </Box>
       </DialogContent>
+      <Box sx={{ p: 3, px: 4, display: 'flex', justifyContent: 'flex-end', gap: 1.5, borderTop: '1px solid', borderColor: 'rgba(107, 76, 42, 0.05)' }}>
+            <Button variant="outlined" onClick={onClose} disabled={isSaving} sx={{ px: 3 }}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={isSaving} sx={{ px: 4, height: 42 }}>{isSaving ? 'Saving...' : 'Confirm Acknowledgement'}</Button>
+      </Box>
     </Dialog>
   );
 }
@@ -186,24 +277,83 @@ function RejectDialog({
   };
 
   return (
-    <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, border: '1px solid', borderColor: 'error.main' }, elevation: 0 }}>
-      <DialogTitle sx={{ fontWeight: 800, color: 'error.main', pb: 1 }}>Reject Return</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'grid', gap: 1.4, mt: 0.4 }}>
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>
-            Are you sure you want to reject this return? The branch will be notified.
+    <Dialog 
+        open={open} 
+        onClose={isSaving ? undefined : onClose} 
+        maxWidth="sm" 
+        fullWidth 
+        PaperProps={{ 
+            sx: { 
+                borderRadius: '20px', 
+                overflow: 'hidden',
+                boxShadow: '0 20px 40px -12px rgba(185, 28, 28, 0.15)'
+            } 
+        }}
+    >
+      <Box sx={{ 
+          p: 2.5, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          bgcolor: '#FFF5F5',
+          borderBottom: '1px solid',
+          borderColor: 'rgba(185, 28, 28, 0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <CancelRoundedIcon sx={{ fontSize: 24, color: '#B91C1C' }} />
+          <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#7F1D1D', letterSpacing: '-0.01em' }}>
+            Reject Return Request
+          </Typography>
+        </Box>
+        <IconButton onClick={onClose} disabled={isSaving} sx={{ color: '#B91C1C' }}>
+            <CancelRoundedIcon sx={{ fontSize: 24 }} />
+        </IconButton>
+      </Box>
+
+      <DialogContent sx={{ p: 4 }}>
+        <Box sx={{ display: 'grid', gap: 3 }}>
+          <Typography sx={{ fontSize: 14, color: 'text.secondary', lineHeight: 1.5 }}>
+            Are you sure you want to reject this return? This action will notify the branch and halt the return process.
           </Typography>
           <Box>
-            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Rejection Reason</Typography>
-            <TextField size="small" fullWidth multiline rows={3} value={reason} onChange={(e) => setReason(e.target.value)} disabled={isSaving} placeholder="Explain why this return is rejected..." />
+            <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#B91C1C', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>Rejection Reason</Typography>
+            <TextField 
+                size="small" 
+                fullWidth 
+                multiline 
+                rows={3} 
+                value={reason} 
+                onChange={(e) => setReason(e.target.value)} 
+                disabled={isSaving} 
+                placeholder="Explain why this return is rejected..." 
+                sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                        borderRadius: '10px',
+                        bgcolor: '#FDFCFB',
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#B91C1C' },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#B91C1C' }
+                    } 
+                }}
+            />
           </Box>
-          {err && <Alert severity="error" sx={{ fontSize: 12.5 }}>{err}</Alert>}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-            <Button variant="outlined" onClick={onClose} disabled={isSaving}>Cancel</Button>
-            <Button variant="outlined" sx={{ color: 'error.main', borderColor: 'error.main' }} onClick={handleSubmit} disabled={isSaving}>{isSaving ? 'Rejecting...' : 'Reject Return'}</Button>
-          </Box>
+          {err && <Alert severity="error" sx={{ borderRadius: '10px', fontSize: 12.5 }}>{err}</Alert>}
         </Box>
       </DialogContent>
+      <Box sx={{ p: 3, px: 4, display: 'flex', justifyContent: 'flex-end', gap: 1.5, borderTop: '1px solid', borderColor: 'rgba(185, 28, 28, 0.05)' }}>
+            <Button variant="outlined" onClick={onClose} disabled={isSaving} sx={{ px: 3 }}>Cancel</Button>
+            <Button 
+                onClick={handleSubmit} 
+                disabled={isSaving} 
+                sx={{ 
+                    px: 4, 
+                    height: 42, 
+                    bgcolor: '#B91C1C', 
+                    '&:hover': { bgcolor: '#991B1B' } 
+                }}
+            >
+                {isSaving ? 'Rejecting...' : 'Reject Return'}
+            </Button>
+      </Box>
     </Dialog>
   );
 }
@@ -234,37 +384,363 @@ function RescheduleDialog({
   };
 
   return (
-    <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, border: '1px solid', borderColor: 'divider' }, elevation: 0 }}>
-      <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>Reschedule Pickup</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'grid', gap: 1.4, mt: 0.4 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2 }}>
+    <Dialog 
+        open={open} 
+        onClose={isSaving ? undefined : onClose} 
+        maxWidth="sm" 
+        fullWidth 
+        PaperProps={{ 
+            sx: { 
+                borderRadius: '20px', 
+                overflow: 'hidden',
+                boxShadow: '0 20px 40px -12px rgba(107, 76, 42, 0.15)'
+            } 
+        }}
+    >
+      <Box sx={{ 
+          p: 2.5, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          bgcolor: '#FAF7F2',
+          borderBottom: '1px solid',
+          borderColor: 'rgba(107, 76, 42, 0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <EventRepeatRoundedIcon sx={{ fontSize: 24, color: '#6B4C2A' }} />
+          <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#3E2723', letterSpacing: '-0.01em' }}>
+            Reschedule Pickup
+          </Typography>
+        </Box>
+        <IconButton onClick={onClose} disabled={isSaving} sx={{ color: '#6B4C2A' }}>
+            <CancelRoundedIcon sx={{ fontSize: 24 }} />
+        </IconButton>
+      </Box>
+
+      <DialogContent sx={{ p: 4 }}>
+        <Box sx={{ display: 'grid', gap: 3.5 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 2 }}>
             <Box>
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Vehicle</Typography>
-              <Select size="small" fullWidth value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} disabled={isSaving}>
+              <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>Vehicle</Typography>
+              <Select 
+                size="small" 
+                fullWidth 
+                value={vehicleId} 
+                onChange={(e) => setVehicleId(e.target.value)} 
+                disabled={isSaving}
+                sx={{ 
+                    borderRadius: '10px', 
+                    bgcolor: '#FDFCFB',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(107, 76, 42, 0.12)' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' }
+                }}
+              >
                 {vehicles.map((v) => (
-                  <MenuItem key={v.vehicleId} value={v.vehicleId}>
-                    {v.plateNumber} ({v.vehicleType}) {!v.isActive ? '[Inactive]' : ''}
+                  <MenuItem key={v.vehicleId} value={v.vehicleId} sx={{ py: 1, borderRadius: '8px', mx: 1, my: 0.2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                        {getVehicleIcon(v.vehicleType)}
+                        <Box>
+                            <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{v.plateNumber}</Typography>
+                            <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 600 }}>{v.vehicleType}</Typography>
+                        </Box>
+                    </Box>
                   </MenuItem>
                 ))}
               </Select>
             </Box>
             <Box>
-              <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>New Schedule</Typography>
-              <TextField type="datetime-local" size="small" fullWidth value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} disabled={isSaving} InputLabelProps={{ shrink: true }} />
+              <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>New Pickup Date</Typography>
+              <TextField 
+                type="date" 
+                size="small" 
+                fullWidth 
+                value={pickupDate} 
+                onChange={(e) => setPickupDate(e.target.value)} 
+                disabled={isSaving} 
+                InputLabelProps={{ shrink: true }} 
+                sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                        borderRadius: '10px',
+                        bgcolor: '#FDFCFB',
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' }
+                    } 
+                }}
+              />
             </Box>
           </Box>
           <Box>
-            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Note</Typography>
-            <TextField size="small" fullWidth multiline rows={2} value={note} onChange={(e) => setNote(e.target.value)} disabled={isSaving} placeholder="Reason for rescheduling..." />
+            <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>Rescheduling Reason</Typography>
+            <TextField 
+                size="small" 
+                fullWidth 
+                multiline 
+                rows={2} 
+                value={note} 
+                onChange={(e) => setNote(e.target.value)} 
+                disabled={isSaving} 
+                placeholder="Brief explanation for the branch..." 
+                sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                        borderRadius: '10px',
+                        bgcolor: '#FDFCFB',
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' }
+                    } 
+                }}
+            />
           </Box>
-          {err && <Alert severity="error" sx={{ fontSize: 12.5 }}>{err}</Alert>}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-            <Button variant="outlined" onClick={onClose} disabled={isSaving}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isSaving}>{isSaving ? 'Saving...' : 'Reschedule'}</Button>
-          </Box>
+          {err && <Alert severity="error" sx={{ borderRadius: '10px', fontSize: 12.5 }}>{err}</Alert>}
         </Box>
       </DialogContent>
+      <Box sx={{ p: 3, px: 4, display: 'flex', justifyContent: 'flex-end', gap: 1.5, borderTop: '1px solid', borderColor: 'rgba(107, 76, 42, 0.05)' }}>
+            <Button variant="outlined" onClick={onClose} disabled={isSaving} sx={{ px: 3 }}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={isSaving} sx={{ px: 4, height: 42 }}>{isSaving ? 'Saving...' : 'Update Schedule'}</Button>
+      </Box>
+    </Dialog>
+  );
+}
+
+// ── Complete Transaction Summary Modal ──
+function CompleteReturnTransactionDialog({
+  open, isSaving, row, onClose, onSubmit,
+}: {
+  open: boolean;
+  isSaving: boolean;
+  row: ReturnRecord;
+  onClose: () => void;
+  onSubmit: (remarks?: string) => void;
+}) {
+  const [remarks, setRemarks] = useState('');
+  const [hqStock, setHqStock] = useState<Record<number, number>>({});
+  const [isLoadingStock, setIsLoadingStock] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setRemarks('');
+      void loadHqStock();
+    }
+  }, [open, row.items]);
+
+  const loadHqStock = async () => {
+    try {
+      setIsLoadingStock(true);
+      // Fetch all HQ items to get current total stock
+      const items = await fetchInventoryItems(undefined, { hqOnly: true });
+      const stockMap: Record<number, number> = {};
+      items.forEach(i => {
+        stockMap[Number(i.id)] = i.totalStock;
+      });
+      setHqStock(stockMap);
+    } catch (e) {
+      console.error('Failed to load HQ stock for reconciliation:', e);
+    } finally {
+      setIsLoadingStock(false);
+    }
+  };
+
+  const restockItems = row.items.filter(i => i.disposition === 'Restock');
+  const writeOffItems = row.items.filter(i => i.disposition === 'WriteOff' || i.disposition === 'Wastage');
+
+  return (
+    <Dialog 
+        open={open} 
+        onClose={isSaving ? undefined : onClose} 
+        maxWidth="sm" 
+        fullWidth 
+        PaperProps={{ 
+            sx: { 
+                borderRadius: '20px', 
+                overflow: 'hidden',
+                boxShadow: '0 24px 48px -12px rgba(62, 39, 35, 0.2)'
+            } 
+        }}
+    >
+      {/* Header */}
+      <Box sx={{ 
+          p: 2.5, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          bgcolor: '#FAF7F2',
+          borderBottom: '1px solid',
+          borderColor: 'rgba(107, 76, 42, 0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <AssignmentTurnedInRoundedIcon sx={{ fontSize: 26, color: '#6B4C2A' }} />
+          <Typography sx={{ fontSize: 19, fontWeight: 800, color: '#3E2723', letterSpacing: '-0.02em' }}>
+            Complete Transaction
+          </Typography>
+        </Box>
+        <IconButton onClick={onClose} disabled={isSaving} sx={{ color: '#6B4C2A' }}>
+            <CancelRoundedIcon sx={{ fontSize: 24 }} />
+        </IconButton>
+      </Box>
+
+      <DialogContent sx={{ p: 3, pt: 3.5 }}>
+        <Typography sx={{ fontSize: 14, color: 'text.secondary', mb: 3.5, fontWeight: 500, lineHeight: 1.5 }}>
+          Please review the final reconciliation summary below. Confirming will finalize the return status and update the HQ warehouse inventory for restocked items.
+        </Typography>
+
+        {/* Request Info Card */}
+        <Box sx={{ 
+          bgcolor: '#FAF7F2', 
+          p: 2.5, 
+          borderRadius: 4, 
+          border: '1px solid', 
+          borderColor: 'rgba(107, 76, 42, 0.12)',
+          mb: 4
+        }}>
+          <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#8C6B43', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 2 }}>
+            Return Information
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 1.5 }}>
+            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Return ID</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 800, textAlign: 'right', color: '#3E2723', fontFamily: 'monospace' }}>
+              RT-{row.returnId}
+            </Typography>
+
+            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Date Arrived at HQ</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, textAlign: 'right', color: 'text.primary' }}>
+              {row.arrivedAt ? new Date(row.arrivedAt).toLocaleString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+              }) : '-'}
+            </Typography>
+
+            <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Inspected By</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, textAlign: 'right', color: 'text.primary' }}>-</Typography>
+          </Box>
+        </Box>
+
+        {/* Items to Restock */}
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, px: 0.5 }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Items to Restock ({restockItems.length})
+            </Typography>
+            {isLoadingStock && <CircularProgress size={14} sx={{ color: '#6B4C2A' }} />}
+          </Box>
+
+          {restockItems.length === 0 ? (
+            <Typography sx={{ fontSize: 13, color: 'text.disabled', fontStyle: 'italic', textAlign: 'center', py: 2 }}>
+              No items marked for restock.
+            </Typography>
+          ) : (
+            <Box sx={{ px: 0.5 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.2fr', pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary' }}>ITEM</Typography>
+                <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary', textAlign: 'center' }}>HQ STOCK</Typography>
+                <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary', textAlign: 'center' }}>RETURN</Typography>
+                <Typography sx={{ fontSize: 10, fontWeight: 800, color: 'text.secondary', textAlign: 'right' }}>NEW QTY</Typography>
+              </Box>
+              {restockItems.map(item => {
+                const returned = item.quantityInspected ?? item.quantityReturned;
+                const current = hqStock[item.itemId] ?? 0;
+                const newQty = current + returned;
+                
+                return (
+                  <Box
+                    key={item.returnItemId}
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 1fr 1fr 1.2fr',
+                      py: 2,
+                      borderBottom: '1px dashed',
+                      borderColor: alpha('#6B4C2A', 0.1),
+                      '&:last-child': { borderBottom: 'none' },
+                    }}
+                  >
+                    <Box>
+                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mb: 0.2 }}>{item.itemName}</Typography>
+                      <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500, fontFamily: 'monospace' }}>{item.itemSku}</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: 13, textAlign: 'center', color: 'text.secondary', fontWeight: 600, alignSelf: 'center' }}>{current}</Typography>
+                    <Typography sx={{ fontSize: 13, textAlign: 'center', fontWeight: 700, color: '#16a34a', alignSelf: 'center' }}>+{returned}</Typography>
+                    <Typography sx={{ fontSize: 15, fontWeight: 900, textAlign: 'right', color: '#6B4C2A', alignSelf: 'center' }}>{newQty}</Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+        </Box>
+
+        {/* Write-offs / Wastage */}
+        {writeOffItems.length > 0 && (
+          <Box sx={{ 
+            p: 2.2, 
+            bgcolor: 'rgba(185, 28, 28, 0.03)', 
+            borderRadius: 3, 
+            border: '1px dashed rgba(185, 28, 28, 0.2)', 
+            mb: 4 
+          }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#B91C1C', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1.5 }}>
+              Marked as Write-off / Wastage ({writeOffItems.length})
+            </Typography>
+            <Box sx={{ display: 'grid', gap: 0.8 }}>
+              {writeOffItems.map(item => (
+                <Typography key={item.returnItemId} sx={{ fontSize: 12.5, color: '#B91C1C', fontWeight: 500, opacity: 0.85 }}>
+                  • {item.itemName} ({item.quantityInspected ?? item.quantityReturned} units)
+                </Typography>
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* Remarks Section */}
+        <Box>
+            <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.2 }}>Final Remarks (Optional)</Typography>
+            <TextField 
+                size="small" 
+                fullWidth 
+                multiline 
+                rows={2} 
+                value={remarks} 
+                onChange={(e) => setRemarks(e.target.value)} 
+                disabled={isSaving} 
+                placeholder="Add any final reconciliation notes here..."
+                sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                        borderRadius: '12px',
+                        bgcolor: '#FDFCFB',
+                        fontSize: 13.5,
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' }
+                    } 
+                }}
+            />
+        </Box>
+      </DialogContent>
+
+      {/* Footer */}
+      <Box sx={{ 
+        p: 3, 
+        pt: 2,
+        display: 'flex', 
+        justifyContent: 'flex-end', 
+        gap: 2, 
+        borderTop: '1px solid', 
+        borderColor: 'rgba(107, 76, 42, 0.05)',
+        bgcolor: '#FAF7F2'
+      }}>
+        <Button 
+          variant="outlined" 
+          onClick={onClose} 
+          disabled={isSaving}
+          sx={{ borderRadius: '10px', px: 3 }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={() => onSubmit(remarks.trim() || undefined)} 
+          disabled={isSaving || isLoadingStock} 
+          color="success"
+          sx={{ 
+            borderRadius: '10px', 
+            px: 4,
+            boxShadow: '0 4px 12px rgba(22, 163, 74, 0.2)',
+            '&:hover': { boxShadow: '0 6px 16px rgba(22, 163, 74, 0.3)' }
+          }}
+        >
+          {isSaving ? 'Finalizing...' : 'Confirm & Complete'}
+        </Button>
+      </Box>
     </Dialog>
   );
 }
@@ -285,29 +761,78 @@ function RemarksConfirmDialog({
   useEffect(() => { if (!open) setRemarks(''); }, [open]);
 
   return (
-    <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3, border: '1px solid', borderColor: 'divider' }, elevation: 0 }}>
-      <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>{title}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'grid', gap: 1.4, mt: 0.4 }}>
+    <Dialog 
+        open={open} 
+        onClose={isSaving ? undefined : onClose} 
+        maxWidth="xs" 
+        fullWidth 
+        PaperProps={{ 
+            sx: { 
+                borderRadius: '20px', 
+                overflow: 'hidden',
+                boxShadow: '0 20px 40px -12px rgba(107, 76, 42, 0.15)'
+            } 
+        }}
+    >
+      <Box sx={{ 
+          p: 2.2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          bgcolor: '#FAF7F2',
+          borderBottom: '1px solid',
+          borderColor: 'rgba(107, 76, 42, 0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+          <AssignmentRoundedIcon sx={{ fontSize: 22, color: '#6B4C2A' }} />
+          <Typography sx={{ fontSize: 16, fontWeight: 800, color: '#3E2723', letterSpacing: '-0.01em' }}>
+            {title}
+          </Typography>
+        </Box>
+        <IconButton onClick={onClose} disabled={isSaving} size="small" sx={{ color: '#6B4C2A' }}>
+            <CancelRoundedIcon sx={{ fontSize: 22 }} />
+        </IconButton>
+      </Box>
+
+      <DialogContent sx={{ p: 3, pt: 2 }}>
+        <Box sx={{ display: 'grid', gap: 2 }}>
           <Box>
-            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 0.5 }}>Remarks (Optional)</Typography>
-            <TextField size="small" fullWidth multiline rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} disabled={isSaving} />
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-            <Button variant="outlined" onClick={onClose} disabled={isSaving}>Cancel</Button>
-            <Button onClick={() => onSubmit(remarks.trim() || undefined)} disabled={isSaving}>{isSaving ? 'Processing...' : ctaLabel}</Button>
+            <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.2 }}>Remarks (Optional)</Typography>
+            <TextField 
+                size="small" 
+                fullWidth 
+                multiline 
+                rows={2} 
+                value={remarks} 
+                onChange={(e) => setRemarks(e.target.value)} 
+                disabled={isSaving} 
+                sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                        borderRadius: '10px',
+                        bgcolor: '#FDFCFB',
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#6B4C2A' }
+                    } 
+                }}
+            />
           </Box>
         </Box>
       </DialogContent>
+      <Box sx={{ p: 2, px: 3, display: 'flex', justifyContent: 'flex-end', gap: 1, borderTop: '1px solid', borderColor: 'rgba(107, 76, 42, 0.05)' }}>
+            <Button variant="outlined" onClick={onClose} disabled={isSaving} size="small">Cancel</Button>
+            <Button onClick={() => onSubmit(remarks.trim() || undefined)} disabled={isSaving} size="small" sx={{ px: 3 }}>
+                {isSaving ? 'Processing...' : ctaLabel}
+            </Button>
+      </Box>
     </Dialog>
   );
 }
 
 // ── Return Item Table Row ──
 function ReturnItemTableRow({
-  item, returnId, isHq, isInspecting, onSaved
+  item, returnId, isHq, isInspecting, onSaved, onPhotoClick
 }: {
   item: ReturnItemDto; returnId: number; isHq: boolean; isInspecting: boolean; onSaved: () => void;
+  onPhotoClick: (url: string) => void;
 }) {
   const [qty, setQty] = useState<number>(item.quantityInspected ?? item.quantityReturned);
   const isDamagedOrExpired = item.reasonCode === 'Damaged' || item.reasonCode === 'Expired';
@@ -384,6 +909,57 @@ function ReturnItemTableRow({
           )}
         </TableCell>
       </TableRow>
+      {(item.notes || item.photoUrls) && (
+        <TableRow>
+          <TableCell colSpan={5} sx={{ pt: 1, pb: err ? 0 : 2, borderBottom: '1px dashed', borderColor: alpha('#8C6B43', 0.2) }}>
+            <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+              {item.notes && (
+                <Box sx={{ flex: 1, minWidth: 200 }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
+                    Item Notes
+                  </Typography>
+                  <Typography sx={{ fontSize: 13, color: 'text.primary', fontStyle: 'italic' }}>
+                    "{item.notes}"
+                  </Typography>
+                </Box>
+              )}
+              {item.photoUrls && (
+                <Box>
+                  <Typography sx={{ fontSize: 11, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
+                    Proof Photos
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {item.photoUrls.split(',').filter(Boolean).map((url, idx) => (
+                      <Box 
+                        key={idx}
+                        component="div" 
+                        onClick={() => onPhotoClick(url)} 
+                        sx={{
+                          display: 'block',
+                          width: 48,
+                          height: 48,
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s, box-shadow 0.2s',
+                          '&:hover': { 
+                            transform: 'scale(1.05)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                          }
+                        }}
+                      >
+                        <Box component="img" src={url} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          </TableCell>
+        </TableRow>
+      )}
       {err && (
         <TableRow>
           <TableCell colSpan={5} sx={{ pt: 0, borderBottom: '1px dashed', borderColor: alpha('#8C6B43', 0.2) }}>
@@ -420,6 +996,8 @@ export function ReturnDetailPage() {
   const [dialog, setDialog] = useState<
     'acknowledge' | 'reject' | 'reschedule' | 'dispatch' | 'arrival' | 'startInspect' | 'complete' | null
   >(null);
+
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   const isHq = HQ_ROLES.includes(user?.role ?? '');
   const isBranch = BRANCH_ROLES.includes(user?.role ?? '');
@@ -471,7 +1049,7 @@ export function ReturnDetailPage() {
 
     return () => {
         if (connection.state === signalR.HubConnectionState.Connected) {
-            connection.invoke('LeaveGroup', `Return_${numericReturnId}`).finally(() => void connection.stop());
+            connection.invoke('LeaveReturn', numericReturnId).finally(() => void connection.stop());
         }
     };
   }, [numericReturnId]);
@@ -609,26 +1187,6 @@ export function ReturnDetailPage() {
             </Button>
           )}
 
-          {/* Branch Status Messages */}
-          {isBranch && row.status === 'Submitted' && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.8, bgcolor: 'action.hover', borderRadius: 2 }}>
-              <HourglassEmptyRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>Awaiting HQ acknowledgement...</Typography>
-            </Box>
-          )}
-          {isBranch && (row.status === 'Dispatched' || row.status === 'Arrived') && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.8, bgcolor: 'action.hover', borderRadius: 2 }}>
-              <LocalShippingRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>Return in transit to HQ...</Typography>
-            </Box>
-          )}
-          {isBranch && row.status === 'Inspecting' && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.8, bgcolor: 'action.hover', borderRadius: 2 }}>
-              <FactCheckRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary' }}>HQ is currently inspecting items...</Typography>
-            </Box>
-          )}
-
           {isHq && row.status === 'Inspecting' && row.items.some((i) => i.disposition === 'Pending') && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
               <ForwardToInboxRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
@@ -650,7 +1208,75 @@ export function ReturnDetailPage() {
       )}
 
       {/* Error */}
-      {error && <Alert severity="error" sx={{ fontSize: 12.5 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ fontSize: 12.5, mb: 2 }}>{error}</Alert>}
+
+      {/* ── Workflow Status Banners ── */}
+
+      {/* 1. Submitted (Branch Only) */}
+      {row.status === 'Submitted' && isBranch && !isHq && (
+        <WorkflowStatusBanner
+          icon={<HourglassEmptyRoundedIcon sx={{ fontSize: 22 }} />}
+          title="Awaiting HQ Acknowledgement"
+          description="Your return request has been submitted. We are waiting for the HQ fulfillment team to review the items and schedule a pickup."
+        />
+      )}
+
+      {/* 2. Acknowledged (Both) */}
+      {row.status === 'Acknowledged' && (
+        <WorkflowStatusBanner
+          icon={<EventAvailableRoundedIcon sx={{ fontSize: 22, color: '#6B4C2A' }} />}
+          title="Pickup Scheduled"
+          description={
+            <>
+              HQ has acknowledged your return. Pickup is scheduled for <strong>{row.pickupScheduledAt ? new Date(row.pickupScheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}</strong>
+              {row.pickupVehiclePlateNumber && <> using vehicle <strong>{row.pickupVehiclePlateNumber}</strong></>}.
+              {isBranch ? " Please ensure items are packed and ready for the driver." : " Awaiting branch to dispatch the items."}
+            </>
+          }
+        />
+      )}
+
+      {/* 3. Dispatched (Both) */}
+      {row.status === 'Dispatched' && (
+        <WorkflowStatusBanner
+          icon={<LocalShippingRoundedIcon sx={{ fontSize: 22 }} />}
+          title="Return in Transit"
+          description={
+            <>
+              The return items have been dispatched from the branch and are currently on their way to HQ.
+              {isHq ? " Please confirm arrival once the vehicle reaches the warehouse." : " We will notify you once HQ confirms the arrival."}
+            </>
+          }
+        />
+      )}
+
+      {/* 4. Arrived (Both) */}
+      {row.status === 'Arrived' && (
+        <WorkflowStatusBanner
+          icon={<WhereToVoteRoundedIcon sx={{ fontSize: 22, color: '#2563EB' }} />}
+          title="Arrived at HQ"
+          description={
+            <>
+              The shipment has arrived at HQ. 
+              {isHq ? "Please start the inspection process to verify item conditions and quantities." : "Items are awaiting quality inspection and reconciliation by the HQ team."}
+            </>
+          }
+        />
+      )}
+
+      {/* 5. Inspecting (Both) */}
+      {row.status === 'Inspecting' && (
+        <WorkflowStatusBanner
+          icon={<FactCheckRoundedIcon sx={{ fontSize: 22, color: '#6B4C2A' }} />}
+          title="Quality Inspection in Progress"
+          description={
+            <>
+              HQ is currently inspecting the returned items. 
+              {isHq ? "Once all items have been dispositioned (Restock/Wastage), you can complete the return." : "You will be notified once the final inspection report is completed."}
+            </>
+          }
+        />
+      )}
       
       {/* Rejection Alert */}
       {row.status === 'Rejected' && row.rejectionReason && (
@@ -736,25 +1362,6 @@ export function ReturnDetailPage() {
                           </Typography>
                       </Typography>
                   </Box>
-
-                  <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
-                          <EventAvailableRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
-                          <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Timeline</Typography>
-                      </Box>
-                      <Box sx={{ pl: 3.2 }}>
-                          <Typography sx={{ fontSize: 13, mb: 0.2 }}>
-                              <span style={{ color: '#757575', marginRight: 4 }}>Filed:</span> 
-                              {new Date(row.loggedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </Typography>
-                          {row.pickupScheduledAt && (
-                              <Typography sx={{ fontSize: 13 }}>
-                                  <span style={{ color: '#757575', marginRight: 4 }}>Pickup:</span> 
-                                  {new Date(row.pickupScheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                              </Typography>
-                          )}
-                      </Box>
-                  </Box>
               </Box>
 
               <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
@@ -807,6 +1414,7 @@ export function ReturnDetailPage() {
                       isHq={isHq}
                       isInspecting={row.status === 'Inspecting'}
                       onSaved={() => void loadReturn()}
+                      onPhotoClick={setSelectedPhoto}
                     />
                   ))}
                 </TableBody>
@@ -865,14 +1473,65 @@ export function ReturnDetailPage() {
         onClose={() => setDialog(null)}
         onSubmit={(remarks) => void withSave(() => startReturnInspection(row.returnId, remarks).then(() => {}))}
       />
-      <RemarksConfirmDialog
+      <CompleteReturnTransactionDialog
         open={dialog === 'complete'}
         isSaving={isSaving}
-        title="Complete Return"
-        ctaLabel="Complete"
+        row={row}
         onClose={() => setDialog(null)}
         onSubmit={(remarks) => void withSave(() => completeReturn(row.returnId, remarks).then(() => {}))}
       />
+
+      {/* Photo Preview Lightbox */}
+      <Dialog 
+        open={Boolean(selectedPhoto)} 
+        onClose={() => setSelectedPhoto(null)}
+        maxWidth="lg"
+        PaperProps={{
+          sx: { 
+            bgcolor: 'transparent', 
+            boxShadow: 'none', 
+            overflow: 'visible',
+            m: 2
+          }
+        }}
+      >
+        <Box 
+          onClick={() => setSelectedPhoto(null)}
+          sx={{
+            position: 'absolute',
+            right: -12,
+            top: -12,
+            bgcolor: '#FFFFFF',
+            borderRadius: '50%',
+            width: 32,
+            height: 32,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 3,
+            cursor: 'pointer',
+            '&:hover': { bgcolor: '#F5F5F5' },
+            zIndex: 1
+          }}
+        >
+          <CancelRoundedIcon sx={{ color: 'text.secondary' }} />
+        </Box>
+        <DialogContent sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {selectedPhoto && (
+            <Box 
+              component="img" 
+              src={selectedPhoto} 
+              sx={{ 
+                maxWidth: '100%', 
+                maxHeight: '90vh', 
+                borderRadius: 2, 
+                boxShadow: 24,
+                objectFit: 'contain'
+              }} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
     </>
   );

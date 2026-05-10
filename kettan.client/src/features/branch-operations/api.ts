@@ -78,6 +78,8 @@ export interface ReturnItemDto {
   disposition: string;
   restockBatchId: number | null;
   inspectionRemarks: string | null;
+  notes?: string;
+  photoUrls?: string;
 }
 
 export interface ReturnScheduleConflict {
@@ -180,7 +182,7 @@ export async function createReturnDraft(payload: {
   resolution: string;
   reason?: string;
   photoUrls?: string;
-  items: Array<{ itemId: number; quantityReturned: number; reasonCode: string }>;
+  items: Array<{ itemId: number; quantityReturned: number; reasonCode: string; notes?: string; photoUrls?: string }>;
 }): Promise<ReturnRecord> {
   const response = await api.post<ReturnRecord>('/api/Returns/drafts', payload);
   return response.data;
@@ -192,7 +194,7 @@ export async function updateReturnDraft(
     resolution: string;
     reason?: string;
     photoUrls?: string;
-    items: Array<{ itemId: number; quantityReturned: number; reasonCode: string }>;
+    items: Array<{ itemId: number; quantityReturned: number; reasonCode: string; notes?: string; photoUrls?: string }>;
   },
 ): Promise<ReturnRecord> {
   const response = await api.put<ReturnRecord>(`/api/Returns/${returnId}/draft`, payload);
