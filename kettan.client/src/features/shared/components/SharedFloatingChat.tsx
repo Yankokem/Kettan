@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Typography, IconButton, TextField, CircularProgress, Dialog, Fab, Badge, Popover, alpha } from '@mui/material';
+import { Box, Typography, IconButton, TextField, CircularProgress, Dialog, Fab, Badge, Popover } from '@mui/material';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded';
@@ -424,7 +424,6 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                         ) : (
                             messages.map((m) => {
                                 const isOwn = m.senderUserId === currentUserId;
-                                const isHq = ['TenantAdmin', 'HqManager', 'HqStaff'].includes(m.senderRole);
                                 return (
                                     <Box key={m.messageId} sx={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start' }}>
                                         <Typography sx={{ fontSize: 10, color: 'text.secondary', mb: 0.5, px: 0.5, fontWeight: 600 }}>

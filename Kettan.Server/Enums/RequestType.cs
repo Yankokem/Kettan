@@ -8,5 +8,8 @@ public enum RequestType : byte
     Scheduled = 2,
     HqInitiated = 2,    // Alias for Scheduled
     Auto = 2,           // Alias for Scheduled
-    Replacement = 2     // Alias for Scheduled
+    Replacement = 2,    // Alias for Scheduled
+    Replenishment = 3,
+    EventLoadout = 4,
+    NewBranchSetup = 5
 }

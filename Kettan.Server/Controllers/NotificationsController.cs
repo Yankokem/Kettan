@@ -35,4 +35,16 @@ public class NotificationsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPost("read-all")]
+    public async Task<IActionResult> MarkAllAsRead()
+    {
+        var notifications = await _service.GetCurrentUserNotificationsAsync(unreadOnly: true, take: 100);
+        foreach (var n in notifications)
+        {
+            await _service.MarkAsReadAsync(n.NotificationId);
+        }
+
+        return NoContent();
+    }
 }

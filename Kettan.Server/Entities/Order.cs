@@ -38,6 +38,12 @@ public class Order : ITenantEntity
     [ForeignKey(nameof(CompletedByUserId))]
     public User? CompletedByUser { get; set; }
 
+    // ── HQ Supply Dispatch fields ──
+    public bool IsHqInitiated { get; set; } = false;
+
+    [MaxLength(200)]
+    public string? DispatchReason { get; set; }
+
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 

@@ -22,7 +22,7 @@ import { DateRangePicker } from '../../components/UI/DateRangePicker';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { OrderRowActionsMenu, type OrderActionStatus } from './components/OrderRowActionsMenu';
-import { fetchOrders, fetchSupplyRequests, type BranchOrder, type SupplyRequest } from '../branch-operations/api';
+import { fetchOrders, fetchHqDispatches, fetchIncomingShipments, fetchSupplyRequests, type BranchOrder, type SupplyRequest } from '../branch-operations/api';
 
 function defaultStartDate() {
   const date = new Date();
@@ -43,23 +43,27 @@ interface OrderItem {
   status: OrderActionStatus;
   date: string;
   actionedBy?: string;
+  requestId?: number;
 }
 
 const STATUS_MAP: Record<string, { color: string; bg: string }> = {
   PendingApproval: { color: '#B45309', bg: 'rgba(180,83,9,0.12)' },
   Approved: { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' },
-  Processing: { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' },
-  Picking: { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
-  Allocated: { color: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
-  Packed: { color: '#0891B2', bg: 'rgba(8,145,178,0.12)' },
-  Dispatched: { color: '#546B3F', bg: 'rgba(84,107,63,0.12)' },
-  InTransit: { color: '#0D9488', bg: 'rgba(13,148,136,0.12)' },
-  Delivered: { color: '#047857', bg: 'rgba(4,120,87,0.12)' },
-  Rejected: { color: '#B91C1C', bg: 'rgba(185,28,28,0.10)' },
-  Returned: { color: '#9333EA', bg: 'rgba(147,51,234,0.10)' },
+  PartiallyApproved: { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' },
+  Processing: { color: '#D97706', bg: 'rgba(217,119,6,0.12)' },
+  Picking: { color: '#D97706', bg: 'rgba(217,119,6,0.12)' },
+  Packed: { color: '#D97706', bg: 'rgba(217,119,6,0.12)' },
+  Dispatched: { color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+  InTransit: { color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+  Delivered: { color: '#059669', bg: 'rgba(5,150,105,0.12)' },
+  Arrived: { color: '#059669', bg: 'rgba(5,150,105,0.12)' },
+  Completed: { color: '#16A34A', bg: 'rgba(22,163,74,0.12)' },
+  Rejected: { color: '#DC2626', bg: 'rgba(220,38,38,0.12)' },
+  Cancelled: { color: '#DC2626', bg: 'rgba(220,38,38,0.12)' }
 };
 
 type DatasetMode = 'active' | 'history';
+type FlowTab = 'inbound' | 'outbound';
 type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
 type ActiveStatusTab = 'Approved' | 'Processing' | 'Picking' | 'Packed';
 
@@ -195,6 +199,7 @@ function getColumns(
 export function OrdersPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const isHqUser = user?.role === 'TenantAdmin' || user?.role === 'HqManager' || user?.role === 'HqStaff';
 
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
@@ -205,6 +210,8 @@ export function OrdersPage() {
   const [historyStatusFilter, setHistoryStatusFilter] = useState<OrderActionStatus | ''>('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [outboundOrders, setOutboundOrders] = useState<OrderItem[]>([]);
+  const [flowTab, setFlowTab] = useState<FlowTab>('inbound');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -215,7 +222,7 @@ export function OrdersPage() {
         setError(null);
         
         const [ordersRows, requestsRows] = await Promise.all([
-          fetchOrders(),
+          isHqUser ? fetchOrders() : fetchIncomingShipments(),
           fetchSupplyRequests() 
         ]);
 
@@ -254,6 +261,24 @@ export function OrdersPage() {
 
         const finalMerged = [...mappedRequests, ...mappedOrders];
         setOrders(finalMerged);
+
+        // Also fetch outbound (HQ dispatches)
+        try {
+          const dispatchRows = await fetchHqDispatches();
+          setOutboundOrders(dispatchRows.map((row: BranchOrder) => ({
+            id: String(row.orderId),
+            branch: row.branchName || `Branch ${row.branchId}`,
+            itemsCount: Number(row.itemsCount || 0),
+            totalCost: Number(row.fulfillmentCost || 0),
+            status: row.status as OrderActionStatus,
+            date: row.pushedToFulfillmentAt,
+            requestId: row.requestId,
+            isHqInitiated: true,
+            dispatchReason: row.dispatchReason,
+          })));
+        } catch {
+          // Outbound tab data is non-critical
+        }
       } catch (err) {
         console.error('Failed to load orders/requests:', err);
         setError('Failed to load orders.');
@@ -295,7 +320,9 @@ export function OrdersPage() {
     };
   }, []);
 
-  const source = orders.filter((order) => {
+  const activeData = flowTab === 'outbound' ? outboundOrders : orders;
+
+  const source = activeData.filter((order) => {
     const statuses = datasetMode === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES;
     return statuses.includes(order.status);
   });
@@ -534,10 +561,39 @@ export function OrdersPage() {
             onClick={() => navigate({ to: '/orders/new' })}
             sx={{ whiteSpace: 'nowrap' }}
           >
-            New Request
+            {flowTab === 'outbound' ? 'New Dispatch' : 'New Request'}
           </Button>
         </Box>
       </Box>
+
+      {/* Inbound / Outbound Flow Tabs */}
+      {isHqUser && (
+        <Box sx={{ display: 'flex', gap: 0.5, mb: 2.5 }}>
+          {(['inbound', 'outbound'] as FlowTab[]).map((tab) => (
+            <Box
+              key={tab}
+              onClick={() => setFlowTab(tab)}
+              sx={{
+                px: 2.5,
+                py: 1,
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: 13,
+                textTransform: 'capitalize',
+                color: flowTab === tab ? '#6B4C2A' : 'text.secondary',
+                bgcolor: flowTab === tab ? 'rgba(107,76,42,0.1)' : 'transparent',
+                border: '1px solid',
+                borderColor: flowTab === tab ? 'rgba(107,76,42,0.2)' : 'transparent',
+                transition: 'all 0.2s ease',
+                '&:hover': { bgcolor: 'rgba(107,76,42,0.06)' },
+              }}
+            >
+              {tab === 'inbound' ? '📥 Inbound (Branch Requests)' : '📤 Outbound (HQ Dispatches)'}
+            </Box>
+          ))}
+        </Box>
+      )}
 
       {error ? (
         <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1.2 }}>{error}</Typography>

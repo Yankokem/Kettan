@@ -185,35 +185,68 @@ export function HomePage() {
 
       {/* STATS BAR */}
       <section style={{ backgroundColor: "#FDFAF5" }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
-          <div
-            className="rounded-2xl grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0"
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid rgba(107,76,42,0.1)",
-              boxShadow: "0 4px 24px rgba(107,76,42,0.07)",
-            }}
-          >
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {[
               { value: "50+", label: "Branches Managed", icon: Building2 },
               { value: "10,000+", label: "Orders Fulfilled", icon: ClipboardList },
               { value: "99.9%", label: "Uptime SLA", icon: Zap },
               { value: "18", label: "Integrated Modules", icon: Globe },
             ].map(({ value, label, icon: Icon }) => (
-              <div key={label} className="flex flex-col items-center justify-center py-8 px-6 text-center">
+              <StaticMotionDiv
+                key={label}
+                className="relative rounded-2xl overflow-hidden"
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid rgba(107,76,42,0.12)",
+                  boxShadow: "0 2px 12px rgba(107,76,42,0.08)",
+                }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+                whileHover={{ y: -4, boxShadow: "0 8px 24px rgba(107,76,42,0.15)" }}
+              >
+                {/* Subtle gradient accent at top */}
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-                  style={{ backgroundColor: "rgba(107,76,42,0.08)" }}
-                >
-                  <Icon size={18} style={{ color: "#6B4C2A" }} />
+                  className="absolute top-0 left-0 right-0 h-1"
+                  style={{
+                    background: "linear-gradient(90deg, #6B4C2A 0%, #C9A84C 50%, #546B3F 100%)",
+                  }}
+                />
+                
+                <div className="relative flex flex-col items-center justify-center py-8 px-6 text-center">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                    style={{ 
+                      backgroundColor: "rgba(107,76,42,0.08)",
+                      border: "1px solid rgba(107,76,42,0.1)",
+                    }}
+                  >
+                    <Icon size={20} style={{ color: "#6B4C2A" }} />
+                  </div>
+                  <div 
+                    style={{ 
+                      fontSize: "2.25rem", 
+                      fontWeight: 800, 
+                      color: "#2C1A0E", 
+                      letterSpacing: "-0.02em",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {value}
+                  </div>
+                  <div 
+                    style={{ 
+                      fontSize: "13px", 
+                      color: "#8C6B43", 
+                      fontWeight: 600,
+                    }}
+                  >
+                    {label}
+                  </div>
                 </div>
-                <div style={{ fontSize: "1.8rem", fontWeight: 800, color: "#2C1A0E", letterSpacing: "-0.02em" }}>
-                  {value}
-                </div>
-                <div style={{ fontSize: "13px", color: "#8C6B43", marginTop: "2px", fontWeight: 500 }}>
-                  {label}
-                </div>
-              </div>
+              </StaticMotionDiv>
             ))}
           </div>
         </div>

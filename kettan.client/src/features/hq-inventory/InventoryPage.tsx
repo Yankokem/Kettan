@@ -9,7 +9,6 @@ import { StatCard } from '../../components/UI/StatCard';
 import type { InventoryItem, InventoryTransaction } from './types';
 import {
   fetchInventoryItems,
-  fetchInventoryItemTransactions,
   fetchGlobalTransactions,
 } from './hqInventoryApi';
 import { useAuthStore } from '../../store/useAuthStore';

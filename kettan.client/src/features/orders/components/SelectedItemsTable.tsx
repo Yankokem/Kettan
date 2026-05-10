@@ -20,7 +20,7 @@ export function SelectedItemsTable({ items, onRemoveItem, onUpdateQuantity }: Se
     {
       key: 'item',
       label: 'Item',
-      width: '26%',
+      width: '28%',
       render: (row) => (
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.item.name}</Typography>
@@ -29,9 +29,16 @@ export function SelectedItemsTable({ items, onRemoveItem, onUpdateQuantity }: Se
       ),
     },
     {
+      key: 'unit',
+      label: 'Unit',
+      align: 'right',
+      width: '8%',
+      render: (row) => <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>{row.item.unit}</Typography>,
+    },
+    {
       key: 'sku',
       label: 'SKU',
-      width: '16%',
+      width: '18%',
       render: (row) => (
         <Typography sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'text.secondary' }}>
           {row.item.sku}
@@ -53,7 +60,7 @@ export function SelectedItemsTable({ items, onRemoveItem, onUpdateQuantity }: Se
       key: 'quantity',
       label: 'Request Qty',
       align: 'right',
-      width: '10%',
+      width: '12%',
       render: (row) => (
         <TextField
           type="number"
@@ -71,7 +78,7 @@ export function SelectedItemsTable({ items, onRemoveItem, onUpdateQuantity }: Se
     {
       key: 'status',
       label: 'Stock Check',
-      width: '14%',
+      width: '16%',
       render: (row) => {
         const shortage = Math.max(0, row.quantity - row.item.hqStock);
         if (row.item.hqStock === 0) {
@@ -82,27 +89,6 @@ export function SelectedItemsTable({ items, onRemoveItem, onUpdateQuantity }: Se
         }
         return <Chip label="Ready" size="small" sx={{ fontWeight: 700, bgcolor: 'rgba(84,107,63,0.12)', color: '#546B3F' }} />;
       },
-    },
-    {
-      key: 'unit',
-      label: 'Unit',
-      align: 'right',
-      width: '10%',
-      render: (row) => <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>{row.item.unit}</Typography>,
-    },
-    {
-      key: 'notes',
-      label: 'Notes',
-      width: '20%',
-      render: (row) => (
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: 'inline-block', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-        >
-          {row.notes || '-'}
-        </Typography>
-      ),
     },
     {
       key: 'actions',

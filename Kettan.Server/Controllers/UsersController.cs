@@ -30,7 +30,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchManager,BranchOwner")]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers([FromQuery] int? branchId = null)
     {
         if (!_currentUserService.TenantId.HasValue)
@@ -48,7 +48,16 @@ public class UsersController : ControllerBase
 
         usersQuery = usersQuery.Where(u => u.TenantId == tenantId);
 
-        if (branchId.HasValue) usersQuery = usersQuery.Where(u => u.BranchId == branchId.Value);
+        var userRole = _currentUserService.Role;
+        if (userRole == "BranchManager" || userRole == "BranchOwner" || userRole == "StoreStaff")
+        {
+            if (!_currentUserService.BranchId.HasValue) return Forbid();
+            usersQuery = usersQuery.Where(u => u.BranchId == _currentUserService.BranchId.Value);
+        }
+        else if (branchId.HasValue)
+        {
+            usersQuery = usersQuery.Where(u => u.BranchId == branchId.Value);
+        }
 
         var users = await usersQuery
             .Include(u => u.Branch)

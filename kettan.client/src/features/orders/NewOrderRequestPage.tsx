@@ -448,15 +448,6 @@ export function NewOrderRequestPage() {
                 Cancel
               </Button>
               <Button
-                variant="outlined"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setError('Draft save is not yet implemented in backend.');
-                }}
-              >
-                Save Draft
-              </Button>
-              <Button
                 type="submit"
                 variant="contained"
                 disabled={isSaving}

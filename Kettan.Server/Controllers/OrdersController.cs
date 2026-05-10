@@ -40,6 +40,22 @@ public class OrdersController : ControllerBase
         return Ok(rows);
     }
 
+    [HttpGet("hq-dispatches")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<List<BranchOrderDto>>> GetHqDispatches([FromQuery] string? status = null)
+    {
+        var rows = await _service.ListHqDispatchesAsync(status);
+        return Ok(rows);
+    }
+
+    [HttpGet("incoming-shipments")]
+    [Authorize(Roles = "BranchManager,BranchOwner")]
+    public async Task<ActionResult<List<BranchOrderDto>>> GetIncomingShipments([FromQuery] string? status = null)
+    {
+        var rows = await _service.ListIncomingShipmentsAsync(status);
+        return Ok(rows);
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<OrderDetailDto>> GetOrder(int id)
     {

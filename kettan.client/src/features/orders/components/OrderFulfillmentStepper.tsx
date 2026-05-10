@@ -7,9 +7,10 @@ import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import WhereToVoteRoundedIcon from '@mui/icons-material/WhereToVoteRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
+import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import type { SupplyRequestTimelineEntry } from '../../supply-requests/components/SupplyRequestDetail.types';
 
-const STEPS = [
+const DEFAULT_STEPS = [
   { key: 'PendingApproval', label: 'Requested', icon: <AccessTimeFilledRoundedIcon sx={{ fontSize: 30 }} /> },
   { key: 'Approved', label: 'Approved', icon: <CheckCircleRoundedIcon sx={{ fontSize: 30 }} /> },
   { key: 'Picking', label: 'Picking', icon: <Inventory2RoundedIcon sx={{ fontSize: 30 }} /> },
@@ -19,8 +20,35 @@ const STEPS = [
   { key: 'Completed', label: 'Completed', icon: <TaskAltRoundedIcon sx={{ fontSize: 30 }} /> },
 ];
 
+const HQ_DISPATCH_STEPS = [
+  { key: 'Processing', label: 'Preparing', icon: <SettingsRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Picking', label: 'Picking', icon: <Inventory2RoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Packed', label: 'Packed', icon: <BackpackRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Dispatched', label: 'Dispatched', icon: <LocalShippingRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Arrived', label: 'Arrived', icon: <WhereToVoteRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Completed', label: 'Completed', icon: <TaskAltRoundedIcon sx={{ fontSize: 30 }} /> },
+];
+
 /** Maps any order/supply-request status to the corresponding stepper index */
-function getStepIndex(status: string): number {
+function getStepIndex(status: string, variant: 'default' | 'hq-dispatch' = 'default'): number {
+  if (variant === 'hq-dispatch') {
+    const mapping: Record<string, number> = {
+      Processing: 0,
+      Picking: 1,
+      Allocated: 1,
+      Packing: 2,
+      Packed: 2,
+      Dispatched: 3,
+      InTransit: 3,
+      Arrived: 4,
+      Delivered: 4,
+      Completed: 5,
+      Fulfilled: 5,
+      Cancelled: 0,
+    };
+    return mapping[status] ?? 0;
+  }
+
   const mapping: Record<string, number> = {
     Draft: -1,
     AutoDrafted: -1,
@@ -48,10 +76,12 @@ export interface OrderFulfillmentStepperProps {
   status?: string;
   activeStepIndex?: number;
   timeline?: SupplyRequestTimelineEntry[];
+  variant?: 'default' | 'hq-dispatch';
 }
 
-export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = [] }: OrderFulfillmentStepperProps) {
-  const resolvedIndex = activeStepIndex ?? (status ? getStepIndex(status) : 0);
+export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = [], variant = 'default' }: OrderFulfillmentStepperProps) {
+  const STEPS = variant === 'hq-dispatch' ? HQ_DISPATCH_STEPS : DEFAULT_STEPS;
+  const resolvedIndex = activeStepIndex ?? (status ? getStepIndex(status, variant) : 0);
   const isRejected = status === 'Rejected';
   const isCancelled = status === 'Cancelled';
   const isCompleted = status === 'Completed' || status === 'Fulfilled';
@@ -74,7 +104,7 @@ export function OrderFulfillmentStepper({ status, activeStepIndex, timeline = []
 
         const event = timeline.find(t => {
            if (isRejected && idx === 0 && t.status === 'Rejected') return true;
-           return getStepIndex(t.status) === idx;
+           return getStepIndex(t.status, variant) === idx;
         });
 
         const tooltipTitle = event ? (

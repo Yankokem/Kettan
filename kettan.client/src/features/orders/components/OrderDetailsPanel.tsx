@@ -1,12 +1,10 @@
 import { Box, Typography, Chip } from '@mui/material';
 import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
 import EventRoundedIcon from '@mui/icons-material/EventRounded';
-import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import DirectionsCarFilledRoundedIcon from '@mui/icons-material/DirectionsCarFilledRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import StickyNote2RoundedIcon from '@mui/icons-material/StickyNote2Rounded';
-import TagRoundedIcon from '@mui/icons-material/TagRounded';
 import type { OrderDetail } from '../../branch-operations/api';
 
 export interface OrderDetailsPanelProps {
@@ -14,23 +12,6 @@ export interface OrderDetailsPanelProps {
 }
 
 export function OrderDetailsPanel({ order }: OrderDetailsPanelProps) {
-  // Helper function to get status chip styling
-  const getStatusChipStyle = (status: string) => {
-    const statusStyles: Record<string, { bgcolor: string; color: string; border: string }> = {
-      'Processing': { bgcolor: 'rgba(59,130,246,0.12)', color: '#2563EB', border: '1px solid rgba(59,130,246,0.28)' },
-      'Picking': { bgcolor: 'rgba(59,130,246,0.12)', color: '#2563EB', border: '1px solid rgba(59,130,246,0.28)' },
-      'Packing': { bgcolor: 'rgba(59,130,246,0.12)', color: '#2563EB', border: '1px solid rgba(59,130,246,0.28)' },
-      'Packed': { bgcolor: 'rgba(180,83,9,0.12)', color: '#B45309', border: '1px solid rgba(180,83,9,0.28)' },
-      'Dispatched': { bgcolor: 'rgba(147,51,234,0.12)', color: '#9333EA', border: '1px solid rgba(147,51,234,0.28)' },
-      'Arrived': { bgcolor: 'rgba(16,185,129,0.12)', color: '#10B981', border: '1px solid rgba(16,185,129,0.28)' },
-      'Completed': { bgcolor: 'rgba(34,197,94,0.12)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.28)' },
-      'Delivered': { bgcolor: 'rgba(34,197,94,0.12)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.28)' },
-    };
-    return statusStyles[status] || { bgcolor: 'rgba(180,83,9,0.12)', color: '#B45309', border: '1px solid rgba(180,83,9,0.28)' };
-  };
-
-  const statusStyle = getStatusChipStyle(order.status);
-
   return (
     <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
       <Box sx={{ 
@@ -74,12 +55,26 @@ export function OrderDetailsPanel({ order }: OrderDetailsPanelProps) {
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <PersonOutlineRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
-              <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pushed By</Typography>
+              <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{order.isHqInitiated ? 'Initiated By' : 'Pushed By'}</Typography>
             </Box>
             <Typography sx={{ fontSize: 14, fontWeight: 500, color: 'text.primary', ml: 3.2 }}>
               {order.requestedByName}
             </Typography>
           </Box>
+
+          {order.isHqInitiated && order.dispatchReason && (
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <InfoRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dispatch Reason</Typography>
+              </Box>
+              <Chip
+                label={order.dispatchReason}
+                size="small"
+                sx={{ ml: 3.2, fontWeight: 600, fontSize: 11, bgcolor: 'rgba(107,76,42,0.1)', color: '#6B4C2A', border: '1px solid rgba(107,76,42,0.2)' }}
+              />
+            </Box>
+          )}
 
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>

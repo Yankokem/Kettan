@@ -119,12 +119,23 @@ public class OrderWorkflowService : IOrderWorkflowService
         _context.SupplyRequests.Add(request);
         await _context.SaveChangesAsync();
 
+        // Resolve a human-readable dispatch reason from the request type
+        var dispatchReason = dto.RequestType?.ToLowerInvariant() switch
+        {
+            "replenishment" => "Low-Stock Replenishment",
+            "event" => "Event / Promo Loadout",
+            "manual" or "hq_initiated" => "Manual Internal Request",
+            _ => "HQ Supply Dispatch"
+        };
+
         var order = new Order
         {
             TenantId = tenantId,
             RequestId = request.RequestId,
             Status = OrderStatus.Processing,
             PushedToFulfillmentAt = now,
+            IsHqInitiated = true,
+            DispatchReason = dispatchReason,
         };
 
         _context.Orders.Add(order);
@@ -134,12 +145,23 @@ public class OrderWorkflowService : IOrderWorkflowService
             Order = order,
             Status = OrderStatus.Processing,
             ChangedBy_UserId = userId,
-            Remarks = "HQ initiated order created and moved to processing.",
+            Remarks = "HQ initiated supply dispatch created.",
             Timestamp = now,
         });
 
         await _context.SaveChangesAsync();
         await tx.CommitAsync();
+
+        // Notify branch users about the incoming shipment
+        var branchName = request.Branch?.Name ?? "your branch";
+        await _notificationService.CreateForRolesAsync(
+            ["BranchManager", "BranchOwner"],
+            "Incoming Supply Shipment",
+            $"HQ is preparing a supply dispatch for {branchName}. {dto.Items.Count} item(s) selected.",
+            type: "Info",
+            branchId: dto.BranchId,
+            referenceType: "SupplyDispatch",
+            referenceId: order.OrderId);
 
         return await MapToOrderDetailDto(order, null);
     }
@@ -542,6 +564,50 @@ public class OrderWorkflowService : IOrderWorkflowService
         return order;
     }
 
+    public async Task<List<BranchOrderDto>> ListHqDispatchesAsync(string? status = null)
+    {
+        if (!_currentUser.TenantId.HasValue) return [];
+
+        var query = _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Branch)
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+                    .ThenInclude(i => i.Item)
+            .Where(o => o.IsHqInitiated);
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
+        {
+            query = query.Where(o => o.Status == parsedStatus);
+        }
+
+        var orders = await query.OrderByDescending(o => o.PushedToFulfillmentAt).ToListAsync();
+        return orders.Select(MapToBranchOrderDto).ToList();
+    }
+
+    public async Task<List<BranchOrderDto>> ListIncomingShipmentsAsync(string? status = null)
+    {
+        if (!_currentUser.TenantId.HasValue || !_currentUser.BranchId.HasValue) return [];
+
+        var branchId = _currentUser.BranchId.Value;
+
+        var query = _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Branch)
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+                    .ThenInclude(i => i.Item)
+            .Where(o => o.IsHqInitiated && o.SupplyRequest != null && o.SupplyRequest.BranchId == branchId);
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
+        {
+            query = query.Where(o => o.Status == parsedStatus);
+        }
+
+        var orders = await query.OrderByDescending(o => o.PushedToFulfillmentAt).ToListAsync();
+        return orders.Select(MapToBranchOrderDto).ToList();
+    }
+
     private static BranchOrderDto MapToBranchOrderDto(Order order)
     {
         var requestItems = order.SupplyRequest?.Items ?? [];
@@ -555,7 +621,9 @@ public class OrderWorkflowService : IOrderWorkflowService
             Status = order.Status.ToString(),
             PushedToFulfillmentAt = order.PushedToFulfillmentAt,
             ItemsCount = requestItems.Count,
-            FulfillmentCost = requestItems.Sum(i => (i.QuantityApproved ?? i.QuantityRequested) * (i.Item?.UnitCost ?? 0))
+            FulfillmentCost = requestItems.Sum(i => (i.QuantityApproved ?? i.QuantityRequested) * (i.Item?.UnitCost ?? 0)),
+            IsHqInitiated = order.IsHqInitiated,
+            DispatchReason = order.DispatchReason
         };
     }
 
@@ -592,12 +660,18 @@ public class OrderWorkflowService : IOrderWorkflowService
             CompletedByName = order.CompletedByUser != null 
                 ? $"{order.CompletedByUser.FirstName} {order.CompletedByUser.LastName}".Trim() 
                 : null,
+            IsHqInitiated = order.IsHqInitiated,
+            DispatchReason = order.DispatchReason,
             RequestedItems = new List<OrderRequestItemDto>()
         };
 
         foreach (var i in (request?.Items ?? []))
         {
             var hqStock = await _inventoryService.GetStockLevelAsync(i.ItemId, null);
+            var branchStock = request != null 
+                ? await _inventoryService.GetStockLevelAsync(i.ItemId, request.BranchId)
+                : 0;
+
             dto.RequestedItems.Add(new OrderRequestItemDto
             {
                 RequestItemId = i.RequestItemId,
@@ -613,7 +687,8 @@ public class OrderWorkflowService : IOrderWorkflowService
                 PickingRejectionReason = i.PickingRejectionReason,
                 IsPacked = i.IsPacked,
                 IsBranchChecked = i.IsBranchChecked,
-                HqStock = hqStock
+                HqStock = hqStock,
+                BranchStock = branchStock
             });
         }
 

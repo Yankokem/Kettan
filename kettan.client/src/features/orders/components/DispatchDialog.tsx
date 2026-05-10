@@ -5,13 +5,11 @@ import {
   DialogContent,
   DialogActions,
   Typography, 
-  Grid, 
   TextField, 
   Box, 
   MenuItem, 
   CircularProgress,
   alpha,
-  useTheme,
   IconButton
 } from '@mui/material';
 import { 
@@ -19,7 +17,6 @@ import {
   DirectionsCarRounded as VanIcon, 
   TwoWheelerRounded as BikeIcon,
   LocalPostOfficeRounded as TrackingIcon,
-  CheckCircleRounded as DispatchIcon,
   CloseRounded as CloseIcon
 } from '@mui/icons-material';
 import { listVehicles } from '../../hq-inventory/vehicleApi';
@@ -53,7 +50,6 @@ const getVehicleIcon = (type: string) => {
 };
 
 export function DispatchDialog({ open, onClose, onConfirm, isSaving }: DispatchDialogProps) {
-  const theme = useTheme();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   

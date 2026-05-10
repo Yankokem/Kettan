@@ -6,5 +6,6 @@ public enum NotificationReferenceType : byte
     SupplyRequest = 1,
     Shipment = 2,
     Return = 3,
-    Invoice = 4
+    Invoice = 4,
+    SupplyDispatch = 5
 }

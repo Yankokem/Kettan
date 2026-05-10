@@ -297,6 +297,8 @@ export interface BranchOrder {
   pushedToFulfillmentAt: string;
   itemsCount: number;
   fulfillmentCost: number;
+  isHqInitiated: boolean;
+  dispatchReason: string | null;
 }
 
 export interface OrderRequestItem {
@@ -314,6 +316,7 @@ export interface OrderRequestItem {
   isPacked: boolean;
   isBranchChecked: boolean;
   hqStock?: number;
+  branchStock?: number;
 }
 
 export interface OrderAllocation {
@@ -339,6 +342,8 @@ export interface OrderDetail extends BranchOrder {
   arrivedConfirmedByName: string | null;
   completedAt: string | null;
   completedByName: string | null;
+  isHqInitiated: boolean;
+  dispatchReason: string | null;
   requestedItems: OrderRequestItem[];
   allocations: OrderAllocation[];
 }
@@ -645,4 +650,56 @@ export async function fetchOrderMessages(orderId: number): Promise<OrderMessage[
 export async function sendOrderMessage(orderId: number, payload: { content: string }): Promise<OrderMessage> {
   const response = await api.post<OrderMessage>(`/api/Orders/${orderId}/messages`, payload);
   return response.data;
+}
+
+// ── HQ DISPATCH APIs ──
+
+export async function fetchHqDispatches(status?: string): Promise<BranchOrder[]> {
+  const response = await api.get<BranchOrder[]>('/api/Orders/hq-dispatches', {
+    params: status ? { status } : undefined,
+  });
+  const payload = response.data as unknown;
+  if (Array.isArray(payload)) {
+    return payload.map((row) => ({ ...row, status: normalizeOrderStatus(row.status) }));
+  }
+  return [];
+}
+
+export async function fetchIncomingShipments(status?: string): Promise<BranchOrder[]> {
+  const response = await api.get<BranchOrder[]>('/api/Orders/incoming-shipments', {
+    params: status ? { status } : undefined,
+  });
+  const payload = response.data as unknown;
+  if (Array.isArray(payload)) {
+    return payload.map((row) => ({ ...row, status: normalizeOrderStatus(row.status) }));
+  }
+  return [];
+}
+
+// ── NOTIFICATION APIs ──
+
+export interface NotificationItem {
+  notificationId: number;
+  title: string;
+  message: string;
+  type: string;
+  referenceType: string | null;
+  referenceId: number | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export async function fetchNotifications(unreadOnly = false): Promise<NotificationItem[]> {
+  const response = await api.get<NotificationItem[]>('/api/Notifications', {
+    params: { unreadOnly, take: 30 },
+  });
+  return response.data;
+}
+
+export async function markNotificationRead(id: number): Promise<void> {
+  await api.post(`/api/Notifications/${id}/read`);
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await api.post('/api/Notifications/read-all');
 }

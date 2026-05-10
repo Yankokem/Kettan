@@ -117,11 +117,39 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
       width: 100,
       align: 'right' as const,
       sortable: true,
-      render: (item: InventoryItem) => (
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: item.hqStock === 0 ? 'error.main' : 'success.main' }}>
-          {item.hqStock}
-        </Typography>
-      ),
+      render: (item: InventoryItem) => {
+        const selectedQty = selectedItems.get(item.id)?.quantity || 0;
+        const projectedStock = item.hqStock - selectedQty;
+        const isOverdrawn = projectedStock < 0;
+
+        return (
+          <Box sx={{ textAlign: 'right' }}>
+            <Typography 
+              sx={{ 
+                fontSize: 13, 
+                fontWeight: 700, 
+                color: isOverdrawn ? 'error.main' : 'success.main',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: 0.5
+              }}
+            >
+              {projectedStock}
+              {selectedQty > 0 && (
+                <Typography component="span" sx={{ fontSize: 10, fontWeight: 500, color: 'text.secondary', opacity: 0.7 }}>
+                  ({item.hqStock})
+                </Typography>
+              )}
+            </Typography>
+            {isOverdrawn && (
+              <Typography sx={{ fontSize: 10, color: 'error.main', fontWeight: 500 }}>
+                Insufficient Stock
+              </Typography>
+            )}
+          </Box>
+        );
+      },
     }] : []),
     {
       key: 'quantity',

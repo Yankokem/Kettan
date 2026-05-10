@@ -35,9 +35,10 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { StatCard } from '../../components/UI/StatCard';
 import { useAuthStore } from '../../store/useAuthStore';
-import { fetchSupplyRequests, type SupplyRequest } from '../branch-operations/api';
+import { fetchSupplyRequests, fetchIncomingShipments, type SupplyRequest, type BranchOrder } from '../branch-operations/api';
 
 type DatasetMode = 'active' | 'history';
+type BranchViewTab = 'my-requests' | 'incoming';
 type SortOption = 'newest' | 'oldest' | 'branch-asc' | 'branch-desc';
 
 const HISTORY_STATUSES = ['Completed', 'Delivered', 'Rejected', 'Cancelled', 'Returned', 'Fulfilled'];
@@ -152,6 +153,8 @@ export function SupplyRequestsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
+  const [branchViewTab, setBranchViewTab] = useState<BranchViewTab>('my-requests');
+  const [incomingShipments, setIncomingShipments] = useState<BranchOrder[]>([]);
 
   const loadRows = async () => {
     try {
@@ -167,8 +170,18 @@ export function SupplyRequestsPage() {
     }
   };
 
+  const loadIncoming = async () => {
+    try {
+      const results = await fetchIncomingShipments();
+      setIncomingShipments(Array.isArray(results) ? results : []);
+    } catch {
+      // non-critical
+    }
+  };
+
   useEffect(() => {
     void loadRows();
+    if (isBranch) void loadIncoming();
   }, []);
 
   // Real-time Status Sync via SignalR
@@ -507,20 +520,101 @@ export function SupplyRequestsPage() {
         </Box>
       </Box>
 
+      {/* Branch: My Requests / Incoming Shipments tabs */}
+      {isBranch && (
+        <Box sx={{ display: 'flex', gap: 0.5, mb: 2.5 }}>
+          {(['my-requests', 'incoming'] as BranchViewTab[]).map((tab) => (
+            <Box
+              key={tab}
+              onClick={() => setBranchViewTab(tab)}
+              sx={{
+                px: 2.5,
+                py: 1,
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: 13,
+                color: branchViewTab === tab ? '#6B4C2A' : 'text.secondary',
+                bgcolor: branchViewTab === tab ? 'rgba(107,76,42,0.1)' : 'transparent',
+                border: '1px solid',
+                borderColor: branchViewTab === tab ? 'rgba(107,76,42,0.2)' : 'transparent',
+                transition: 'all 0.2s ease',
+                '&:hover': { bgcolor: 'rgba(107,76,42,0.06)' },
+              }}
+            >
+              {tab === 'my-requests' ? '📋 My Requests' : `📦 Incoming Shipments (${incomingShipments.length})`}
+            </Box>
+          ))}
+        </Box>
+      )}
+
       {error ? (
         <Typography sx={{ color: 'error.main', fontSize: 12.5, mb: 1.2 }}>{error}</Typography>
       ) : null}
 
-      <DataTable
-        data={sortedRows}
-        columns={columns}
-        keyExtractor={(row) => row.requestId.toString()}
-        emptyTitle={search ? 'No matches found' : 'No supply requests yet'}
-        emptyMessage={isLoading ? 'Loading supply requests...' : search ? 'We couldn\'t find any supply requests matching your search.' : 'There are no supply requests logged for your branch.'}
-        emptyIcon={<AddShoppingCartRoundedIcon />}
-        defaultRowsPerPage={10}
-        pageSizes={[10, 25, 50]}
-      />
+      {branchViewTab === 'incoming' && isBranch ? (
+        <DataTable
+          data={incomingShipments}
+          columns={[
+            {
+              key: 'orderId',
+              label: 'DISPATCH ID',
+              render: (row: BranchOrder) => (
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>SD-{row.orderId}</Typography>
+              ),
+            },
+            {
+              key: 'status',
+              label: 'STATUS',
+              render: (row: BranchOrder) => (
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: statusColor(row.status) }}>{formatStatusLabel(row.status)}</Typography>
+              ),
+            },
+            {
+              key: 'itemsCount',
+              label: 'ITEMS',
+              align: 'center' as const,
+              render: (row: BranchOrder) => (
+                <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>{row.itemsCount}</Typography>
+              ),
+            },
+            {
+              key: 'dispatchReason',
+              label: 'REASON',
+              render: (row: BranchOrder) => (
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>{row.dispatchReason || 'HQ Dispatch'}</Typography>
+              ),
+            },
+            {
+              key: 'pushedToFulfillmentAt',
+              label: 'DATE',
+              render: (row: BranchOrder) => (
+                <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+                  {new Date(row.pushedToFulfillmentAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                </Typography>
+              ),
+            },
+          ]}
+          keyExtractor={(row: BranchOrder) => String(row.orderId)}
+          onRowClick={(row: BranchOrder) => navigate({ to: '/orders/$orderId', params: { orderId: String(row.orderId) } })}
+          emptyTitle="No incoming shipments"
+          emptyMessage="No HQ-initiated dispatches for your branch yet."
+          emptyIcon={<LocalShippingRoundedIcon />}
+          defaultRowsPerPage={10}
+          pageSizes={[10, 25, 50]}
+        />
+      ) : (
+        <DataTable
+          data={sortedRows}
+          columns={columns}
+          keyExtractor={(row) => row.requestId.toString()}
+          emptyTitle={search ? 'No matches found' : 'No supply requests yet'}
+          emptyMessage={isLoading ? 'Loading supply requests...' : search ? 'We couldn\'t find any supply requests matching your search.' : 'There are no supply requests logged for your branch.'}
+          emptyIcon={<AddShoppingCartRoundedIcon />}
+          defaultRowsPerPage={10}
+          pageSizes={[10, 25, 50]}
+        />
+      )}
     </Box>
   );
 }

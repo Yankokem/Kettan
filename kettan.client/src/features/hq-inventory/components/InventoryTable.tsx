@@ -370,11 +370,8 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
   }, [transactions, searchQuery]);
 
 
-  const formatQuantity = (qty: number, unit?: string) => {
-    const absQty = Math.abs(qty);
-    const formatted = absQty < 1 ? absQty.toFixed(3) : absQty.toFixed(absQty % 1 === 0 ? 0 : 2);
-    return `${qty > 0 ? '+' : '-'}${formatted} ${unit || ''}`;
-  };
+
+
 
   // Get unique categories from items
   const categoryOptions = useMemo(() => {

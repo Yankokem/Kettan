@@ -10,6 +10,8 @@ public class BranchOrderDto
     public DateTime PushedToFulfillmentAt { get; set; }
     public int ItemsCount { get; set; }
     public decimal FulfillmentCost { get; set; }
+    public bool IsHqInitiated { get; set; }
+    public string? DispatchReason { get; set; }
 }
 
 public class OrderRequestItemDto
@@ -30,6 +32,7 @@ public class OrderRequestItemDto
     public bool IsPacked { get; set; }
     public bool IsBranchChecked { get; set; }
     public decimal? HqStock { get; set; }
+    public decimal? BranchStock { get; set; }
 }
 
 public class OrderAllocationDto

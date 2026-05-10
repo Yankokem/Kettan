@@ -1,4 +1,4 @@
-import { Box, Typography, Chip, Grid, Tooltip, Alert } from '@mui/material';
+import { Box, Typography, Chip, Tooltip, Alert } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
@@ -7,10 +7,10 @@ import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
 import BackpackRoundedIcon from '@mui/icons-material/BackpackRounded';
 import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import QuestionAnswerRoundedIcon from '@mui/icons-material/QuestionAnswerRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
+import WhereToVoteRoundedIcon from '@mui/icons-material/WhereToVoteRounded';
 import { WorkflowStatusBanner } from '../shared/components/WorkflowStatusBanner';
 
 import { useAuthStore } from '../../store/useAuthStore';
@@ -57,6 +57,7 @@ function mapOrderItemsToViewModel(requestedItems: OrderDetail['requestedItems'])
     pickingRejectionReason: i.pickingRejectionReason,
     isPacked: i.isPacked,
     isBranchChecked: i.isBranchChecked,
+    branchStock: i.branchStock ?? 0,
   }));
 }
 
@@ -76,8 +77,12 @@ export function OrderDetailPage() {
   const [pickingModalOpen, setPickingModalOpen] = useState(false);
   const [packingModalOpen, setPackingModalOpen] = useState(false);
   const [dispatchModalOpen, setDispatchModalOpen] = useState(false);
+  const [summaryModalOpen, setSummaryModalOpen] = useState(false);
 
   // Track whether user has made local changes (to avoid blowing them away during poll)
+  const isHq = ['TenantAdmin', 'HqManager', 'HqStaff'].includes(user?.role || '');
+  const isBranch = ['BranchManager', 'BranchOwner', 'BranchStaff'].includes(user?.role || '');
+  
   const hasPendingChanges = useRef(false);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -144,12 +149,7 @@ export function OrderDetailPage() {
 
   const orderStatus = order?.status || 'Processing';
 
-  const isHq =
-    user?.role === 'TenantAdmin' ||
-    user?.role === 'HqManager' ||
-    user?.role === 'HqStaff';
 
-  const isBranch = user?.role === 'BranchManager' || user?.role === 'BranchOwner';
 
   // ── Threshold validation for send quantities ──
   // Warn if any item's sendQty would push HQ stock below zero
@@ -256,6 +256,10 @@ export function OrderDetailPage() {
 
   const handleCompleteTransaction = async () => {
     if (!orderId) return;
+    setSummaryModalOpen(true);
+  };
+
+  const handleConfirmAndComplete = async () => {
     try {
       setIsSaving(true);
       setError(null);
@@ -265,6 +269,8 @@ export function OrderDetailPage() {
       }));
       await completeTransaction(Number(orderId), payload);
       hasPendingChanges.current = false;
+      
+      setSummaryModalOpen(false);
       await loadOrder(false);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to complete transaction.');
@@ -279,16 +285,24 @@ export function OrderDetailPage() {
   // Packing → packing checkboxes
   // Packed and beyond → readonly-packed (inventory already deducted, nothing to edit)
   let tableMode: SRTableMode = 'readonly';
-  if (orderStatus === 'Processing' || orderStatus === 'Allocated' || orderStatus === 'Picking') {
-    tableMode = 'picking';
-  } else if (orderStatus === 'Packing') {
-    tableMode = 'packing';
-  } else if (orderStatus === 'Packed' || orderStatus === 'Dispatched' || orderStatus === 'InTransit') {
-    tableMode = 'readonly-packed';
-  } else if (orderStatus === 'Arrived') {
-    tableMode = isBranch ? 'branch-check' : 'readonly-packed';
-  } else if (orderStatus === 'Completed' || orderStatus === 'Cancelled' || orderStatus === 'Delivered') {
-    tableMode = 'readonly-packed';
+  
+  if (isHq) {
+    if (orderStatus === 'Processing' || orderStatus === 'Allocated' || orderStatus === 'Picking') {
+      tableMode = 'picking';
+    } else if (orderStatus === 'Packing') {
+      tableMode = 'packing';
+    } else if (orderStatus === 'Packed' || orderStatus === 'Dispatched' || orderStatus === 'InTransit' || orderStatus === 'Arrived') {
+      tableMode = 'readonly-packed';
+    } else if (orderStatus === 'Completed' || orderStatus === 'Cancelled' || orderStatus === 'Delivered') {
+      tableMode = 'readonly-packed';
+    }
+  } else if (isBranch) {
+    if (orderStatus === 'Arrived') {
+      tableMode = 'branch-check';
+    } else {
+      // Branch side is READ-ONLY for all preparation and transit phases
+      tableMode = 'readonly-packed';
+    }
   }
 
   if (!order) {
@@ -364,16 +378,15 @@ export function OrderDetailPage() {
               />
             </Box>
             <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>
-              Workflow management for order fulfillment, picking, and dispatch to <strong>{order.branchName}</strong>.
+              {order.isHqInitiated
+                ? <>HQ-initiated supply dispatch to <strong>{order.branchName}</strong>. Reason: {order.dispatchReason || 'Manual'}.</>
+                : <>Workflow management for order fulfillment, picking, and dispatch to <strong>{order.branchName}</strong>.</>}
             </Typography>
           </Box>
         </Box>
 
         {/* ── Header Actions ── */}
         <Box sx={{ display: 'flex', gap: 1.5, pt: 0.5, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-
-
-
           {/* Cancel Order — HQ only, cancellable statuses only */}
           {isHq && ['Processing', 'Picking', 'Packing', 'Packed'].includes(orderStatus) && (
             <Button
@@ -462,20 +475,21 @@ export function OrderDetailPage() {
               loading={isSaving}
               disabled={isSaving}
             >
-              Package Arrived
+              Confirm Arrival
             </Button>
           )}
 
-          {/* Complete Transaction — branch only, arrived status, all items checked */}
-          {orderStatus === 'Arrived' && isBranch && localItems.every((i) => i.isBranchChecked) && (
+          {/* Complete Transaction — branch only, arrived status */}
+          {orderStatus === 'Arrived' && isBranch && (
             <Button
-              startIcon={<CheckCircleRoundedIcon />}
+              variant="contained"
+              startIcon={<FactCheckRoundedIcon />}
               color="success"
               onClick={() => void handleCompleteTransaction()}
               loading={isSaving}
               disabled={isSaving}
             >
-              Complete Transaction
+              Complete Shipment
             </Button>
           )}
 
@@ -492,24 +506,57 @@ export function OrderDetailPage() {
       </Box>
 
       {/* ── Status Banners (Passive Wait States) ── */}
-      {orderStatus === 'Dispatched' && isHq && (
+      
+      {/* 1. Preparation Phase (Branch Side) */}
+      {['Processing', 'Picking', 'Packing', 'Packed'].includes(orderStatus) && isBranch && order.isHqInitiated && (
         <WorkflowStatusBanner
-          icon={<LocalShippingRoundedIcon sx={{ fontSize: 22 }} />}
-          title="In Transit to Branch"
+          icon={<AccessTimeFilledRoundedIcon sx={{ fontSize: 22 }} />}
+          title="Shipment in Progress"
           description={
             <>
-              The package has been dispatched and is currently on its way to <strong>{order.branchName}</strong>. 
-              We are awaiting confirmation from the branch upon arrival.
+              HQ is currently preparing this dispatch for your branch. 
+              We'll notify you once the items are out for delivery.
             </>
           }
         />
       )}
 
+      {/* 2. In Transit (Both) */}
+      {orderStatus === 'Dispatched' && (
+        <WorkflowStatusBanner
+          icon={<LocalShippingRoundedIcon sx={{ fontSize: 22 }} />}
+          title="Shipment in Transit"
+          description={
+            <>
+              The package has been dispatched and is currently on its way to <strong>{order.branchName}</strong>. 
+              {isBranch ? "Please confirm once the delivery has arrived at your location." : "We are awaiting confirmation from the branch upon arrival."}
+            </>
+          }
+        />
+      )}
+
+      {/* 3. Arrived (Both) */}
+      {orderStatus === 'Arrived' && (
+        <WorkflowStatusBanner
+          icon={<WhereToVoteRoundedIcon sx={{ fontSize: 22, color: '#2563EB' }} />}
+          title="Shipment Arrived"
+          description={
+            <>
+              The shipment has arrived at the branch. 
+              {isBranch 
+                ? "Please reconcile the items in the list below. Once all items are checked, you can complete the transaction." 
+                : "The branch is currently checking and reconciling the received items."}
+            </>
+          }
+        />
+      )}
+
+      {/* 4. Completed (Both) */}
       {orderStatus === 'Completed' && (
         <WorkflowStatusBanner
           icon={<CheckCircleRoundedIcon sx={{ fontSize: 22, color: 'success.main' }} />}
-          title="Order Fulfillment Completed"
-          description="The items have been successfully delivered and checked by the branch. The transaction is now complete."
+          title="Shipment Received & Completed"
+          description="The items have been successfully delivered and verified by the branch. The inventory has been updated."
         />
       )}
 
@@ -537,7 +584,7 @@ export function OrderDetailPage() {
       )}
 
       {/* ── Stepper ── */}
-      <OrderFulfillmentStepper status={orderStatus} />
+      <OrderFulfillmentStepper status={orderStatus} variant={order.isHqInitiated ? 'hq-dispatch' : 'default'} />
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '400px 1fr' }, gap: 3, alignItems: 'start' }}>
         <Box>
@@ -702,6 +749,142 @@ export function OrderDetailPage() {
 
       {/* ── Order Messages Modal ── */}
       <SharedFloatingChat contextType="order" id={Number(orderId)} open={chatOpen} onOpenChange={setChatOpen} />
+
+      {/* ── Completion Summary Modal ── */}
+      <Dialog 
+        open={summaryModalOpen} 
+        onClose={() => !isSaving && setSummaryModalOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '14px',
+            border: '1px solid',
+            borderColor: 'divider',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <Box sx={{ 
+          p: 3, 
+          background: 'linear-gradient(135deg, #FAF5EF 0%, #F5EFE6 100%)',
+          borderBottom: '1px solid',
+          borderColor: 'rgba(140,107,67,0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5
+        }}>
+          <FactCheckRoundedIcon sx={{ color: '#6B4C2A', fontSize: 20 }} />
+          <Typography sx={{ fontSize: 16, fontWeight: 800, color: '#6B4C2A', letterSpacing: '-0.01em' }}>
+            Complete Transaction
+          </Typography>
+        </Box>
+
+        <DialogContent sx={{ px: 3, pt: 3 }}>
+          <Box sx={{ 
+            bgcolor: '#FAF5EF', 
+            p: 2.5, 
+            borderRadius: 3, 
+            border: '1px solid', 
+            borderColor: 'rgba(140,107,67,0.12)',
+            mb: 3
+          }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#8C6B43', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 2 }}>
+              Request Information
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 1.2 }}>
+              <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Request ID</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 800, textAlign: 'right', color: 'text.primary' }}>
+                #{order?.requestId || orderId}
+              </Typography>
+
+              <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Date Arrived</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 500, textAlign: 'right', color: 'text.primary' }}>
+                {order?.arrivedAt ? new Date(order.arrivedAt).toLocaleString('en-US', {
+                  month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+                }) : '-'}
+              </Typography>
+
+              <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Confirmed By</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 500, textAlign: 'right', color: 'text.primary' }}>{order?.arrivedConfirmedByName || '-'}</Typography>
+            </Box>
+          </Box>
+
+          {/* Items Received Table */}
+          <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1.5, px: 0.5 }}>
+            Items Received ({localItems.filter(i => i.isBranchChecked).length})
+          </Typography>
+
+          {localItems.filter(i => i.isBranchChecked).length === 0 ? (
+            <Alert severity="error" sx={{ mb: 4, borderRadius: 2 }}>
+              No items were checked. This shipment will be marked as not received.
+            </Alert>
+          ) : (
+            <Box sx={{ mb: 4, px: 0.5 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.2fr', pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary' }}>ITEM</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textAlign: 'center' }}>CURRENT</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textAlign: 'center' }}>SENT</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.secondary', textAlign: 'right' }}>NEW QTY</Typography>
+              </Box>
+              {localItems.filter(i => i.isBranchChecked).map(item => {
+                const sent = item.sendQuantity ?? item.approvedQty ?? item.requestedQty;
+                const current = item.branchStock ?? 0;
+                const newQty = current + sent;
+                
+                return (
+                  <Box
+                    key={item.id}
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 1fr 1fr 1.2fr',
+                      py: 1.5,
+                      borderBottom: '1px dashed',
+                      borderColor: 'divider',
+                      '&:last-child': { borderBottom: 'none' },
+                    }}
+                  >
+                    <Box>
+                      <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}>{item.name}</Typography>
+                      <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 400 }}>{item.sku}</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: 13, textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}>{current}</Typography>
+                    <Typography sx={{ fontSize: 13, textAlign: 'center', fontWeight: 600, color: 'success.main' }}>+{sent}</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 800, textAlign: 'right', color: '#6B4C2A' }}>{newQty}</Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+
+          {/* Items Not Checked (Marked Lost) */}
+          {localItems.filter(i => !i.isBranchChecked && !i.isRejectedDuringPicking).length > 0 && (
+            <Box sx={{ p: 2, bgcolor: 'rgba(217,119,6,0.04)', borderRadius: 2, border: '1px dashed rgba(217,119,6,0.3)', mb: 2 }}>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'warning.main', textTransform: 'uppercase', mb: 1 }}>
+                Not Checked — Marked Lost ({localItems.filter(i => !i.isBranchChecked && !i.isRejectedDuringPicking).length})
+              </Typography>
+              {localItems.filter(i => !i.isBranchChecked && !i.isRejectedDuringPicking).map(item => (
+                <Typography key={item.id} sx={{ fontSize: 12, color: 'warning.dark', opacity: 0.8 }}>
+                  • {item.name} ({item.sendQuantity ?? item.approvedQty ?? item.requestedQty} units)
+                </Typography>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1.5 }}>
+          <Button variant="outlined" onClick={() => setSummaryModalOpen(false)} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button 
+            color="success"
+            onClick={() => void handleConfirmAndComplete()} 
+            loading={isSaving}
+            sx={{ px: 4 }}
+          >
+            Confirm &amp; Complete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
