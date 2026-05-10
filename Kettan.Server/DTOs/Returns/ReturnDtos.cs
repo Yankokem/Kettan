@@ -26,6 +26,7 @@ public class ReturnItemDto
     public string ItemName { get; set; } = string.Empty;
     public string ItemSku { get; set; } = string.Empty;
     public decimal QuantityReturned { get; set; }
+    public decimal UnitCostSnapshot { get; set; }
     public decimal? QuantityInspected { get; set; }
     public string ReasonCode { get; set; } = string.Empty;
     public string Disposition { get; set; } = string.Empty;
@@ -59,6 +60,7 @@ public class ReturnDto
 {
     public int ReturnId { get; set; }
     public int OrderId { get; set; }
+    public string? Subject { get; set; }
     public int BranchId { get; set; }
     public string BranchName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
@@ -67,6 +69,9 @@ public class ReturnDto
     public string? RejectionReason { get; set; }
     public string? PhotoUrls { get; set; }
     public decimal? CreditAmount { get; set; }
+    public decimal TotalReturnedValue { get; set; }
+    public decimal TotalLossValue { get; set; }
+    public string PickupScheduleStatus { get; set; } = "NoSchedule";
     public DateTime LoggedAt { get; set; }
     public DateTime? SubmittedAt { get; set; }
     public DateTime? AcknowledgedAt { get; set; }
@@ -98,6 +103,7 @@ public class CreateReturnDraftItemDto
 public class CreateReturnDraftDto
 {
     public int OrderId { get; set; }
+    public string? Subject { get; set; }
     public string Resolution { get; set; } = "Pending";
     public string? Reason { get; set; }
     public string? PhotoUrls { get; set; }
@@ -106,6 +112,7 @@ public class CreateReturnDraftDto
 
 public class UpdateReturnDraftDto
 {
+    public string? Subject { get; set; }
     public string Resolution { get; set; } = "Pending";
     public string? Reason { get; set; }
     public string? PhotoUrls { get; set; }

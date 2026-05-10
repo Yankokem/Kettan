@@ -45,6 +45,25 @@ function DetailField({
 }
 
 export function SupplyRequestDetailsPanel({ request }: SupplyRequestDetailsPanelProps) {
+  const formatScheduleStatus = (status?: string) => {
+    if (!status) return 'No Schedule';
+    if (status === 'DueToday') return 'Due Today';
+    if (status === 'NoSchedule') return 'No Schedule';
+    if (status === 'OnTime') return 'On Time';
+    return status;
+  };
+
+  const scheduleColor = (status?: string) => {
+    if (status === 'Late') return '#D32F2F';
+    if (status === 'DueToday') return '#ED6C02';
+    if (status === 'OnTime') return '#2E7D32';
+    if (status === 'Scheduled') return '#0288D1';
+    return '#6B7280';
+  };
+
+  const toPeso = (value?: number) =>
+    `₱${(value ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   return (
     <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
       <Box sx={{ 
@@ -72,8 +91,32 @@ export function SupplyRequestDetailsPanel({ request }: SupplyRequestDetailsPanel
             <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{request.requestType}</Typography>
           </DetailField>
 
+          <DetailField icon={<DescriptionRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />} label="Subject">
+            <Typography sx={{ fontSize: 14, fontWeight: 500, color: request.subject ? 'text.primary' : 'text.secondary' }}>
+              {request.subject || 'No subject'}
+            </Typography>
+          </DetailField>
+
           <DetailField icon={<ScheduleRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />} label="Dispatch Window">
             <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{request.dispatchWindow}</Typography>
+          </DetailField>
+
+          <DetailField icon={<ScheduleRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />} label="Dispatch SLA">
+            <Typography sx={{ fontSize: 14, fontWeight: 700, color: scheduleColor(request.dispatchScheduleStatus) }}>
+              {formatScheduleStatus(request.dispatchScheduleStatus)}
+            </Typography>
+          </DetailField>
+
+          <DetailField icon={<PriorityHighRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />} label="Value Summary">
+            <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#6B4C2A' }}>
+              Requested: {toPeso(request.totalRequestedValue)}
+            </Typography>
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+              Approved: {toPeso(request.totalApprovedValue)}
+            </Typography>
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+              Fulfilled: {toPeso(request.totalFulfilledValue)}
+            </Typography>
           </DetailField>
         </Box>
 

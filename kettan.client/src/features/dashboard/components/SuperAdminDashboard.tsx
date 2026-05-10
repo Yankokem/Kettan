@@ -13,6 +13,7 @@ import {
 
 import { StatCard } from '../../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
+import { LoadingOverlay } from '../../../components/UI/LoadingOverlay';
 
 
 const PIE_COLORS = ['#6B4C2A', '#047857', '#B08B5A', '#2563EB', '#7C3AED'];
@@ -47,11 +48,7 @@ export function SuperAdminDashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>Loading dashboard…</Typography>
-      </Box>
-    );
+    return <LoadingOverlay open={true} />;
   }
 
   if (!data) {

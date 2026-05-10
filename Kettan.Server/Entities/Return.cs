@@ -27,6 +27,9 @@ public class Return : ITenantEntity
     [MaxLength(100)]
     public string? Reason { get; set; }
 
+    [MaxLength(80)]
+    public string? Subject { get; set; }
+
     public string? PhotoUrls { get; set; }
 
     [Required]
@@ -98,6 +101,12 @@ public class Return : ITenantEntity
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal? CreditAmount { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalReturnedValue { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalLossValue { get; set; }
 
     public DateTime LoggedAt { get; set; } = DateTime.UtcNow;
 

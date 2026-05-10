@@ -38,8 +38,13 @@ function defaultEndDate() {
 interface OrderItem {
   id: string;
   branch: string;
+  subject: string;
   itemsCount: number;
   totalCost: number;
+  requestedValue: number;
+  approvedValue: number;
+  fulfilledValue: number;
+  dispatchScheduleStatus?: string;
   status: OrderActionStatus;
   date: string;
   actionedBy?: string;
@@ -105,6 +110,22 @@ function getColumns(
   onApprove: (orderId: string) => void,
   onReject: (orderId: string) => void,
 ): ColumnDef<OrderItem>[] {
+  const formatScheduleStatus = (status?: string) => {
+    if (!status) return 'No Schedule';
+    if (status === 'DueToday') return 'Due Today';
+    if (status === 'NoSchedule') return 'No Schedule';
+    if (status === 'OnTime') return 'On Time';
+    return status;
+  };
+
+  const scheduleColor = (status?: string) => {
+    if (status === 'Late') return '#D32F2F';
+    if (status === 'DueToday') return '#ED6C02';
+    if (status === 'OnTime') return '#2E7D32';
+    if (status === 'Scheduled') return '#0288D1';
+    return '#6B7280';
+  };
+
   return [
     {
       key: 'id',
@@ -141,6 +162,15 @@ function getColumns(
       ),
     },
     {
+      key: 'subject',
+      label: 'Subject',
+      render: (row) => (
+        <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
+          {row.subject || '—'}
+        </Typography>
+      ),
+    },
+    {
       key: 'itemsCount',
       label: 'Items',
       sortable: true,
@@ -170,8 +200,17 @@ function getColumns(
       },
     },
     {
+      key: 'dispatchScheduleStatus',
+      label: 'Dispatch SLA',
+      render: (row) => (
+        <Typography sx={{ fontSize: 12, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
+          {formatScheduleStatus(row.dispatchScheduleStatus)}
+        </Typography>
+      ),
+    },
+    {
       key: 'totalCost',
-      label: 'Fulfillment Cost',
+      label: 'Fulfilled Value',
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 700 }}>
@@ -229,8 +268,13 @@ export function OrdersPage() {
         const mappedOrders = ordersRows.map((row: BranchOrder) => ({
           id: String(row.orderId),
           branch: row.branchName || `Branch ${row.branchId}`,
+          subject: row.subject || row.dispatchReason || '',
           itemsCount: Number(row.itemsCount || 0),
-          totalCost: Number(row.fulfillmentCost || 0),
+          totalCost: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+          requestedValue: Number(row.totalRequestedValue || 0),
+          approvedValue: Number(row.totalApprovedValue || 0),
+          fulfilledValue: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+          dispatchScheduleStatus: row.dispatchScheduleStatus,
           status: row.status as OrderActionStatus,
           date: row.pushedToFulfillmentAt,
           requestId: row.requestId,
@@ -252,8 +296,13 @@ export function OrdersPage() {
             id: `SR-${row.requestId}`,
             requestId: row.requestId,
             branch: row.branchName || `Branch ${row.branchId}`,
+            subject: row.subject || '',
             itemsCount: row.items?.length || 0,
-            totalCost: 0,
+            totalCost: Number(row.totalFulfilledValue || 0),
+            requestedValue: Number(row.totalRequestedValue || 0),
+            approvedValue: Number(row.totalApprovedValue || 0),
+            fulfilledValue: Number(row.totalFulfilledValue || 0),
+            dispatchScheduleStatus: row.dispatchScheduleStatus,
             status: row.status as OrderActionStatus,
             date: row.createdAt,
             actionedBy: row.requestedByName
@@ -268,8 +317,13 @@ export function OrdersPage() {
           setOutboundOrders(dispatchRows.map((row: BranchOrder) => ({
             id: String(row.orderId),
             branch: row.branchName || `Branch ${row.branchId}`,
+            subject: row.subject || row.dispatchReason || '',
             itemsCount: Number(row.itemsCount || 0),
-            totalCost: Number(row.fulfillmentCost || 0),
+            totalCost: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+            requestedValue: Number(row.totalRequestedValue || 0),
+            approvedValue: Number(row.totalApprovedValue || 0),
+            fulfilledValue: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+            dispatchScheduleStatus: row.dispatchScheduleStatus,
             status: row.status as OrderActionStatus,
             date: row.pushedToFulfillmentAt,
             requestId: row.requestId,
@@ -333,6 +387,7 @@ export function OrdersPage() {
       query.length === 0 ||
       order.id.toLowerCase().includes(query) ||
       order.branch.toLowerCase().includes(query) ||
+      order.subject.toLowerCase().includes(query) ||
       (order.actionedBy || '').toLowerCase().includes(query);
     const matchesStatus = datasetMode === 'active'
       ? (

@@ -12,6 +12,7 @@ import GroupAddRoundedIcon from '@mui/icons-material/GroupAddRounded';
 
 import { StatCard } from '../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
+import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const PIE_COLORS = ['#6B4C2A', '#047857', '#B08B5A', '#2563EB', '#7C3AED'];
@@ -31,7 +32,7 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
   return res.data;
 }
 
-async function fetchDashboardKPIs(): Promise<{ activeTenants: number; monthlyRecurringRevenue: number }> {
+async function fetchDashboardKPIs(): Promise<{ activeTenants: number; monthlyRecurringRevenue: number; totalTenants: number; totalUsers: number; totalBranches: number }> {
   const res = await api.get('/api/admin/dashboard');
   
   return res.data;
@@ -39,7 +40,7 @@ async function fetchDashboardKPIs(): Promise<{ activeTenants: number; monthlyRec
 
 export function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
-  const [kpis, setKPIs] = useState<{ activeTenants: number; monthlyRecurringRevenue: number } | null>(null);
+  const [kpis, setKPIs] = useState<{ activeTenants: number; monthlyRecurringRevenue: number; totalTenants: number; totalUsers: number; totalBranches: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,11 +54,7 @@ export function AnalyticsPage() {
   }, []);
 
   if (loading || !data || !kpis) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>{loading ? 'Loading analytics…' : 'Unable to load data.'}</Typography>
-      </Box>
-    );
+    return <LoadingOverlay open={true} />;
   }
 
   const revenueChartData = data.revenueTrend.map(r => ({
@@ -101,21 +98,14 @@ export function AnalyticsPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      {/* ── Header ── */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', mb: 0.5 }}>
-          Platform Analytics
-        </Typography>
-        <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>
-          Deep metrics on platform revenue, subscriber growth, and tenant distribution.
-        </Typography>
-      </Box>
+
 
       {/* ── KPI Cards ── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', lg: 'repeat(4,1fr)' }, gap: 2.5, mb: 4 }}>
         <StatCard
           label="Monthly Recurring Revenue"
           value={`₱${kpis.monthlyRecurringRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          sub="Platform subscriptions"
           icon={<AssessmentRoundedIcon />}
           accentClass="stat-accent-brown"
           iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
@@ -123,6 +113,7 @@ export function AnalyticsPage() {
         <StatCard
           label="Total Revenue (All-Time)"
           value={`₱${data.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          sub="Cumulative earnings"
           icon={<TrendingUpRoundedIcon />}
           accentClass="stat-accent-sage"
           iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
@@ -130,13 +121,15 @@ export function AnalyticsPage() {
         <StatCard
           label="Active Subscribers"
           value={kpis.activeTenants}
+          sub={`of ${kpis.totalTenants} total`}
           icon={<StorefrontRoundedIcon />}
           accentClass="stat-accent-gold"
           iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
         />
         <StatCard
-          label="New This Month"
-          value={data.newThisMonth}
+          label="Platform Users"
+          value={kpis.totalUsers}
+          sub={`Across ${kpis.totalBranches} branches`}
           icon={<GroupAddRoundedIcon />}
           accentClass="stat-accent-brown"
           iconBg="linear-gradient(135deg, #C9A84C 0%, #E8D3A9 100%)"

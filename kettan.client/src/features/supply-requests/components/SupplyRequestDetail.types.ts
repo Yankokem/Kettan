@@ -50,6 +50,7 @@ export interface SupplyRequestTimelineEntry {
 
 export interface SupplyRequestDetailViewModel {
   requestNumber: string;
+  subject?: string;
   status: SupplyRequestLifecycleStatus;
   branchName: string;
   requestedByName: string;
@@ -58,7 +59,11 @@ export interface SupplyRequestDetailViewModel {
   priority: 'Low' | 'Normal' | 'High' | 'Urgent';
   requestType: string;
   dispatchWindow: string;
+  dispatchScheduleStatus?: string;
   notes: string;
+  totalRequestedValue?: number;
+  totalApprovedValue?: number;
+  totalFulfilledValue?: number;
   linkedOrderId?: string;
   items: SupplyRequestDetailItem[];
   timeline: SupplyRequestTimelineEntry[];

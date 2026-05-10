@@ -12,6 +12,9 @@ public class SupplyRequest : ITenantEntity
     [MaxLength(100)]
     public string? ReferenceNumber { get; set; }
 
+    [MaxLength(80)]
+    public string? Subject { get; set; }
+
     public int TenantId { get; set; }
 
     [ForeignKey(nameof(TenantId))]
@@ -43,6 +46,15 @@ public class SupplyRequest : ITenantEntity
 
     [MaxLength(1000)]
     public string? Notes { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalRequestedValue { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalApprovedValue { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalFulfilledValue { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

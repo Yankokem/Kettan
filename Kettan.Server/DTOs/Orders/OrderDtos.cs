@@ -4,11 +4,16 @@ public class BranchOrderDto
 {
     public int OrderId { get; set; }
     public int RequestId { get; set; }
+    public string? Subject { get; set; }
     public int BranchId { get; set; }
     public string BranchName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string DispatchScheduleStatus { get; set; } = "NoSchedule";
     public DateTime PushedToFulfillmentAt { get; set; }
     public int ItemsCount { get; set; }
+    public decimal TotalRequestedValue { get; set; }
+    public decimal TotalApprovedValue { get; set; }
+    public decimal TotalFulfilledValue { get; set; }
     public decimal FulfillmentCost { get; set; }
     public bool IsHqInitiated { get; set; }
     public string? DispatchReason { get; set; }
@@ -76,6 +81,7 @@ public class CreateOrderItemDto
 public class CreateOrderDto
 {
     public int BranchId { get; set; }
+    public string? Subject { get; set; }
     public string RequestType { get; set; } = "hq_initiated";
     public string Priority { get; set; } = "normal";
     public string DispatchWindow { get; set; } = "today";

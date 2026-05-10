@@ -37,7 +37,7 @@ public class AdminController : ControllerBase
         var mrr = await _context.TenantSubscriptions.IgnoreQueryFilters()
             .Where(ts => ts.Status == SubscriptionStatus.Active)
             .Join(_context.SubscriptionPlans, ts => ts.PlanId, p => p.PlanId, (ts, p) => p.PriceMonthly)
-            .SumAsync(price => price, ct);
+            .SumAsync(price => (decimal?)price, ct) ?? 0m;
 
         // Plan distribution
         var planDistribution = await _context.TenantSubscriptions.IgnoreQueryFilters()
@@ -48,7 +48,7 @@ public class AdminController : ControllerBase
             {
                 PlanName = g.Key,
                 Count = g.Count(),
-                Revenue = g.Sum(p => p.PriceMonthly)
+                Revenue = g.Sum(p => (decimal?)p.PriceMonthly) ?? 0m
             })
             .ToListAsync(ct);
 
@@ -122,6 +122,60 @@ public class AdminController : ControllerBase
             .ToListAsync(ct);
 
         return Ok(tenants);
+    }
+
+    // ── Users ───────────────────────────────────────────────────────────────
+
+    [HttpGet("users")]
+    public async Task<IActionResult> GetPlatformUsers(CancellationToken ct)
+    {
+        var users = await _context.Users.IgnoreQueryFilters()
+            .Include(u => u.Tenant)
+            .Include(u => u.Branch)
+            .OrderByDescending(u => u.CreatedAt)
+            .Select(u => new
+            {
+                u.UserId,
+                TenantName = u.Tenant != null ? u.Tenant.Name : "Kettan HQ",
+                BranchName = u.Branch != null ? u.Branch.Name : "N/A",
+                u.FirstName,
+                u.LastName,
+                u.Email,
+                u.ContactNo,
+                Role = u.Role.ToString(),
+                Status = u.Status.ToString(),
+                u.IsActive,
+                u.CreatedAt
+            })
+            .ToListAsync(ct);
+
+        return Ok(users);
+    }
+
+    [HttpPatch("users/{id:int}/status")]
+    public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] bool isActive, CancellationToken ct)
+    {
+        var user = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.UserId == id, ct);
+        if (user == null) return NotFound(new { message = "User not found." });
+
+        user.IsActive = isActive;
+        user.Status = isActive ? EmployeeStatus.Active : EmployeeStatus.Inactive;
+
+        await _context.SaveChangesAsync(ct);
+        return Ok(new { message = $"User status updated to {(isActive ? "Active" : "Inactive")}." });
+    }
+
+    [HttpDelete("users/{id:int}")]
+    public async Task<IActionResult> ArchiveUser(int id, CancellationToken ct)
+    {
+        var user = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.UserId == id, ct);
+        if (user == null) return NotFound(new { message = "User not found." });
+
+        user.IsActive = false;
+        user.Status = EmployeeStatus.Archived;
+
+        await _context.SaveChangesAsync(ct);
+        return Ok(new { message = "User has been archived." });
     }
 
     // ── Tenant Detail ───────────────────────────────────────────────────────
@@ -257,7 +311,7 @@ public class AdminController : ControllerBase
             {
                 Year = g.Key.Year,
                 Month = g.Key.Month,
-                Revenue = g.Sum(p => p.Amount)
+                Revenue = g.Sum(p => (decimal?)p.Amount) ?? 0m
             })
             .OrderBy(x => x.Year).ThenBy(x => x.Month)
             .ToListAsync(ct);
@@ -284,7 +338,7 @@ public class AdminController : ControllerBase
             {
                 PlanName = g.Key,
                 Count = g.Count(),
-                Revenue = g.Sum(p => p.PriceMonthly)
+                Revenue = g.Sum(p => (decimal?)p.PriceMonthly) ?? 0m
             })
             .ToListAsync(ct);
 
@@ -305,7 +359,7 @@ public class AdminController : ControllerBase
         // Total all-time revenue
         var totalRevenue = await _context.SubscriptionPayments.IgnoreQueryFilters()
             .Where(p => p.Status == PaymentStatus.Paid)
-            .SumAsync(p => p.Amount, ct);
+            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
 
         // New tenants this month
         var firstOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);

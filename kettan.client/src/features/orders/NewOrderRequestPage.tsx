@@ -59,6 +59,7 @@ export function NewOrderRequestPage() {
   const [requestType, setRequestType] = useState(REQUEST_TYPES[0].value);
   const [dispatchWindow, setDispatchWindow] = useState(DISPATCH_WINDOWS[1].value);
   const [dispatchDate, setDispatchDate] = useState(new Date().toISOString().split('T')[0]);
+  const [subject, setSubject] = useState('');
   const [requestNotes, setRequestNotes] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -171,6 +172,7 @@ export function NewOrderRequestPage() {
 
         const created = await createOrder({
           branchId: Number(selectedBranch),
+          subject: subject.trim() || undefined,
           requestType,
           priority: selectedPriority,
           dispatchWindow,
@@ -337,6 +339,25 @@ export function NewOrderRequestPage() {
                     {requesterLabel}
                   </Typography>
                 </Box>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <CategoryRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Dispatch Subject
+                  </Typography>
+                </Box>
+                <MuiTextField
+                  fullWidth
+                  size="small"
+                  value={subject}
+                  onChange={(event) => setSubject(event.target.value)}
+                  inputProps={{ maxLength: 80 }}
+                  placeholder="Example: Pre-weekend stock push"
+                />
               </Box>
             </Grid>
 

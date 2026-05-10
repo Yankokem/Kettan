@@ -126,20 +126,21 @@ public class NotificationService : INotificationService
             query = query.Where(n => !n.IsRead);
         }
 
-        return await query
+        var notifications = await query
             .Take(Math.Clamp(take, 1, 100))
-            .Select(n => new NotificationDto
-            {
-                NotificationId = n.NotificationId,
-                Title = n.Title,
-                Message = n.Message,
-                Type = n.Type.ToString(),
-                ReferenceType = n.ReferenceType.HasValue ? n.ReferenceType.Value.ToString() : null,
-                ReferenceId = n.ReferenceId,
-                IsRead = n.IsRead,
-                CreatedAt = n.CreatedAt
-            })
             .ToListAsync();
+
+        return notifications.Select(n => new NotificationDto
+        {
+            NotificationId = n.NotificationId,
+            Title = n.Title,
+            Message = n.Message,
+            Type = n.Type.ToString(),
+            ReferenceType = n.ReferenceType?.ToString(),
+            ReferenceId = n.ReferenceId,
+            IsRead = n.IsRead,
+            CreatedAt = n.CreatedAt
+        }).ToList();
     }
 
     public async Task<bool> MarkAsReadAsync(int notificationId)

@@ -49,6 +49,8 @@ public class SupplyRequestService : ISupplyRequestService
                 .ThenInclude(o => o.ArrivedConfirmedByUser)
             .Include(r => r.Orders)
                 .ThenInclude(o => o.CompletedByUser)
+            .Include(r => r.Orders)
+                .ThenInclude(o => o.Shipment)
             .AsQueryable();
 
         if (IsBranchScopedUser())
@@ -119,7 +121,7 @@ public class SupplyRequestService : ISupplyRequestService
         var userId = EnsureUserContext();
 
         var branchId = await ResolveBranchIdAsync(dto.BranchId, tenantId);
-        await ValidateItemsAsync(dto.Items, tenantId);
+        var itemCostLookup = await ValidateItemsAsync(dto.Items, tenantId);
 
         var now = DateTime.UtcNow;
 
@@ -133,6 +135,7 @@ public class SupplyRequestService : ISupplyRequestService
             Priority = Enum.TryParse<Priority>(dto.Priority, true, out var priority) ? priority : Priority.Normal,
             DispatchWindow = Enum.TryParse<DispatchWindow>(dto.DispatchWindow, true, out var dispatchWindow) ? dispatchWindow : DispatchWindow.Today,
             DispatchDate = dto.DispatchDate,
+            Subject = NormalizeSubject(dto.Subject),
             Notes = NormalizeOptional(dto.Notes),
             CreatedAt = now,
             UpdatedAt = now,
@@ -141,9 +144,12 @@ public class SupplyRequestService : ISupplyRequestService
                 TenantId = _currentUser.TenantId.Value,
                 ItemId = i.ItemId,
                 QuantityRequested = i.QuantityRequested,
-                QuantityApproved = null
+                QuantityApproved = null,
+                UnitCostSnapshot = itemCostLookup.TryGetValue(i.ItemId, out var unitCost) ? unitCost : 0
             }).ToList()
         };
+
+        RecalculateRequestTotals(request);
 
         _context.SupplyRequests.Add(request);
         await _context.SaveChangesAsync();
@@ -160,7 +166,7 @@ public class SupplyRequestService : ISupplyRequestService
     public async Task<SupplyRequestDto?> UpdateDraftAsync(int requestId, UpdateSupplyRequestDto dto)
     {
         var tenantId = EnsureTenantContext();
-        await ValidateItemsAsync(dto.Items, tenantId);
+        var itemCostLookup = await ValidateItemsAsync(dto.Items, tenantId);
 
         var request = await _context.SupplyRequests
             .Include(r => r.Items)
@@ -186,6 +192,7 @@ public class SupplyRequestService : ISupplyRequestService
         request.Priority = Enum.TryParse<Priority>(dto.Priority, true, out var priority) ? priority : request.Priority;
         request.DispatchWindow = Enum.TryParse<DispatchWindow>(dto.DispatchWindow, true, out var dispatchWindow) ? dispatchWindow : request.DispatchWindow;
         request.DispatchDate = dto.DispatchDate;
+        request.Subject = NormalizeSubject(dto.Subject);
         request.Notes = NormalizeOptional(dto.Notes);
         request.UpdatedAt = DateTime.UtcNow;
 
@@ -200,8 +207,11 @@ public class SupplyRequestService : ISupplyRequestService
             RequestId = request.RequestId,
             ItemId = i.ItemId,
             QuantityRequested = i.QuantityRequested,
-            QuantityApproved = null
+            QuantityApproved = null,
+            UnitCostSnapshot = itemCostLookup.TryGetValue(i.ItemId, out var unitCost) ? unitCost : 0
         }).ToList();
+
+        RecalculateRequestTotals(request);
 
         await _context.SaveChangesAsync();
 
@@ -247,6 +257,8 @@ public class SupplyRequestService : ISupplyRequestService
         {
             request.Notes = normalizedNotes;
         }
+
+        RecalculateRequestTotals(request);
 
         await _context.SaveChangesAsync();
 
@@ -327,6 +339,8 @@ public class SupplyRequestService : ISupplyRequestService
 
             requestItem.QuantityApproved = approvedQty;
         }
+
+        RecalculateRequestTotals(request);
 
         if (await _context.Orders.AnyAsync(o => o.RequestId == request.RequestId))
         {
@@ -423,6 +437,7 @@ public class SupplyRequestService : ISupplyRequestService
             requestItem.QuantityApproved = 0;
         }
 
+        RecalculateRequestTotals(request);
         request.Notes = BuildRejectionNotes(request.Notes, dto.Reason, dto.Notes);
 
         await _context.SaveChangesAsync();
@@ -474,6 +489,12 @@ public class SupplyRequestService : ISupplyRequestService
 
         if (existingDraft != null)
         {
+            var autoDraftItemIds = validAlerts.Select(a => a.ItemId).ToList();
+            var autoDraftItemCosts = await _context.Items
+                .Where(i => i.TenantId == tenantId && autoDraftItemIds.Contains(i.ItemId))
+                .Select(i => new { i.ItemId, i.UnitCost })
+                .ToDictionaryAsync(i => i.ItemId, i => i.UnitCost);
+
             foreach (var alert in validAlerts)
             {
                 var neededQty = alert.Threshold - alert.StockLevel;
@@ -485,6 +506,11 @@ public class SupplyRequestService : ISupplyRequestService
                     {
                         existingItem.QuantityRequested = neededQty;
                     }
+
+                    if (existingItem.UnitCostSnapshot <= 0 && autoDraftItemCosts.TryGetValue(alert.ItemId, out var existingCost))
+                    {
+                        existingItem.UnitCostSnapshot = existingCost;
+                    }
                 }
                 else
                 {
@@ -493,11 +519,13 @@ public class SupplyRequestService : ISupplyRequestService
                         TenantId = existingDraft.TenantId,
                         RequestId = existingDraft.RequestId,
                         ItemId = alert.ItemId,
-                        QuantityRequested = neededQty
+                        QuantityRequested = neededQty,
+                        UnitCostSnapshot = autoDraftItemCosts.TryGetValue(alert.ItemId, out var itemCost) ? itemCost : 0
                     });
                 }
             }
 
+            RecalculateRequestTotals(existingDraft);
             existingDraft.UpdatedAt = now;
             await _context.SaveChangesAsync();
             await BroadcastSupplyRequestUpdateAsync(existingDraft.RequestId);
@@ -533,6 +561,19 @@ public class SupplyRequestService : ISupplyRequestService
                 QuantityRequested = a.Threshold - a.StockLevel
             }).ToList()
         };
+
+        var newRequestItemIds = newRequest.Items.Select(i => i.ItemId).Distinct().ToList();
+        var newRequestItemCosts = await _context.Items
+            .Where(i => i.TenantId == tenantId && newRequestItemIds.Contains(i.ItemId))
+            .Select(i => new { i.ItemId, i.UnitCost })
+            .ToDictionaryAsync(i => i.ItemId, i => i.UnitCost);
+
+        foreach (var item in newRequest.Items)
+        {
+            item.UnitCostSnapshot = newRequestItemCosts.TryGetValue(item.ItemId, out var itemCost) ? itemCost : 0;
+        }
+
+        RecalculateRequestTotals(newRequest);
 
         _context.SupplyRequests.Add(newRequest);
         await _context.SaveChangesAsync();
@@ -578,6 +619,7 @@ public class SupplyRequestService : ISupplyRequestService
         request.Status = SupplyRequestStatus.Cancelled;
         request.UpdatedAt = DateTime.UtcNow;
 
+        RecalculateRequestTotals(request);
         request.Notes = BuildRejectionNotes(request.Notes, dto.Reason, dto.Notes);
 
         await _context.SaveChangesAsync();
@@ -623,6 +665,7 @@ public class SupplyRequestService : ISupplyRequestService
             .Include(r => r.Items)
                 .ThenInclude(i => i.Item)
             .Include(r => r.Orders)
+                .ThenInclude(o => o.Shipment)
             .Where(r => r.TenantId == tenantId 
                 && r.BranchId == branchId 
                 && !terminalStatuses.Contains(r.Status))
@@ -663,7 +706,7 @@ public class SupplyRequestService : ISupplyRequestService
         return branchId;
     }
 
-    private async Task ValidateItemsAsync(IEnumerable<CreateSupplyRequestItemDto> items, int tenantId)
+    private async Task<Dictionary<int, decimal>> ValidateItemsAsync(IEnumerable<CreateSupplyRequestItemDto> items, int tenantId)
     {
         var itemRows = items.ToList();
 
@@ -686,13 +729,15 @@ public class SupplyRequestService : ISupplyRequestService
 
         var validItems = await _context.Items
             .Where(i => i.TenantId == tenantId && itemIds.Contains(i.ItemId))
-            .Select(i => i.ItemId)
+            .Select(i => new { i.ItemId, i.UnitCost })
             .ToListAsync();
 
         if (validItems.Count != itemIds.Count)
         {
             throw new InvalidOperationException("One or more requested items are invalid.");
         }
+
+        return validItems.ToDictionary(i => i.ItemId, i => i.UnitCost);
     }
 
     private async Task<SupplyRequest?> GetHydratedByIdAsync(int requestId, int tenantId)
@@ -706,6 +751,8 @@ public class SupplyRequestService : ISupplyRequestService
                 .ThenInclude(o => o.ArrivedConfirmedByUser)
             .Include(r => r.Orders)
                 .ThenInclude(o => o.CompletedByUser)
+            .Include(r => r.Orders)
+                .ThenInclude(o => o.Shipment)
             .FirstOrDefaultAsync(r => r.RequestId == requestId && r.TenantId == tenantId);
     }
 
@@ -770,6 +817,55 @@ public class SupplyRequestService : ISupplyRequestService
         return entries.Count == 0 ? null : string.Join(Environment.NewLine, entries);
     }
 
+    private static string? NormalizeSubject(string? value)
+    {
+        var normalized = NormalizeOptional(value);
+        if (normalized != null && normalized.Length > 80)
+        {
+            throw new InvalidOperationException("Subject cannot exceed 80 characters.");
+        }
+
+        return normalized;
+    }
+
+    private static void RecalculateRequestTotals(SupplyRequest request)
+    {
+        var items = request.Items ?? [];
+
+        var totalRequested = items.Sum(item =>
+            item.QuantityRequested * ResolveUnitCost(item));
+
+        var totalApproved = items.Sum(item =>
+            Math.Max(item.QuantityApproved ?? 0, 0) * ResolveUnitCost(item));
+
+        var totalFulfilled = items.Sum(item =>
+            ResolveFulfilledQuantity(item) * ResolveUnitCost(item));
+
+        request.TotalRequestedValue = Math.Round(totalRequested, 2, MidpointRounding.AwayFromZero);
+        request.TotalApprovedValue = Math.Round(totalApproved, 2, MidpointRounding.AwayFromZero);
+        request.TotalFulfilledValue = Math.Round(totalFulfilled, 2, MidpointRounding.AwayFromZero);
+    }
+
+    private static decimal ResolveFulfilledQuantity(SupplyRequestItem item)
+    {
+        if (item.IsRejectedDuringPicking)
+        {
+            return 0;
+        }
+
+        return item.SendQuantity ?? item.QuantityApproved ?? 0;
+    }
+
+    private static decimal ResolveUnitCost(SupplyRequestItem item)
+    {
+        if (item.UnitCostSnapshot > 0)
+        {
+            return item.UnitCostSnapshot;
+        }
+
+        return item.Item?.UnitCost ?? 0;
+    }
+
     private bool IsBranchScopedUser()
     {
         return _currentUser.BranchId.HasValue && !IsHqRole();
@@ -783,10 +879,15 @@ public class SupplyRequestService : ISupplyRequestService
     private static SupplyRequestDto MapToDto(SupplyRequest request)
     {
         var order = request.Orders?.OrderByDescending(o => o.PushedToFulfillmentAt).FirstOrDefault();
+        var dispatchScheduleStatus = TransactionScheduleStatus.Resolve(
+            request.DispatchDate,
+            order?.Shipment?.DispatchDate);
 
         return new SupplyRequestDto
         {
             RequestId = request.RequestId,
+            ReferenceNumber = request.ReferenceNumber,
+            Subject = request.Subject,
             BranchId = request.BranchId,
             BranchName = request.Branch?.Name ?? string.Empty,
             RequestedByUserId = request.RequestedBy_UserId,
@@ -798,7 +899,11 @@ public class SupplyRequestService : ISupplyRequestService
             Priority = request.Priority.ToString(),
             DispatchWindow = request.DispatchWindow.ToString(),
             DispatchDate = request.DispatchDate,
+            DispatchScheduleStatus = dispatchScheduleStatus,
             Notes = request.Notes,
+            TotalRequestedValue = request.TotalRequestedValue,
+            TotalApprovedValue = request.TotalApprovedValue,
+            TotalFulfilledValue = request.TotalFulfilledValue,
             CreatedAt = request.CreatedAt,
             UpdatedAt = request.UpdatedAt,
 
@@ -821,6 +926,7 @@ public class SupplyRequestService : ISupplyRequestService
                 ItemSku = item.Item?.SKU ?? string.Empty,
                 QuantityRequested = item.QuantityRequested,
                 QuantityApproved = item.QuantityApproved,
+                UnitCostSnapshot = item.UnitCostSnapshot,
                 
                 IsPicked = item.IsPicked,
                 SendQuantity = item.SendQuantity,

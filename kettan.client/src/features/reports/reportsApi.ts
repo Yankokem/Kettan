@@ -62,6 +62,11 @@ export interface CostTrendPointDto {
 export interface BranchSpendDto {
   branchId: number;
   branchName: string;
+  requestedValue: number;
+  approvedValue: number;
+  fulfilledValue: number;
+  returnedValue: number;
+  lossValue: number;
   totalSpend: number;
 }
 
@@ -137,6 +142,9 @@ export interface BranchSupplyHistoryDto {
   referenceNumber: string;
   status: string;
   priority: string;
+  requestedValue: number;
+  approvedValue: number;
+  fulfilledValue: number;
   fulfillmentCost: number;
   isFullyFulfilled: boolean;
   createdAt: string;

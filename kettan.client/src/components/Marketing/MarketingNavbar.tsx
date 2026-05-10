@@ -31,10 +31,10 @@ export function MarketingNavbar() {
     <nav
       className="sticky top-0 z-50 transition-all duration-300"
       style={{
-        backgroundColor: scrolled ? "rgba(253, 250, 245, 0.95)" : "transparent",
-        backdropFilter: scrolled ? "blur(12px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(107,76,42,0.1)" : "1px solid transparent",
-        boxShadow: scrolled ? "0 2px 20px rgba(107,76,42,0.07)" : "none",
+        background: "linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)",
+        backdropFilter: "blur(12px)",
+        borderBottom: "1px solid rgba(107, 76, 42, 0.1)",
+        boxShadow: scrolled ? "0 4px 20px rgba(107, 76, 42, 0.08)" : "none",
       }}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -52,9 +52,9 @@ export function MarketingNavbar() {
                 to={link.to}
                 className="px-4 py-2 rounded-lg transition-all duration-200 text-sm"
                 style={{
-                  color: isActive(link.to) ? "#6B4C2A" : "#4B5563",
-                  fontWeight: isActive(link.to) ? 600 : 500,
-                  backgroundColor: isActive(link.to) ? "rgba(107,76,42,0.08)" : "transparent",
+                  color: isActive(link.to) ? "#6B4C2A" : "#6B4C2A",
+                  fontWeight: isActive(link.to) ? 700 : 500,
+                  backgroundColor: isActive(link.to) ? "rgba(107, 76, 42, 0.08)" : "transparent",
                 }}
               >
                 {link.label}
@@ -69,8 +69,8 @@ export function MarketingNavbar() {
               className="px-4 py-2 rounded-lg text-sm transition-all duration-200 border"
               style={{
                 color: "#6B4C2A",
-                borderColor: "rgba(107,76,42,0.35)",
-                fontWeight: 500,
+                borderColor: "rgba(107, 76, 42, 0.35)",
+                fontWeight: 600,
               }}
             >
               Login
@@ -80,18 +80,18 @@ export function MarketingNavbar() {
               className="px-4 py-2 rounded-lg text-sm text-white transition-all duration-200"
               style={{
                 backgroundColor: "#6B4C2A",
-                fontWeight: 600,
-                boxShadow: "0 2px 8px rgba(107,76,42,0.3)",
+                color: "#FFFFFF",
+                fontWeight: 700,
+                boxShadow: "0 2px 8px rgba(107, 76, 42, 0.3)",
               }}
             >
               Get Started →
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 rounded-lg"
-            style={{ color: "#6B4C2A" }}
+            <button
+              className="md:hidden p-2 rounded-lg"
+              style={{ color: "#6B4C2A" }}
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -114,8 +114,8 @@ export function MarketingNavbar() {
               to={link.to}
               className="block px-4 py-2.5 rounded-lg text-sm"
               style={{
-                color: isActive(link.to) ? "#6B4C2A" : "#4B5563",
-                fontWeight: isActive(link.to) ? 600 : 500,
+                color: isActive(link.to) ? "#6B4C2A" : "#6B4C2A",
+                fontWeight: isActive(link.to) ? 700 : 500,
                 backgroundColor: isActive(link.to) ? "rgba(107,76,42,0.08)" : "transparent",
               }}
             >

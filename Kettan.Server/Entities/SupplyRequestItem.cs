@@ -29,6 +29,9 @@ public class SupplyRequestItem : ITenantEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal? QuantityApproved { get; set; }
 
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal UnitCostSnapshot { get; set; }
+
     // ── Picking workflow ──
     public bool IsPicked { get; set; } = false;
 

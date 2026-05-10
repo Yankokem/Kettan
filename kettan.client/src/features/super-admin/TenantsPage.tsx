@@ -4,19 +4,33 @@ import { useNavigate } from '@tanstack/react-router';
 
 import { DataTable, type ColumnDef, type QuickFilter } from '../../components/UI/DataTable';
 import { SearchInput } from '../../components/UI/SearchInput';
+import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
+import { StatCard } from '../../components/UI/StatCard';
+import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import PaymentRoundedIcon from '@mui/icons-material/PaymentRounded';
+import GroupRoundedIcon from '@mui/icons-material/GroupRounded';
 import { fetchTenants, type TenantRow } from './tenantsApi';
+import { api } from '../../utils/api';
 
 export function TenantsPage() {
   const navigate = useNavigate();
   const [tenants, setTenants] = useState<TenantRow[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
     setLoading(true);
-    fetchTenants(searchQuery, statusFilter)
-      .then(setTenants)
+    Promise.all([
+      fetchTenants(searchQuery, statusFilter),
+      api.get('/api/admin/dashboard').then(res => res.data)
+    ])
+      .then(([tenantData, dashboardData]) => {
+        setTenants(tenantData);
+        setStats(dashboardData);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [searchQuery, statusFilter]);
@@ -116,16 +130,52 @@ export function TenantsPage() {
 
   return (
     <Box sx={{ pb: 3, display: 'grid', gap: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', mb: 0.5 }}>
-            Tenant Management
-          </Typography>
-          <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>
-            Monitor and manage all platform subscribers, their plans, and account status.
-          </Typography>
+      <LoadingOverlay open={loading} />
+
+      {stats && (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', lg: 'repeat(4,1fr)' },
+            gap: 2.5,
+            mb: 1,
+          }}
+        >
+          <StatCard
+            label="Total Tenants"
+            value={stats.totalTenants}
+            sub={`${stats.pendingPaymentTenants} pending payment`}
+            icon={<StorefrontRoundedIcon />}
+            accentClass="stat-accent-brown"
+            iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+          />
+          <StatCard
+            label="Active Subscribers"
+            value={stats.activeTenants}
+            sub={`of ${stats.totalTenants} total`}
+            icon={<CheckCircleOutlineRoundedIcon />}
+            accentClass="stat-accent-sage"
+            iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+          />
+          <StatCard
+            label="Pending Payment"
+            value={stats.pendingPaymentTenants}
+            sub="Requires attention"
+            icon={<PaymentRoundedIcon />}
+            accentClass="stat-accent-gold"
+            iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+          />
+          <StatCard
+            label="Total Platform Users"
+            value={stats.totalUsers}
+            sub={`Across ${stats.totalBranches} branches`}
+            icon={<GroupRoundedIcon />}
+            accentClass="stat-accent-brown"
+            iconBg="linear-gradient(135deg, #C9A84C 0%, #E8D3A9 100%)"
+          />
         </Box>
-      </Box>
+      )}
+
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <DataTable
@@ -136,7 +186,7 @@ export function TenantsPage() {
           activeQuickFilter={statusFilter}
           onQuickFilterChange={setStatusFilter}
           onRowClick={(row) => navigate({ to: '/tenants/$tenantId', params: { tenantId: String(row.tenantId) } })}
-          emptyMessage={loading ? 'Loading tenants…' : 'No tenants found.'}
+          emptyMessage={loading ? ' ' : 'No tenants found.'}
           toolbar={
             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
               <SearchInput

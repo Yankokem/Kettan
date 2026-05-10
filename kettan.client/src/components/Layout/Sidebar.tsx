@@ -23,6 +23,7 @@ import BarChartRoundedIcon          from '@mui/icons-material/BarChartRounded';
 import BadgeRoundedIcon             from '@mui/icons-material/BadgeRounded';
 import ExpandMoreRoundedIcon        from '@mui/icons-material/ExpandMoreRounded';
 import ExpandLessRoundedIcon        from '@mui/icons-material/ExpandLessRounded';
+import GroupRoundedIcon             from '@mui/icons-material/GroupRounded';
 
 import ShoppingCartRoundedIcon      from '@mui/icons-material/ShoppingCartRounded';
 import ScaleRoundedIcon             from '@mui/icons-material/ScaleRounded';
@@ -70,8 +71,8 @@ const MAIN_NAV: NavItem[] = [
 const SUPER_ADMIN_NAV: NavItem[] = [
   { text: 'Dashboard',          icon: <DashboardRoundedIcon />,          path: '/' },
   { text: 'Tenant Management',  icon: <StoreRoundedIcon />,              path: '/tenants' },
+  { text: 'Platform Users',     icon: <GroupRoundedIcon />,              path: '/platform-users' },
   { text: 'Platform Analytics', icon: <AnalyticsRoundedIcon />,          path: '/analytics' },
-  { text: 'Help & Support',    icon: <BadgeRoundedIcon />,               path: '/help' },
 ];
 
 function NavLink({

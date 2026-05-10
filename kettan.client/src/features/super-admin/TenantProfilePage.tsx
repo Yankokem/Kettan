@@ -10,6 +10,7 @@ import { Button } from '../../components/UI/Button';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
+import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
 import { fetchTenantDetail, toggleTenantStatus, type TenantDetail } from './tenantsApi';
 
 export function TenantProfilePage() {
@@ -31,11 +32,7 @@ export function TenantProfilePage() {
   useEffect(() => { loadData(); }, [tenantId]);
 
   if (loading || !data) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>{loading ? 'Loading…' : 'Tenant not found.'}</Typography>
-      </Box>
-    );
+    return <LoadingOverlay open={true} />;
   }
 
   const { tenant, branches, userCount, subscription, payments } = data;

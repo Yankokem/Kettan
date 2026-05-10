@@ -8,6 +8,7 @@ public class SupplyRequestItemDto
     public string ItemSku { get; set; } = string.Empty;
     public decimal QuantityRequested { get; set; }
     public decimal? QuantityApproved { get; set; }
+    public decimal UnitCostSnapshot { get; set; }
 
     // Workflow fields
     public bool IsPicked { get; set; }
@@ -23,6 +24,7 @@ public class SupplyRequestDto
 {
     public int RequestId { get; set; }
     public string? ReferenceNumber { get; set; }
+    public string? Subject { get; set; }
     public int BranchId { get; set; }
     public string BranchName { get; set; } = string.Empty;
     public int RequestedByUserId { get; set; }
@@ -32,7 +34,11 @@ public class SupplyRequestDto
     public string Priority { get; set; } = "normal";
     public string DispatchWindow { get; set; } = "today";
     public DateTime? DispatchDate { get; set; }
+    public string DispatchScheduleStatus { get; set; } = "NoSchedule";
     public string? Notes { get; set; }
+    public decimal TotalRequestedValue { get; set; }
+    public decimal TotalApprovedValue { get; set; }
+    public decimal TotalFulfilledValue { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
@@ -56,6 +62,7 @@ public class CreateSupplyRequestDto
 {
     public int? BranchId { get; set; }
     public string? ReferenceNumber { get; set; }
+    public string? Subject { get; set; }
     public string RequestType { get; set; } = "manual";
     public string Priority { get; set; } = "normal";
     public string DispatchWindow { get; set; } = "today";
@@ -67,6 +74,7 @@ public class CreateSupplyRequestDto
 public class UpdateSupplyRequestDto
 {
     public string? ReferenceNumber { get; set; }
+    public string? Subject { get; set; }
     public string RequestType { get; set; } = "manual";
     public string Priority { get; set; } = "normal";
     public string DispatchWindow { get; set; } = "today";

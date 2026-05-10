@@ -49,6 +49,7 @@ import { canAccessModule } from '../utils/roleHelpers';
 import { TenantsPage } from '../features/super-admin/TenantsPage';
 import { TenantProfilePage } from '../features/super-admin/TenantProfilePage';
 import { AnalyticsPage } from '../features/analytics/AnalyticsPage';
+import { UsersManagementPage } from '../features/super-admin/UsersManagementPage';
 import { HelpPage } from '../features/support/HelpPage';
 import { MarketingLayout } from '../components/Marketing/MarketingLayout';
 import { UserProfilePage } from '../features/auth/UserProfilePage';
@@ -378,6 +379,12 @@ const analyticsRoute = createRoute({
   component: AnalyticsPage,
 });
 
+const platformUsersRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/platform-users',
+  component: UsersManagementPage,
+});
+
 const helpRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/help',
@@ -457,6 +464,7 @@ const routeTree = rootRoute.addChildren([
     tenantsRoute,
     tenantProfileRoute,
     analyticsRoute,
+    platformUsersRoute,
     helpRoute,
     userProfileRoute,
     userProfileEditRoute,

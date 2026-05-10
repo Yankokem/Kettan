@@ -27,6 +27,9 @@ public class ReturnItem : ITenantEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal QuantityReturned { get; set; }
 
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal UnitCostSnapshot { get; set; }
+
     [Required]
     public ReturnItemReason ReasonCode { get; set; } = ReturnItemReason.Damaged;
 

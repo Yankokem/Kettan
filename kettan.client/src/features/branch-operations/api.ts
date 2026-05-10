@@ -7,6 +7,7 @@ export interface SupplyRequestItem {
   itemSku: string;
   quantityRequested: number;
   quantityApproved: number | null;
+  unitCostSnapshot: number;
   isPicked: boolean;
   sendQuantity: number | null;
   isRejectedDuringPicking: boolean;
@@ -20,6 +21,7 @@ export interface SupplyRequestItem {
 export interface SupplyRequest {
   requestId: number;
   referenceNumber?: string | null;
+  subject?: string | null;
   branchId: number;
   branchName: string;
   requestedByUserId: number;
@@ -29,7 +31,11 @@ export interface SupplyRequest {
   priority: string;
   dispatchWindow: string;
   dispatchDate: string | null;
+  dispatchScheduleStatus: string;
   notes: string | null;
+  totalRequestedValue: number;
+  totalApprovedValue: number;
+  totalFulfilledValue: number;
   createdAt: string;
   updatedAt: string;
   orderId?: number | null;
@@ -44,6 +50,7 @@ export interface SupplyRequest {
 export interface CreateSupplyRequestPayload {
   branchId?: number;
   referenceNumber?: string;
+  subject?: string;
   requestType: string;
   priority: string;
   dispatchWindow: string;
@@ -73,6 +80,7 @@ export interface ReturnItemDto {
   itemName: string;
   itemSku: string;
   quantityReturned: number;
+  unitCostSnapshot: number;
   quantityInspected: number | null;
   reasonCode: string;
   disposition: string;
@@ -93,6 +101,7 @@ export interface ReturnScheduleConflict {
 export interface ReturnRecord {
   returnId: number;
   orderId: number;
+  subject: string | null;
   branchId: number;
   branchName: string;
   status: string;
@@ -101,6 +110,9 @@ export interface ReturnRecord {
   rejectionReason: string | null;
   photoUrls: string | null;
   creditAmount: number | null;
+  totalReturnedValue: number;
+  totalLossValue: number;
+  pickupScheduleStatus: string;
   loggedAt: string;
   submittedAt: string | null;
   acknowledgedAt: string | null;
@@ -179,6 +191,7 @@ export async function fetchEligibleOrderDetail(orderId: number): Promise<ReturnE
 
 export async function createReturnDraft(payload: {
   orderId: number;
+  subject?: string;
   resolution: string;
   reason?: string;
   photoUrls?: string;
@@ -191,6 +204,7 @@ export async function createReturnDraft(payload: {
 export async function updateReturnDraft(
   returnId: number,
   payload: {
+    subject?: string;
     resolution: string;
     reason?: string;
     photoUrls?: string;
@@ -293,11 +307,16 @@ export async function sendReturnMessage(returnId: number, content: string): Prom
 export interface BranchOrder {
   orderId: number;
   requestId: number;
+  subject?: string | null;
   branchId: number;
   branchName: string;
   status: string;
+  dispatchScheduleStatus: string;
   pushedToFulfillmentAt: string;
   itemsCount: number;
+  totalRequestedValue: number;
+  totalApprovedValue: number;
+  totalFulfilledValue: number;
   fulfillmentCost: number;
   isHqInitiated: boolean;
   dispatchReason: string | null;
@@ -352,6 +371,7 @@ export interface OrderDetail extends BranchOrder {
 
 export interface CreateOrderPayload {
   branchId: number;
+  subject?: string;
   requestType?: string;
   priority?: string;
   dispatchWindow?: string;

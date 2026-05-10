@@ -37,6 +37,7 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
   
   return {
     requestNumber,
+    subject: request.subject ?? undefined,
     status: (request.orderStatus || request.status) as SupplyRequestDetailViewModel['status'],
     branchName: request.branchName,
     requestedByName: request.requestedByName,
@@ -47,7 +48,11 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
     priority: (request.priority?.charAt(0).toUpperCase() + request.priority?.slice(1)) as SupplyRequestDetailViewModel['priority'],
     requestType: request.requestType,
     dispatchWindow: request.dispatchWindow,
+    dispatchScheduleStatus: request.dispatchScheduleStatus,
     notes: request.notes ?? '',
+    totalRequestedValue: request.totalRequestedValue,
+    totalApprovedValue: request.totalApprovedValue,
+    totalFulfilledValue: request.totalFulfilledValue,
     linkedOrderId: request.orderId?.toString(),
     items: request.items.map((item) => ({
       id: String(item.requestItemId),

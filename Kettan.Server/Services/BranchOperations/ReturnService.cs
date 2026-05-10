@@ -177,6 +177,7 @@ public class ReturnService : IReturnService
             TenantId = tenantId,
             OrderId = dto.OrderId,
             BranchId = _currentUser.BranchId.Value,
+            Subject = NormalizeSubject(dto.Subject),
             Reason = NormalizeOptional(dto.Reason),
             PhotoUrls = NormalizeOptional(dto.PhotoUrls),
             Status = ReturnStatus.Draft,
@@ -184,6 +185,8 @@ public class ReturnService : IReturnService
             LoggedAt = DateTime.UtcNow,
             Items = BuildReturnItems(tenantId, order, dto.Items)
         };
+
+        RecalculateReturnValues(returnEntry);
 
         _context.Returns.Add(returnEntry);
         await _context.SaveChangesAsync();
@@ -230,11 +233,13 @@ public class ReturnService : IReturnService
         }
 
         returnEntry.Reason = NormalizeOptional(dto.Reason);
+        returnEntry.Subject = NormalizeSubject(dto.Subject);
         returnEntry.PhotoUrls = NormalizeOptional(dto.PhotoUrls);
         returnEntry.Resolution = ParseResolution(dto.Resolution);
 
         _context.ReturnItems.RemoveRange(returnEntry.Items);
         returnEntry.Items = BuildReturnItems(tenantId, returnEntry.Order, dto.Items);
+        RecalculateReturnValues(returnEntry);
 
         await _context.SaveChangesAsync();
         return await GetByIdAsync(returnId);
@@ -745,6 +750,7 @@ public class ReturnService : IReturnService
             returnItem.InspectionRemarks = NormalizeOptional(payload.InspectionRemarks);
         }
 
+        RecalculateReturnValues(returnEntry);
         await _context.SaveChangesAsync();
         await BroadcastReturnUpdateAsync(returnId);
         return await GetByIdAsync(returnId);
@@ -797,7 +803,7 @@ public class ReturnService : IReturnService
             returnEntry.CreditAmount = returnEntry.Items.Sum(i =>
             {
                 var qty = i.QuantityInspected ?? i.QuantityReturned;
-                var unitCost = i.Item?.UnitCost ?? 0;
+                var unitCost = ResolveUnitCost(i);
                 return qty * unitCost;
             });
         }
@@ -806,6 +812,8 @@ public class ReturnService : IReturnService
             returnEntry.CreditAmount = null;
             await CreateReplacementOrderAsync(returnEntry, userId, now);
         }
+
+        RecalculateReturnValues(returnEntry);
 
         returnEntry.Status = ReturnStatus.Completed;
         returnEntry.CompletedAt = now;
@@ -920,6 +928,14 @@ public class ReturnService : IReturnService
             .ToDictionary(
                 g => g.Key,
                 g => g.Sum(i => i.SendQuantity ?? i.QuantityApproved ?? i.QuantityRequested));
+        var unitCostByItem = orderItems
+            .GroupBy(i => i.ItemId)
+            .ToDictionary(
+                g => g.Key,
+                g => g
+                    .Select(ResolveUnitCost)
+                    .DefaultIfEmpty(0)
+                    .Average());
 
         var dedupedIds = new HashSet<int>();
         var rows = new List<ReturnItem>(items.Count);
@@ -956,6 +972,7 @@ public class ReturnService : IReturnService
                 TenantId = tenantId,
                 ItemId = line.ItemId,
                 QuantityReturned = line.QuantityReturned,
+                UnitCostSnapshot = unitCostByItem.TryGetValue(line.ItemId, out var unitCost) ? unitCost : 0,
                 ReasonCode = reasonCode,
                 Disposition = ReturnItemDisposition.Pending,
                 Notes = NormalizeOptional(line.Notes),
@@ -1150,6 +1167,7 @@ public class ReturnService : IReturnService
             RequestType = RequestType.Replacement,
             Priority = Priority.High,
             DispatchWindow = DispatchWindow.Today,
+            Subject = NormalizeReplacementSubject(returnEntry.Subject, returnEntry.ReturnId),
             Notes = $"Auto-generated replacement for return RT-{returnEntry.ReturnId}.",
             CreatedAt = now,
             UpdatedAt = now,
@@ -1158,9 +1176,12 @@ public class ReturnService : IReturnService
                 TenantId = returnEntry.TenantId,
                 ItemId = i.ItemId,
                 QuantityRequested = i.QuantityInspected ?? i.QuantityReturned,
-                QuantityApproved = i.QuantityInspected ?? i.QuantityReturned
+                QuantityApproved = i.QuantityInspected ?? i.QuantityReturned,
+                UnitCostSnapshot = ResolveUnitCost(i)
             }).ToList()
         };
+
+        RecalculateSupplyRequestTotals(replacementRequest);
 
         _context.SupplyRequests.Add(replacementRequest);
         await _context.SaveChangesAsync();
@@ -1207,6 +1228,7 @@ public class ReturnService : IReturnService
         {
             ReturnId = row.ReturnId,
             OrderId = row.OrderId,
+            Subject = row.Subject,
             BranchId = row.BranchId,
             BranchName = row.Branch?.Name ?? string.Empty,
             Status = row.Status.ToString(),
@@ -1215,6 +1237,9 @@ public class ReturnService : IReturnService
             RejectionReason = row.RejectionReason,
             PhotoUrls = row.PhotoUrls,
             CreditAmount = row.CreditAmount,
+            TotalReturnedValue = row.TotalReturnedValue,
+            TotalLossValue = row.TotalLossValue,
+            PickupScheduleStatus = TransactionScheduleStatus.Resolve(row.PickupScheduledAt, row.DispatchedAt),
             SubmittedByName = row.SubmittedBy_User != null ? $"{row.SubmittedBy_User.FirstName} {row.SubmittedBy_User.LastName}".Trim() : null,
             LoggedAt = row.LoggedAt,
             SubmittedAt = row.SubmittedAt,
@@ -1236,6 +1261,7 @@ public class ReturnService : IReturnService
                 ItemName = i.Item?.Name ?? string.Empty,
                 ItemSku = i.Item?.SKU ?? string.Empty,
                 QuantityReturned = i.QuantityReturned,
+                UnitCostSnapshot = i.UnitCostSnapshot,
                 QuantityInspected = i.QuantityInspected,
                 ReasonCode = i.ReasonCode.ToString(),
                 Disposition = i.Disposition.ToString(),
@@ -1245,6 +1271,102 @@ public class ReturnService : IReturnService
                 PhotoUrls = i.PhotoUrls
             }).ToList()
         };
+    }
+
+    private static void RecalculateReturnValues(Return row)
+    {
+        var items = row.Items ?? [];
+
+        row.TotalReturnedValue = Math.Round(
+            items.Sum(i => i.QuantityReturned * ResolveUnitCost(i)),
+            2,
+            MidpointRounding.AwayFromZero);
+
+        row.TotalLossValue = Math.Round(
+            items.Sum(i => ResolveLossQuantity(i) * ResolveUnitCost(i)),
+            2,
+            MidpointRounding.AwayFromZero);
+    }
+
+    private static void RecalculateSupplyRequestTotals(SupplyRequest request)
+    {
+        var items = request.Items ?? [];
+
+        request.TotalRequestedValue = Math.Round(
+            items.Sum(i => i.QuantityRequested * ResolveUnitCost(i)),
+            2,
+            MidpointRounding.AwayFromZero);
+
+        request.TotalApprovedValue = Math.Round(
+            items.Sum(i => Math.Max(i.QuantityApproved ?? 0, 0) * ResolveUnitCost(i)),
+            2,
+            MidpointRounding.AwayFromZero);
+
+        request.TotalFulfilledValue = Math.Round(
+            items.Sum(i => ResolveFulfilledQuantity(i) * ResolveUnitCost(i)),
+            2,
+            MidpointRounding.AwayFromZero);
+    }
+
+    private static decimal ResolveLossQuantity(ReturnItem row)
+    {
+        return row.Disposition == ReturnItemDisposition.WriteOff
+            ? (row.QuantityInspected ?? row.QuantityReturned)
+            : 0;
+    }
+
+    private static decimal ResolveFulfilledQuantity(SupplyRequestItem row)
+    {
+        if (row.IsRejectedDuringPicking)
+        {
+            return 0;
+        }
+
+        return row.SendQuantity ?? row.QuantityApproved ?? 0;
+    }
+
+    private static decimal ResolveUnitCost(ReturnItem row)
+    {
+        if (row.UnitCostSnapshot > 0)
+        {
+            return row.UnitCostSnapshot;
+        }
+
+        return row.Item?.UnitCost ?? 0;
+    }
+
+    private static decimal ResolveUnitCost(SupplyRequestItem row)
+    {
+        if (row.UnitCostSnapshot > 0)
+        {
+            return row.UnitCostSnapshot;
+        }
+
+        return row.Item?.UnitCost ?? 0;
+    }
+
+    private static string? NormalizeSubject(string? value)
+    {
+        var normalized = NormalizeOptional(value);
+        if (normalized != null && normalized.Length > 80)
+        {
+            throw new InvalidOperationException("Subject cannot exceed 80 characters.");
+        }
+
+        return normalized;
+    }
+
+    private static string NormalizeReplacementSubject(string? sourceSubject, int returnId)
+    {
+        var baseSubject = NormalizeOptional(sourceSubject);
+        var fallback = $"Replacement for RT-{returnId}";
+        if (string.IsNullOrWhiteSpace(baseSubject))
+        {
+            return fallback;
+        }
+
+        var combined = $"Replacement: {baseSubject}";
+        return combined.Length <= 80 ? combined : combined[..80];
     }
 
     private static ReturnResolution ParseResolution(string? value)

@@ -12,6 +12,25 @@ export interface OrderDetailsPanelProps {
 }
 
 export function OrderDetailsPanel({ order }: OrderDetailsPanelProps) {
+  const toPeso = (value: number) =>
+    `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const formatScheduleStatus = (status?: string | null) => {
+    if (!status) return 'No Schedule';
+    if (status === 'DueToday') return 'Due Today';
+    if (status === 'NoSchedule') return 'No Schedule';
+    if (status === 'OnTime') return 'On Time';
+    return status;
+  };
+
+  const scheduleColor = (status?: string | null) => {
+    if (status === 'Late') return '#D32F2F';
+    if (status === 'DueToday') return '#ED6C02';
+    if (status === 'OnTime') return '#2E7D32';
+    if (status === 'Scheduled') return '#0288D1';
+    return '#6B7280';
+  };
+
   return (
     <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
       <Box sx={{ 
@@ -38,6 +57,16 @@ export function OrderDetailsPanel({ order }: OrderDetailsPanelProps) {
             </Box>
             <Typography sx={{ fontSize: 14, fontWeight: 500, color: 'text.primary', ml: 3.2 }}>{new Date(order.pushedToFulfillmentAt).toLocaleString()}</Typography>
           </Box>
+
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <InfoRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+              <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject</Typography>
+            </Box>
+            <Typography sx={{ fontSize: 14, fontWeight: 500, color: order.subject ? 'text.primary' : 'text.secondary', ml: 3.2 }}>
+              {order.subject || 'No subject'}
+            </Typography>
+          </Box>
           
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -46,6 +75,16 @@ export function OrderDetailsPanel({ order }: OrderDetailsPanelProps) {
             </Box>
             <Typography sx={{ fontSize: 14, fontWeight: 500, color: order.vehicleId ? 'text.primary' : 'text.disabled', fontStyle: order.vehicleId ? 'normal' : 'italic', ml: 3.2 }}>
               {order.vehicleId ? `Vehicle #${order.vehicleId}` : 'Not yet assigned'}
+            </Typography>
+          </Box>
+
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <EventRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+              <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dispatch SLA</Typography>
+            </Box>
+            <Typography sx={{ fontSize: 14, fontWeight: 700, color: scheduleColor(order.dispatchScheduleStatus), ml: 3.2 }}>
+              {formatScheduleStatus(order.dispatchScheduleStatus)}
             </Typography>
           </Box>
         </Box>
@@ -87,6 +126,21 @@ export function OrderDetailsPanel({ order }: OrderDetailsPanelProps) {
           </Box>
         </Box>
         
+        <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+          <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1 }}>
+            Value Summary
+          </Typography>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', mb: 0.4 }}>
+            Requested: {toPeso(order.totalRequestedValue)}
+          </Typography>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mb: 0.2 }}>
+            Approved: {toPeso(order.totalApprovedValue)}
+          </Typography>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+            Fulfilled: {toPeso(order.totalFulfilledValue)}
+          </Typography>
+        </Box>
+
         <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <StickyNote2RoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />

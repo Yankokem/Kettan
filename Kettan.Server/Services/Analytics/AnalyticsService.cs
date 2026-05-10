@@ -304,33 +304,67 @@ public class AnalyticsService : IAnalyticsService
     {
         var tenantId = RequireTenantId();
 
-        var orders = await _context.Orders
-            .Include(o => o.SupplyRequest)
-                .ThenInclude(sr => sr!.Branch)
-            .Include(o => o.Allocations)
-                .ThenInclude(a => a.Batch)
-                    .ThenInclude(b => b.Item)
-            .Where(o => o.TenantId == tenantId
-                && o.Status >= OrderStatus.Dispatched
-                && o.Status != OrderStatus.Cancelled
-                && o.PushedToFulfillmentAt >= startDate
-                && o.PushedToFulfillmentAt <= endDate)
+        var requests = await _context.SupplyRequests
+            .Include(sr => sr.Branch)
+            .Where(sr => sr.TenantId == tenantId
+                && sr.CreatedAt >= startDate
+                && sr.CreatedAt <= endDate)
             .ToListAsync();
 
-        return orders
-            .GroupBy(o => new
+        var returnsByBranch = await _context.Returns
+            .Where(r => r.TenantId == tenantId
+                && r.LoggedAt >= startDate
+                && r.LoggedAt <= endDate)
+            .GroupBy(r => r.BranchId)
+            .Select(g => new
             {
-                BranchId = o.SupplyRequest?.BranchId ?? 0,
-                BranchName = o.SupplyRequest?.Branch?.Name ?? "Unknown"
+                BranchId = g.Key,
+                ReturnedValue = g.Sum(r => r.TotalReturnedValue),
+                LossValue = g.Sum(r => r.TotalLossValue)
             })
-            .Select(g => new BranchSpendDto
+            .ToDictionaryAsync(x => x.BranchId, x => new { x.ReturnedValue, x.LossValue });
+
+        var requestByBranch = requests
+            .GroupBy(sr => new { sr.BranchId, BranchName = sr.Branch != null ? sr.Branch.Name : "Unknown" })
+            .ToDictionary(
+                g => g.Key.BranchId,
+                g => new
+                {
+                    g.Key.BranchName,
+                    RequestedValue = g.Sum(sr => sr.TotalRequestedValue),
+                    ApprovedValue = g.Sum(sr => sr.TotalApprovedValue),
+                    FulfilledValue = g.Sum(sr => sr.TotalFulfilledValue)
+                });
+
+        var branchIds = requestByBranch.Keys
+            .Union(returnsByBranch.Keys)
+            .ToList();
+
+        return branchIds
+            .Select(branchId =>
             {
-                BranchId = g.Key.BranchId,
-                BranchName = g.Key.BranchName,
-                TotalSpend = g.SelectMany(o => o.Allocations)
-                    .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0))
+                var requestAgg = requestByBranch.TryGetValue(branchId, out var req) ? req : null;
+                var returnAgg = returnsByBranch.TryGetValue(branchId, out var ret) ? ret : null;
+
+                var requestedValue = requestAgg?.RequestedValue ?? 0;
+                var approvedValue = requestAgg?.ApprovedValue ?? 0;
+                var fulfilledValue = requestAgg?.FulfilledValue ?? 0;
+                var returnedValue = returnAgg?.ReturnedValue ?? 0;
+                var lossValue = returnAgg?.LossValue ?? 0;
+
+                return new BranchSpendDto
+                {
+                    BranchId = branchId,
+                    BranchName = requestAgg?.BranchName ?? $"Branch {branchId}",
+                    RequestedValue = requestedValue,
+                    ApprovedValue = approvedValue,
+                    FulfilledValue = fulfilledValue,
+                    ReturnedValue = returnedValue,
+                    LossValue = lossValue,
+                    TotalSpend = fulfilledValue
+                };
             })
-            .OrderByDescending(b => b.TotalSpend)
+            .OrderByDescending(b => b.FulfilledValue)
             .ToList();
     }
 
@@ -625,6 +659,7 @@ public class AnalyticsService : IAnalyticsService
         var tenantId = RequireTenantId();
 
         var requests = await _context.SupplyRequests
+            .Include(sr => sr.Items)
             .Include(sr => sr.Orders)
                 .ThenInclude(o => o.Allocations)
                     .ThenInclude(a => a.Batch)
@@ -639,9 +674,7 @@ public class AnalyticsService : IAnalyticsService
         return requests.Select(sr =>
         {
             var order = sr.Orders.FirstOrDefault();
-            decimal cost = order?.Allocations
-                .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0)) ?? 0;
-
+            var fulfilledValue = sr.TotalFulfilledValue;
             bool fullyFulfilled = order != null && sr.Items != null
                 && sr.Items.All(i => i.QuantityApproved >= i.QuantityRequested);
 
@@ -651,7 +684,10 @@ public class AnalyticsService : IAnalyticsService
                 ReferenceNumber = sr.ReferenceNumber ?? $"SR-{sr.RequestId}",
                 Status = sr.Status.ToString(),
                 Priority = sr.Priority.ToString(),
-                FulfillmentCost = cost,
+                RequestedValue = sr.TotalRequestedValue,
+                ApprovedValue = sr.TotalApprovedValue,
+                FulfilledValue = fulfilledValue,
+                FulfillmentCost = fulfilledValue,
                 IsFullyFulfilled = fullyFulfilled,
                 CreatedAt = sr.CreatedAt,
                 DeliveredAt = order?.DeliveredAt

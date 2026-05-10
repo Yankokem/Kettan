@@ -59,6 +59,7 @@ export function SupplyRequestEditDraftPage() {
   const [priority, setPriority] = useState('');
   const [dispatchWindow, setDispatchWindow] = useState('');
   const [dispatchDate, setDispatchDate] = useState('');
+  const [subject, setSubject] = useState('');
   const [notes, setNotes] = useState('');
   const [requestLines, setRequestLines] = useState<EditLineItem[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -73,6 +74,7 @@ export function SupplyRequestEditDraftPage() {
     setRequestType(mapRequestType(request.requestType));
     setPriority(mapPriority(request.priority));
     setDispatchWindow(mapDispatchWindow(request.dispatchWindow));
+    setSubject((request as { subject?: string }).subject ?? '');
     setNotes(request.notes);
     setRequestLines(
       request.items.map((item) => ({
@@ -188,6 +190,7 @@ export function SupplyRequestEditDraftPage() {
       setError(null);
 
       await updateSupplyRequest(Number(requestId), {
+        subject: subject.trim() || undefined,
         requestType,
         priority,
         dispatchWindow,
@@ -409,6 +412,13 @@ export function SupplyRequestEditDraftPage() {
                 slotProps={{ inputLabel: { shrink: true } }}
               />
             </Box>
+
+            <TextField
+              label="Subject / Title"
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              slotProps={{ htmlInput: { maxLength: 80 } }}
+            />
 
             <TextField
               label="Notes"

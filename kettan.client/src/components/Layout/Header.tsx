@@ -33,6 +33,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/staff':     'Staff Directory',
   '/staff/add': 'Add Staff Member',
   '/tenants':   'Tenant Management',
+  '/platform-users': 'Platform Users',
   '/analytics': 'Platform Analytics',
   '/help':      'Help & Support',
   '/settings':  'Settings',
@@ -54,7 +55,8 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/menu':      'Manage your coffee menu, recipes, and ingredient compositions.',
   '/staff':     'Manage your team members, roles, and branch assignments.',
   '/staff/add': 'Create a new staff account with role and access permissions.',
-  '/tenants':   'Monitor and manage tenant accounts, subscriptions, and platform access.',
+  '/tenants':   'Monitor and manage all platform subscribers, their plans, and account status.',
+  '/platform-users': 'Manage and monitor all user accounts across the entire platform.',
   '/analytics': 'Deep dive into platform-wide performance, growth, and usage metrics.',
   '/help':      'Access support resources, documentation, and contact platform helpdesk.',
   '/settings':  'System settings, user roles, and platform permissions.',
@@ -105,6 +107,11 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
   const basePath = getParentResource(location.pathname);
   let pageTitle = PAGE_TITLES[location.pathname] ?? PAGE_TITLES[basePath] ?? 'Kettan';
   let pageDesc = PAGE_DESCRIPTIONS[location.pathname] ?? PAGE_DESCRIPTIONS[basePath] ?? 'Kettan · Café Chain Operations';
+
+  if (location.pathname === '/' && user?.role === 'SuperAdmin') {
+    pageTitle = 'Admin Dashboard';
+    pageDesc = 'Global platform overview, tenant activities, and system health.';
+  }
 
   // Branch User overrides for Inventory
   if (user?.branchId && (basePath === '/hq-inventory' || location.pathname === '/hq-inventory')) {

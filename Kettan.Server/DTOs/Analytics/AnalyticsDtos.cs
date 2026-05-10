@@ -79,6 +79,11 @@ public class BranchSpendDto
 {
     public int BranchId { get; set; }
     public string BranchName { get; set; } = string.Empty;
+    public decimal RequestedValue { get; set; }
+    public decimal ApprovedValue { get; set; }
+    public decimal FulfilledValue { get; set; }
+    public decimal ReturnedValue { get; set; }
+    public decimal LossValue { get; set; }
     public decimal TotalSpend { get; set; }
 }
 
@@ -223,6 +228,9 @@ public class BranchSupplyHistoryDto
     public string ReferenceNumber { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string Priority { get; set; } = string.Empty;
+    public decimal RequestedValue { get; set; }
+    public decimal ApprovedValue { get; set; }
+    public decimal FulfilledValue { get; set; }
     public decimal FulfillmentCost { get; set; }
     public bool IsFullyFulfilled { get; set; }
     public DateTime CreatedAt { get; set; }

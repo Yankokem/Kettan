@@ -43,6 +43,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
+            .Include(o => o.Shipment)
             .Include(o => o.ArrivedConfirmedByUser)
             .Include(o => o.CompletedByUser)
             .AsQueryable();
@@ -82,7 +83,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         var tenantId = EnsureTenantContext();
         var userId = EnsureUserContext();
 
-        await ValidateCreateOrderItemsAsync(dto.Items, tenantId);
+        var itemCostLookup = await ValidateCreateOrderItemsAsync(dto.Items, tenantId);
 
         var branchExists = await _context.Branches.AnyAsync(b => b.BranchId == dto.BranchId && b.TenantId == tenantId && b.IsActive);
         if (!branchExists)
@@ -104,6 +105,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             Priority = Enum.TryParse<Priority>(dto.Priority, true, out var priority) ? priority : Priority.Normal,
             DispatchWindow = Enum.TryParse<DispatchWindow>(dto.DispatchWindow, true, out var dispatchWindow) ? dispatchWindow : DispatchWindow.Today,
             DispatchDate = dto.DispatchDate,
+            Subject = NormalizeSubject(dto.Subject),
             Notes = NormalizeOptional(dto.Notes),
             CreatedAt = now,
             UpdatedAt = now,
@@ -113,8 +115,11 @@ public class OrderWorkflowService : IOrderWorkflowService
                 ItemId = i.ItemId,
                 QuantityRequested = i.QuantityRequested,
                 QuantityApproved = i.QuantityRequested,
+                UnitCostSnapshot = itemCostLookup.TryGetValue(i.ItemId, out var unitCost) ? unitCost : 0
             }).ToList(),
         };
+
+        RecalculateRequestTotals(request);
 
         _context.SupplyRequests.Add(request);
         await _context.SaveChangesAsync();
@@ -293,6 +298,7 @@ public class OrderWorkflowService : IOrderWorkflowService
                 }
             }
 
+            await RecalculateRequestTotalsAsync(order.RequestId);
             order.Status = OrderStatus.Packed;
 
             _context.OrderStatusHistories.Add(new OrderStatusHistory
@@ -342,6 +348,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         var now = DateTime.UtcNow;
 
         order.Status = OrderStatus.InTransit;
+        await RecalculateRequestTotalsAsync(order.RequestId);
 
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -574,6 +581,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
+            .Include(o => o.Shipment)
             .Where(o => o.IsHqInitiated);
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
@@ -597,6 +605,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
+            .Include(o => o.Shipment)
             .Where(o => o.IsHqInitiated && o.SupplyRequest != null && o.SupplyRequest.BranchId == branchId);
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
@@ -611,17 +620,25 @@ public class OrderWorkflowService : IOrderWorkflowService
     private static BranchOrderDto MapToBranchOrderDto(Order order)
     {
         var requestItems = order.SupplyRequest?.Items ?? [];
+        var request = order.SupplyRequest;
 
         return new BranchOrderDto
         {
             OrderId = order.OrderId,
             RequestId = order.RequestId,
-            BranchId = order.SupplyRequest?.BranchId ?? 0,
-            BranchName = order.SupplyRequest?.Branch?.Name ?? string.Empty,
+            Subject = request?.Subject,
+            BranchId = request?.BranchId ?? 0,
+            BranchName = request?.Branch?.Name ?? string.Empty,
             Status = order.Status.ToString(),
+            DispatchScheduleStatus = TransactionScheduleStatus.Resolve(
+                request?.DispatchDate,
+                order.Shipment?.DispatchDate),
             PushedToFulfillmentAt = order.PushedToFulfillmentAt,
             ItemsCount = requestItems.Count,
-            FulfillmentCost = requestItems.Sum(i => (i.QuantityApproved ?? i.QuantityRequested) * (i.Item?.UnitCost ?? 0)),
+            TotalRequestedValue = request?.TotalRequestedValue ?? 0,
+            TotalApprovedValue = request?.TotalApprovedValue ?? 0,
+            TotalFulfilledValue = request?.TotalFulfilledValue ?? 0,
+            FulfillmentCost = request?.TotalFulfilledValue ?? 0,
             IsHqInitiated = order.IsHqInitiated,
             DispatchReason = order.DispatchReason
         };
@@ -638,14 +655,22 @@ public class OrderWorkflowService : IOrderWorkflowService
         {
             OrderId = order.OrderId,
             RequestId = order.RequestId,
+            Subject = request?.Subject,
             BranchId = request?.BranchId ?? 0,
             BranchName = request?.Branch?.Name ?? string.Empty,
             Status = order.Status.ToString(),
+            DispatchScheduleStatus = TransactionScheduleStatus.Resolve(
+                request?.DispatchDate,
+                shipment?.DispatchDate),
             PushedToFulfillmentAt = order.PushedToFulfillmentAt,
             RequestStatus = request?.Status.ToString() ?? string.Empty,
             RequestedByUserId = request?.RequestedBy_UserId ?? 0,
             RequestedByName = requestedByName,
             Notes = request?.Notes,
+            TotalRequestedValue = request?.TotalRequestedValue ?? 0,
+            TotalApprovedValue = request?.TotalApprovedValue ?? 0,
+            TotalFulfilledValue = request?.TotalFulfilledValue ?? 0,
+            FulfillmentCost = request?.TotalFulfilledValue ?? 0,
             TrackingNumber = shipment?.TrackingNumber,
 
             VehicleId = shipment?.VehicleId,
@@ -680,7 +705,7 @@ public class OrderWorkflowService : IOrderWorkflowService
                 ItemSku = i.Item?.SKU ?? string.Empty,
                 QuantityRequested = i.QuantityRequested,
                 QuantityApproved = i.QuantityApproved,
-                UnitCost = i.Item?.UnitCost ?? 0,
+                UnitCost = ResolveUnitCost(i),
                 IsPicked = i.IsPicked,
                 SendQuantity = i.SendQuantity,
                 IsRejectedDuringPicking = i.IsRejectedDuringPicking,
@@ -715,6 +740,74 @@ public class OrderWorkflowService : IOrderWorkflowService
         }
 
         return value.Trim();
+    }
+
+    private static string? NormalizeSubject(string? value)
+    {
+        var normalized = NormalizeOptional(value);
+        if (normalized != null && normalized.Length > 80)
+        {
+            throw new InvalidOperationException("Subject cannot exceed 80 characters.");
+        }
+
+        return normalized;
+    }
+
+    private static decimal ResolveUnitCost(SupplyRequestItem item)
+    {
+        if (item.UnitCostSnapshot > 0)
+        {
+            return item.UnitCostSnapshot;
+        }
+
+        return item.Item?.UnitCost ?? 0;
+    }
+
+    private static decimal ResolveFulfilledQuantity(SupplyRequestItem item)
+    {
+        if (item.IsRejectedDuringPicking)
+        {
+            return 0;
+        }
+
+        return item.SendQuantity ?? item.QuantityApproved ?? 0;
+    }
+
+    private static void RecalculateRequestTotals(SupplyRequest request)
+    {
+        var items = request.Items ?? [];
+
+        request.TotalRequestedValue = Math.Round(
+            items.Sum(i => i.QuantityRequested * ResolveUnitCost(i)),
+            2,
+            MidpointRounding.AwayFromZero);
+
+        request.TotalApprovedValue = Math.Round(
+            items.Sum(i => Math.Max(i.QuantityApproved ?? 0, 0) * ResolveUnitCost(i)),
+            2,
+            MidpointRounding.AwayFromZero);
+
+        request.TotalFulfilledValue = Math.Round(
+            items.Sum(i => ResolveFulfilledQuantity(i) * ResolveUnitCost(i)),
+            2,
+            MidpointRounding.AwayFromZero);
+    }
+
+    private async Task RecalculateRequestTotalsAsync(int requestId)
+    {
+        var tenantId = EnsureTenantContext();
+
+        var request = await _context.SupplyRequests
+            .Include(r => r.Items)
+                .ThenInclude(i => i.Item)
+            .FirstOrDefaultAsync(r => r.RequestId == requestId && r.TenantId == tenantId);
+
+        if (request == null)
+        {
+            return;
+        }
+
+        RecalculateRequestTotals(request);
     }
 
 
@@ -818,6 +911,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             }
         }
 
+        RecalculateRequestTotals(order.SupplyRequest);
         order.Status = OrderStatus.Packing;
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
@@ -924,6 +1018,8 @@ public class OrderWorkflowService : IOrderWorkflowService
                 }
             }
         }
+
+        RecalculateRequestTotals(order.SupplyRequest);
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -992,6 +1088,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         {
             order.SupplyRequest.Status = SupplyRequestStatus.InFulfillment;
             order.SupplyRequest.UpdatedAt = now;
+            RecalculateRequestTotals(order.SupplyRequest);
         }
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
@@ -1064,6 +1161,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             order.SupplyRequest.Status = SupplyRequestStatus.Arrived;
             order.SupplyRequest.UpdatedAt = now;
         }
+        await RecalculateRequestTotalsAsync(order.RequestId);
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -1196,6 +1294,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         order.SupplyRequest.Status = SupplyRequestStatus.Fulfilled;
         order.SupplyRequest.UpdatedAt = now;
+        RecalculateRequestTotals(order.SupplyRequest);
         
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -1270,6 +1369,8 @@ public class OrderWorkflowService : IOrderWorkflowService
             var reasonSuffix = string.IsNullOrWhiteSpace(dto.Reason) ? "" : $"\nReason: {dto.Reason}";
             order.SupplyRequest.Notes = (order.SupplyRequest.Notes + $"\nCancelled by HQ.{reasonSuffix}").Trim();
         }
+
+        await RecalculateRequestTotalsAsync(order.RequestId);
 
         _context.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -1347,7 +1448,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         };
     }
 
-    private async Task ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items, int tenantId)
+    private async Task<Dictionary<int, decimal>> ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items, int tenantId)
     {
         var rows = items.ToList();
         if (rows.Count == 0)
@@ -1368,13 +1469,15 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         var validIds = await _context.Items
             .Where(i => i.TenantId == tenantId && itemIds.Contains(i.ItemId))
-            .Select(i => i.ItemId)
+            .Select(i => new { i.ItemId, i.UnitCost })
             .ToListAsync();
 
         if (validIds.Count != itemIds.Count)
         {
             throw new InvalidOperationException("One or more requested items are invalid.");
         }
+
+        return validIds.ToDictionary(i => i.ItemId, i => i.UnitCost);
     }
 
     private int EnsureTenantContext()

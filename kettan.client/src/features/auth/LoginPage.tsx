@@ -114,47 +114,48 @@ export function LoginPage() {
       <div
         className="hidden lg:flex flex-col items-center justify-center w-[70%] flex-shrink-0 p-10 relative overflow-hidden"
         style={{
-          background: "linear-gradient(170deg, #E8DCC4 0%, #D9C9A8 100%)",
+          background: "linear-gradient(170deg, #6B4C2A 0%, #4D3823 100%)",
         }}
       >
         {/* Subtle decorative elements */}
         <div
-          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-5 pointer-events-none"
-          style={{ background: "radial-gradient(circle, #C9A84C, transparent)" }}
+          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #F5EDD8, transparent)" }}
         />
         <div
-          className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full opacity-5 pointer-events-none"
-          style={{ background: "radial-gradient(circle, #93AF7E, transparent)" }}
+          className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #E8DCC4, transparent)" }}
         />
 
         <div className="relative z-10 flex flex-col items-center text-center">
-          {/* Large centered logo */}
-          <Link to="/market" className="mb-12">
+          <div className="mb-12 p-8 rounded-3xl bg-[#F5EDD8] shadow-xl border border-white/10">
             <img 
               src={logo} 
               alt="Kettan" 
               width="280" 
               height="280"
             />
-          </Link>
+          </div>
 
           <h2
             style={{
               fontSize: "clamp(1.8rem, 3vw, 2.6rem)",
               fontWeight: 800,
-              color: "#2C1A0E",
+              color: "#F5EDD8",
               lineHeight: 1.3,
               marginBottom: "20px",
               maxWidth: "600px",
+              letterSpacing: "-0.02em",
             }}
           >
             Welcome back to your coffee chain command center
           </h2>
           <p style={{ 
             fontSize: "16px", 
-            color: "#6B4C2A", 
+            color: "#F5EDD8", 
             lineHeight: 1.7,
             maxWidth: "500px",
+            opacity: 0.85,
           }}>
             Streamline your multi-branch operations with real-time inventory tracking and supply chain management.
           </p>

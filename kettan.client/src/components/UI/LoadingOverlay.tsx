@@ -1,36 +1,53 @@
 import { Box, Backdrop, styled, keyframes } from '@mui/material';
 
-const l7 = keyframes`
-  0%   { transform: translate(0,0); }
-  25%  { transform: translate(100%,0); }
-  50%  { transform: translate(100%,100%); }
-  75%  { transform: translate(0,100%); }
-  100% { transform: translate(0,0); }
+const orbit = keyframes`
+  0%   { transform: translate(0px, 0px); }
+  25%  { transform: translate(28px, -20px); }
+  50%  { transform: translate(0px, -40px); }
+  75%  { transform: translate(-28px, -20px); }
+  100% { transform: translate(0px, 0px); }
 `;
 
-const LoaderContainer = styled(Box)(() => ({
-  width: 120,
-  height: 120,
-  padding: 10,
-  boxSizing: 'border-box',
-  display: 'grid',
-  background: '#fff',
-  filter: 'blur(5px) contrast(10)',
-  mixBlendMode: 'darken',
+const orbitReverse = keyframes`
+  0%   { transform: translate(0px, 0px); }
+  25%  { transform: translate(-28px, 20px); }
+  50%  { transform: translate(0px, 40px); }
+  75%  { transform: translate(28px, 20px); }
+  100% { transform: translate(0px, 0px); }
+`;
+
+
+
+
+
+const CreamDot = styled(Box)(() => ({
+  width: 44,
+  height: 44,
+  borderRadius: '50%',
+  background: '#FAF5EF',
+  position: 'absolute',
+  animation: `${orbit} 2s cubic-bezier(0.45, 0, 0.55, 1) infinite`,
+  boxShadow: '0 0 0 1.5px rgba(107,76,42,0.18), 0 2px 16px 6px rgba(107,76,42,0.1)',
+}));
+
+const BrownDot = styled(Box)(() => ({
+  width: 44,
+  height: 44,
+  borderRadius: '50%',
+  background: '#6B4C2A',
+  position: 'absolute',
+  animation: `${orbitReverse} 2s cubic-bezier(0.45, 0, 0.55, 1) infinite`,
+  animationDelay: '-0s',
+  boxShadow: '0 0 20px 8px rgba(107,76,42,0.4)',
+}));
+
+const Stage = styled(Box)(() => ({
   position: 'relative',
-  '&::before, &::after': {
-    content: '""',
-    gridArea: '1/1',
-    width: 50,
-    height: 50,
-    borderRadius: '50%',
-    background: '#FAF7F2', // Exact Kettan Cream
-    animation: `${l7} 2s infinite`,
-  },
-  '&::after': {
-    background: '#6B4C2A', // Exact Kettan Brown
-    animationDelay: '-1s',
-  },
+  width: 100,
+  height: 100,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 }));
 
 export const LoadingOverlay = ({ open }: { open: boolean }) => {
@@ -38,12 +55,15 @@ export const LoadingOverlay = ({ open }: { open: boolean }) => {
     <Backdrop
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1000,
-        backgroundColor: 'rgba(0, 0, 0, 0.25)', // Brighter, less dim
-        backdropFilter: 'blur(4px)',
+        backgroundColor: 'rgba(250, 245, 239, 0.12)',
+        backdropFilter: 'blur(3px)',
       }}
       open={open}
     >
-      <LoaderContainer />
+      <Stage>
+        <CreamDot />
+        <BrownDot />
+      </Stage>
     </Backdrop>
   );
 };

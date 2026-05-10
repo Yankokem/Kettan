@@ -81,6 +81,31 @@ function statusColor(status: string): string {
   return '#6B7280';
 }
 
+function formatPeso(value: number): string {
+  return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatScheduleStatus(status?: string | null): string {
+  switch (status) {
+    case 'DueToday':
+      return 'Due Today';
+    case 'NoSchedule':
+      return 'No Schedule';
+    case 'OnTime':
+      return 'On Time';
+    default:
+      return status || 'No Schedule';
+  }
+}
+
+function scheduleColor(status?: string | null): string {
+  if (status === 'Late') return '#D32F2F';
+  if (status === 'DueToday') return '#ED6C02';
+  if (status === 'OnTime') return '#2E7D32';
+  if (status === 'Scheduled') return '#0288D1';
+  return '#6B7280';
+}
+
 function ActionsMenu({ row }: { row: SupplyRequest }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
@@ -291,6 +316,15 @@ export function SupplyRequestsPage() {
       ),
     },
     {
+      key: 'subject',
+      label: 'SUBJECT',
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+          {row.subject || '—'}
+        </Typography>
+      ),
+    },
+    {
       key: 'requestedByName',
       label: 'FILED BY',
       sortable: true,
@@ -313,12 +347,37 @@ export function SupplyRequestsPage() {
       ),
     },
     {
+      key: 'totalFulfilledValue',
+      label: 'VALUES',
+      sortable: true,
+      render: (row) => (
+        <Box>
+          <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: '#6B4C2A' }}>
+            Req {formatPeso(row.totalRequestedValue ?? 0)}
+          </Typography>
+          <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
+            App {formatPeso(row.totalApprovedValue ?? 0)} • Ful {formatPeso(row.totalFulfilledValue ?? 0)}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
       key: 'status',
       label: 'STATUS',
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 600, color: statusColor(row.status) }}>
           {formatStatusLabel(row.status)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'dispatchScheduleStatus',
+      label: 'DISPATCH SLA',
+      sortable: true,
+      render: (row) => (
+        <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
+          {formatScheduleStatus(row.dispatchScheduleStatus)}
         </Typography>
       ),
     },
@@ -579,10 +638,31 @@ export function SupplyRequestsPage() {
               ),
             },
             {
-              key: 'dispatchReason',
-              label: 'REASON',
+              key: 'subject',
+              label: 'SUBJECT',
               render: (row: BranchOrder) => (
-                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>{row.dispatchReason || 'HQ Dispatch'}</Typography>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
+                  {row.subject || row.dispatchReason || 'HQ Dispatch'}
+                </Typography>
+              ),
+            },
+            {
+              key: 'totalFulfilledValue',
+              label: 'VALUE',
+              align: 'right' as const,
+              render: (row: BranchOrder) => (
+                <Typography sx={{ fontSize: 12.5, color: '#6B4C2A', fontWeight: 700 }}>
+                  {formatPeso(row.totalFulfilledValue || row.fulfillmentCost || 0)}
+                </Typography>
+              ),
+            },
+            {
+              key: 'dispatchScheduleStatus',
+              label: 'DISPATCH SLA',
+              render: (row: BranchOrder) => (
+                <Typography sx={{ fontSize: 12, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
+                  {formatScheduleStatus(row.dispatchScheduleStatus)}
+                </Typography>
               ),
             },
             {

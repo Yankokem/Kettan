@@ -61,6 +61,7 @@ export function SupplyRequestCreatePage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [priority, setPriority] = useState('normal');
   const [dispatchDate, setDispatchDate] = useState('');
+  const [subject, setSubject] = useState('');
   const [notes, setNotes] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
@@ -107,6 +108,7 @@ export function SupplyRequestCreatePage() {
   const resetForm = () => {
     setRequestLines([]);
     setDispatchDate('');
+    setSubject('');
     setNotes('');
     setPriority('normal');
     setError(null);
@@ -131,9 +133,10 @@ export function SupplyRequestCreatePage() {
       setIsSaving(true);
       setError(null);
 
-      const created = await createSupplyRequest({
-        branchId: user?.branchId ?? undefined,
-        requestType: 'manual',
+        const created = await createSupplyRequest({
+          branchId: user?.branchId ?? undefined,
+          subject: subject.trim() || undefined,
+          requestType: 'manual',
         priority,
         dispatchWindow: 'scheduled',
         dispatchDate: dispatchDate || undefined,
@@ -338,6 +341,16 @@ export function SupplyRequestCreatePage() {
           </Box>
 
           <Grid container spacing={2.5}>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Subject / Title"
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+                placeholder="Example: Weekend restock - milk and cups"
+                slotProps={{ htmlInput: { maxLength: 80 } }}
+              />
+            </Grid>
+
             <Grid size={{ xs: 12 }}>
               <Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
