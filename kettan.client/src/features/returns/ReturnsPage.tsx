@@ -65,6 +65,27 @@ function statusColor(status: string): string {
   }
 }
 
+function formatPeso(value: number): string {
+  return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatScheduleStatus(status?: string | null): string {
+  switch (status) {
+    case 'DueToday':    return 'Due Today';
+    case 'NoSchedule':  return 'No Schedule';
+    case 'OnTime':      return 'On Time';
+    default:            return status || 'No Schedule';
+  }
+}
+
+function scheduleColor(status?: string | null): string {
+  if (status === 'Late') return '#D32F2F';
+  if (status === 'DueToday') return '#ED6C02';
+  if (status === 'OnTime') return '#2E7D32';
+  if (status === 'Scheduled') return '#0288D1';
+  return '#6B7280';
+}
+
 function ActionsMenu({ row }: { row: ReturnRecord }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
@@ -201,6 +222,7 @@ export function ReturnsPage() {
         row.returnId.toString().includes(query) ||
         row.orderId.toString().includes(query) ||
         row.branchName.toLowerCase().includes(query) ||
+        (row.subject ?? '').toLowerCase().includes(query) ||
         (row.reason ?? '').toLowerCase().includes(query) ||
         row.status.toLowerCase().includes(query) ||
         row.resolution.toLowerCase().includes(query);
@@ -245,6 +267,15 @@ export function ReturnsPage() {
       ),
     },
     {
+      key: 'subject',
+      label: 'SUBJECT',
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+          {row.subject || '—'}
+        </Typography>
+      ),
+    },
+    {
       key: 'branchName',
       label: 'BRANCH',
       sortable: true,
@@ -252,6 +283,23 @@ export function ReturnsPage() {
         <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
           {row.branchName || `Branch ${row.branchId}`}
         </Typography>
+      ),
+    },
+    {
+      key: 'totalReturnedValue',
+      label: 'VALUES',
+      sortable: true,
+      render: (row) => (
+        <Box>
+          <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: '#6B4C2A' }}>
+            Ret {formatPeso(row.totalReturnedValue ?? 0)}
+          </Typography>
+          {(row.totalLossValue ?? 0) > 0 && (
+            <Typography sx={{ fontSize: 11.5, color: '#D32F2F' }}>
+              Loss {formatPeso(row.totalLossValue ?? 0)}
+            </Typography>
+          )}
+        </Box>
       ),
     },
     {
@@ -272,12 +320,12 @@ export function ReturnsPage() {
       ),
     },
     {
-      key: 'submittedBy',
-      label: 'FILED BY',
+      key: 'pickupScheduleStatus',
+      label: 'PICKUP SLA',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 500 }}>
-          {row.submittedByName || '---'}
+        <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: scheduleColor(row.pickupScheduleStatus) }}>
+          {formatScheduleStatus(row.pickupScheduleStatus)}
         </Typography>
       ),
     },

@@ -23,7 +23,6 @@ import {
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
-import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
@@ -38,6 +37,9 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import ForwardToInboxRoundedIcon from '@mui/icons-material/ForwardToInboxRounded';
 import WhereToVoteRoundedIcon from '@mui/icons-material/WhereToVoteRounded';
+import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
+import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded';
+import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceWalletRounded';
 
 import type { AxiosError } from 'axios';
 import { useParams } from '@tanstack/react-router';
@@ -94,6 +96,27 @@ function statusStyle(status: string): StatusStyle {
     case 'Pending':     return { bg: '#FFF8E1', color: '#F57F17', label: 'Pending' };
     default:            return { bg: '#F5F5F5', color: '#616161', label: status };
   }
+}
+
+function formatPeso(value: number): string {
+  return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatScheduleStatus(status?: string | null): string {
+  switch (status) {
+    case 'DueToday':    return 'Due Today';
+    case 'NoSchedule':  return 'No Schedule';
+    case 'OnTime':      return 'On Time';
+    default:            return status || 'No Schedule';
+  }
+}
+
+function scheduleColor(status?: string | null): string {
+  if (status === 'Late') return '#D32F2F';
+  if (status === 'DueToday') return '#ED6C02';
+  if (status === 'OnTime') return '#2E7D32';
+  if (status === 'Scheduled') return '#0288D1';
+  return '#6B7280';
 }
 
 function StatusChip({ status }: { status: string }) {
@@ -1334,20 +1357,53 @@ export function ReturnDetailPage() {
                       </Typography>
                   </Box>
 
-              {row.creditAmount != null && (
-                  <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
-                          <ReceiptLongRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
-                          <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Amount</Typography>
-                      </Box>
-                      <Typography sx={{ pl: 3.2, fontSize: 14, fontWeight: 700, color: 'text.primary' }}>
-                          {row.creditAmount.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
-                      </Typography>
+              {/* Subject */}
+              <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
+                      <DescriptionRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject</Typography>
                   </Box>
-              )}
+                  <Typography sx={{ pl: 3.2, fontSize: 14, fontWeight: 500, color: row.subject ? 'text.primary' : 'text.secondary' }}>
+                      {row.subject || 'No subject'}
+                  </Typography>
+              </Box>
 
+              {/* Pickup Schedule Status */}
+              <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
+                      <ScheduleRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pickup SLA</Typography>
+                  </Box>
+                  <Typography sx={{ pl: 3.2, fontSize: 14, fontWeight: 700, color: scheduleColor(row.pickupScheduleStatus) }}>
+                      {formatScheduleStatus(row.pickupScheduleStatus)}
+                  </Typography>
+              </Box>
 
-
+              {/* Value Summary */}
+              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#FAF7F2', border: '1px solid', borderColor: 'rgba(107, 76, 42, 0.1)' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
+                      <AccountBalanceWalletRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+                      <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Valuation</Typography>
+                  </Box>
+                  <Box sx={{ display: 'grid', gap: 1, pl: 0.5 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Returned Value</Typography>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>{formatPeso(row.totalReturnedValue ?? 0)}</Typography>
+                      </Box>
+                      {(row.totalLossValue ?? 0) > 0 && (
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Loss Value</Typography>
+                              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#D32F2F' }}>{formatPeso(row.totalLossValue ?? 0)}</Typography>
+                          </Box>
+                      )}
+                      {row.creditAmount != null && (
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 0.8, borderTop: '1px dashed', borderColor: 'rgba(107, 76, 42, 0.15)' }}>
+                              <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>Credit Amount</Typography>
+                              <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#2E7D32' }}>{formatPeso(row.creditAmount)}</Typography>
+                          </Box>
+                      )}
+                  </Box>
+              </Box>
               {/* Workflow Section */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                   <Box>

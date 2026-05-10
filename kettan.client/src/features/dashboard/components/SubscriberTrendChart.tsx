@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  ResponsiveContainer, Legend, Cell
+  ResponsiveContainer, Legend
 } from 'recharts';
 import { Box, Typography, Card, MenuItem, Select, FormControl } from '@mui/material';
 import SsidChartRoundedIcon from '@mui/icons-material/SsidChartRounded';

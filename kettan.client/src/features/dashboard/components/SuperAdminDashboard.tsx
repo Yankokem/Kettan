@@ -10,7 +10,7 @@ import PieChartRoundedIcon from '@mui/icons-material/PieChartRounded';
 import { useNavigate } from '@tanstack/react-router';
 import {
   Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell
 } from 'recharts';
 
 import { StatCard } from '../../../components/UI/StatCard';
