@@ -1,3 +1,4 @@
+
 # Kettan: System Architecture & Specification
 
 > **Master Document**

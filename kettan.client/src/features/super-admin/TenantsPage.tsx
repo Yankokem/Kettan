@@ -11,14 +11,14 @@ import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
 import { StatCard } from '../../components/UI/StatCard';
-import { fetchTenants, toggleTenantStatus, type TenantRow } from './tenantsApi';
+import { fetchTenants, archiveTenant, type TenantRow } from './tenantsApi';
 import { api } from '../../utils/api';
 
 function ActionsMenu({ row, onRefresh }: { row: TenantRow; onRefresh: () => void }) {
@@ -26,15 +26,22 @@ function ActionsMenu({ row, onRefresh }: { row: TenantRow; onRefresh: () => void
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
   const handleClose = () => setAnchorEl(null);
 
-  const handleToggleStatus = async () => {
+  const handleArchive = async () => {
+    if (!window.confirm(`Are you sure you want to archive "${row.name}"? This will immediately revoke access for all users of this business.`)) {
+      return;
+    }
     try {
-      await toggleTenantStatus(String(row.tenantId), !row.isActive);
+      await archiveTenant(String(row.tenantId));
       onRefresh();
     } catch (err) {
       console.error(err);
+      alert('Failed to archive tenant.');
     } finally {
       handleClose();
     }
@@ -69,16 +76,11 @@ function ActionsMenu({ row, onRefresh }: { row: TenantRow; onRefresh: () => void
           <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
           <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
         </MenuItem>
-        <MenuItem onClick={handleToggleStatus}>
-          <ListItemIcon>
-            {row.isActive ? 
-              <BlockRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /> : 
-              <CheckCircleRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-            }
-          </ListItemIcon>
+        <MenuItem onClick={handleArchive}>
+          <ListItemIcon><ArchiveRoundedIcon fontSize="small" sx={{ color: 'error.main' }} /></ListItemIcon>
           <ListItemText 
-            primary={row.isActive ? "Deactivate Tenant" : "Activate Tenant"} 
-            primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} 
+            primary="Archive Business" 
+            primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: 'error.main' }} 
           />
         </MenuItem>
       </Menu>
@@ -344,7 +346,6 @@ export function TenantsPage() {
           data={filteredAndSortedTenants}
           columns={columns}
           keyExtractor={(row) => String(row.tenantId)}
-          onRowClick={(row) => navigate({ to: '/tenants/$tenantId', params: { tenantId: String(row.tenantId) } })}
           emptyMessage={loading ? ' ' : 'No tenants found.'}
           defaultRowsPerPage={10}
           pageSizes={[10, 25, 50]}

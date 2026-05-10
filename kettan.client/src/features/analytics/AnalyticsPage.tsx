@@ -13,6 +13,7 @@ import GroupAddRoundedIcon from '@mui/icons-material/GroupAddRounded';
 import { StatCard } from '../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
+import { Dropdown } from '../../components/UI/Dropdown';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const PIE_COLORS = ['#6B4C2A', '#047857', '#B08B5A', '#2563EB', '#7C3AED'];
@@ -21,7 +22,7 @@ interface AnalyticsData {
   revenueTrend: { year: number; month: number; revenue: number }[];
   tenantGrowth: { year: number; month: number; count: number }[];
   planDistribution: { planName: string; count: number; revenue: number }[];
-  topTenants: { tenantId: number; name: string; subscriptionTier: string; branchCount: number }[];
+  topTenants: { tenantId: number; name: string; subscriptionTier: string; branchCount: number; adminName: string; tenantScore: number }[];
   totalRevenue: number;
   newThisMonth: number;
 }
@@ -42,6 +43,7 @@ export function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [kpis, setKPIs] = useState<{ activeTenants: number; monthlyRecurringRevenue: number; totalTenants: number; totalUsers: number; totalBranches: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rangeFilter, setRangeFilter] = useState<'6months' | '12months'>('6months');
 
   useEffect(() => {
     Promise.all([fetchAnalytics(), fetchDashboardKPIs()])
@@ -57,15 +59,43 @@ export function AnalyticsPage() {
     return <LoadingOverlay open={true} />;
   }
 
-  const revenueChartData = data.revenueTrend.map(r => ({
-    name: `${MONTH_NAMES[r.month - 1]} ${r.year}`,
-    revenue: r.revenue,
-  }));
+  const generateTrendData = (months: number) => {
+    const result = [];
+    const now = new Date();
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      
+      const found = data.revenueTrend.find(r => r.year === year && r.month === month);
+      result.push({
+        name: `${MONTH_NAMES[month - 1]} ${year}`,
+        revenue: found ? found.revenue : 0
+      });
+    }
+    return result;
+  };
 
-  const growthChartData = data.tenantGrowth.map(g => ({
-    name: `${MONTH_NAMES[g.month - 1]}`,
-    signups: g.count,
-  }));
+  const revenueChartData = generateTrendData(rangeFilter === '6months' ? 6 : 12);
+
+  const generateGrowthData = (months: number) => {
+    const result = [];
+    const now = new Date();
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      
+      const found = data.tenantGrowth.find(g => g.year === year && g.month === month);
+      result.push({
+        name: `${MONTH_NAMES[month - 1]} ${year}`,
+        signups: found ? found.count : 0
+      });
+    }
+    return result;
+  };
+
+  const growthChartData = generateGrowthData(rangeFilter === '6months' ? 6 : 12);
 
   const pieData = data.planDistribution.map(p => ({
     name: p.planName,
@@ -74,20 +104,31 @@ export function AnalyticsPage() {
 
   const topTenantColumns: ColumnDef<(typeof data.topTenants)[0]>[] = [
     {
+      key: 'tenantId', label: 'ID', width: 80, sortable: true,
+      render: (row) => <Typography sx={{ fontSize: 12, fontFamily: 'monospace', color: 'text.secondary', fontWeight: 600 }}>{row.tenantId}</Typography>,
+    },
+    {
       key: 'name', label: 'Tenant Name', sortable: true,
+      render: (row) => <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#3E2723' }}>{row.name}</Typography>,
+    },
+    {
+      key: 'adminName', label: 'Tenant Admin', sortable: true,
+      render: (row) => <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>{row.adminName}</Typography>,
+    },
+    {
+      key: 'tenantScore', label: 'Score', width: 100, align: 'center', sortable: true,
       render: (row) => (
-        <Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{row.name}</Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary', fontFamily: 'monospace' }}>ID: {row.tenantId}</Typography>
-        </Box>
+        <Typography sx={{ fontSize: 13, fontWeight: 800, color: row.tenantScore >= 90 ? '#047857' : (row.tenantScore >= 80 ? '#B45309' : '#B91C1C') }}>
+          {row.tenantScore}
+        </Typography>
       ),
     },
     {
       key: 'subscriptionTier', label: 'Plan', width: 130, sortable: true,
       render: (row) => (
-        <Box sx={{ fontSize: 11.5, fontWeight: 700, color: '#6B4C2A', bgcolor: 'rgba(107,76,42,0.12)', px: 1.5, py: 0.5, borderRadius: 1, display: 'inline-block', border: '1px solid rgba(107,76,42,0.28)' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>
           {row.subscriptionTier}
-        </Box>
+        </Typography>
       ),
     },
     {
@@ -139,70 +180,62 @@ export function AnalyticsPage() {
       {/* ── Charts ── */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* Revenue Trend */}
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', height: 400 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 3 }}>Revenue Trend (Last 6 Months)</Typography>
-            <ResponsiveContainer width="100%" height="85%">
-              <AreaChart data={revenueChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6B4C2A" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6B4C2A" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dx={-10} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <RechartsTooltip contentStyle={{ borderRadius: '14px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                <Area type="monotone" dataKey="revenue" stroke="#6B4C2A" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-              </AreaChart>
-            </ResponsiveContainer>
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', height: 400, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography sx={{ fontSize: 16, fontWeight: 700 }}>Revenue Trend</Typography>
+              <Dropdown
+                value={rangeFilter}
+                onChange={(e) => setRangeFilter(e.target.value as '6months' | '12months')}
+                options={[
+                  { value: '6months', label: 'Last 6 Months' },
+                  { value: '12months', label: 'Last 12 Months' },
+                ]}
+                sx={{ minWidth: 140 }}
+              />
+            </Box>
+            <Box sx={{ flex: 1, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6B4C2A" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6B4C2A" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dx={-10} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <RechartsTooltip contentStyle={{ borderRadius: '14px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                  <Area type="monotone" dataKey="revenue" stroke="#6B4C2A" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Box>
           </Card>
         </Grid>
 
-        {/* Plan Distribution */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', height: 400 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 3 }}>Plan Distribution</Typography>
-            {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="85%">
-                <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="45%" innerRadius={50} outerRadius={90} paddingAngle={4} strokeWidth={2} stroke="#fff">
-                    {pieData.map((_e, i) => <Cell key={`cell-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie>
-                  <Legend verticalAlign="bottom" iconSize={10} formatter={(v: string) => <span style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>{v}</span>} />
-                  <RechartsTooltip formatter={(v: unknown, n: unknown) => [`${v} subscribers`, String(n)]} contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                </PieChart>
+        {/* Growth Chart */}
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', height: 400, display: 'flex', flexDirection: 'column' }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 3 }}>New Signups Per Month</Typography>
+            <Box sx={{ flex: 1, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={growthChartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <RechartsTooltip cursor={{ fill: '#F1F5F9' }} contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                  <Bar dataKey="signups" fill="#047857" radius={[4, 4, 0, 0]} barSize={30} />
+                </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '85%' }}>
-                <Typography sx={{ color: 'text.secondary', fontSize: 13 }}>No subscription data</Typography>
-              </Box>
-            )}
+            </Box>
           </Card>
         </Grid>
       </Grid>
 
-      {/* ── Tenant Growth & Top Tenants ── */}
+      {/* ── Top Tenants ── */}
       <Grid container spacing={3}>
-        {/* Growth Chart */}
-        <Grid size={{ xs: 12, lg: 5 }}>
-          <Card elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: '14px', height: 380 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 3 }}>New Signups Per Month</Typography>
-            <ResponsiveContainer width="100%" height="85%">
-              <BarChart data={growthChartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} allowDecimals={false} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <RechartsTooltip cursor={{ fill: '#F1F5F9' }} contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                <Bar dataKey="signups" fill="#047857" radius={[4, 4, 0, 0]} barSize={30} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        </Grid>
-
-        {/* Top Tenants */}
-        <Grid size={{ xs: 12, lg: 7 }}>
+        <Grid size={{ xs: 12 }}>
           <DataTable
             title="Top Tenants by Branches"
             data={data.topTenants}

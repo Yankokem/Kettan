@@ -16,9 +16,14 @@ export interface TenantDetail {
   tenant: {
     tenantId: number;
     name: string;
+    legalName: string | null;
+    taxId: string | null;
     email: string | null;
     phone: string | null;
+    telephone: string | null;
     address: string | null;
+    website: string | null;
+    supportEmail: string | null;
     subscriptionTier: string;
     subscriptionStatus: string;
     isActive: boolean;
@@ -36,6 +41,8 @@ export interface TenantDetail {
     autoRenew: boolean;
     planName: string | null;
     planPrice: number;
+    branchLimit: number;
+    userLimit: number;
   } | null;
   payments: { paymentId: number; amount: number; currency: string; paymentMethod: string | null; status: string; paidAt: string | null }[];
 }
@@ -67,5 +74,13 @@ export async function toggleTenantStatus(id: string, activate: boolean): Promise
     await api.put(`/api/admin/tenants/${id}/${endpoint}`);
   } catch (error: any) {
     throw new Error(error.response?.data?.message || `Failed to ${endpoint} tenant`);
+  }
+}
+
+export async function archiveTenant(id: string): Promise<void> {
+  try {
+    await api.delete(`/api/admin/tenants/${id}`);
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to archive tenant');
   }
 }
