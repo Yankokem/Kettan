@@ -323,6 +323,8 @@ export interface BranchOrder {
   fulfillmentCost: number;
   isHqInitiated: boolean;
   dispatchReason: string | null;
+  supplyPushBatchId?: number | null;
+  supplyPushBatchCode?: string | null;
 }
 
 export interface OrderRequestItem {
@@ -386,6 +388,60 @@ export interface CreateOrderPayload {
   }>;
 }
 
+export interface CreateMultiBranchSupplyPushPayload {
+  branchIds: number[];
+  subject?: string;
+  requestType?: string;
+  priority?: string;
+  dispatchWindow?: string;
+  dispatchDate?: string;
+  notes?: string;
+  items: Array<{
+    itemId: number;
+    quantityRequested: number;
+  }>;
+}
+
+export interface SupplyPushBatchStatusCount {
+  status: string;
+  count: number;
+}
+
+export interface MultiBranchSupplyPushDetail {
+  supplyPushBatchId: number;
+  transactionCode: string;
+  subject?: string | null;
+  requestType: string;
+  priority: string;
+  dispatchWindow: string;
+  dispatchDate?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  totalBranches: number;
+  completedBranches: number;
+  cancelledBranches: number;
+  statusBreakdown: SupplyPushBatchStatusCount[];
+  branchOrders: BranchOrder[];
+}
+
+export interface MultiBranchSupplyPushSummary {
+  supplyPushBatchId: number;
+  transactionCode: string;
+  subject?: string | null;
+  requestType: string;
+  priority: string;
+  dispatchWindow: string;
+  dispatchDate?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  totalBranches: number;
+  completedBranches: number;
+  cancelledBranches: number;
+  statusBreakdown: SupplyPushBatchStatusCount[];
+}
+
 function normalizeSupplyRequestStatus(status: string): string {
   if (status === 'Auto_Drafted') return 'AutoDrafted';
   return status;
@@ -394,6 +450,32 @@ function normalizeSupplyRequestStatus(status: string): string {
 function normalizeOrderStatus(status: string): string {
   if (status === 'DeliveredWithVariance') return 'Delivered';
   return status;
+}
+
+function normalizeBranchOrder(row: BranchOrder): BranchOrder {
+  return {
+    ...row,
+    status: normalizeOrderStatus(row.status),
+  };
+}
+
+function normalizeMultiBranchSupplyPushSummary(
+  summary: MultiBranchSupplyPushSummary,
+): MultiBranchSupplyPushSummary {
+  return {
+    ...summary,
+    statusBreakdown: summary.statusBreakdown ?? [],
+  };
+}
+
+function normalizeMultiBranchSupplyPushDetail(
+  detail: MultiBranchSupplyPushDetail,
+): MultiBranchSupplyPushDetail {
+  return {
+    ...detail,
+    statusBreakdown: detail.statusBreakdown ?? [],
+    branchOrders: (detail.branchOrders ?? []).map(normalizeBranchOrder),
+  };
 }
 
 export async function fetchSupplyRequests(status?: string): Promise<SupplyRequest[]> {
@@ -533,6 +615,32 @@ export async function fetchOrderById(orderId: number): Promise<OrderDetail> {
 export async function createOrder(payload: CreateOrderPayload): Promise<OrderDetail> {
   const response = await api.post<OrderDetail>('/api/Orders', payload);
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
+}
+
+export async function createMultiBranchSupplyPush(
+  payload: CreateMultiBranchSupplyPushPayload,
+): Promise<MultiBranchSupplyPushDetail> {
+  const response = await api.post<MultiBranchSupplyPushDetail>('/api/Orders/multi-branch-push', payload);
+  return normalizeMultiBranchSupplyPushDetail(response.data);
+}
+
+export async function fetchMultiBranchSupplyPushes(status?: string): Promise<MultiBranchSupplyPushSummary[]> {
+  const response = await api.get<MultiBranchSupplyPushSummary[]>('/api/Orders/multi-branch-pushes', {
+    params: status ? { status } : undefined,
+  });
+  const payload = response.data as unknown;
+  if (Array.isArray(payload)) {
+    return payload.map(normalizeMultiBranchSupplyPushSummary);
+  }
+  if (payload && typeof payload === 'object' && Array.isArray((payload as { items?: unknown }).items)) {
+    return (payload as { items: MultiBranchSupplyPushSummary[] }).items.map(normalizeMultiBranchSupplyPushSummary);
+  }
+  return [];
+}
+
+export async function fetchMultiBranchSupplyPushById(batchId: number): Promise<MultiBranchSupplyPushDetail> {
+  const response = await api.get<MultiBranchSupplyPushDetail>(`/api/Orders/multi-branch-pushes/${batchId}`);
+  return normalizeMultiBranchSupplyPushDetail(response.data);
 }
 
 export async function pickOrder(orderId: number, remarks?: string): Promise<void> {

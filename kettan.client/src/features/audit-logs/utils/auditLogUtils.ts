@@ -90,7 +90,7 @@ export function humanizeRoute(route: string, method: string): string {
 export function humanizeRequestDetails(row: AuditLogEntry): string {
   if (!row.route) return '';
 
-  const [path, queryString] = row.route.split('?');
+  const [_path, queryString] = row.route.split('?');
   let details = '';
 
   if (queryString) {

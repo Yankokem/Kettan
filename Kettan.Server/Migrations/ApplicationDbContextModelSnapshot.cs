@@ -1068,6 +1068,9 @@ namespace Kettan.Server.Migrations
                     b.Property<bool>("IsHqInitiated")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("SupplyPushBatchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("PushedToFulfillmentAt")
                         .HasColumnType("datetime2(3)");
 
@@ -1092,6 +1095,8 @@ namespace Kettan.Server.Migrations
                     b.HasIndex("CompletedByUserId");
 
                     b.HasIndex("RequestId");
+
+                    b.HasIndex("SupplyPushBatchId");
 
                     b.HasIndex("TenantId", "TransactionCode")
                         .IsUnique()
@@ -1781,6 +1786,97 @@ namespace Kettan.Server.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("Suppliers");
+                });
+
+            modelBuilder.Entity("Kettan.Server.Entities.SupplyPushBatch", b =>
+                {
+                    b.Property<int>("SupplyPushBatchId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SupplyPushBatchId"));
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("DispatchDate")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<byte>("DispatchWindow")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<byte>("Priority")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte>("RequestType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransactionCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2(3)");
+
+                    b.HasKey("SupplyPushBatchId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("TenantId", "TransactionCode")
+                        .IsUnique()
+                        .HasFilter("[TransactionCode] IS NOT NULL AND [TransactionCode] != ''");
+
+                    b.ToTable("SupplyPushBatches");
+                });
+
+            modelBuilder.Entity("Kettan.Server.Entities.SupplyPushBatchItem", b =>
+                {
+                    b.Property<int>("SupplyPushBatchItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SupplyPushBatchItemId"));
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("QuantityRequested")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SupplyPushBatchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitCostSnapshot")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("SupplyPushBatchItemId");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("SupplyPushBatchId", "ItemId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("SupplyPushBatchItems");
                 });
 
             modelBuilder.Entity("Kettan.Server.Entities.SupplyRequest", b =>
@@ -2631,6 +2727,11 @@ namespace Kettan.Server.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Kettan.Server.Entities.SupplyPushBatch", "SupplyPushBatch")
+                        .WithMany("Orders")
+                        .HasForeignKey("SupplyPushBatchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Kettan.Server.Entities.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
@@ -2642,6 +2743,8 @@ namespace Kettan.Server.Migrations
                     b.Navigation("CompletedByUser");
 
                     b.Navigation("SupplyRequest");
+
+                    b.Navigation("SupplyPushBatch");
 
                     b.Navigation("Tenant");
                 });
@@ -2936,6 +3039,52 @@ namespace Kettan.Server.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("Kettan.Server.Entities.SupplyPushBatch", b =>
+                {
+                    b.HasOne("Kettan.Server.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kettan.Server.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Kettan.Server.Entities.SupplyPushBatchItem", b =>
+                {
+                    b.HasOne("Kettan.Server.Entities.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kettan.Server.Entities.SupplyPushBatch", "SupplyPushBatch")
+                        .WithMany("Items")
+                        .HasForeignKey("SupplyPushBatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kettan.Server.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("SupplyPushBatch");
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("Kettan.Server.Entities.SupplyRequest", b =>
                 {
                     b.HasOne("Kettan.Server.Entities.Branch", "Branch")
@@ -3105,6 +3254,13 @@ namespace Kettan.Server.Migrations
             modelBuilder.Entity("Kettan.Server.Entities.Supplier", b =>
                 {
                     b.Navigation("ItemSuppliers");
+                });
+
+            modelBuilder.Entity("Kettan.Server.Entities.SupplyPushBatch", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Kettan.Server.Entities.SupplyRequest", b =>

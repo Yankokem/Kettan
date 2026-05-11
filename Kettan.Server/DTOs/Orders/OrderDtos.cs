@@ -18,6 +18,8 @@ public class BranchOrderDto
     public decimal FulfillmentCost { get; set; }
     public bool IsHqInitiated { get; set; }
     public string? DispatchReason { get; set; }
+    public int? SupplyPushBatchId { get; set; }
+    public string? SupplyPushBatchCode { get; set; }
 }
 
 public class OrderRequestItemDto

@@ -11,7 +11,6 @@ import { Button } from '../../components/UI/Button';
 import { PageHeader } from '../../components/UI/PageHeader';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
-import { BatchList } from './components/BatchList';
 import { TransactionsTable } from './components/TransactionsTable';
 import { AdjustmentModal } from './components/AdjustmentModal';
 import {
@@ -93,7 +92,7 @@ export function InventoryItemProfilePage() {
   const navigate = useNavigate();
 
   const [item, setItem] = useState<InventoryItem | null>(null);
-  const [batches, setBatches] = useState<Batch[]>([]);
+
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -133,7 +132,7 @@ export function InventoryItemProfilePage() {
         }
 
         setItem(detail.item);
-        setBatches(detail.batches);
+
         setTransactions(liveTransactions);
         setCategories(liveCategories);
         setSuppliers(liveSuppliers);
@@ -144,7 +143,7 @@ export function InventoryItemProfilePage() {
         }
 
         setItem(null);
-        setBatches([]);
+
         setTransactions([]);
         setCategories([]);
         setForm(null);
@@ -240,7 +239,7 @@ export function InventoryItemProfilePage() {
       }).catch(() => []);
 
       setItem(refreshedDetail.item);
-      setBatches(refreshedDetail.batches);
+
       setTransactions(refreshedTransactions);
       setForm(toItemFormState(refreshedDetail.item));
       setIsEditing(false);
@@ -270,13 +269,7 @@ export function InventoryItemProfilePage() {
     ...categories.map((category) => ({ value: category.id, label: category.name })),
   ];
 
-  const handleAdjustBatch = (batchId: string) => {
-    const batch = batches.find((entry) => entry.id === batchId);
-    if (batch) {
-      setSelectedBatch(batch);
-      setAdjustmentOpen(true);
-    }
-  };
+
 
   const handleAdjustmentConfirm = (data: AdjustmentFormData) => {
     console.log('Adjustment confirmed:', data);

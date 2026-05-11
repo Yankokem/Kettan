@@ -19,7 +19,6 @@ import {
   humanizeEntityAction, 
   parseChanges, 
   humanizeRequestDetails,
-  getSeverityColor,
   type AuditLogEntry as UtilityAuditLogEntry
 } from './utils/auditLogUtils';
 

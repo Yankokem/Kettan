@@ -19,6 +19,7 @@ import { SettingsPage } from '../features/settings/SettingsPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
 import { OrdersPage } from '../features/orders/OrdersPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
+import { MultiBranchSupplyPushDetailPage } from '../features/orders/MultiBranchSupplyPushDetailPage';
 import { NewOrderRequestPage } from '../features/orders/NewOrderRequestPage';
 import { MenuItemsPage } from '../features/menu/MenuItemsPage';
 import { AddMenuItemPage } from '../features/menu/AddMenuItemPage';
@@ -271,6 +272,12 @@ const orderDetailRoute = createRoute({
   component: OrderDetailPage,
 });
 
+const multiBranchSupplyPushDetailRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/orders/multi-branch/$batchId',
+  component: MultiBranchSupplyPushDetailPage,
+});
+
 const supplyRequestsRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/supply-requests',
@@ -447,6 +454,7 @@ const routeTree = rootRoute.addChildren([
     ordersRoute,
     newOrderRoute,
     orderDetailRoute,
+    multiBranchSupplyPushDetailRoute,
     supplyRequestsRoute,
     supplyRequestCreateRoute,
     supplyRequestEditRoute,

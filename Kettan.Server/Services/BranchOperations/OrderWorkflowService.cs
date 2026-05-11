@@ -46,6 +46,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
+            .Include(o => o.SupplyPushBatch)
             .Include(o => o.Shipment)
             .Include(o => o.ArrivedConfirmedByUser)
             .Include(o => o.CompletedByUser)
@@ -86,94 +87,248 @@ public class OrderWorkflowService : IOrderWorkflowService
         var tenantId = EnsureTenantContext();
         var userId = EnsureUserContext();
 
-        var itemCostLookup = await ValidateCreateOrderItemsAsync(dto.Items, tenantId);
-
-        var branchExists = await _context.Branches.AnyAsync(b => b.BranchId == dto.BranchId && b.TenantId == tenantId && b.IsActive);
-        if (!branchExists)
+        var branch = await _context.Branches
+            .Where(b => b.BranchId == dto.BranchId && b.TenantId == tenantId && b.IsActive)
+            .Select(b => new { b.BranchId, b.Name })
+            .FirstOrDefaultAsync();
+        if (branch == null)
         {
             throw new InvalidOperationException("Target branch was not found.");
         }
 
+        var itemCostLookup = await ValidateCreateOrderItemsAsync(dto.Items, tenantId);
         var now = DateTime.UtcNow;
 
         await using var tx = await _context.Database.BeginTransactionAsync();
 
-        var request = new SupplyRequest
-        {
-            TenantId = tenantId,
-            TransactionCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "SupplyRequest", "SP"), // SP for Supply Push
-            BranchId = dto.BranchId,
-            RequestedBy_UserId = userId,
-            Status = SupplyRequestStatus.Approved,
-            RequestType = Enum.TryParse<RequestType>(dto.RequestType, true, out var reqType) ? reqType : RequestType.HqInitiated,
-            Priority = Enum.TryParse<Priority>(dto.Priority, true, out var priority) ? priority : Priority.Normal,
-            DispatchWindow = Enum.TryParse<DispatchWindow>(dto.DispatchWindow, true, out var dispatchWindow) ? dispatchWindow : DispatchWindow.Today,
-            DispatchDate = dto.DispatchDate,
-            Subject = NormalizeSubject(dto.Subject),
-            Notes = NormalizeOptional(dto.Notes),
-            CreatedAt = now,
-            UpdatedAt = now,
-            Items = dto.Items.Select(i => new SupplyRequestItem
+        var (_, order) = await CreateHqInitiatedRequestAndOrderAsync(
+            tenantId,
+            userId,
+            dto.BranchId,
+            dto.Subject,
+            dto.RequestType,
+            dto.Priority,
+            dto.DispatchWindow,
+            dto.DispatchDate,
+            dto.Notes,
+            dto.Items.Select(i => new CreateOrderItemDto
             {
-                TenantId = tenantId,
                 ItemId = i.ItemId,
-                QuantityRequested = i.QuantityRequested,
-                QuantityApproved = i.QuantityRequested,
-                UnitCostSnapshot = itemCostLookup.TryGetValue(i.ItemId, out var unitCost) ? unitCost : 0
+                QuantityRequested = i.QuantityRequested
             }).ToList(),
-        };
+            itemCostLookup,
+            now,
+            supplyPushBatchId: null);
 
-        RecalculateRequestTotals(request);
-
-        _context.SupplyRequests.Add(request);
-        await _context.SaveChangesAsync();
-
-        // Resolve a human-readable dispatch reason from the request type
-        var dispatchReason = dto.RequestType?.ToLowerInvariant() switch
-        {
-            "replenishment" => "Low-Stock Replenishment",
-            "event" => "Event / Promo Loadout",
-            "manual" or "hq_initiated" => "Manual Internal Request",
-            _ => "HQ Supply Dispatch"
-        };
-
-        var order = new Order
-        {
-            TenantId = tenantId,
-            TransactionCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "Order", "ORD"),
-            RequestId = request.RequestId,
-            Status = OrderStatus.Processing,
-            PushedToFulfillmentAt = now,
-            IsHqInitiated = true,
-            DispatchReason = dispatchReason,
-        };
-
-        _context.Orders.Add(order);
-        _context.OrderStatusHistories.Add(new OrderStatusHistory
-        {
-            TenantId = tenantId,
-            Order = order,
-            Status = OrderStatus.Processing,
-            ChangedBy_UserId = userId,
-            Remarks = "HQ initiated supply dispatch created.",
-            Timestamp = now,
-        });
-
-        await _context.SaveChangesAsync();
         await tx.CommitAsync();
 
-        // Notify branch users about the incoming shipment
-        var branchName = request.Branch?.Name ?? "your branch";
         await _notificationService.CreateForRolesAsync(
             ["BranchManager", "BranchOwner"],
             "Incoming Supply Shipment",
-            $"HQ is preparing a supply dispatch for {branchName}. {dto.Items.Count} item(s) selected.",
+            $"HQ is preparing a supply dispatch for {branch.Name}. {dto.Items.Count} item(s) selected.",
             type: "Info",
             branchId: dto.BranchId,
             referenceType: "SupplyDispatch",
             referenceId: order.OrderId);
 
-        return await MapToOrderDetailDto(order, null);
+        var createdOrder = await _context.Orders
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Branch)
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.RequestedBy_User)
+            .Include(o => o.SupplyRequest)
+                .ThenInclude(r => r!.Items)
+                    .ThenInclude(i => i.Item)
+            .Include(o => o.Allocations)
+                .ThenInclude(a => a.Batch)
+                    .ThenInclude(b => b!.Item)
+            .Include(o => o.SupplyPushBatch)
+            .FirstAsync(o => o.OrderId == order.OrderId);
+
+        return await MapToOrderDetailDto(createdOrder, null);
+    }
+
+    public async Task<MultiBranchSupplyPushDetailDto> CreateMultiBranchSupplyPushAsync(CreateMultiBranchSupplyPushDto dto)
+    {
+        var tenantId = EnsureTenantContext();
+        var userId = EnsureUserContext();
+
+        var branchIds = (dto.BranchIds ?? [])
+            .Distinct()
+            .ToList();
+
+        if (branchIds.Count == 0)
+        {
+            throw new InvalidOperationException("At least one target branch is required.");
+        }
+
+        var branches = await _context.Branches
+            .Where(b => b.TenantId == tenantId && b.IsActive && branchIds.Contains(b.BranchId))
+            .Select(b => new { b.BranchId, b.Name })
+            .ToListAsync();
+
+        if (branches.Count != branchIds.Count)
+        {
+            throw new InvalidOperationException("One or more target branches are invalid.");
+        }
+
+        var createItems = (dto.Items ?? [])
+            .Select(i => new CreateOrderItemDto
+        {
+            ItemId = i.ItemId,
+            QuantityRequested = i.QuantityRequested
+        })
+            .ToList();
+        var itemCostLookup = await ValidateCreateOrderItemsAsync(createItems, tenantId);
+
+        var now = DateTime.UtcNow;
+        var requestType = Enum.TryParse<RequestType>(dto.RequestType, true, out var parsedType) ? parsedType : RequestType.HqInitiated;
+        var priority = Enum.TryParse<Priority>(dto.Priority, true, out var parsedPriority) ? parsedPriority : Priority.Normal;
+        var dispatchWindow = Enum.TryParse<DispatchWindow>(dto.DispatchWindow, true, out var parsedDispatchWindow) ? parsedDispatchWindow : DispatchWindow.Today;
+
+        await using var tx = await _context.Database.BeginTransactionAsync();
+
+        var batch = new SupplyPushBatch
+        {
+            TenantId = tenantId,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "SupplyPushBatch", "SPB"),
+            CreatedByUserId = userId,
+            Subject = NormalizeSubject(dto.Subject),
+            RequestType = requestType,
+            Priority = priority,
+            DispatchWindow = dispatchWindow,
+            DispatchDate = dto.DispatchDate,
+            Notes = NormalizeOptional(dto.Notes),
+            CreatedAt = now,
+            UpdatedAt = now,
+            Items = createItems.Select(i => new SupplyPushBatchItem
+            {
+                TenantId = tenantId,
+                ItemId = i.ItemId,
+                QuantityRequested = i.QuantityRequested,
+                UnitCostSnapshot = itemCostLookup.TryGetValue(i.ItemId, out var unitCost) ? unitCost : 0
+            }).ToList()
+        };
+
+        _context.SupplyPushBatches.Add(batch);
+        await _context.SaveChangesAsync();
+
+        foreach (var branch in branches)
+        {
+            var (_, order) = await CreateHqInitiatedRequestAndOrderAsync(
+                tenantId,
+                userId,
+                branch.BranchId,
+                dto.Subject,
+                dto.RequestType,
+                dto.Priority,
+                dto.DispatchWindow,
+                dto.DispatchDate,
+                dto.Notes,
+                createItems,
+                itemCostLookup,
+                now,
+                batch.SupplyPushBatchId);
+
+            await _notificationService.CreateForRolesAsync(
+                ["BranchManager", "BranchOwner"],
+                "Incoming Supply Shipment",
+                $"HQ is preparing a supply dispatch for {branch.Name}. {createItems.Count} item(s) selected.",
+                type: "Info",
+                branchId: branch.BranchId,
+                referenceType: "SupplyDispatch",
+                referenceId: order.OrderId);
+        }
+
+        await tx.CommitAsync();
+        return await GetMultiBranchSupplyPushByIdAsync(batch.SupplyPushBatchId)
+            ?? throw new InvalidOperationException("Failed to load created multi-branch supply push.");
+    }
+
+    public async Task<List<MultiBranchSupplyPushDto>> ListMultiBranchSupplyPushesAsync(string? status = null)
+    {
+        EnsureTenantContext();
+
+        var query = _context.SupplyPushBatches
+            .Include(b => b.Orders)
+            .OrderByDescending(b => b.CreatedAt)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
+        {
+            query = query.Where(b => b.Orders.Any(o => o.Status == parsedStatus));
+        }
+
+        var rows = await query.ToListAsync();
+        return rows.Select(MapToSupplyPushBatchDto).ToList();
+    }
+
+    public async Task<MultiBranchSupplyPushDetailDto?> GetMultiBranchSupplyPushByIdAsync(int batchId)
+    {
+        EnsureTenantContext();
+
+        var batch = await _context.SupplyPushBatches
+            .Include(b => b.Items)
+                .ThenInclude(i => i.Item)
+            .Include(b => b.Orders)
+                .ThenInclude(o => o.SupplyRequest)
+                    .ThenInclude(r => r!.Branch)
+            .Include(b => b.Orders)
+                .ThenInclude(o => o.SupplyRequest)
+                    .ThenInclude(r => r!.Items)
+                        .ThenInclude(i => i.Item)
+            .Include(b => b.Orders)
+                .ThenInclude(o => o.Shipment)
+            .Include(b => b.Orders)
+                .ThenInclude(o => o.SupplyPushBatch)
+            .FirstOrDefaultAsync(b => b.SupplyPushBatchId == batchId);
+
+        if (batch == null)
+        {
+            return null;
+        }
+
+        var detail = new MultiBranchSupplyPushDetailDto
+        {
+            SupplyPushBatchId = batch.SupplyPushBatchId,
+            TransactionCode = batch.TransactionCode,
+            Subject = batch.Subject,
+            RequestType = batch.RequestType.ToString(),
+            Priority = batch.Priority.ToString(),
+            DispatchWindow = batch.DispatchWindow.ToString(),
+            DispatchDate = batch.DispatchDate,
+            Notes = batch.Notes,
+            CreatedAt = batch.CreatedAt,
+            UpdatedAt = batch.UpdatedAt,
+            TotalBranches = batch.Orders.Count,
+            CompletedBranches = batch.Orders.Count(o => o.Status == OrderStatus.Completed),
+            CancelledBranches = batch.Orders.Count(o => o.Status == OrderStatus.Cancelled),
+            StatusBreakdown = batch.Orders
+                .GroupBy(o => o.Status)
+                .OrderBy(g => g.Key.ToString())
+                .Select(g => new SupplyPushBatchStatusCountDto
+                {
+                    Status = g.Key.ToString(),
+                    Count = g.Count()
+                })
+                .ToList(),
+            Items = batch.Items
+                .Select(i => new SupplyPushBatchItemDto
+                {
+                    ItemId = i.ItemId,
+                    ItemName = i.Item?.Name ?? string.Empty,
+                    ItemSku = i.Item?.SKU ?? string.Empty,
+                    QuantityRequested = i.QuantityRequested,
+                    UnitCostSnapshot = i.UnitCostSnapshot
+                })
+                .ToList(),
+            BranchOrders = batch.Orders
+                .OrderByDescending(o => o.PushedToFulfillmentAt)
+                .Select(MapToBranchOrderDto)
+                .ToList()
+        };
+
+        return detail;
     }
 
     public async Task<OrderDetailDto?> GetOrderDetailAsync(int orderId)
@@ -193,6 +348,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
+            .Include(o => o.SupplyPushBatch)
             .Include(o => o.Allocations)
                 .ThenInclude(a => a.Batch)
                     .ThenInclude(b => b!.Item)
@@ -533,6 +689,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Branch)
+            .Include(o => o.SupplyPushBatch)
             .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order == null)
@@ -560,6 +717,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         var order = await _context.Orders
             .Include(o => o.SupplyRequest)
+            .Include(o => o.SupplyPushBatch)
             .FirstOrDefaultAsync(o => o.OrderId == orderId && o.TenantId == tenantId);
 
         if (order == null)
@@ -586,6 +744,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
+            .Include(o => o.SupplyPushBatch)
             .Include(o => o.Shipment)
             .Where(o => o.IsHqInitiated);
 
@@ -610,6 +769,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .Include(o => o.SupplyRequest)
                 .ThenInclude(r => r!.Items)
                     .ThenInclude(i => i.Item)
+            .Include(o => o.SupplyPushBatch)
             .Include(o => o.Shipment)
             .Where(o => o.IsHqInitiated && o.SupplyRequest != null && o.SupplyRequest.BranchId == branchId);
 
@@ -646,7 +806,9 @@ public class OrderWorkflowService : IOrderWorkflowService
             TotalFulfilledValue = request?.TotalFulfilledValue ?? 0,
             FulfillmentCost = request?.TotalFulfilledValue ?? 0,
             IsHqInitiated = order.IsHqInitiated,
-            DispatchReason = order.DispatchReason
+            DispatchReason = order.DispatchReason,
+            SupplyPushBatchId = order.SupplyPushBatchId,
+            SupplyPushBatchCode = order.SupplyPushBatch?.TransactionCode
         };
     }
 
@@ -694,6 +856,8 @@ public class OrderWorkflowService : IOrderWorkflowService
                 : null,
             IsHqInitiated = order.IsHqInitiated,
             DispatchReason = order.DispatchReason,
+            SupplyPushBatchId = order.SupplyPushBatchId,
+            SupplyPushBatchCode = order.SupplyPushBatch?.TransactionCode,
             RequestedItems = new List<OrderRequestItemDto>()
         };
 
@@ -737,6 +901,118 @@ public class OrderWorkflowService : IOrderWorkflowService
                 }).ToList();
 
         return dto;
+    }
+
+    private MultiBranchSupplyPushDto MapToSupplyPushBatchDto(SupplyPushBatch batch)
+    {
+        var orders = batch.Orders ?? [];
+        return new MultiBranchSupplyPushDto
+        {
+            SupplyPushBatchId = batch.SupplyPushBatchId,
+            TransactionCode = batch.TransactionCode,
+            Subject = batch.Subject,
+            RequestType = batch.RequestType.ToString(),
+            Priority = batch.Priority.ToString(),
+            DispatchWindow = batch.DispatchWindow.ToString(),
+            DispatchDate = batch.DispatchDate,
+            Notes = batch.Notes,
+            CreatedAt = batch.CreatedAt,
+            UpdatedAt = batch.UpdatedAt,
+            TotalBranches = orders.Count,
+            CompletedBranches = orders.Count(o => o.Status == OrderStatus.Completed),
+            CancelledBranches = orders.Count(o => o.Status == OrderStatus.Cancelled),
+            StatusBreakdown = orders
+                .GroupBy(o => o.Status)
+                .OrderBy(g => g.Key.ToString())
+                .Select(g => new SupplyPushBatchStatusCountDto
+                {
+                    Status = g.Key.ToString(),
+                    Count = g.Count()
+                })
+                .ToList()
+        };
+    }
+
+    private async Task<(SupplyRequest Request, Order Order)> CreateHqInitiatedRequestAndOrderAsync(
+        int tenantId,
+        int userId,
+        int branchId,
+        string? subject,
+        string? requestType,
+        string? priority,
+        string? dispatchWindow,
+        DateTime? dispatchDate,
+        string? notes,
+        IReadOnlyCollection<CreateOrderItemDto> items,
+        IReadOnlyDictionary<int, decimal> itemCostLookup,
+        DateTime now,
+        int? supplyPushBatchId)
+    {
+        var request = new SupplyRequest
+        {
+            TenantId = tenantId,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "SupplyRequest", "SP"),
+            BranchId = branchId,
+            RequestedBy_UserId = userId,
+            Status = SupplyRequestStatus.Approved,
+            RequestType = Enum.TryParse<RequestType>(requestType, true, out var reqType) ? reqType : RequestType.HqInitiated,
+            Priority = Enum.TryParse<Priority>(priority, true, out var parsedPriority) ? parsedPriority : Priority.Normal,
+            DispatchWindow = Enum.TryParse<DispatchWindow>(dispatchWindow, true, out var parsedDispatchWindow) ? parsedDispatchWindow : DispatchWindow.Today,
+            DispatchDate = dispatchDate,
+            Subject = NormalizeSubject(subject),
+            Notes = NormalizeOptional(notes),
+            CreatedAt = now,
+            UpdatedAt = now,
+            Items = items.Select(i => new SupplyRequestItem
+            {
+                TenantId = tenantId,
+                ItemId = i.ItemId,
+                QuantityRequested = i.QuantityRequested,
+                QuantityApproved = i.QuantityRequested,
+                UnitCostSnapshot = itemCostLookup.TryGetValue(i.ItemId, out var unitCost) ? unitCost : 0
+            }).ToList()
+        };
+
+        RecalculateRequestTotals(request);
+        _context.SupplyRequests.Add(request);
+        await _context.SaveChangesAsync();
+
+        var order = new Order
+        {
+            TenantId = tenantId,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "Order", "ORD"),
+            RequestId = request.RequestId,
+            Status = OrderStatus.Processing,
+            PushedToFulfillmentAt = now,
+            IsHqInitiated = true,
+            DispatchReason = ResolveDispatchReason(requestType),
+            SupplyPushBatchId = supplyPushBatchId
+        };
+
+        _context.Orders.Add(order);
+        _context.OrderStatusHistories.Add(new OrderStatusHistory
+        {
+            TenantId = tenantId,
+            Order = order,
+            Status = OrderStatus.Processing,
+            ChangedBy_UserId = userId,
+            Remarks = "HQ initiated supply dispatch created.",
+            Timestamp = now,
+        });
+
+        await _context.SaveChangesAsync();
+        return (request, order);
+    }
+
+    private static string ResolveDispatchReason(string? requestType)
+    {
+        return requestType?.ToLowerInvariant() switch
+        {
+            "replenishment" => "Low-Stock Replenishment",
+            "event" => "Event / Promo Loadout",
+            "manual" or "hq_initiated" => "Manual Internal Request",
+            _ => "HQ Supply Dispatch"
+        };
     }
 
     private static string? NormalizeOptional(string? value)
@@ -1457,6 +1733,11 @@ public class OrderWorkflowService : IOrderWorkflowService
 
     private async Task<Dictionary<int, decimal>> ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items, int tenantId)
     {
+        if (items == null)
+        {
+            throw new InvalidOperationException("At least one item is required.");
+        }
+
         var rows = items.ToList();
         if (rows.Count == 0)
         {

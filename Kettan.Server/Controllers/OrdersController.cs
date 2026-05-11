@@ -32,12 +32,48 @@ public class OrdersController : ControllerBase
         }
     }
 
+    [HttpPost("multi-branch-push")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<MultiBranchSupplyPushDetailDto>> CreateMultiBranchPush([FromBody] CreateMultiBranchSupplyPushDto dto)
+    {
+        try
+        {
+            var created = await _service.CreateMultiBranchSupplyPushAsync(dto);
+            return CreatedAtAction(nameof(GetMultiBranchPushById), new { batchId = created.SupplyPushBatchId }, created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpGet]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
     public async Task<ActionResult<List<BranchOrderDto>>> GetOrders([FromQuery] string? status = null)
     {
         var rows = await _service.ListBranchOrdersAsync(status);
         return Ok(rows);
+    }
+
+    [HttpGet("multi-branch-pushes")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<List<MultiBranchSupplyPushDto>>> GetMultiBranchPushes([FromQuery] string? status = null)
+    {
+        var rows = await _service.ListMultiBranchSupplyPushesAsync(status);
+        return Ok(rows);
+    }
+
+    [HttpGet("multi-branch-pushes/{batchId:int}")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<MultiBranchSupplyPushDetailDto>> GetMultiBranchPushById(int batchId)
+    {
+        var row = await _service.GetMultiBranchSupplyPushByIdAsync(batchId);
+        if (row == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(row);
     }
 
     [HttpGet("hq-dispatches")]

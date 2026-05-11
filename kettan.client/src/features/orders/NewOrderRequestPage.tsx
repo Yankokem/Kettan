@@ -1,5 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Divider, Grid, Paper, TextField as MuiTextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Checkbox,
+  Divider,
+  FormControl,
+  Grid,
+  ListItemText,
+  MenuItem,
+  OutlinedInput,
+  Paper,
+  Select,
+  TextField as MuiTextField,
+  Typography
+} from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
@@ -17,7 +31,7 @@ import { Dropdown } from '../../components/UI/Dropdown';
 import { useAuthStore } from '../../store/useAuthStore';
 import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 import { fetchBranches } from '../branches/branchesApi';
-import { createOrder } from '../branch-operations/api';
+import { createMultiBranchSupplyPush, createOrder } from '../branch-operations/api';
 
 import { SelectedItemsTable } from './components/SelectedItemsTable';
 import { InventorySelectionModal } from './components/InventorySelectionModal';
@@ -54,7 +68,7 @@ export function NewOrderRequestPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedBranch, setSelectedBranch] = useState(BRANCHES[0].value);
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [selectedPriority, setSelectedPriority] = useState(REQUEST_PRIORITIES[0].value);
   const [requestType, setRequestType] = useState(REQUEST_TYPES[0].value);
   const [dispatchWindow, setDispatchWindow] = useState(DISPATCH_WINDOWS[1].value);
@@ -97,7 +111,7 @@ export function NewOrderRequestPage() {
 
         setBranchOptions(mappedBranches.length > 0 ? mappedBranches : [{ value: '', label: 'No active branches' }]);
         if (mappedBranches.length > 0) {
-          setSelectedBranch((prev) => (prev ? prev : mappedBranches[0].value));
+          setSelectedBranches((prev) => (prev.length > 0 ? prev : [String(mappedBranches[0].value)]));
         }
 
         const mappedInventory: InventoryItem[] = items.map((item) => ({
@@ -156,8 +170,16 @@ export function NewOrderRequestPage() {
         return;
       }
 
-      if (!selectedBranch) {
-        setError('Please select a destination branch.');
+      if (selectedBranches.length === 0) {
+        setError('Please select at least one destination branch.');
+        return;
+      }
+
+      const branchIds = selectedBranches
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0);
+      if (branchIds.length !== selectedBranches.length) {
+        setError('Please select valid destination branches.');
         return;
       }
 
@@ -170,8 +192,27 @@ export function NewOrderRequestPage() {
         setIsSaving(true);
         setError(null);
 
-        const created = await createOrder({
-          branchId: Number(selectedBranch),
+        if (branchIds.length === 1) {
+          const created = await createOrder({
+            branchId: branchIds[0],
+            subject: subject.trim() || undefined,
+            requestType,
+            priority: selectedPriority,
+            dispatchWindow,
+            dispatchDate: dispatchDate ? new Date(`${dispatchDate}T00:00:00`).toISOString() : undefined,
+            notes: requestNotes || undefined,
+            items: selectedItems.map((line) => ({
+              itemId: Number(line.item.id),
+              quantityRequested: Number(line.quantity),
+            })),
+          });
+
+          navigate({ to: '/orders/$orderId', params: { orderId: String(created.orderId) } });
+          return;
+        }
+
+        const createdBatch = await createMultiBranchSupplyPush({
+          branchIds,
           subject: subject.trim() || undefined,
           requestType,
           priority: selectedPriority,
@@ -184,7 +225,16 @@ export function NewOrderRequestPage() {
           })),
         });
 
-        navigate({ to: '/orders/$orderId', params: { orderId: String(created.orderId) } });
+        const createdBatchId = Number(createdBatch.supplyPushBatchId);
+        if (!Number.isInteger(createdBatchId) || createdBatchId <= 0) {
+          setError('Batch was created but no valid batch ID was returned.');
+          return;
+        }
+
+        navigate({
+          to: '/orders/multi-branch/$batchId',
+          params: { batchId: String(createdBatchId) }
+        });
       } catch {
         setError('Failed to submit internal request.');
       } finally {
@@ -240,12 +290,50 @@ export function NewOrderRequestPage() {
                     Destination Branch
                   </Typography>
                 </Box>
-                <Dropdown
-                  options={branchOptions}
-                  value={selectedBranch}
-                  onChange={(e) => setSelectedBranch(e.target.value as string)}
-                  fullWidth
-                />
+                <FormControl size="small" fullWidth>
+                  <Select
+                    multiple
+                    value={selectedBranches}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setSelectedBranches(typeof value === 'string' ? value.split(',') : (value as string[]));
+                    }}
+                    input={<OutlinedInput />}
+                    renderValue={(selected) => {
+                      const selectedValues = selected as string[];
+                      return branchOptions
+                        .filter((option) => selectedValues.includes(String(option.value)))
+                        .map((option) => option.label)
+                        .join(', ');
+                    }}
+                    sx={{
+                      borderRadius: '14px',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      bgcolor: 'background.paper',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'divider',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(107, 76, 42, 0.5)',
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#C9A84C',
+                        borderWidth: '1px',
+                      },
+                    }}
+                  >
+                    {branchOptions.map((option) => {
+                      const value = String(option.value);
+                      return (
+                        <MenuItem key={value} value={value}>
+                          <Checkbox checked={selectedBranches.includes(value)} />
+                          <ListItemText primary={option.label} />
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
               </Box>
             </Grid>
 
