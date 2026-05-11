@@ -112,7 +112,8 @@ export type TransactionType = 'Restock' | 'Consumption' | 'Sales_Auto' | 'Adjust
 
 // Inventory transaction (audit trail)
 export interface InventoryTransaction {
-  id: string;
+  id: string; // Will hold the canonical UI key
+  transactionCode?: string;
   batchId: string;
   batch?: Batch;
   itemId: string;

@@ -95,6 +95,7 @@ public class BatchDto
 
 public class TransactionDto
 {
+    public string TransactionCode { get; set; } = string.Empty;
     public int TransactionId { get; set; }
     public int BatchId { get; set; }
     public string BatchNumber { get; set; } = string.Empty;

@@ -16,6 +16,7 @@ public class SupplyRequestService : ISupplyRequestService
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notificationService;
     private readonly IInventoryService _inventoryService;
+    private readonly IDocumentSequenceService _sequenceService;
 
     private readonly IHubContext<WorkflowHub> _hubContext;
 
@@ -24,12 +25,14 @@ public class SupplyRequestService : ISupplyRequestService
         ICurrentUserService currentUser,
         INotificationService notificationService,
         IInventoryService inventoryService,
+        IDocumentSequenceService sequenceService,
         IHubContext<WorkflowHub> hubContext)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationService = notificationService;
         _inventoryService = inventoryService;
+        _sequenceService = sequenceService;
         _hubContext = hubContext;
     }
 
@@ -128,6 +131,7 @@ public class SupplyRequestService : ISupplyRequestService
         var request = new SupplyRequest
         {
             TenantId = _currentUser.TenantId.Value,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(_currentUser.TenantId.Value, "SupplyRequest", "SR"),
             BranchId = branchId,
             RequestedBy_UserId = userId,
             Status = SupplyRequestStatus.Draft,
@@ -366,6 +370,7 @@ public class SupplyRequestService : ISupplyRequestService
         var order = new Order
         {
             TenantId = request.TenantId,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(request.TenantId, "Order", "ORD"),
             RequestId = request.RequestId,
             Status = OrderStatus.Picking,
             PushedToFulfillmentAt = now
@@ -546,6 +551,7 @@ public class SupplyRequestService : ISupplyRequestService
         var newRequest = new SupplyRequest
         {
             TenantId = _currentUser.TenantId.Value,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(_currentUser.TenantId.Value, "SupplyRequest", "SR"),
             BranchId = validatedBranchId,
             RequestedBy_UserId = userId,
             Status = SupplyRequestStatus.AutoDrafted,
@@ -885,6 +891,7 @@ public class SupplyRequestService : ISupplyRequestService
 
         return new SupplyRequestDto
         {
+            TransactionCode = request.TransactionCode,
             RequestId = request.RequestId,
             ReferenceNumber = request.ReferenceNumber,
             Subject = request.Subject,

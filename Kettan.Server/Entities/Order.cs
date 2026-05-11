@@ -11,6 +11,9 @@ public class Order : ITenantEntity
 
     public int TenantId { get; set; }
 
+    [MaxLength(20)]
+    public string TransactionCode { get; set; } = string.Empty;
+
     [ForeignKey(nameof(TenantId))]
     public Tenant? Tenant { get; set; }
 

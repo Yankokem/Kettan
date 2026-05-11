@@ -12,21 +12,26 @@ public class InventoryService : IInventoryService
     private readonly ApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notificationService;
+    private readonly IDocumentSequenceService _sequenceService;
 
     public InventoryService(
         ApplicationDbContext context, 
         ICurrentUserService currentUser,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IDocumentSequenceService sequenceService)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationService = notificationService;
+        _sequenceService = sequenceService;
     }
 
     public async Task<StockInResult> StockInAsync(int itemId, decimal quantity, string batchNumber, DateTime expiryDate, decimal unitCost, int? supplierId = null, decimal? defaultThreshold = null, string? remarks = null)
     {
         var tenantId = EnsureTenantContext();
         var userId = EnsureUserContext();
+
+        var transCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "Inventory", "IV");
 
         if (quantity <= 0)
         {
@@ -99,6 +104,7 @@ public class InventoryService : IInventoryService
         _context.InventoryTransactions.Add(new InventoryTransaction
         {
             TenantId = tenantId,
+            TransactionCode = transCode,
             BatchId = batch.BatchId,
             UserId = userId,
             QuantityChange = quantity,
@@ -151,6 +157,8 @@ public class InventoryService : IInventoryService
     {
         var tenantId = EnsureTenantContext();
         var userId = EnsureUserContext();
+
+        var transCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "Inventory", "IV");
 
         if (quantity <= 0)
         {
@@ -206,6 +214,7 @@ public class InventoryService : IInventoryService
             _context.InventoryTransactions.Add(new InventoryTransaction
             {
                 TenantId = tenantId,
+                TransactionCode = transCode,
                 BatchId = batch.BatchId,
                 UserId = userId,
                 QuantityChange = -consume,
@@ -319,6 +328,8 @@ public class InventoryService : IInventoryService
         var tenantId = EnsureTenantContext();
         var userId = EnsureUserContext();
 
+        var transCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "Inventory", "IV");
+
         if (quantity <= 0)
         {
             throw new InvalidOperationException("Transfer quantity must be greater than zero.");
@@ -374,6 +385,7 @@ public class InventoryService : IInventoryService
         _context.InventoryTransactions.Add(new InventoryTransaction
         {
             TenantId = tenantId,
+            TransactionCode = transCode,
             BatchId = sourceBatch.BatchId,
             UserId = userId,
             QuantityChange = -quantity,
@@ -387,6 +399,7 @@ public class InventoryService : IInventoryService
         _context.InventoryTransactions.Add(new InventoryTransaction
         {
             TenantId = tenantId,
+            TransactionCode = transCode,
             BatchId = targetBatch.BatchId,
             UserId = userId,
             QuantityChange = quantity,

@@ -44,6 +44,7 @@ interface BatchDto {
 }
 
 interface TransactionDto {
+  transactionCode?: string;
   transactionId: number;
   batchId: number;
   batchNumber: string;
@@ -243,7 +244,8 @@ function toTransaction(
   const batch = batchById?.get(batchId);
 
   return {
-    id: String(row.transactionId),
+    id: row.transactionCode || String(row.transactionId),
+    transactionCode: row.transactionCode,
     batchId,
     batch:
       batch ??

@@ -2,6 +2,7 @@ namespace Kettan.Server.DTOs.Orders;
 
 public class BranchOrderDto
 {
+    public string TransactionCode { get; set; } = string.Empty;
     public int OrderId { get; set; }
     public int RequestId { get; set; }
     public string? Subject { get; set; }

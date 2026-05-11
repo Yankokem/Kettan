@@ -19,6 +19,7 @@ export interface SupplyRequestItem {
 }
 
 export interface SupplyRequest {
+  transactionCode: string;
   requestId: number;
   referenceNumber?: string | null;
   subject?: string | null;
@@ -99,6 +100,7 @@ export interface ReturnScheduleConflict {
 }
 
 export interface ReturnRecord {
+  transactionCode: string;
   returnId: number;
   orderId: number;
   subject: string | null;
@@ -305,6 +307,7 @@ export async function sendReturnMessage(returnId: number, content: string): Prom
 // ── BRANCH ORDERS ──
 
 export interface BranchOrder {
+  transactionCode: string;
   orderId: number;
   requestId: number;
   subject?: string | null;

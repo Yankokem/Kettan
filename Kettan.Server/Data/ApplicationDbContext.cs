@@ -64,10 +64,37 @@ public class ApplicationDbContext : DbContext
     public DbSet<AuditLog> AuditLogs { get; set; } = null!;
     public DbSet<OrderMessage> OrderMessages { get; set; } = null!;
     public DbSet<ReturnMessage> ReturnMessages { get; set; } = null!;
+    public DbSet<DocumentSequence> DocumentSequences { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Document Sequence
+        modelBuilder.Entity<DocumentSequence>()
+            .HasIndex(ds => new { ds.TenantId, ds.DocumentType, ds.PeriodKey })
+            .IsUnique();
+
+        // Transaction Code Unique Constraints
+        modelBuilder.Entity<Order>()
+            .HasIndex(o => new { o.TenantId, o.TransactionCode })
+            .IsUnique()
+            .HasFilter("[TransactionCode] IS NOT NULL AND [TransactionCode] != ''");
+
+        modelBuilder.Entity<SupplyRequest>()
+            .HasIndex(sr => new { sr.TenantId, sr.TransactionCode })
+            .IsUnique()
+            .HasFilter("[TransactionCode] IS NOT NULL AND [TransactionCode] != ''");
+
+        modelBuilder.Entity<Return>()
+            .HasIndex(r => new { r.TenantId, r.TransactionCode })
+            .IsUnique()
+            .HasFilter("[TransactionCode] IS NOT NULL AND [TransactionCode] != ''");
+
+        modelBuilder.Entity<InventoryTransaction>()
+            .HasIndex(it => new { it.TenantId, it.TransactionCode })
+            .IsUnique()
+            .HasFilter("[TransactionCode] IS NOT NULL AND [TransactionCode] != ''");
 
         // Required email index
         modelBuilder.Entity<User>()

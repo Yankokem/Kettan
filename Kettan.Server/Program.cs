@@ -13,6 +13,7 @@ using Kettan.Server.Services.Inventory;
 using Kettan.Server.Services.Email;
 using Kettan.Server.Services.Subscription;
 using Kettan.Server.Services.Analytics;
+using Kettan.Server.Services;
 using Kettan.Server.Services.Export;
 using Kettan.Server.Middleware;
 
@@ -76,6 +77,7 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<ICsvExportService, CsvExportService>();
 builder.Services.AddScoped<IPdfExportService, PdfExportService>();
 builder.Services.AddScoped<IImageService, CloudinaryService>();
+builder.Services.AddScoped<IDocumentSequenceService, DocumentSequenceService>();
 builder.Services.AddHostedService<MonthlyBillingBackgroundService>();
 builder.Services.AddSignalR();
 

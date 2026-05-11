@@ -125,7 +125,7 @@ function ActionsMenu({ row }: { row: ReturnRecord }) {
           <ListItemText primary="View Linked Order" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#16A34A' }} />
         </MenuItem>
         <Divider sx={{ my: 1 }} />
-        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(`RT-${row.returnId}`); }}>
+        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(row.transactionCode || `RT-${row.returnId}`); }}>
           <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: '#64748B' }} /></ListItemIcon>
           <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#64748B' }} />
         </MenuItem>
@@ -248,7 +248,7 @@ export function ReturnsPage() {
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          RT-{row.returnId}
+          {row.transactionCode || `RT-${row.returnId}`}
         </Typography>
       ),
     },

@@ -152,7 +152,7 @@ function ActionsMenu({ row, type }: { row: any; type: 'Request' | 'Dispatch' }) 
           <ListItemText primary="Quick Message" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
         </MenuItem>
         <Divider sx={{ my: 1 }} />
-        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(type === 'Request' ? `SR-${row.requestId}` : `SD-${row.orderId}`); }}>
+        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(row.transactionCode || (type === 'Request' ? `SR-${row.requestId}` : `SD-${row.orderId}`)); }}>
           <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
           <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
         </MenuItem>
@@ -239,9 +239,9 @@ export function SupplyRequestsPage() {
   const combinedRows = useMemo(() => {
     const requests = Array.isArray(rows) ? rows.map(r => ({
       ...r,
-      id: `SR-${r.requestId}`,
+      id: r.transactionCode || `SR-${r.requestId}`,
       type: 'Request' as const,
-      displayId: `SR-${r.requestId}`,
+      displayId: r.transactionCode || `SR-${r.requestId}`,
       date: r.updatedAt,
       itemsCount: r.items.length,
       filedBy: r.requestedByName || `User ${r.requestedByUserId}`,
@@ -252,9 +252,9 @@ export function SupplyRequestsPage() {
 
     const dispatches = Array.isArray(incomingShipments) ? incomingShipments.map(o => ({
       ...o,
-      id: `SD-${o.orderId}`,
+      id: o.transactionCode || `SD-${o.orderId}`,
       type: 'Dispatch' as const,
-      displayId: `SD-${o.orderId}`,
+      displayId: o.transactionCode || `SD-${o.orderId}`,
       date: o.pushedToFulfillmentAt,
       itemsCount: o.itemsCount,
       filedBy: 'HQ Dispatch',

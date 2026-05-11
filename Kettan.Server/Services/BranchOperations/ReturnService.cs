@@ -25,6 +25,7 @@ public class ReturnService : IReturnService
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notificationService;
     private readonly IInventoryService _inventoryService;
+    private readonly IDocumentSequenceService _sequenceService;
     private readonly IHubContext<ReturnHub> _hubContext;
     private readonly IHubContext<WorkflowHub> _workflowHub;
 
@@ -33,6 +34,7 @@ public class ReturnService : IReturnService
         ICurrentUserService currentUser,
         INotificationService notificationService,
         IInventoryService inventoryService,
+        IDocumentSequenceService sequenceService,
         IHubContext<ReturnHub> hubContext,
         IHubContext<WorkflowHub> workflowHub)
     {
@@ -40,6 +42,7 @@ public class ReturnService : IReturnService
         _currentUser = currentUser;
         _notificationService = notificationService;
         _inventoryService = inventoryService;
+        _sequenceService = sequenceService;
         _hubContext = hubContext;
         _workflowHub = workflowHub;
     }
@@ -175,6 +178,7 @@ public class ReturnService : IReturnService
         var returnEntry = new Return
         {
             TenantId = tenantId,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "Return", "RT"),
             OrderId = dto.OrderId,
             BranchId = _currentUser.BranchId.Value,
             Subject = NormalizeSubject(dto.Subject),
@@ -1161,6 +1165,7 @@ public class ReturnService : IReturnService
         var replacementRequest = new SupplyRequest
         {
             TenantId = returnEntry.TenantId,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(returnEntry.TenantId, "SupplyRequest", "SR"),
             BranchId = returnEntry.BranchId,
             RequestedBy_UserId = userId,
             Status = SupplyRequestStatus.Approved,
@@ -1189,6 +1194,7 @@ public class ReturnService : IReturnService
         var replacementOrder = new Order
         {
             TenantId = returnEntry.TenantId,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(returnEntry.TenantId, "Order", "ORD"),
             RequestId = replacementRequest.RequestId,
             Status = OrderStatus.Processing,
             PushedToFulfillmentAt = now
@@ -1226,6 +1232,7 @@ public class ReturnService : IReturnService
     {
         return new ReturnDto
         {
+            TransactionCode = row.TransactionCode,
             ReturnId = row.ReturnId,
             OrderId = row.OrderId,
             Subject = row.Subject,

@@ -34,7 +34,8 @@ function defaultEndDate() {
 
 // Mock Data for Orders
 interface OrderItem {
-  id: string;
+  id: string; // The canonical ID composite e.g. ORD-123 or SR-123 for routing
+  transactionCode: string; // The display code ORD-2605-0123
   branch: string;
   subject: string;
   itemsCount: number;
@@ -124,7 +125,7 @@ function getColumns(
       width: 120,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          {row.id.startsWith('SR-') ? row.id : `ORD-${row.id}`}
+          {row.transactionCode || (row.id.startsWith('SR-') ? row.id : `ORD-${row.id}`)}
         </Typography>
       ),
     },
@@ -262,6 +263,7 @@ export function OrdersPage() {
 
         const mappedOrders = ordersRows.map((row: BranchOrder) => ({
           id: String(row.orderId),
+          transactionCode: row.transactionCode,
           branch: row.branchName || `Branch ${row.branchId}`,
           subject: row.subject || row.dispatchReason || '',
           itemsCount: Number(row.itemsCount || 0),
@@ -289,6 +291,7 @@ export function OrdersPage() {
           .filter(row => !existingOrderRequestIds.has(row.requestId) && !excludedStatuses.includes(row.status)) 
           .map((row: SupplyRequest) => ({
             id: `SR-${row.requestId}`,
+            transactionCode: row.transactionCode,
             requestId: row.requestId,
             branch: row.branchName || `Branch ${row.branchId}`,
             subject: row.subject || '',
@@ -305,28 +308,47 @@ export function OrdersPage() {
 
         const finalMerged = [...mappedRequests, ...mappedOrders];
         
-        // Also fetch outbound (HQ dispatches) and merge
+        // Also fetch outbound (HQ dispatches) and merge if necessary
         try {
-          const dispatchRows = await fetchHqDispatches();
-          const mappedOutbound = dispatchRows.map((row: BranchOrder) => ({
-            id: String(row.orderId),
-            branch: row.branchName || `Branch ${row.branchId}`,
-            subject: row.subject || row.dispatchReason || '',
-            itemsCount: Number(row.itemsCount || 0),
-            totalCost: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
-            requestedValue: Number(row.totalRequestedValue || 0),
-            approvedValue: Number(row.totalApprovedValue || 0),
-            fulfilledValue: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
-            dispatchScheduleStatus: row.dispatchScheduleStatus,
-            status: row.status as OrderActionStatus,
-            date: row.pushedToFulfillmentAt,
-            requestId: row.requestId,
-            isHqInitiated: true,
-            dispatchReason: row.dispatchReason,
-          }));
-          setOrders([...finalMerged, ...mappedOutbound]);
+          if (!isHqUser) {
+            setOrders(finalMerged); // Branches only need to see their incoming shipments + requests
+          } else {
+            // HQ needs outbound, but fetchOrders() might already have them. 
+            // We use fetchHqDispatches to get explicit dispatch Reason, but deduplicate by ID.
+            const dispatchRows = await fetchHqDispatches();
+            const mappedOutbound = dispatchRows.map((row: BranchOrder) => ({
+              id: String(row.orderId),
+              branch: row.branchName || `Branch ${row.branchId}`,
+              subject: row.subject || row.dispatchReason || '',
+              itemsCount: Number(row.itemsCount || 0),
+              totalCost: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+              requestedValue: Number(row.totalRequestedValue || 0),
+              approvedValue: Number(row.totalApprovedValue || 0),
+              fulfilledValue: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+              dispatchScheduleStatus: row.dispatchScheduleStatus,
+              status: row.status as OrderActionStatus,
+              date: row.pushedToFulfillmentAt,
+              requestId: row.requestId,
+              isHqInitiated: true,
+              dispatchReason: row.dispatchReason,
+            }));
+            
+            const mergedList = [...finalMerged, ...mappedOutbound];
+            const uniqueOrders = new Map<string, OrderItem>();
+            mergedList.forEach(item => {
+              // Prefer later entries if duplicating id? Or just keep first?
+              // The outbound item has `isHqInitiated` maybe we want that
+              if (!uniqueOrders.has(item.id) || item.isHqInitiated) {
+                uniqueOrders.set(item.id, item);
+              }
+            });
+            setOrders(Array.from(uniqueOrders.values()));
+          }
         } catch {
-          setOrders(finalMerged);
+          // If deduplication fails or API fails, fallback to finalMerged
+          const uniqueOrders = new Map<string, OrderItem>();
+          finalMerged.forEach(item => uniqueOrders.set(item.id, item));
+          setOrders(Array.from(uniqueOrders.values()));
         }
       } catch (err) {
         console.error('Failed to load orders/requests:', err);

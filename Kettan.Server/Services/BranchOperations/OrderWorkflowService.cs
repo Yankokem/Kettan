@@ -15,18 +15,21 @@ public class OrderWorkflowService : IOrderWorkflowService
     private readonly INotificationService _notificationService;
     private readonly IInventoryService _inventoryService;
     private readonly ILogger<OrderWorkflowService> _logger;
+    private readonly IDocumentSequenceService _sequenceService;
 
     public OrderWorkflowService(
         ApplicationDbContext context,
         ICurrentUserService currentUser,
         INotificationService notificationService,
         IInventoryService inventoryService,
+        IDocumentSequenceService sequenceService,
         ILogger<OrderWorkflowService> logger)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationService = notificationService;
         _inventoryService = inventoryService;
+        _sequenceService = sequenceService;
         _logger = logger;
     }
 
@@ -98,6 +101,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         var request = new SupplyRequest
         {
             TenantId = tenantId,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "SupplyRequest", "SP"), // SP for Supply Push
             BranchId = dto.BranchId,
             RequestedBy_UserId = userId,
             Status = SupplyRequestStatus.Approved,
@@ -136,6 +140,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         var order = new Order
         {
             TenantId = tenantId,
+            TransactionCode = await _sequenceService.GenerateNextCodeAsync(tenantId, "Order", "ORD"),
             RequestId = request.RequestId,
             Status = OrderStatus.Processing,
             PushedToFulfillmentAt = now,
@@ -624,6 +629,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         return new BranchOrderDto
         {
+            TransactionCode = order.TransactionCode,
             OrderId = order.OrderId,
             RequestId = order.RequestId,
             Subject = request?.Subject,
@@ -653,6 +659,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         var dto = new OrderDetailDto
         {
+            TransactionCode = order.TransactionCode,
             OrderId = order.OrderId,
             RequestId = order.RequestId,
             Subject = request?.Subject,

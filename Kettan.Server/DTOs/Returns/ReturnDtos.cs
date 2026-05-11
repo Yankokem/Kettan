@@ -58,6 +58,7 @@ public class ReturnMessageDto
 
 public class ReturnDto
 {
+    public string TransactionCode { get; set; } = string.Empty;
     public int ReturnId { get; set; }
     public int OrderId { get; set; }
     public string? Subject { get; set; }

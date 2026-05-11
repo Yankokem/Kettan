@@ -449,6 +449,7 @@ public class ItemsController : ControllerBase
 
         var rows = transactions.Select(t => new TransactionDto
         {
+            TransactionCode = t.TransactionCode,
             TransactionId = t.TransactionId,
             BatchId = t.BatchId,
             BatchNumber = t.Batch?.BatchNumber ?? string.Empty,
@@ -503,8 +504,7 @@ public class ItemsController : ControllerBase
             .ToListAsync();
 
         var rows = transactions.Select(t => new TransactionDto
-        {
-            TransactionId = t.TransactionId,
+        {            TransactionCode = t.TransactionCode,            TransactionId = t.TransactionId,
             BatchId = t.BatchId,
             BatchNumber = t.Batch?.BatchNumber ?? string.Empty,
             ItemId = t.Batch?.ItemId ?? 0,
@@ -556,6 +556,7 @@ public class ItemsController : ControllerBase
 
         var rows = transactions.Select(t => new TransactionDto
         {
+            TransactionCode = t.TransactionCode,
             TransactionId = t.TransactionId,
             BatchId = t.BatchId,
             BatchNumber = t.Batch?.BatchNumber ?? string.Empty,

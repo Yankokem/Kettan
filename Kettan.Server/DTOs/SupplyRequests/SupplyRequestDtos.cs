@@ -22,6 +22,7 @@ public class SupplyRequestItemDto
 
 public class SupplyRequestDto
 {
+    public string TransactionCode { get; set; } = string.Empty;
     public int RequestId { get; set; }
     public string? ReferenceNumber { get; set; }
     public string? Subject { get; set; }

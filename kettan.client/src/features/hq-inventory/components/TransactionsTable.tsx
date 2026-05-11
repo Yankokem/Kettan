@@ -75,6 +75,16 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
   const columns: ColumnDef<InventoryTransaction>[] = useMemo(() => {
     const baseColumns: ColumnDef<InventoryTransaction>[] = [
       {
+        key: 'id',
+        label: 'ID',
+        gridWidth: compact ? 'none' : '0.8fr', // Hidden on compact view if desired, or small width
+        render: (row) => (
+          <Typography sx={{ fontSize: 13, fontFamily: 'Courier New, monospace', color: 'text.primary', fontWeight: 600 }}>
+            {row.transactionCode || `TXN-${row.id}`}
+          </Typography>
+        ),
+      },
+      {
         key: 'timestamp',
         label: 'Date',
         gridWidth: compact ? '1.4fr' : '1.2fr',
