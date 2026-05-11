@@ -28,6 +28,21 @@ public static class DbInitializer
             logger?.LogInformation("DbSeeder: applied pending migrations.");
         }
 
+        // Apply a hard fix to any existing subscription plans to ensure they strictly match their intended limits, regardless of past duplicate seeds.
+        try
+        {
+            await context.Database.ExecuteSqlRawAsync(@"
+                UPDATE [SubscriptionPlans] SET [BranchLimit] = 5, [UserLimit] = 25 WHERE [PlanCode] = 'STARTER' OR [Name] = 'Starter';
+                UPDATE [SubscriptionPlans] SET [BranchLimit] = 10, [UserLimit] = 50 WHERE [PlanCode] = 'GROWTH' OR [Name] = 'Growth';
+                UPDATE [SubscriptionPlans] SET [BranchLimit] = 20, [UserLimit] = 100 WHERE [PlanCode] = 'ENTERPRISE' OR [Name] = 'Enterprise';
+            ", cancellationToken);
+            logger?.LogInformation("DbSeeder: synchronized subscription plan limits in database.");
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "DbSeeder: failed to synchronize subscription plan limits.");
+        }
+
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         try

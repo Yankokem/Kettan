@@ -28,7 +28,7 @@ public static class SubscriptionTenantSeeder
 
         foreach (var seed in seeds)
         {
-            var plan = existingPlans.FirstOrDefault(p => p.PlanCode == seed.PlanCode);
+            var plan = existingPlans.FirstOrDefault(p => string.Equals(p.PlanCode, seed.PlanCode, StringComparison.OrdinalIgnoreCase));
 
             if (plan is null)
             {
