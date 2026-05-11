@@ -168,7 +168,7 @@ function TransactionActionsMenu({ transaction }: { transaction: GroupedTransacti
   );
 }
 
-function ActionsMenu({ item, isBranchView, onThresholdEdit }: { item: InventoryItem, isBranchView?: boolean, onThresholdEdit: (item: InventoryItem) => void }) {
+function ActionsMenu({ item, isBranchView, onThresholdEdit, onRefresh }: { item: InventoryItem, isBranchView?: boolean, onThresholdEdit: (item: InventoryItem) => void, onRefresh?: () => void }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const open = Boolean(anchorEl);
@@ -178,6 +178,23 @@ function ActionsMenu({ item, isBranchView, onThresholdEdit }: { item: InventoryI
     setAnchorEl(event.currentTarget);
   };
   const handleClose = () => setAnchorEl(null);
+
+  const handleArchiveAction = async () => {
+    handleClose();
+    try {
+      const { archiveInventoryItem, unarchiveInventoryItem } = await import('../hqInventoryApi');
+      if (item.isDeleted) {
+        await unarchiveInventoryItem(item.id);
+      } else {
+        const confirmed = window.confirm(`Are you sure you want to archive ${item.name}? It will be hidden from transactions.`);
+        if (!confirmed) return;
+        await archiveInventoryItem(item.id);
+      }
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Failed to toggle archive status', err);
+    }
+  };
 
   return (
     <>
@@ -202,25 +219,28 @@ function ActionsMenu({ item, isBranchView, onThresholdEdit }: { item: InventoryI
         }}
       >
         <MenuItem onClick={() => { handleClose(); navigate({ to: '/hq-inventory/$itemId', params: { itemId: String(item.id) } }); }}>
-          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: '#3B82F6' }} /></ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#3B82F6' }} />
         </MenuItem>
 
         <MenuItem onClick={() => { handleClose(); onThresholdEdit(item); }}>
-          <ListItemIcon><TuneRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="Set Low Stock Alert" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          <ListItemIcon><TuneRoundedIcon fontSize="small" sx={{ color: '#16A34A' }} /></ListItemIcon>
+          <ListItemText primary="Set Low Stock Alert" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#16A34A' }} />
         </MenuItem>
 
         {!isBranchView && (
-          <MenuItem onClick={() => { handleClose(); }}>
-            <ListItemIcon><ArchiveRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-            <ListItemText primary="Archive Item" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          <MenuItem onClick={handleArchiveAction}>
+            <ListItemIcon><ArchiveRoundedIcon fontSize="small" sx={{ color: '#DC2626' }} /></ListItemIcon>
+            <ListItemText 
+              primary={item.isDeleted ? "Unarchive Item" : "Archive Item"} 
+              primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#DC2626' }} 
+            />
           </MenuItem>
         )}
         <Divider sx={{ my: 1 }} />
         <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(item.sku); }}>
-          <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="Copy SKU" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: '#64748B' }} /></ListItemIcon>
+          <ListItemText primary="Copy SKU" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#64748B' }} />
         </MenuItem>
       </Menu>
     </>
@@ -392,7 +412,14 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
       label: 'ITEM NAME',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13 }}>{row.name}</Typography>
+        <Typography sx={{ 
+          fontWeight: 600, 
+          color: row.isDeleted ? 'text.disabled' : 'text.primary', 
+          fontSize: 13,
+          textDecoration: row.isDeleted ? 'line-through' : 'none'
+        }}>
+          {row.name} {row.isDeleted && '(Archived)'}
+        </Typography>
       ),
     },
     {
@@ -478,6 +505,7 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
           item={row} 
           isBranchView={isBranchView} 
           onThresholdEdit={handleOpenThreshold} 
+          onRefresh={onRefresh}
         />
       ),
     },

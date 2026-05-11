@@ -64,10 +64,12 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
   };
 
   const formatQuantity = (qty: number, unitSymbol?: string) => {
-    const sign = qty > 0 ? '+' : '';
+    if (Math.abs(qty) < 0.0001) return `0 ${unitSymbol || ''}`;
+    const sign = qty > 0 ? '+' : '-';
     const absQty = Math.abs(qty);
     const formatted = absQty < 1 ? absQty.toFixed(3) : absQty.toFixed(absQty % 1 === 0 ? 0 : 2);
-    return `${sign}${qty > 0 ? '' : '-'}${formatted} ${unitSymbol || ''}`;
+    const finalFormatted = formatted.includes('.') ? formatted.replace(/\.?0+$/, '') : formatted;
+    return `${sign}${finalFormatted} ${unitSymbol || ''}`;
   };
 
   const columns: ColumnDef<InventoryTransaction>[] = useMemo(() => {
@@ -88,23 +90,30 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
         gridWidth: compact ? '1.1fr' : '1fr',
         render: (row) => {
           const config = TYPE_CONFIG[row.transactionType];
+          let label = config.label;
+
+          // Provide more specific labels based on context
+          const remarks = row.remarks?.toLowerCase() || '';
+          if (row.transactionType === 'Restock') {
+            if (remarks.includes('request')) label = 'Supply Request';
+            else if (remarks.includes('push')) label = 'HQ Supply Push';
+            else if (remarks.includes('return')) label = 'Stock Return';
+            else if (row.referenceType === 'StockIn') label = 'Stock-In';
+          } else if (row.transactionType === 'Consumption') {
+            if (remarks.includes('wastage')) label = 'Wastage';
+            else if (remarks.includes('spill')) label = 'Spillage';
+            else if (remarks.includes('expire')) label = 'Expired';
+            else if (remarks.includes('damage')) label = 'Damaged';
+            else if (remarks.includes('return')) label = 'Return to Supplier';
+          }
+
           return (
-            <Chip
-              icon={config.icon as React.ReactElement}
-              label={config.label}
-              size="small"
-              sx={{
-                height: 26,
-                fontSize: 11,
-                fontWeight: 700,
-                px: 0.5,
-                bgcolor: config.bgcolor,
-                color: config.color,
-                border: '1px solid',
-                borderColor: config.color,
-                '& .MuiChip-icon': { color: config.color },
-              }}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: config.color }}>
+              {config.icon}
+              <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'inherit' }}>
+                {label}
+              </Typography>
+            </Box>
           );
         },
       },

@@ -117,21 +117,17 @@ function ActionsMenu({ row }: { row: ReturnRecord }) {
         }}
       >
         <MenuItem onClick={() => { handleClose(); navigate({ to: '/returns/$returnId', params: { returnId: String(row.returnId) } }); }}>
-          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: '#3B82F6' }} /></ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#3B82F6' }} />
         </MenuItem>
         <MenuItem onClick={() => { handleClose(); }}>
-          <ListItemIcon><OpenInNewRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="View Linked Order" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
-        </MenuItem>
-        <MenuItem onClick={() => { handleClose(); }}>
-          <ListItemIcon><ChatBubbleOutlineRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="Quick Message" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          <ListItemIcon><OpenInNewRoundedIcon fontSize="small" sx={{ color: '#16A34A' }} /></ListItemIcon>
+          <ListItemText primary="View Linked Order" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#16A34A' }} />
         </MenuItem>
         <Divider sx={{ my: 1 }} />
         <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(`RT-${row.returnId}`); }}>
-          <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: '#64748B' }} /></ListItemIcon>
+          <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#64748B' }} />
         </MenuItem>
       </Menu>
     </>

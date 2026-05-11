@@ -172,7 +172,7 @@ export default function InventoryTransactionPage() {
         .map((line) => line.itemId)
     );
 
-    return catalogItems.filter((item) => !lockedItemIds.has(item.id));
+    return catalogItems.filter((item) => !lockedItemIds.has(item.id) && !item.isDeleted);
   }, [catalogItems, items, editingIndex]);
 
   const totalQuantity = useMemo(

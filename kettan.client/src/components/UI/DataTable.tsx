@@ -392,10 +392,8 @@ export function DataTable<T>({
             key={col.key}
             onClick={col.sortable ? () => handleSort(col) : undefined}
             sx={{
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 700,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
               px: 0.5,
               color: (theme) =>
                 sortKey === col.key

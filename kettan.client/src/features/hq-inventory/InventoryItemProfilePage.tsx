@@ -80,7 +80,7 @@ function InfoRow({
       {editing ? (
         <Box sx={{ mt: 1 }}>{children}</Box>
       ) : (
-        <Typography sx={{ fontSize: 13, fontWeight: 500, color }}>
+        <Typography component="div" sx={{ fontSize: 13, fontWeight: 500, color }}>
           {value ?? '-'}
         </Typography>
       )}
@@ -389,7 +389,7 @@ export function InventoryItemProfilePage() {
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                 <BadgeRoundedIcon sx={{ fontSize: 20, color: KETTAN_BROWN }} />
-                <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: KETTAN_BROWN }}>
                   Item Specifications
                 </Typography>
               </Box>
@@ -465,7 +465,7 @@ export function InventoryItemProfilePage() {
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                 <PaymentsRoundedIcon sx={{ fontSize: 20, color: KETTAN_BROWN }} />
-                <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: KETTAN_BROWN }}>
                   Inventory & Pricing
                 </Typography>
               </Box>
@@ -525,7 +525,7 @@ export function InventoryItemProfilePage() {
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                 <NotificationsActiveRoundedIcon sx={{ fontSize: 20, color: KETTAN_BROWN }} />
-                <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: KETTAN_BROWN }}>
                   System Metrics
                 </Typography>
               </Box>
@@ -551,23 +551,11 @@ export function InventoryItemProfilePage() {
         {/* Right Column - Batches & History */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* Batch List */}
-            <Paper elevation={0} sx={{ p: 4, border: '1px solid', borderColor: 'divider', borderRadius: '24px' }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, mb: 3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Available Batches
-              </Typography>
-              {selectedUnit && (
-                <BatchList
-                  batches={batches}
-                  unit={selectedUnit}
-                  onAdjust={handleAdjustBatch}
-                />
-              )}
-            </Paper>
+
 
             {/* History Table */}
             <Paper elevation={0} sx={{ p: 4, border: '1px solid', borderColor: 'divider', borderRadius: '24px' }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 800, color: KETTAN_BROWN, mb: 3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 800, color: KETTAN_BROWN, mb: 3 }}>
                 Transaction History
               </Typography>
               <TransactionsTable transactions={transactions} compact />

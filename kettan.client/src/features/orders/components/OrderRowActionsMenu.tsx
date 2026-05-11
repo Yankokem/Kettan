@@ -4,7 +4,7 @@ import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
-import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import DoDisturbOnRoundedIcon from '@mui/icons-material/DoDisturbOnRounded';
 
 export type OrderActionStatus =
@@ -28,8 +28,8 @@ interface OrderRowActionsMenuProps {
   onViewDetails: (orderId: string) => void;
   onApprove: (orderId: string) => void;
   onReject: (orderId: string) => void;
-  onMessageBranch?: (orderId: string) => void;
   onCancelOrder?: (orderId: string) => void;
+  isHqUser?: boolean;
 }
 
 export function OrderRowActionsMenu({
@@ -38,14 +38,14 @@ export function OrderRowActionsMenu({
   onViewDetails,
   onApprove,
   onReject,
-  onMessageBranch,
   onCancelOrder,
+  isHqUser,
 }: OrderRowActionsMenuProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
   const isPending = status === 'PendingApproval';
-  const canCancel = !['Delivered', 'Rejected', 'Returned', 'Dispatched', 'InTransit'].includes(status);
+  const canCancel = !['Delivered', 'Rejected', 'Returned', 'Dispatched', 'InTransit', 'Completed'].includes(status);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -101,43 +101,43 @@ export function OrderRowActionsMenu({
       >
         <MenuItem onClick={(event) => runAction(event, () => onViewDetails(orderId))}>
           <ListItemIcon>
-            <VisibilityRoundedIcon fontSize="small" sx={{ color: 'inherit' }} />
+            <VisibilityRoundedIcon fontSize="small" sx={{ color: '#3B82F6' }} />
           </ListItemIcon>
-          View Details
+          <Typography sx={{ color: '#3B82F6', fontSize: 14, fontWeight: 500 }}>View Details</Typography>
         </MenuItem>
 
-        {isPending ? (
+        {isPending && isHqUser ? (
           <MenuItem onClick={(event) => runAction(event, () => onApprove(orderId))}>
             <ListItemIcon>
-              <CheckCircleRoundedIcon fontSize="small" sx={{ color: 'inherit' }} />
+              <CheckCircleRoundedIcon fontSize="small" sx={{ color: '#16A34A' }} />
             </ListItemIcon>
-            Approve
+            <Typography sx={{ color: '#16A34A', fontSize: 14, fontWeight: 500 }}>Approve</Typography>
           </MenuItem>
         ) : null}
 
-        <MenuItem onClick={(event) => runAction(event, () => onMessageBranch?.(orderId))}>
+        <MenuItem onClick={(event) => runAction(event, () => navigator.clipboard.writeText(orderId))}>
           <ListItemIcon>
-            <ChatBubbleOutlineRoundedIcon fontSize="small" sx={{ color: 'inherit' }} />
+            <ContentCopyRoundedIcon fontSize="small" sx={{ color: '#64748B' }} />
           </ListItemIcon>
-          Message Branch
+          <Typography sx={{ color: '#64748B', fontSize: 14, fontWeight: 500 }}>Copy ID</Typography>
         </MenuItem>
 
-        {isPending ? (
+        {isHqUser && isPending && (
           <MenuItem onClick={(event) => runAction(event, () => onReject(orderId))}>
             <ListItemIcon>
-              <CancelRoundedIcon fontSize="small" sx={{ color: '#B91C1C' }} />
+              <CancelRoundedIcon fontSize="small" sx={{ color: '#DC2626' }} />
             </ListItemIcon>
-            <Typography sx={{ color: '#B91C1C', fontSize: 14, fontWeight: 500 }}>Reject</Typography>
+            <Typography sx={{ color: '#DC2626', fontSize: 14, fontWeight: 500 }}>Reject Request</Typography>
           </MenuItem>
-        ) : (
-          canCancel && (
-            <MenuItem onClick={(event) => runAction(event, () => onCancelOrder?.(orderId))}>
-              <ListItemIcon>
-                <DoDisturbOnRoundedIcon fontSize="small" sx={{ color: '#B91C1C' }} />
-              </ListItemIcon>
-              <Typography sx={{ color: '#B91C1C', fontSize: 14, fontWeight: 500 }}>Cancel Order</Typography>
-            </MenuItem>
-          )
+        )}
+
+        {isHqUser && !isPending && canCancel && (
+          <MenuItem onClick={(event) => runAction(event, () => onCancelOrder?.(orderId))}>
+            <ListItemIcon>
+              <DoDisturbOnRoundedIcon fontSize="small" sx={{ color: '#DC2626' }} />
+            </ListItemIcon>
+            <Typography sx={{ color: '#DC2626', fontSize: 14, fontWeight: 500 }}>Cancel Order</Typography>
+          </MenuItem>
         )}
       </Menu>
     </>

@@ -25,6 +25,7 @@ interface ItemDto {
   isLowStock: boolean;
   isBranchThreshold?: boolean;
   imageUrl?: string | null;
+  isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -202,7 +203,7 @@ function toItem(row: ItemDto): InventoryItem {
     status: toItemStatus(totalStock, defaultThreshold),
     isBranchThreshold: row.isBranchThreshold,
     imageUrl: row.imageUrl,
-    isDeleted: false,
+    isDeleted: row.isDeleted,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -417,4 +418,12 @@ export async function setGlobalThreshold(itemId: string, threshold: number): Pro
     itemId: Number(itemId),
     threshold
   });
+}
+
+export async function archiveInventoryItem(itemId: string): Promise<void> {
+  await api.delete(`/api/items/${itemId}`);
+}
+
+export async function unarchiveInventoryItem(itemId: string): Promise<void> {
+  await api.post(`/api/items/${itemId}/unarchive`);
 }

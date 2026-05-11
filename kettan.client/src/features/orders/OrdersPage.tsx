@@ -99,6 +99,7 @@ function getColumns(
   onViewDetails: (orderId: string) => void,
   onApprove: (orderId: string) => void,
   onReject: (orderId: string) => void,
+  isHqUser: boolean
 ): ColumnDef<OrderItem>[] {
   const formatScheduleStatus = (status?: string) => {
     if (!status) return 'No Schedule';
@@ -227,6 +228,7 @@ function getColumns(
           onViewDetails={onViewDetails}
           onApprove={onApprove}
           onReject={onReject}
+          isHqUser={isHqUser}
         />
       ),
     },
@@ -425,7 +427,7 @@ export function OrdersPage() {
     openDetails(id);
   };
 
-  const columns = getColumns(openDetails, handleApprove, handleReject);
+  const columns = getColumns(openDetails, handleApprove, handleReject, isHqUser);
 
   return (
     <Box sx={{ pb: 3 }}>
