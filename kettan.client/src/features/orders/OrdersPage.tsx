@@ -122,7 +122,7 @@ function getColumns(
     {
       key: 'id',
       label: 'Order ID',
-      width: 120,
+      width: 100,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
           {row.transactionCode || (row.id.startsWith('SR-') ? row.id : `ORD-${row.id}`)}
@@ -132,7 +132,7 @@ function getColumns(
     {
       key: 'date',
       label: 'Date Requested',
-      width: 180,
+      width: 155,
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
@@ -149,7 +149,7 @@ function getColumns(
     {
       key: 'branch',
       label: 'Branch',
-      width: 160,
+      width: 140,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
           {row.branch}
@@ -168,7 +168,7 @@ function getColumns(
     {
       key: 'itemsCount',
       label: 'Items',
-      width: 100,
+      width: 80,
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
@@ -179,7 +179,7 @@ function getColumns(
     {
       key: 'status',
       label: 'Status',
-      width: 140,
+      width: 120,
       render: (row) => {
         const st = STATUS_MAP[row.status] || { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
         const displayLabel = getStatusDisplayLabel(row.status);
@@ -199,7 +199,7 @@ function getColumns(
     {
       key: 'dispatchScheduleStatus',
       label: 'Dispatch SLA',
-      width: 140,
+      width: 130,
       render: (row) => (
         <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
           {formatScheduleStatus(row.dispatchScheduleStatus)}
@@ -209,7 +209,7 @@ function getColumns(
     {
       key: 'totalCost',
       label: 'Fulfilled Value',
-      width: 150,
+      width: 130,
       align: 'right',
       sortable: true,
       render: (row) => (
@@ -221,6 +221,7 @@ function getColumns(
     {
       key: 'actions',
       label: 'Actions',
+      width: 80,
       align: 'right',
       render: (row) => (
         <OrderRowActionsMenu
@@ -234,6 +235,7 @@ function getColumns(
       ),
     },
   ];
+
 }
 
 export function OrdersPage() {
@@ -571,13 +573,15 @@ export function OrdersPage() {
             gap: 1.2,
           }}
         >
-          <Button
-            startIcon={<LocalMallRoundedIcon />}
-            onClick={() => navigate({ to: '/orders/new' })}
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            Supply Push
-          </Button>
+          {isHqUser && (
+            <Button
+              startIcon={<LocalMallRoundedIcon />}
+              onClick={() => navigate({ to: '/orders/new' })}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              Supply Push
+            </Button>
+          )}
         </Box>
       </Box>
 

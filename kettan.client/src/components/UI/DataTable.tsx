@@ -353,134 +353,140 @@ export function DataTable<T>({
         </Box>
       ) : null}
 
-      {/* Table header */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns,
-          columnGap: 2,
-          px: fulfillment ? 2.5 : 3,
-          py: fulfillment ? 1.5 : 1.3,
-          position: 'relative',
-          background: fulfillment 
-            ? 'transparent'
-            : (theme) =>
-                theme.palette.mode === 'dark'
-                  ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.9) 0%, rgba(58, 39, 24, 0.86) 100%)'
-                  : 'linear-gradient(170deg, rgba(250, 245, 239, 0.94) 0%, rgba(240, 230, 211, 0.94) 100%)',
-          '&::after': fulfillment ? {
-            content: '""',
-            position: 'absolute',
-            bottom: 0,
-            left: 20,
-            right: 20,
-            height: '2px',
-            bgcolor: alpha('#6B4C2A', 0.5),
-          } : {
-            content: '""',
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '1px',
-            bgcolor: alpha('#6B4C2A', 0.12),
-          }
-        }}
-      >
-        {columns.map((col) => (
-          <Typography
-            key={col.key}
-            onClick={col.sortable ? () => handleSort(col) : undefined}
-            sx={{
-              fontSize: 12,
-              fontWeight: 700,
-              px: 0.5,
-              color: (theme) =>
-                sortKey === col.key
-                  ? theme.palette.primary.main
-                  : '#6B4C2A',
-              textAlign: col.align || 'left',
-              userSelect: 'none',
-              cursor: col.sortable ? 'pointer' : 'default',
-              transition: 'color 0.15s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: getAlign(col.align),
-              '&:hover': col.sortable ? { color: 'text.primary' } : undefined,
-            }}
-          >
-            {col.label}
-            {col.sortable ? <SortIcon columnKey={col.key} /> : null}
-          </Typography>
-        ))}
-      </Box>
-
-      {/* Rows */}
-      {isLoading ? (
-        Array.from({ length: effectiveDefaultPageSize }).map((_, idx) => (
+      {/* Scrollable table content area */}
+      <Box sx={{ overflowX: 'auto', flexGrow: 1, minHeight: 0 }}>
+        <Box sx={{ minWidth: 'max-content' }}>
+          {/* Table header */}
           <Box
-            key={`skeleton-${idx}`}
-            sx={{
-              display: 'grid',
-              gridTemplateColumns,
-              columnGap: 2,
-              px: 3,
-              py: 2,
-              borderBottom: fulfillment ? '1px dashed' : 1,
-              borderColor: fulfillment ? alpha('#C9A84C', 0.4) : 'divider',
-            }}
-          >
-            {columns.map((col) => (
-              <Box key={col.key} sx={{ px: 0.5 }}>
-                <Box className="skeleton" sx={{ height: 16, width: '80%', borderRadius: 1 }} />
-              </Box>
-            ))}
-          </Box>
-        ))
-      ) : paginatedData.length > 0 ? (
-        paginatedData.map((row, rowIndex) => (
-          <Box
-            key={keyExtractor(row)}
-            className="hover-lift"
-            onClick={onRowClick ? () => onRowClick(row) : undefined}
             sx={{
               display: 'grid',
               gridTemplateColumns,
               columnGap: 2,
               px: fulfillment ? 2.5 : 3,
-              py: fulfillment ? 1.75 : 1.75,
-              alignItems: 'center',
+              py: fulfillment ? 1.5 : 1.3,
               position: 'relative',
-              bgcolor: striped && rowIndex % 2 === 1 ? 'rgba(0,0,0,0.015)' : 'transparent',
-              '&:hover': { bgcolor: 'action.hover' },
-              ...(rowSx ? rowSx(row, rowIndex) : {}),
-              '&::after': {
+              background: fulfillment 
+                ? 'transparent'
+                : (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.9) 0%, rgba(58, 39, 24, 0.86) 100%)'
+                      : 'linear-gradient(170deg, rgba(250, 245, 239, 0.94) 0%, rgba(240, 230, 211, 0.94) 100%)',
+              '&::after': fulfillment ? {
                 content: '""',
                 position: 'absolute',
                 bottom: 0,
-                left: fulfillment ? 20 : 0,
-                right: fulfillment ? 20 : 0,
+                left: 20,
+                right: 20,
+                height: '2px',
+                bgcolor: alpha('#6B4C2A', 0.5),
+              } : {
+                content: '""',
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
                 height: '1px',
-                borderBottom: fulfillment ? '1px dashed' : '1px solid',
-                borderColor: alpha('#6B4C2A', 0.1),
+                bgcolor: alpha('#6B4C2A', 0.12),
               }
             }}
           >
             {columns.map((col) => (
-              <Box key={col.key} sx={{ display: 'flex', justifyContent: getAlign(col.align), px: 0.5 }}>
-                {col.render(row, page * rowsPerPage + rowIndex)}
-              </Box>
+              <Typography
+                key={col.key}
+                onClick={col.sortable ? () => handleSort(col) : undefined}
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  px: 0.5,
+                  color: (theme) =>
+                    sortKey === col.key
+                      ? theme.palette.primary.main
+                      : '#6B4C2A',
+                  textAlign: col.align || 'left',
+                  userSelect: 'none',
+                  cursor: col.sortable ? 'pointer' : 'default',
+                  transition: 'color 0.15s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: getAlign(col.align),
+                  '&:hover': col.sortable ? { color: 'text.primary' } : undefined,
+                }}
+              >
+                {col.label}
+                {col.sortable ? <SortIcon columnKey={col.key} /> : null}
+              </Typography>
             ))}
           </Box>
-        ))
-      ) : (
-        <EmptyState
-          title={emptyTitle}
-          message={emptyMessage}
-          icon={emptyIcon}
-          minHeight={280}
-        />
-      )}
+
+          {/* Rows */}
+          {isLoading ? (
+            Array.from({ length: effectiveDefaultPageSize }).map((_, idx) => (
+              <Box
+                key={`skeleton-${idx}`}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns,
+                  columnGap: 2,
+                  px: 3,
+                  py: 2,
+                  borderBottom: fulfillment ? '1px dashed' : 1,
+                  borderColor: fulfillment ? alpha('#C9A84C', 0.4) : 'divider',
+                }}
+              >
+                {columns.map((col) => (
+                  <Box key={col.key} sx={{ px: 0.5 }}>
+                    <Box className="skeleton" sx={{ height: 16, width: '80%', borderRadius: 1 }} />
+                  </Box>
+                ))}
+              </Box>
+            ))
+          ) : paginatedData.length > 0 ? (
+            paginatedData.map((row, rowIndex) => (
+              <Box
+                key={keyExtractor(row)}
+                className="hover-lift"
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns,
+                  columnGap: 2,
+                  px: fulfillment ? 2.5 : 3,
+                  py: fulfillment ? 1.75 : 1.75,
+                  alignItems: 'center',
+                  position: 'relative',
+                  bgcolor: striped && rowIndex % 2 === 1 ? 'rgba(0,0,0,0.015)' : 'transparent',
+                  '&:hover': { bgcolor: 'action.hover' },
+                  ...(rowSx ? rowSx(row, rowIndex) : {}),
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: fulfillment ? 20 : 0,
+                    right: fulfillment ? 20 : 0,
+                    height: '1px',
+                    borderBottom: fulfillment ? '1px dashed' : '1px solid',
+                    borderColor: alpha('#6B4C2A', 0.1),
+                  }
+                }}
+              >
+                {columns.map((col) => (
+                  <Box key={col.key} sx={{ display: 'flex', justifyContent: getAlign(col.align), px: 0.5 }}>
+                    {col.render(row, page * rowsPerPage + rowIndex)}
+                  </Box>
+                ))}
+              </Box>
+            ))
+          ) : (
+            <EmptyState
+              title={emptyTitle}
+              message={emptyMessage}
+              icon={emptyIcon}
+              minHeight={280}
+            />
+          )}
+        </Box>
+      </Box>
+
 
       {/* Pagination component from MUI */}
       {showPagination && !fulfillment ? (
