@@ -619,7 +619,6 @@ public class SubscriptionService : ISubscriptionService
             PlanName = planName,
             BranchLimit = branchLimit,
             UserLimit = userLimit,
-            UsersPerBranchLimit = SubscriptionLimitService.DefaultUsersPerBranchLimit,
             ActiveBranches = activeBranches,
             ActiveUsers = activeUsers,
             Status = tenant.SubscriptionStatus.ToString(),

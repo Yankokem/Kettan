@@ -2,8 +2,7 @@ namespace Kettan.Server.Services.Subscription;
 
 public sealed record SubscriptionLimits(
     int? BranchLimit,
-    int? UserLimit,
-    int UsersPerBranchLimit);
+    int? UserLimit);
 
 public interface ISubscriptionLimitService
 {

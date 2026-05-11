@@ -7,8 +7,6 @@ namespace Kettan.Server.Services.Subscription;
 
 public class SubscriptionLimitService : ISubscriptionLimitService
 {
-    public const int DefaultUsersPerBranchLimit = 5;
-
     private readonly ApplicationDbContext _context;
 
     public SubscriptionLimitService(ApplicationDbContext context)
@@ -52,8 +50,7 @@ public class SubscriptionLimitService : ISubscriptionLimitService
 
         return new SubscriptionLimits(
             plan?.BranchLimit,
-            plan?.UserLimit,
-            DefaultUsersPerBranchLimit);
+            plan?.UserLimit);
     }
 
     public async Task EnsureCanCreateBranchAsync(int tenantId, CancellationToken cancellationToken = default)
@@ -123,26 +120,6 @@ public class SubscriptionLimitService : ISubscriptionLimitService
         if (!branchExists)
         {
             throw new InvalidOperationException("Selected branch is invalid or inactive.");
-        }
-
-        var branchUsersQuery = _context.Users
-            .IgnoreQueryFilters()
-            .Where(u =>
-                u.TenantId == tenantId
-                && u.BranchId == branchId.Value
-                && !u.IsDeleted
-                && u.IsActive);
-
-        if (excludeUserId.HasValue)
-        {
-            branchUsersQuery = branchUsersQuery.Where(u => u.UserId != excludeUserId.Value);
-        }
-
-        var activeUsersInBranch = await branchUsersQuery.CountAsync(cancellationToken);
-        if (activeUsersInBranch >= limits.UsersPerBranchLimit)
-        {
-            throw new InvalidOperationException(
-                $"Per-branch user limit reached. A branch can only have {limits.UsersPerBranchLimit} active users.");
         }
     }
 }
