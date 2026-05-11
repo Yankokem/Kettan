@@ -48,6 +48,8 @@ interface OrderItem {
   date: string;
   actionedBy?: string;
   requestId?: number;
+  isHqInitiated?: boolean;
+  dispatchReason?: string | null;
 }
 
 const STATUS_MAP: Record<string, { color: string; bg: string }> = {
@@ -67,7 +69,7 @@ const STATUS_MAP: Record<string, { color: string; bg: string }> = {
 };
 
 type SortOption = 'newest' | 'oldest' | 'cost-high' | 'cost-low' | 'items-high' | 'items-low';
-type ActiveStatusTab = 'All' | 'Approved' | 'Processing' | 'Picking' | 'Packed';
+type ActiveStatusTab = 'All' | 'Approved' | 'Processing' | 'Picking' | 'Packed' | 'Dispatched' | 'Completed' | 'Rejected' | 'Cancelled';
 
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
@@ -235,7 +237,6 @@ function getColumns(
       ),
     },
   ];
-
 }
 
 export function OrdersPage() {
@@ -263,7 +264,7 @@ export function OrdersPage() {
           fetchSupplyRequests() 
         ]);
 
-        const mappedOrders = ordersRows.map((row: BranchOrder) => ({
+        const mappedOrders: OrderItem[] = ordersRows.map((row: BranchOrder) => ({
           id: String(row.orderId),
           transactionCode: row.transactionCode,
           branch: row.branchName || `Branch ${row.branchId}`,
@@ -289,7 +290,7 @@ export function OrdersPage() {
             .filter((id: any) => !!id)
         );
 
-        const mappedRequests = requestsRows
+        const mappedRequests: OrderItem[] = requestsRows
           .filter(row => !existingOrderRequestIds.has(row.requestId) && !excludedStatuses.includes(row.status)) 
           .map((row: SupplyRequest) => ({
             id: `SR-${row.requestId}`,
@@ -318,8 +319,9 @@ export function OrdersPage() {
             // HQ needs outbound, but fetchOrders() might already have them. 
             // We use fetchHqDispatches to get explicit dispatch Reason, but deduplicate by ID.
             const dispatchRows = await fetchHqDispatches();
-            const mappedOutbound = dispatchRows.map((row: BranchOrder) => ({
+            const mappedOutbound: OrderItem[] = dispatchRows.map((row: BranchOrder) => ({
               id: String(row.orderId),
+              transactionCode: row.transactionCode,
               branch: row.branchName || `Branch ${row.branchId}`,
               subject: row.subject || row.dispatchReason || '',
               itemsCount: Number(row.itemsCount || 0),
