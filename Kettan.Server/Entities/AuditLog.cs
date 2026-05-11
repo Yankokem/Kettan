@@ -22,6 +22,50 @@ public class AuditLog
     [MaxLength(80)]
     public required string Action { get; set; }
 
+    [MaxLength(80)]
+    public string? ActionCode { get; set; }
+
+    [MaxLength(40)]
+    public string? Outcome { get; set; }
+
+    [MaxLength(20)]
+    public string? Severity { get; set; }
+
+    [MaxLength(40)]
+    public string? Source { get; set; }
+
+    [MaxLength(10)]
+    public string? HttpMethod { get; set; }
+
+    [MaxLength(255)]
+    public string? Route { get; set; }
+
+    public int? StatusCode { get; set; }
+
+    [MaxLength(64)]
+    public string? CorrelationId { get; set; }
+
+    public int? BranchId { get; set; }
+
+    [MaxLength(80)]
+    public string? Module { get; set; }
+
+    [MaxLength(80)]
+    public string? ReferenceType { get; set; }
+
+    [MaxLength(120)]
+    public string? ReferenceId { get; set; }
+
+    [MaxLength(80)]
+    public string? ErrorCode { get; set; }
+
+    [MaxLength(1000)]
+    public string? ErrorMessage { get; set; }
+
+    public string? MetadataJson { get; set; }
+
+    public string? ChangedFieldsJson { get; set; }
+
     [Required]
     [MaxLength(120)]
     public required string EntityName { get; set; }

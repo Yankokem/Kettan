@@ -14,20 +14,17 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { StatCard } from '../../components/UI/StatCard';
 import { Button } from '../../components/UI/Button';
+import { 
+  humanizeRoute, 
+  humanizeEntityAction, 
+  parseChanges, 
+  humanizeRequestDetails,
+  getSeverityColor,
+  type AuditLogEntry as UtilityAuditLogEntry
+} from './utils/auditLogUtils';
 
-interface AuditLogEntry {
-  id: number;
-  action: string;
-  entityName: string;
-  entityId: string | null;
-  eventCategory: string;
-  actorName: string;
-  actorRole: string;
-  tenantId: number | null;
-  tenantName: string | null;
-  occurredAt: string;
-  ipAddress: string | null;
-}
+// Update local interface to match utility if needed, or just use the utility one
+type AuditLogEntry = UtilityAuditLogEntry;
 
 interface AuditLogResponse {
   totalCount: number;
@@ -65,6 +62,7 @@ function defaultEndDate() {
 }
 
 export function AuditLogsPage() {
+  const theme = useTheme();
   const [rows, setRows] = useState<AuditLogEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -154,44 +152,111 @@ export function AuditLogsPage() {
       ),
     },
     {
-      key: 'action',
-      label: 'Action',
-      width: '1fr',
+      key: 'entityName',
+      label: 'Event',
+      width: '4fr',
       sortable: true,
       render: (row) => {
+        const isRequest = row.action === 'HttpRequest' || row.entityName === 'Request';
+        const title = isRequest 
+          ? humanizeRoute(row.route || '', row.httpMethod || 'GET')
+          : humanizeEntityAction(row.action, row.entityName, row.entityId);
+        
         const style = actionStyle(row.action);
+
         return (
-          <Typography 
-            sx={{ 
-              fontSize: 13, 
-              fontWeight: 800, 
-              color: style.color,
-              letterSpacing: '0.01em'
-            }}
-          >
-            {row.action}
-          </Typography>
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.primary', letterSpacing: '0.01em' }}>
+                {title}
+              </Typography>
+              {!isRequest && (
+                <Typography 
+                  sx={{ 
+                    fontSize: 10, 
+                    fontWeight: 800, 
+                    color: style.color,
+                    backgroundColor: style.bg,
+                    px: 0.6,
+                    py: 0.1,
+                    borderRadius: 0.5,
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  {row.action}
+                </Typography>
+              )}
+            </Box>
+            <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.3, fontWeight: 500, opacity: 0.8 }}>
+              {row.eventCategory} • {row.module || 'General'}
+            </Typography>
+          </Box>
         );
       },
     },
     {
-      key: 'entityName',
-      label: 'Event',
-      width: '3.5fr',
-      sortable: true,
-      render: (row) => (
-        <Box>
-          <Typography sx={{ fontSize: 13.5, fontWeight: 500, color: 'text.primary', letterSpacing: '0.01em' }}>
-            <Box component="span" sx={{ fontWeight: 800, color: '#6B4C2A' }}>{row.action}</Box>
-            {` the `}
-            <Box component="span" sx={{ fontWeight: 700 }}>{row.entityName}</Box>
-            {row.entityId ? ` (ID: #${row.entityId})` : ''}
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.3, fontWeight: 500, opacity: 0.8 }}>
-            Category: {row.eventCategory}
-          </Typography>
-        </Box>
-      ),
+      key: 'context',
+      label: 'Context & Changes',
+      width: '4fr',
+      sortable: false,
+      render: (row) => {
+        const changes = parseChanges(row.oldValues || null, row.newValues || null);
+        
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, py: 0.8 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+               <Typography 
+                 sx={{ 
+                   fontSize: 11, 
+                   fontWeight: 800, 
+                   px: 0.8, 
+                   py: 0.2, 
+                   borderRadius: 1,
+                   backgroundColor: row.outcome === 'Success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                   color: row.outcome === 'Success' ? 'success.main' : 'error.main',
+                   textTransform: 'uppercase'
+                 }}
+               >
+                 {row.outcome || 'Unknown'}
+               </Typography>
+               {row.outcome !== 'Success' && row.errorMessage && (
+                 <Typography sx={{ fontSize: 11, fontWeight: 500, color: 'error.main', opacity: 0.8 }}>
+                   {row.errorCode ? `[${row.errorCode}] ` : ''}{row.errorMessage}
+                 </Typography>
+               )}
+               {row.statusCode && (
+                 <Typography sx={{ fontSize: 11, fontWeight: 600, color: 'text.disabled' }}>
+                   HTTP {row.statusCode}
+                 </Typography>
+               )}
+            </Box>
+
+            {changes.length > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, mt: 0.5 }}>
+                {changes.slice(0, 3).map((change, idx) => (
+                  <Typography key={idx} sx={{ fontSize: 11.5, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>{change.field}:</Box>
+                    {change.oldValue !== null && (
+                      <Box component="span" sx={{ textDecoration: 'line-through', opacity: 0.6 }}>{String(change.oldValue)}</Box>
+                    )}
+                    {change.oldValue !== null && <Box component="span">→</Box>}
+                    <Box component="span" sx={{ color: 'primary.main', fontWeight: 500 }}>{String(change.newValue)}</Box>
+                  </Typography>
+                ))}
+                {changes.length > 3 && (
+                  <Typography sx={{ fontSize: 10, color: 'text.disabled', fontStyle: 'italic' }}>
+                    + {changes.length - 3} more changes
+                  </Typography>
+                )}
+              </Box>
+            ) : row.route ? (
+              <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 400, opacity: 0.9 }}>
+                {humanizeRequestDetails(row)}
+              </Typography>
+            ) : null}
+          </Box>
+        );
+      },
     },
     {
       key: 'actorName',
@@ -210,32 +275,10 @@ export function AuditLogsPage() {
       width: '1.2fr',
       sortable: true,
       render: (row) => {
-        const theme = useTheme();
         const roleStyle = theme.custom.roles[row.actorRole] || { text: theme.palette.text.secondary };
         return (
           <Typography sx={{ fontSize: 13, fontWeight: 600, color: roleStyle.text }}>
             {row.actorRole}
-          </Typography>
-        );
-      },
-    },
-    {
-      key: 'id',
-      label: 'Outcome',
-      width: '1fr',
-      align: 'center',
-      render: (row) => {
-        const theme = useTheme();
-        const isNegative = row.action.toLowerCase().includes('delete') || row.action.toLowerCase().includes('archive');
-        return (
-          <Typography 
-            sx={{ 
-              fontSize: 13, 
-              fontWeight: 700, 
-              color: isNegative ? theme.custom.status.danger : theme.custom.status.success,
-            }}
-          >
-            {isNegative ? 'Flagged' : 'Successful'}
           </Typography>
         );
       },

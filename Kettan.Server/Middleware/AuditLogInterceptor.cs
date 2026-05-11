@@ -15,24 +15,16 @@ public class AuditLogInterceptor : SaveChangesInterceptor
 {
     private readonly IServiceProvider _serviceProvider;
 
-    // Entity types worth auditing. Skip noisy/internal tables.
-    private static readonly HashSet<string> AuditableTypes = new(StringComparer.OrdinalIgnoreCase)
+    // Entity types to exclude from automatic DB record auditing.
+    private static readonly HashSet<string> ExcludedTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        nameof(Tenant),
-        nameof(User),
-        nameof(Branch),
-        nameof(Order),
-        nameof(SupplyRequest),
-        nameof(Return),
-        nameof(Item),
-        nameof(Batch),
-        nameof(InventoryTransaction),
-        nameof(Shipment),
-        nameof(TenantSubscription),
-        nameof(SubscriptionPayment),
-        nameof(Employee),
-
-        nameof(Vehicle)
+        nameof(AuditLog),
+        "IdentityUserToken<int>",
+        "IdentityUserLogin<int>",
+        "IdentityUserClaim<int>",
+        "IdentityRoleClaim<int>",
+        "IdentityUserRole<int>",
+        "IdentityRole<int>"
     };
 
     // Properties that are too noisy or sensitive to log value changes for
@@ -93,7 +85,7 @@ public class AuditLogInterceptor : SaveChangesInterceptor
         foreach (var entry in context.ChangeTracker.Entries())
         {
             var typeName = entry.Entity.GetType().Name;
-            if (!AuditableTypes.Contains(typeName)) continue;
+            if (ExcludedTypes.Contains(typeName)) continue;
             if (entry.State is EntityState.Detached or EntityState.Unchanged) continue;
 
             string action;

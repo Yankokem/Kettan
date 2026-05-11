@@ -1,3 +1,4 @@
+using Kettan.Server.Data;
 using Kettan.Server.Services.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -11,10 +12,14 @@ namespace Kettan.Server.Controllers;
 public class UploadsController : ControllerBase
 {
     private readonly IImageService _imageService;
+    private readonly ApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public UploadsController(IImageService imageService)
+    public UploadsController(IImageService imageService, ApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _imageService = imageService;
+        _context = context;
+        _currentUserService = currentUserService;
     }
 
     /// <summary>
@@ -32,6 +37,26 @@ public class UploadsController : ControllerBase
         try
         {
             var (secureUrl, publicId) = await _imageService.UploadImageAsync(file, existingPublicId, folder);
+            
+            _context.AuditLogs.Add(new Entities.AuditLog
+            {
+                Action = "ImageUploaded",
+                ActionCode = "UPLOAD_IMAGE",
+                EventCategory = "Media",
+                Outcome = "Success",
+                Severity = "Info",
+                Source = "API",
+                EntityName = "File",
+                EntityId = publicId,
+                TenantId = _currentUserService.TenantId,
+                UserId = _currentUserService.UserId,
+                BranchId = _currentUserService.BranchId,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserAgent = HttpContext.Request.Headers.UserAgent.ToString().Substring(0, Math.Min(HttpContext.Request.Headers.UserAgent.ToString().Length, 512)),
+                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { url = secureUrl, folder })
+            });
+            await _context.SaveChangesAsync();
+
             return Ok(new { Url = secureUrl, PublicId = publicId });
         }
         catch (ArgumentException ex)

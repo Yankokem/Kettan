@@ -27,6 +27,11 @@ public class AuditLogsController : ControllerBase
     public async Task<IActionResult> GetAuditLogs(
         [FromQuery] string? search,
         [FromQuery] string? action,
+        [FromQuery] string? module,
+        [FromQuery] string? outcome,
+        [FromQuery] string? actionCode,
+        [FromQuery] string? correlationId,
+        [FromQuery] int? actorId,
         [FromQuery] string? startDate,
         [FromQuery] string? endDate,
         [FromQuery] int page = 1,
@@ -103,6 +108,31 @@ public class AuditLogsController : ControllerBase
             query = query.Where(a => a.Action == action);
         }
 
+        if (!string.IsNullOrWhiteSpace(module))
+        {
+            query = query.Where(a => a.Module == module);
+        }
+
+        if (!string.IsNullOrWhiteSpace(outcome))
+        {
+            query = query.Where(a => a.Outcome == outcome);
+        }
+
+        if (!string.IsNullOrWhiteSpace(actionCode))
+        {
+            query = query.Where(a => a.ActionCode == actionCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(correlationId))
+        {
+            query = query.Where(a => a.CorrelationId == correlationId);
+        }
+
+        if (actorId.HasValue)
+        {
+            query = query.Where(a => a.UserId == actorId.Value);
+        }
+
         // Date range filter
         if (DateTime.TryParse(startDate, out var from))
         {
@@ -125,6 +155,23 @@ public class AuditLogsController : ControllerBase
             {
                 Id = a.AuditLogId,
                 a.Action,
+                a.ActionCode,
+                a.Outcome,
+                a.Severity,
+                a.Source,
+                a.HttpMethod,
+                a.Route,
+                a.StatusCode,
+                a.CorrelationId,
+                BranchId = a.BranchId ?? (a.User != null ? a.User.BranchId : null),
+                a.Module,
+                a.ReferenceType,
+                a.ReferenceId,
+                a.ErrorCode,
+                a.ErrorMessage,
+                a.MetadataJson,
+                a.OldValues,
+                a.NewValues,
                 a.EntityName,
                 a.EntityId,
                 a.EventCategory,

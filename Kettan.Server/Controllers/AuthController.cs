@@ -37,8 +37,43 @@ public class AuthController : ControllerBase
 
             if (response == null)
             {
+                _context.AuditLogs.Add(new Entities.AuditLog
+                {
+                    Action = "LoginFailed",
+                    ActionCode = "AUTH_LOGIN_FAIL",
+                    EventCategory = "Auth",
+                    Outcome = "Failure",
+                    Severity = "Medium",
+                    Source = "API",
+                    EntityName = "User",
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers.UserAgent.ToString().Substring(0, Math.Min(HttpContext.Request.Headers.UserAgent.ToString().Length, 512)),
+                    ErrorMessage = "Invalid credentials",
+                    MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { email = request.Email })
+                });
+                await _context.SaveChangesAsync();
+
                 return Unauthorized(new { message = "Invalid email or password." });
             }
+
+            _context.AuditLogs.Add(new Entities.AuditLog
+            {
+                Action = "LoginSuccess",
+                ActionCode = "AUTH_LOGIN_SUCCESS",
+                EventCategory = "Auth",
+                Outcome = "Success",
+                Severity = "Info",
+                Source = "API",
+                EntityName = "User",
+                EntityId = response.UserId.ToString(),
+                TenantId = response.TenantId,
+                UserId = response.UserId,
+                BranchId = response.BranchId,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserAgent = HttpContext.Request.Headers.UserAgent.ToString().Substring(0, Math.Min(HttpContext.Request.Headers.UserAgent.ToString().Length, 512)),
+                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { email = request.Email })
+            });
+            await _context.SaveChangesAsync();
 
             // Return JWT in HttpOnly Cookie for security against XSS
             Response.Cookies.Append("jwt", response.Token, new CookieOptions
@@ -59,8 +94,29 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
+        if (_currentUserService.UserId.HasValue)
+        {
+            _context.AuditLogs.Add(new Entities.AuditLog
+            {
+                Action = "Logout",
+                ActionCode = "AUTH_LOGOUT",
+                EventCategory = "Auth",
+                Outcome = "Success",
+                Severity = "Info",
+                Source = "API",
+                EntityName = "User",
+                EntityId = _currentUserService.UserId.Value.ToString(),
+                TenantId = _currentUserService.TenantId,
+                UserId = _currentUserService.UserId,
+                BranchId = _currentUserService.BranchId,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserAgent = HttpContext.Request.Headers.UserAgent.ToString().Substring(0, Math.Min(HttpContext.Request.Headers.UserAgent.ToString().Length, 512))
+            });
+            await _context.SaveChangesAsync();
+        }
+
         Response.Cookies.Delete("jwt");
         return Ok(new { message = "Logged out successfully" });
     }
