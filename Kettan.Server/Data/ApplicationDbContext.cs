@@ -145,6 +145,12 @@ public class ApplicationDbContext : DbContext
             .HasIndex(a => a.OccurredAt);
         modelBuilder.Entity<AuditLog>()
             .HasIndex(a => new { a.TenantId, a.OccurredAt });
+        modelBuilder.Entity<AuditLog>()
+            .HasIndex(a => new { a.BranchId, a.OccurredAt });
+        modelBuilder.Entity<AuditLog>()
+            .HasIndex(a => new { a.TenantId, a.BranchId, a.OccurredAt });
+        modelBuilder.Entity<AuditLog>()
+            .HasIndex(a => new { a.UserId, a.OccurredAt });
 
         // BundleItem self-reference check (NoSelfReference constraint cannot be easily added here without raw SQL, 
         // but we handle the relationships here)

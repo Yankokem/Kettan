@@ -358,6 +358,48 @@ export interface ReturnStatsDto {
   completed: StatMetricDto;
 }
 
+export interface BranchStatsDto {
+  monitoredBranches: StatMetricDto;
+  branchesLowOnStock: StatMetricDto;
+  totalBranches: StatMetricDto;
+  inactiveBranches: StatMetricDto;
+}
+
+export interface InventoryStatsDto {
+  totalActiveSkus: StatMetricDto;
+  lowStockAlerts: StatMetricDto;
+  pendingRestocks: StatMetricDto;
+  inventoryValue: StatMetricDto;
+}
+
+export interface MenuStatsDto {
+  totalItems: StatMetricDto;
+  activeItems: StatMetricDto;
+  inactiveItems: StatMetricDto;
+  outOfStockItems: StatMetricDto;
+}
+
+export interface StaffStatsDto {
+  totalStaff: StatMetricDto;
+  activeStaff: StatMetricDto;
+  inactiveStaff: StatMetricDto;
+  archivedStaff: StatMetricDto;
+}
+
+export interface AuditStatsDto {
+  totalEvents: StatMetricDto;
+  createdEvents: StatMetricDto;
+  activeUsers: StatMetricDto;
+  archivalEvents: StatMetricDto;
+}
+
+export interface FinanceStatsDto {
+  totalFulfillmentCost: StatMetricDto;
+  chainInventoryValue: StatMetricDto;
+  totalWastageLoss: StatMetricDto;
+  returnsCreditLoss: StatMetricDto;
+}
+
 export async function fetchDashboardStats(branchId?: number): Promise<DashboardStatsDto> {
   return get<DashboardStatsDto>(`/api/reports/dashboard-stats${branchId ? `?branchId=${branchId}` : ''}`);
 }
@@ -368,4 +410,28 @@ export async function fetchOrderProcessingStats(): Promise<OrderProcessingStatsD
 
 export async function fetchReturnStats(): Promise<ReturnStatsDto> {
   return get<ReturnStatsDto>('/api/reports/return-stats');
+}
+
+export async function fetchBranchStats(): Promise<BranchStatsDto> {
+  return get<BranchStatsDto>('/api/reports/branch-stats');
+}
+
+export async function fetchInventoryStats(): Promise<InventoryStatsDto> {
+  return get<InventoryStatsDto>('/api/reports/inventory-stats');
+}
+
+export async function fetchMenuStats(): Promise<MenuStatsDto> {
+  return get<MenuStatsDto>('/api/reports/menu-stats');
+}
+
+export async function fetchStaffStats(): Promise<StaffStatsDto> {
+  return get<StaffStatsDto>('/api/reports/staff-stats');
+}
+
+export async function fetchAuditStats(): Promise<AuditStatsDto> {
+  return get<AuditStatsDto>('/api/reports/audit-stats');
+}
+
+export async function fetchFinanceStats(): Promise<FinanceStatsDto> {
+  return get<FinanceStatsDto>('/api/reports/finance-stats');
 }

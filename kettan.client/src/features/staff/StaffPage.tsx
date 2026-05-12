@@ -11,6 +11,9 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
 import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
+import { IconButton, Dialog, DialogTitle, DialogContent, List, ListItem, ListItemText, Divider } from '@mui/material';
 import type { StaffMember } from './types';
 import { StaffCard } from './components/StaffCard';
 import { StaffTableView } from './components/StaffTableView';
@@ -23,6 +26,7 @@ import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { ConfirmationModal } from '../../components/UI/ConfirmationModal';
 import { useAuthStore } from '../../store/useAuthStore';
 import { fetchEmployees, updateEmployeeStatus, type EmployeeDto } from './staffApi';
+import { fetchStaffStats, type StaffStatsDto, type StatMetricDto } from '../reports/reportsApi';
 
 function toStaffMember(e: EmployeeDto): StaffMember {
   return {
@@ -52,6 +56,21 @@ export function StaffPage() {
   const [statusFilter, setStatusFilter] = useState<StaffStatusFilter>('active');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [viewMode, setViewMode] = useState<StaffViewMode>('card');
+  const [staffStats, setStaffStats] = useState<StaffStatsDto | null>(null);
+
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    title: string;
+    icon: React.ReactNode;
+    data: StatMetricDto | null;
+  }>({ open: false, title: '', icon: null, data: null });
+
+  const openDetail = (title: string, data: StatMetricDto | null | undefined, icon: React.ReactNode) => {
+    if (!data) return;
+    setDetailModal({ open: true, title, icon, data });
+  };
+
+  const closeDetail = () => setDetailModal(prev => ({ ...prev, open: false }));
 
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState<{
@@ -73,13 +92,23 @@ export function StaffPage() {
   useEffect(() => {
     if (!isAuthorized) return;
 
-    setLoading(true);
-    fetchEmployees()
-      .then((employees: EmployeeDto[]) => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [employees, stats] = await Promise.all([
+          fetchEmployees(),
+          fetchStaffStats()
+        ]);
         setStaffMembers(employees.map(toStaffMember));
-      })
-      .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
-      .finally(() => setLoading(false));
+        setStaffStats(stats);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadData();
   }, [isAuthorized]);
 
   if (!isAuthorized) {
@@ -225,41 +254,128 @@ export function StaffPage() {
       <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
         <StatCard
           label="Total Staff"
-          value={stats.total}
-          trend="up"
-          trendValue="+1"
+          value={staffStats?.totalStaff.currentValue ?? stats.total}
+          trend={staffStats?.totalStaff.trend ?? 'up'}
+          trendValue={`${staffStats?.totalStaff.percentageChange ?? 0}% vs last week`}
           icon={<Groups2RoundedIcon />}
           accentClass="stat-accent-brown"
           iconBg="#B08B5A"
+          onClick={() => openDetail('Total Staff', staffStats?.totalStaff, <Groups2RoundedIcon />)}
         />
         <StatCard
           label="Active Staff"
-          value={stats.active}
-          trend="up"
-          trendValue="+2"
+          value={staffStats?.activeStaff.currentValue ?? stats.active}
+          trend={staffStats?.activeStaff.trend ?? 'up'}
+          trendValue={`${staffStats?.activeStaff.percentageChange ?? 0}% vs last week`}
           icon={<VerifiedUserRoundedIcon />}
           accentClass="stat-accent-gold"
           iconBg="#C2AA6B"
+          onClick={() => openDetail('Active Staff', staffStats?.activeStaff, <VerifiedUserRoundedIcon />)}
         />
         <StatCard
           label="Inactive Staff"
-          value={stats.inactive}
-          trend="down"
-          trendValue="-1"
+          value={staffStats?.inactiveStaff.currentValue ?? stats.inactive}
+          trend={staffStats?.inactiveStaff.trend ?? 'down'}
+          trendValue={`${staffStats?.inactiveStaff.percentageChange ?? 0}% vs last week`}
           icon={<PersonOffRoundedIcon />}
           accentClass="stat-accent-sage"
           iconBg="#7EAD6D"
+          onClick={() => openDetail('Inactive Staff', staffStats?.inactiveStaff, <PersonOffRoundedIcon />)}
         />
         <StatCard
           label="Archived Staff"
-          value={stats.archived}
-          trend="down"
-          trendValue="-1"
+          value={staffStats?.archivedStaff.currentValue ?? stats.archived}
+          trend={staffStats?.archivedStaff.trend ?? 'down'}
+          trendValue={`${staffStats?.archivedStaff.percentageChange ?? 0}% vs last week`}
           icon={<ArchiveRoundedIcon />}
           accentClass="stat-accent-error"
           iconBg="#EC6666"
+          onClick={() => openDetail('Archived Staff', staffStats?.archivedStaff, <ArchiveRoundedIcon />)}
         />
       </Box>
+
+      {/* ── Detail Modal ── */}
+      <Dialog 
+        open={detailModal.open} 
+        onClose={closeDetail}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            bgcolor: '#FCF9F6',
+            backgroundImage: 'none',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          m: 0, p: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(107, 76, 42, 0.08)'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              color: '#6B4C2A', 
+              opacity: 0.8,
+              '& svg': { fontSize: 20 }
+            }}>
+              {detailModal.icon}
+            </Box>
+            <Typography sx={{ fontWeight: 800, color: '#6B4C2A', fontSize: '0.95rem' }}>
+              {detailModal.title} Breakdown
+            </Typography>
+          </Box>
+          <IconButton onClick={closeDetail} sx={{ color: '#6B4C2A' }}>
+            <CloseRoundedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <List sx={{ py: 0 }}>
+            {!detailModal.data || detailModal.data.items.length === 0 ? (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                  No records to display for this metric.
+                </Typography>
+              </Box>
+            ) : (
+              detailModal.data.items.map((item, idx) => (
+                <Box key={item.id}>
+                  <ListItem 
+                    sx={{ 
+                      py: 1.2, px: 3, 
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'rgba(107, 76, 42, 0.04)' }
+                    }}
+                    onClick={() => {
+                      closeDetail();
+                      const staffId = item.id.replace('USR-', '');
+                      navigate({ to: '/staff/$staffId', params: { staffId } });
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography sx={{ fontWeight: 700, color: '#6B4C2A', fontSize: '0.82rem' }}>
+                          {item.id} — {item.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {item.subtitle} {item.date && `• ${new Date(item.date).toLocaleDateString()}`}
+                        </Typography>
+                      }
+                    />
+                    <ArrowForwardIosRoundedIcon sx={{ fontSize: 12, color: 'rgba(107, 76, 42, 0.3)' }} />
+                  </ListItem>
+                  {idx < (detailModal.data?.items.length ?? 0) - 1 && <Divider sx={{ opacity: 0.5 }} />}
+                </Box>
+              ))
+            )}
+          </List>
+        </DialogContent>
+      </Dialog>
 
       <Box sx={{ display: 'flex', gap: 1.2, mb: 2.5, flexWrap: 'wrap', alignItems: 'center' }}>
         <SearchInput

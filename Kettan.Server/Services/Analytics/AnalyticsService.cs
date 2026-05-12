@@ -1217,4 +1217,426 @@ public class AnalyticsService : IAnalyticsService
             Completed = CalculateMetric(completedList.Count, lastWeekCompleted, completedItems)
         };
     }
+
+    public async Task<BranchStatsDto> GetBranchStatsAsync()
+    {
+        var tenantId = RequireTenantId();
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7);
+        var lastWeekStart = now.AddDays(-14);
+
+        var allBranches = await _context.Branches
+            .Where(b => b.TenantId == tenantId)
+            .ToListAsync();
+
+        // 1. Monitored (Active)
+        var activeBranches = allBranches.Where(b => b.IsActive).ToList();
+        var monitoredItems = activeBranches.Take(10).Select(b => new StatItemDto {
+            Id = $"BR-{b.BranchId}",
+            Title = b.Name,
+            Subtitle = b.Location ?? "No Location",
+            Date = b.CreatedAt
+        }).ToList();
+
+        // 2. Total Branches
+        var totalItems = allBranches.Take(10).Select(b => new StatItemDto {
+            Id = $"BR-{b.BranchId}",
+            Title = b.Name,
+            Subtitle = b.IsActive ? "Active" : "Inactive",
+            Date = b.CreatedAt
+        }).ToList();
+
+        // 3. Inactive
+        var inactiveBranches = allBranches.Where(b => !b.IsActive).ToList();
+        var inactiveItems = inactiveBranches.Take(10).Select(b => new StatItemDto {
+            Id = $"BR-{b.BranchId}",
+            Title = b.Name,
+            Subtitle = "In Setup / Inactive",
+            Date = b.CreatedAt
+        }).ToList();
+
+        // 4. Branches Low on Stock
+        // We need to check batches for each branch
+        var lowStockBranchIds = await _context.Batches
+            .Include(b => b.Item)
+            .Where(b => b.TenantId == tenantId && b.BranchId != null)
+            .GroupBy(b => b.BranchId)
+            .Select(g => new { 
+                BranchId = g.Key!.Value, 
+                LowStock = g.Any(b => b.CurrentQuantity <= (b.Item != null ? b.Item.DefaultThreshold : 10)) 
+            })
+            .Where(x => x.LowStock)
+            .Select(x => x.BranchId)
+            .ToListAsync();
+
+        var lowStockBranches = allBranches.Where(b => lowStockBranchIds.Contains(b.BranchId)).ToList();
+        var lowStockItems = lowStockBranches.Take(10).Select(b => new StatItemDto {
+            Id = $"BR-{b.BranchId}",
+            Title = b.Name,
+            Subtitle = "Needs Stock Attention",
+            Date = DateTime.UtcNow // Placeholder
+        }).ToList();
+
+        // Trends (comparing against last week's count if we have that data, but here we'll just compare snapshots)
+        // Since we don't have historical branch snapshots, we'll compare current vs created before last week.
+        int lastWeekTotal = allBranches.Count(b => b.CreatedAt < thisWeekStart);
+        int lastWeekActive = activeBranches.Count(b => b.CreatedAt < thisWeekStart);
+        int lastWeekInactive = inactiveBranches.Count(b => b.CreatedAt < thisWeekStart);
+        
+        // For low stock, we don't have historical data easily, so we'll just show 0% change or estimate
+        int lastWeekLowStock = lowStockBranches.Count; // Placeholder
+
+        return new BranchStatsDto
+        {
+            MonitoredBranches = CalculateMetric(activeBranches.Count, lastWeekActive, monitoredItems),
+            TotalBranches = CalculateMetric(allBranches.Count, lastWeekTotal, totalItems),
+            InactiveBranches = CalculateMetric(inactiveBranches.Count, lastWeekInactive, inactiveItems),
+            BranchesLowOnStock = CalculateMetric(lowStockBranches.Count, lastWeekLowStock, lowStockItems)
+        };
+    }
+
+    public async Task<InventoryStatsDto> GetInventoryStatsAsync()
+    {
+        var tenantId = RequireTenantId();
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7);
+        var lastWeekStart = now.AddDays(-14);
+
+        // HQ Inventory refers to batches with BranchId == null
+        var hqBatches = await _context.Batches
+            .Include(b => b.Item)
+            .Where(b => b.TenantId == tenantId && b.BranchId == null)
+            .ToListAsync();
+
+        // 1. Total Active SKUs
+        var activeSkus = hqBatches.Select(b => b.Item).DistinctBy(i => i!.ItemId).ToList();
+        var skuItems = activeSkus.Take(10).Select(i => new StatItemDto {
+            Id = i!.SKU ?? $"SKU-{i.ItemId}",
+            Title = i.Name,
+            Subtitle = $"{hqBatches.Where(b => b.ItemId == i.ItemId).Sum(b => b.CurrentQuantity)} {i.Unit} in stock",
+            Date = i.CreatedAt
+        }).ToList();
+
+        // 2. Low Stock Alerts (HQ)
+        var lowStockBatches = hqBatches.Where(b => b.CurrentQuantity <= (b.Item?.DefaultThreshold ?? 10)).ToList();
+        var lowStockItems = lowStockBatches.Take(10).Select(b => new StatItemDto {
+            Id = b.BatchNumber ?? $"BT-{b.BatchId}",
+            Title = b.Item?.Name ?? "Unknown Item",
+            Subtitle = $"Stock: {b.CurrentQuantity} (Threshold: {b.Item?.DefaultThreshold ?? 10})",
+            Date = b.ExpiryDate
+        }).ToList();
+
+        // 3. Pending Restocks
+        // Assuming pending restocks are Orders with SourceBranchId == null (from supplier) and status < Received
+        // Or SupplyRequests with BranchId == null?
+        // Actually, let's look at PurchaseOrders if they exist, or Orders with no RequestId.
+        var pendingOrders = await _context.Orders
+            .Where(o => o.TenantId == tenantId && o.RequestId == 0 && o.Status < OrderStatus.Arrived)
+            .OrderByDescending(o => o.PushedToFulfillmentAt)
+            .ToListAsync();
+
+        var pendingItems = pendingOrders.Take(10).Select(o => new StatItemDto {
+            Id = $"ORD-{o.OrderId}",
+            Title = "Supplier Order",
+            Subtitle = $"Status: {o.Status}",
+            Date = o.PushedToFulfillmentAt
+        }).ToList();
+
+        // 4. Inventory Value
+        decimal totalValue = hqBatches.Sum(b => b.CurrentQuantity * (b.Item?.UnitCost ?? 0));
+        
+        // Trends
+        int lastWeekSkus = activeSkus.Count(i => i!.CreatedAt < thisWeekStart);
+        int lastWeekLowStock = 0; // Snapshot not available
+        int lastWeekPending = pendingOrders.Count(o => o.PushedToFulfillmentAt < thisWeekStart);
+        decimal lastWeekValue = totalValue; // Snapshot not available
+
+        return new InventoryStatsDto
+        {
+            TotalActiveSkus = CalculateMetric(activeSkus.Count, lastWeekSkus, skuItems),
+            LowStockAlerts = CalculateMetric(lowStockBatches.Count, lastWeekLowStock, lowStockItems),
+            PendingRestocks = CalculateMetric(pendingOrders.Count, lastWeekPending, pendingItems),
+            InventoryValue = CalculateMetric(totalValue, lastWeekValue, [])
+        };
+    }
+
+    public async Task<MenuStatsDto> GetMenuStatsAsync()
+    {
+        var tenantId = RequireTenantId();
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7);
+        var lastWeekStart = now.AddDays(-14);
+
+        var allItems = await _context.MenuItems
+            .Where(m => m.TenantId == tenantId && !m.IsDeleted)
+            .ToListAsync();
+
+        // 1. Total Items
+        var totalItemsBreakdown = allItems.Take(10).Select(m => new StatItemDto {
+            Id = $"MNU-{m.MenuItemId}",
+            Title = m.Name,
+            Subtitle = $"Base Price: ₱{m.BasePrice:N2}",
+            Date = m.CreatedAt
+        }).ToList();
+
+        // 2. Active
+        var activeList = allItems.Where(m => m.Status == MenuItemStatus.Active).ToList();
+        var activeItemsBreakdown = activeList.Take(10).Select(m => new StatItemDto {
+            Id = $"MNU-{m.MenuItemId}",
+            Title = m.Name,
+            Subtitle = "Live in Branch Menus",
+            Date = m.CreatedAt
+        }).ToList();
+
+        // 3. Inactive
+        var inactiveList = allItems.Where(m => m.Status == MenuItemStatus.Inactive).ToList();
+        var inactiveItemsBreakdown = inactiveList.Take(10).Select(m => new StatItemDto {
+            Id = $"MNU-{m.MenuItemId}",
+            Title = m.Name,
+            Subtitle = "Disabled / Hidden",
+            Date = m.CreatedAt
+        }).ToList();
+
+        // 4. Out of Stock
+        // Logic: Check ingredients. If any ingredient has 0 quantity across all HQ batches.
+        var hqBatchQuantities = await _context.Batches
+            .Where(b => b.TenantId == tenantId && b.BranchId == null)
+            .GroupBy(b => b.ItemId)
+            .Select(g => new { ItemId = g.Key, TotalQty = g.Sum(b => b.CurrentQuantity) })
+            .ToDictionaryAsync(x => x.ItemId, x => x.TotalQty);
+
+        var menuWithIngredients = await _context.MenuItems
+            .Include(m => m.Ingredients)
+            .Where(m => m.TenantId == tenantId && !m.IsDeleted && m.Status == MenuItemStatus.Active)
+            .ToListAsync();
+
+        var outOfStockList = menuWithIngredients.Where(m => 
+            m.Ingredients.Any(i => !hqBatchQuantities.ContainsKey(i.ItemId) || hqBatchQuantities[i.ItemId] <= 0)
+        ).ToList();
+
+        var outOfStockItemsBreakdown = outOfStockList.Take(10).Select(m => new StatItemDto {
+            Id = $"MNU-{m.MenuItemId}",
+            Title = m.Name,
+            Subtitle = "Missing Ingredients in HQ",
+            Date = DateTime.UtcNow
+        }).ToList();
+
+        // Trends
+        int lastWeekTotal = allItems.Count(m => m.CreatedAt < thisWeekStart);
+        int lastWeekActive = activeList.Count(m => m.CreatedAt < thisWeekStart);
+        int lastWeekInactive = inactiveList.Count(m => m.CreatedAt < thisWeekStart);
+        int lastWeekOutOfStock = 0; // Snapshot not available
+
+        return new MenuStatsDto
+        {
+            TotalItems = CalculateMetric(allItems.Count, lastWeekTotal, totalItemsBreakdown),
+            ActiveItems = CalculateMetric(activeList.Count, lastWeekActive, activeItemsBreakdown),
+            InactiveItems = CalculateMetric(inactiveList.Count, lastWeekInactive, inactiveItemsBreakdown),
+            OutOfStockItems = CalculateMetric(outOfStockList.Count, lastWeekOutOfStock, outOfStockItemsBreakdown)
+        };
+    }
+
+    public async Task<StaffStatsDto> GetStaffStatsAsync()
+    {
+        var tenantId = RequireTenantId();
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7);
+        var lastWeekStart = now.AddDays(-14);
+
+        var allStaff = await _context.Users
+            .Include(u => u.Branch)
+            .Where(u => u.TenantId == tenantId)
+            .ToListAsync();
+
+        // 1. Total Staff
+        var totalItems = allStaff.Take(10).Select(u => new StatItemDto {
+            Id = $"USR-{u.UserId}",
+            Title = u.FullName,
+            Subtitle = u.Role.ToString(),
+            Date = u.CreatedAt
+        }).ToList();
+
+        // 2. Active Staff
+        var activeList = allStaff.Where(u => u.Status == EmployeeStatus.Active && !u.IsDeleted).ToList();
+        var activeItems = activeList.Take(10).Select(u => new StatItemDto {
+            Id = $"USR-{u.UserId}",
+            Title = u.FullName,
+            Subtitle = u.Branch?.Name ?? "HQ",
+            Date = u.CreatedAt
+        }).ToList();
+
+        // 3. Inactive Staff
+        var inactiveList = allStaff.Where(u => u.Status == EmployeeStatus.Inactive && !u.IsDeleted).ToList();
+        var inactiveItems = inactiveList.Take(10).Select(u => new StatItemDto {
+            Id = $"USR-{u.UserId}",
+            Title = u.FullName,
+            Subtitle = "Currently Off-boarded",
+            Date = u.CreatedAt
+        }).ToList();
+
+        // 4. Archived Staff
+        var archivedList = allStaff.Where(u => u.Status == EmployeeStatus.Archived || u.IsDeleted).ToList();
+        var archivedItems = archivedList.Take(10).Select(u => new StatItemDto {
+            Id = $"USR-{u.UserId}",
+            Title = u.FullName,
+            Subtitle = "Historical Record",
+            Date = u.DeletedAt ?? u.CreatedAt
+        }).ToList();
+
+        // Trends
+        int lastWeekTotal = allStaff.Count(u => u.CreatedAt < thisWeekStart);
+        int lastWeekActive = activeList.Count(u => u.CreatedAt < thisWeekStart);
+        int lastWeekInactive = inactiveList.Count(u => u.CreatedAt < thisWeekStart);
+        int lastWeekArchived = archivedList.Count(u => u.CreatedAt < thisWeekStart);
+
+        return new StaffStatsDto
+        {
+            TotalStaff = CalculateMetric(allStaff.Count, lastWeekTotal, totalItems),
+            ActiveStaff = CalculateMetric(activeList.Count, lastWeekActive, activeItems),
+            InactiveStaff = CalculateMetric(inactiveList.Count, lastWeekInactive, inactiveItems),
+            ArchivedStaff = CalculateMetric(archivedList.Count, lastWeekArchived, archivedItems)
+        };
+    }
+
+    public async Task<AuditStatsDto> GetAuditStatsAsync()
+    {
+        var tenantId = RequireTenantId();
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7);
+        var lastWeekStart = now.AddDays(-14);
+
+        var allLogs = await _context.AuditLogs
+            .Where(l => l.TenantId == tenantId)
+            .ToListAsync();
+
+        // 1. Total Events
+        int currentTotal = allLogs.Count;
+        int lastWeekTotal = allLogs.Count(l => l.OccurredAt < thisWeekStart);
+
+        // 2. Created Events
+        var createdActions = new[] { "Created", "Register", "Add" };
+        int currentCreated = allLogs.Count(l => createdActions.Any(a => l.Action.Contains(a, StringComparison.OrdinalIgnoreCase)));
+        int lastWeekCreated = allLogs.Count(l => l.OccurredAt < thisWeekStart && createdActions.Any(a => l.Action.Contains(a, StringComparison.OrdinalIgnoreCase)));
+
+        // 3. Active Users (Actors) this week vs last week
+        var currentUsers = allLogs.Where(l => l.OccurredAt >= thisWeekStart).Select(l => l.UserId).Distinct().Count();
+        var lastWeekUsers = allLogs.Where(l => l.OccurredAt >= lastWeekStart && l.OccurredAt < thisWeekStart).Select(l => l.UserId).Distinct().Count();
+
+        // 4. Archival/Inactive Events
+        var archiveActions = new[] { "Archive", "Delete", "Inactivate" };
+        int currentArchived = allLogs.Count(l => archiveActions.Any(a => l.Action.Contains(a, StringComparison.OrdinalIgnoreCase)));
+        int lastWeekArchived = allLogs.Count(l => l.OccurredAt < thisWeekStart && archiveActions.Any(a => l.Action.Contains(a, StringComparison.OrdinalIgnoreCase)));
+
+        return new AuditStatsDto
+        {
+            TotalEvents = CalculateMetric(currentTotal, lastWeekTotal, []),
+            CreatedEvents = CalculateMetric(currentCreated, lastWeekCreated, []),
+            ActiveUsers = CalculateMetric(currentUsers, lastWeekUsers, []),
+            ArchivalEvents = CalculateMetric(currentArchived, lastWeekArchived, [])
+        };
+    }
+
+    public async Task<FinanceStatsDto> GetFinanceStatsAsync()
+    {
+        var tenantId = RequireTenantId();
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7);
+        var lastWeekStart = now.AddDays(-14);
+
+        // 1. Total Fulfillment Cost (Delivered/Completed Orders)
+        var allAllocations = await _context.OrderAllocations
+            .Include(a => a.Batch).ThenInclude(b => b.Item)
+            .Include(a => a.Order).ThenInclude(o => o.SupplyRequest).ThenInclude(sr => sr != null ? sr.Branch : null)
+            .Where(a => a.TenantId == tenantId && a.Order != null && (a.Order.Status == OrderStatus.Delivered || a.Order.Status == OrderStatus.Completed))
+            .ToListAsync();
+
+        var currentFulfillmentCost = allAllocations.Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0));
+        var lastWeekFulfillmentCost = allAllocations
+            .Where(a => a.Order?.PushedToFulfillmentAt < thisWeekStart)
+            .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0));
+
+        var fulfillmentItems = allAllocations
+            .GroupBy(a => a.OrderId)
+            .OrderByDescending(g => g.First().Order?.PushedToFulfillmentAt)
+            .Take(10)
+            .Select(g => new StatItemDto {
+                Id = $"ORD-{g.Key}",
+                Title = g.First().Order?.SupplyRequest?.Branch?.Name ?? "HQ",
+                Subtitle = $"Cost: ₱{g.Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0)):N0}",
+                Date = g.First().Order?.PushedToFulfillmentAt
+            }).ToList();
+
+        // 2. Chain Inventory Value
+        var allBatches = await _context.Batches
+            .Include(b => b.Item)
+            .Include(b => b.Branch)
+            .Where(b => b.TenantId == tenantId && b.CurrentQuantity > 0)
+            .ToListAsync();
+
+        var currentInventoryValue = allBatches.Sum(b => b.CurrentQuantity * (b.Item?.UnitCost ?? 0));
+        var lastWeekInventoryValue = allBatches
+            .Where(b => b.CreatedAt < thisWeekStart)
+            .Sum(b => b.CurrentQuantity * (b.Item?.UnitCost ?? 0));
+
+        var inventoryItems = allBatches
+            .OrderByDescending(b => b.CurrentQuantity * (b.Item?.UnitCost ?? 0))
+            .Take(10)
+            .Select(b => new StatItemDto {
+                Id = $"BATCH-{b.BatchId}",
+                Title = b.Item?.Name ?? "Unknown Item",
+                Subtitle = $"Value: ₱{(b.CurrentQuantity * (b.Item?.UnitCost ?? 0)):N0} @ {b.Branch?.Name ?? "HQ"}",
+                Date = b.CreatedAt
+            }).ToList();
+
+        // 3. Total Wastage Loss (Spoilage + Adjustment)
+        var allLogs = await _context.ConsumptionLogItems
+            .Include(i => i.Item)
+            .Include(i => i.ConsumptionLog).ThenInclude(l => l != null ? l.Branch : null)
+            .Where(i => i.TenantId == tenantId && i.ConsumptionLog != null && (i.ConsumptionLog.Method == ConsumptionMethod.Spoilage || i.ConsumptionLog.Method == ConsumptionMethod.Adjustment))
+            .ToListAsync();
+
+        var currentWastageLoss = allLogs.Sum(i => i.Quantity * (i.Item?.UnitCost ?? 0));
+        var lastWeekWastageLoss = allLogs
+            .Where(i => i.ConsumptionLog?.LogDate < thisWeekStart)
+            .Sum(i => i.Quantity * (i.Item?.UnitCost ?? 0));
+
+        var wastageItems = allLogs
+            .OrderByDescending(i => i.Quantity * (i.Item?.UnitCost ?? 0))
+            .Take(10)
+            .Select(i => new StatItemDto {
+                Id = $"LOG-{i.ConsumptionLogItemId}",
+                Title = i.Item?.Name ?? "Unknown Item",
+                Subtitle = $"Loss: ₱{(i.Quantity * (i.Item?.UnitCost ?? 0)):N0} ({i.ConsumptionLog?.Method})",
+                Date = i.ConsumptionLog?.LogDate
+            }).ToList();
+
+        // 4. Returns Credit Loss
+        var allReturns = await _context.Returns
+            .Include(r => r.Branch)
+            .Where(r => r.TenantId == tenantId && r.Status == ReturnStatus.Completed)
+            .ToListAsync();
+
+        var currentReturnLoss = allReturns.Sum(r => r.TotalLossValue);
+        var lastWeekReturnLoss = allReturns
+            .Where(r => r.CompletedAt < thisWeekStart)
+            .Sum(r => r.TotalLossValue);
+
+        var returnItems = allReturns
+            .OrderByDescending(r => r.TotalLossValue)
+            .Take(10)
+            .Select(r => new StatItemDto {
+                Id = $"RET-{r.ReturnId}",
+                Title = r.Branch?.Name ?? "HQ",
+                Subtitle = $"Credit Loss: ₱{r.TotalLossValue:N0}",
+                Date = r.CompletedAt
+            }).ToList();
+
+        return new FinanceStatsDto
+        {
+            TotalFulfillmentCost = CalculateMetric((int)currentFulfillmentCost, (int)lastWeekFulfillmentCost, fulfillmentItems),
+            ChainInventoryValue = CalculateMetric((int)currentInventoryValue, (int)lastWeekInventoryValue, inventoryItems),
+            TotalWastageLoss = CalculateMetric((int)currentWastageLoss, (int)lastWeekWastageLoss, wastageItems),
+            ReturnsCreditLoss = CalculateMetric((int)currentReturnLoss, (int)lastWeekReturnLoss, returnItems)
+        };
+    }
 }

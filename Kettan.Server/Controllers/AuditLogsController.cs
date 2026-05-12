@@ -35,10 +35,14 @@ public class AuditLogsController : ControllerBase
         [FromQuery] string? startDate,
         [FromQuery] string? endDate,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50,
+        [FromQuery] int pageSize = 25,
         [FromQuery] int? branchId = null,
         CancellationToken ct = default)
     {
+        // Clamp pageSize
+        if (pageSize > 100) pageSize = 100;
+        if (pageSize < 1) pageSize = 10;
+
         var userRole = _currentUserService.Role;
         var userBranchId = _currentUserService.BranchId;
         var isSuperAdmin = userRole == UserRole.SuperAdmin.ToString();
@@ -58,7 +62,7 @@ public class AuditLogsController : ControllerBase
             return Forbid();
         }
 
-        var query = _context.AuditLogs.AsQueryable();
+        var query = _context.AuditLogs.AsNoTracking().AsQueryable();
 
         // 2. Tenant isolation
         if (!isSuperAdmin && tenantId.HasValue)
@@ -70,7 +74,7 @@ public class AuditLogsController : ControllerBase
         if (userBranchId.HasValue)
         {
             // Branch user: strictly their own branch
-            query = query.Where(a => a.User != null && a.User.BranchId == userBranchId.Value);
+            query = query.Where(a => a.BranchId == userBranchId.Value || (a.User != null && a.User.BranchId == userBranchId.Value));
         }
         else if (!isSuperAdmin) 
         {
@@ -78,28 +82,28 @@ public class AuditLogsController : ControllerBase
             if (branchId.HasValue)
             {
                 // Explicitly filtering for a branch (e.g. from branch profile view)
-                query = query.Where(a => a.User != null && a.User.BranchId == branchId.Value);
+                query = query.Where(a => a.BranchId == branchId.Value || (a.User != null && a.User.BranchId == branchId.Value));
             }
             else 
             {
                 // Sidebar default: HQ logs ONLY (where user has no branchId or is null/system)
-                query = query.Where(a => a.User == null || a.User.BranchId == null);
+                query = query.Where(a => a.BranchId == null && (a.User == null || a.User.BranchId == null));
             }
         }
         else if (branchId.HasValue)
         {
             // SuperAdmin with explicit branch filter
-            query = query.Where(a => a.User != null && a.User.BranchId == branchId.Value);
+            query = query.Where(a => a.BranchId == branchId.Value || (a.User != null && a.User.BranchId == branchId.Value));
         }
 
         // Search filter
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var q = search.Trim().ToLower();
+            var q = search.Trim();
             query = query.Where(a =>
-                a.Action.ToLower().Contains(q) ||
-                a.EntityName.ToLower().Contains(q) ||
-                (a.EntityId != null && a.EntityId.ToLower().Contains(q)));
+                a.Action.Contains(q) ||
+                a.EntityName.Contains(q) ||
+                (a.EntityId != null && a.EntityId.Contains(q)));
         }
 
         // Action filter
@@ -169,9 +173,6 @@ public class AuditLogsController : ControllerBase
                 a.ReferenceId,
                 a.ErrorCode,
                 a.ErrorMessage,
-                a.MetadataJson,
-                a.OldValues,
-                a.NewValues,
                 a.EntityName,
                 a.EntityId,
                 a.EventCategory,
@@ -193,5 +194,33 @@ public class AuditLogsController : ControllerBase
             pageSize,
             data = logs
         });
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetAuditLogDetails(int id, CancellationToken ct = default)
+    {
+        var userRole = _currentUserService.Role;
+        var tenantId = _currentUserService.TenantId;
+        var isSuperAdmin = userRole == UserRole.SuperAdmin.ToString();
+
+        var query = _context.AuditLogs.AsNoTracking().Where(a => a.AuditLogId == id);
+
+        if (!isSuperAdmin && tenantId.HasValue)
+        {
+            query = query.Where(a => a.TenantId == tenantId.Value);
+        }
+
+        var log = await query.Select(a => new
+        {
+            Id = a.AuditLogId,
+            a.MetadataJson,
+            a.OldValues,
+            a.NewValues
+        }).FirstOrDefaultAsync(ct);
+
+        if (log == null)
+            return NotFound();
+
+        return Ok(log);
     }
 }

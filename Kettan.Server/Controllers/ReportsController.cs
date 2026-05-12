@@ -273,6 +273,96 @@ public class ReportsController : ControllerBase
         }
     }
 
+    [HttpGet("branch-stats")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<BranchStatsDto>> GetBranchStats()
+    {
+        try
+        {
+            var stats = await _service.GetBranchStatsAsync();
+            return Ok(stats);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("inventory-stats")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<InventoryStatsDto>> GetInventoryStats()
+    {
+        try
+        {
+            var stats = await _service.GetInventoryStatsAsync();
+            return Ok(stats);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("menu-stats")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<MenuStatsDto>> GetMenuStats()
+    {
+        try
+        {
+            var stats = await _service.GetMenuStatsAsync();
+            return Ok(stats);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("staff-stats")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<StaffStatsDto>> GetStaffStats()
+    {
+        try
+        {
+            var stats = await _service.GetStaffStatsAsync();
+            return Ok(stats);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("audit-stats")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<AuditStatsDto>> GetAuditStats()
+    {
+        try
+        {
+            var stats = await _service.GetAuditStatsAsync();
+            return Ok(stats);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("finance-stats")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<FinanceStatsDto>> GetFinanceStats()
+    {
+        try
+        {
+            var stats = await _service.GetFinanceStatsAsync();
+            return Ok(stats);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     // ── Export endpoints ─────────────────────────────────────────────────────
 
     [HttpGet("inventory/export")]

@@ -34,4 +34,10 @@ public interface IAnalyticsService
     Task<DashboardStatsDto> GetDashboardStatsAsync(int? branchId = null);
     Task<OrderProcessingStatsDto> GetOrderProcessingStatsAsync();
     Task<ReturnStatsDto> GetReturnStatsAsync();
+    Task<BranchStatsDto> GetBranchStatsAsync();
+    Task<InventoryStatsDto> GetInventoryStatsAsync();
+    Task<MenuStatsDto> GetMenuStatsAsync();
+    Task<StaffStatsDto> GetStaffStatsAsync();
+    Task<AuditStatsDto> GetAuditStatsAsync();
+    Task<FinanceStatsDto> GetFinanceStatsAsync();
 }

@@ -1,4 +1,4 @@
-import { createRootRoute, createRoute, createRouter, Outlet, redirect } from '@tanstack/react-router';
+import { createRootRoute, createRoute, createRouter, Outlet, redirect, lazyRouteComponent } from '@tanstack/react-router';
 import { AppLayout } from '../components/Layout/AppLayout';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { LoginPage } from '../features/auth/LoginPage';
@@ -44,7 +44,6 @@ import { RegisterPage } from '../features/marketing/RegisterPage';
 import { RegisterOtpPage } from '../features/marketing/RegisterOtpPage';
 import { RegisterOnboardingPage } from '../features/marketing/RegisterOnboardingPage';
 import { RegisterSuccessPage } from '../features/marketing/RegisterSuccessPage';
-import { AuditLogsPage } from '../features/audit-logs/AuditLogsPage';
 import { useAuthStore } from '../store/useAuthStore';
 import { canAccessModule } from '../utils/roleHelpers';
 import { TenantsPage } from '../features/super-admin/TenantsPage';
@@ -335,7 +334,7 @@ const returnDetailRoute = createRoute({
 const auditLogsRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/audit-logs',
-  component: AuditLogsPage,
+  component: lazyRouteComponent(() => import('../features/audit-logs/AuditLogsPage'), 'AuditLogsPage'),
   beforeLoad: () => {
     const role = useAuthStore.getState().user?.role;
     if (!role || !canAccessModule(role, 'audit-logs')) {

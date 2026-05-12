@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { Box, Tabs, Tab, Grid, Skeleton, Card } from '@mui/material';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import { Button } from '../../components/UI/Button';
 import { useAuthStore } from '../../store/useAuthStore';
 import { isBranchRole } from '../../utils/roleHelpers';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
+import { IconButton, Dialog, DialogTitle, DialogContent, List, ListItem, ListItemText, Divider, Typography } from '@mui/material';
 
 // ── Components ───────────────────────────────────────────────────────────────
 import { HqOverviewTab } from './components/HqOverviewTab';
@@ -18,7 +22,10 @@ import {
   fetchBranchOverview, 
   fetchHqOverview,
   type BranchOverviewDto, 
-  type HqOverviewDto 
+  type HqOverviewDto,
+  fetchFinanceStats,
+  type FinanceStatsDto,
+  type StatMetricDto
 } from './reportsApi';
 import { StatCard } from '../../components/UI/StatCard';
 import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
@@ -70,14 +77,42 @@ function HqReportsView({
 }) {
   const [tab, setTab] = useState<HqTab>('overview');
   const [overview, setOverview] = useState<HqOverviewDto | null>(null);
+  const [financeStats, setFinanceStats] = useState<FinanceStatsDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    title: string;
+    icon: ReactNode;
+    data: StatMetricDto | null;
+  }>({ open: false, title: '', icon: null, data: null });
+
+  const openDetail = (title: string, data: StatMetricDto | null | undefined, icon: ReactNode) => {
+    if (!data) return;
+    setDetailModal({ open: true, title, icon, data });
+  };
+
+  const closeDetail = () => setDetailModal(prev => ({ ...prev, open: false }));
 
   useEffect(() => {
-    setLoading(true);
-    fetchHqOverview(startDate, endDate)
-      .then(setOverview)
-      .catch(() => setOverview(null))
-      .finally(() => setLoading(false));
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [ov, fin] = await Promise.all([
+          fetchHqOverview(startDate, endDate),
+          fetchFinanceStats()
+        ]);
+        setOverview(ov);
+        setFinanceStats(fin);
+      } catch (err) {
+        console.error('Failed to load HQ reports data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadData();
   }, [startDate, endDate]);
 
   const getCards = () => {
@@ -87,31 +122,63 @@ function HqReportsView({
     switch (tab) {
       case 'overview':
         return [
-          { label: 'Total Fulfillment Cost', value: toPeso(ov.totalFulfillmentCost), sub: 'Chain-wide supply spend', icon: <MonetizationOnRoundedIcon />, accent: 'stat-accent-brown' },
-          { label: 'Chain Inventory Value', value: toPeso(ov.totalChainInventoryValue), sub: 'HQ + All Branches', icon: <InventoryRoundedIcon />, accent: 'stat-accent-gold' },
-          { label: 'Total Wastage Loss', value: toPeso(ov.totalWastageLoss), sub: 'Spoilage & adjustments', icon: <DeleteSweepRoundedIcon />, accent: 'stat-accent-sage' },
-          { label: 'Returns Credit Loss', value: toPeso(ov.totalReturnLoss), sub: 'Branch/Customer credits', icon: <AssignmentReturnRoundedIcon />, accent: 'stat-accent-rust' },
+          { 
+            label: 'Total Fulfillment Cost', 
+            value: toPeso(financeStats?.totalFulfillmentCost.currentValue ?? ov.totalFulfillmentCost), 
+            trend: financeStats?.totalFulfillmentCost.trend ?? 'neutral',
+            sub: `${financeStats?.totalFulfillmentCost.percentageChange ?? 0}% vs last week`,
+            icon: <MonetizationOnRoundedIcon />, 
+            accent: 'stat-accent-brown',
+            onClick: () => openDetail('Total Fulfillment Cost', financeStats?.totalFulfillmentCost, <MonetizationOnRoundedIcon />)
+          },
+          { 
+            label: 'Chain Inventory Value', 
+            value: toPeso(financeStats?.chainInventoryValue.currentValue ?? ov.totalChainInventoryValue), 
+            trend: financeStats?.chainInventoryValue.trend ?? 'neutral',
+            sub: `${financeStats?.chainInventoryValue.percentageChange ?? 0}% vs last week`,
+            icon: <InventoryRoundedIcon />, 
+            accent: 'stat-accent-gold',
+            onClick: () => openDetail('Chain Inventory Value', financeStats?.chainInventoryValue, <InventoryRoundedIcon />)
+          },
+          { 
+            label: 'Total Wastage Loss', 
+            value: toPeso(financeStats?.totalWastageLoss.currentValue ?? ov.totalWastageLoss), 
+            trend: financeStats?.totalWastageLoss.trend ?? 'neutral',
+            sub: `${financeStats?.totalWastageLoss.percentageChange ?? 0}% vs last week`,
+            icon: <DeleteSweepRoundedIcon />, 
+            accent: 'stat-accent-sage',
+            onClick: () => openDetail('Total Wastage Loss', financeStats?.totalWastageLoss, <DeleteSweepRoundedIcon />)
+          },
+          { 
+            label: 'Returns Credit Loss', 
+            value: toPeso(financeStats?.returnsCreditLoss.currentValue ?? ov.totalReturnLoss), 
+            trend: financeStats?.returnsCreditLoss.trend ?? 'neutral',
+            sub: `${financeStats?.returnsCreditLoss.percentageChange ?? 0}% vs last week`,
+            icon: <AssignmentReturnRoundedIcon />, 
+            accent: 'stat-accent-rust',
+            onClick: () => openDetail('Returns Credit Loss', financeStats?.returnsCreditLoss, <AssignmentReturnRoundedIcon />)
+          },
         ];
       case 'inventory':
         return [
-          { label: 'Chain Inventory Value', value: toPeso(ov.totalChainInventoryValue), sub: 'Total asset valuation', icon: <InventoryRoundedIcon />, accent: 'stat-accent-gold' },
-          { label: 'Fulfillment Rate', value: `${ov.fulfillmentRate.toFixed(1)}%`, sub: 'Order success percentage', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-sage' },
-          { label: 'Total Orders', value: ov.totalOrders.toLocaleString(), sub: 'Fulfillment volume', icon: <CategoryRoundedIcon />, accent: 'stat-accent-brown' },
-          { label: 'Wastage Loss', value: toPeso(ov.totalWastageLoss), sub: 'Inventory write-offs', icon: <DeleteSweepRoundedIcon />, accent: 'stat-accent-rust' },
+          { label: 'Chain Inventory Value', value: toPeso(ov.totalChainInventoryValue), trend: 'neutral', sub: 'Total asset valuation', icon: <InventoryRoundedIcon />, accent: 'stat-accent-gold' },
+          { label: 'Fulfillment Rate', value: `${ov.fulfillmentRate.toFixed(1)}%`, trend: 'neutral', sub: 'Order success percentage', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-sage' },
+          { label: 'Total Orders', value: ov.totalOrders.toLocaleString(), trend: 'neutral', sub: 'Fulfillment volume', icon: <CategoryRoundedIcon />, accent: 'stat-accent-brown' },
+          { label: 'Wastage Loss', value: toPeso(ov.totalWastageLoss), trend: 'neutral', sub: 'Inventory write-offs', icon: <DeleteSweepRoundedIcon />, accent: 'stat-accent-rust' },
         ];
       case 'performance':
         return [
-          { label: 'Avg Fulfillment Rate', value: `${ov.fulfillmentRate.toFixed(1)}%`, sub: 'Chain-wide efficiency', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-sage' },
-          { label: 'Top Performer', value: ov.topPerformerName || '—', sub: 'Highest scoring branch', icon: <EmojiEventsRoundedIcon />, accent: 'stat-accent-gold' },
-          { label: 'Total Orders', value: ov.totalOrders.toLocaleString(), sub: 'Volume this period', icon: <CategoryRoundedIcon />, accent: 'stat-accent-brown' },
-          { label: 'Top Score', value: `${ov.topPerformerScore.toFixed(1)}%`, sub: 'Leaderboard benchmark', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-gold' },
+          { label: 'Avg Fulfillment Rate', value: `${ov.fulfillmentRate.toFixed(1)}%`, trend: 'neutral', sub: 'Chain-wide efficiency', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-sage' },
+          { label: 'Top Performer', value: ov.topPerformerName || '—', trend: 'neutral', sub: 'Highest scoring branch', icon: <EmojiEventsRoundedIcon />, accent: 'stat-accent-gold' },
+          { label: 'Total Orders', value: ov.totalOrders.toLocaleString(), trend: 'neutral', sub: 'Volume this period', icon: <CategoryRoundedIcon />, accent: 'stat-accent-brown' },
+          { label: 'Top Score', value: `${ov.topPerformerScore.toFixed(1)}%`, trend: 'neutral', sub: 'Leaderboard benchmark', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-gold' },
         ];
       case 'returns':
         return [
-          { label: 'Total Return Loss', value: toPeso(ov.totalReturnLoss), sub: 'Monetary credits issued', icon: <AssignmentReturnRoundedIcon />, accent: 'stat-accent-rust' },
-          { label: 'Total Wastage Loss', value: toPeso(ov.totalWastageLoss), sub: 'Spoilage valuation', icon: <DeleteSweepRoundedIcon />, accent: 'stat-accent-sage' },
-          { label: 'Return Rate', value: '2.4%', sub: 'Avg vs total orders', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-brown' },
-          { label: 'Total Monetary Loss', value: toPeso(ov.totalReturnLoss + ov.totalWastageLoss), sub: 'Combined risk value', icon: <MonetizationOnRoundedIcon />, accent: 'stat-accent-rust' },
+          { label: 'Total Return Loss', value: toPeso(ov.totalReturnLoss), trend: 'neutral', sub: 'Monetary credits issued', icon: <AssignmentReturnRoundedIcon />, accent: 'stat-accent-rust' },
+          { label: 'Total Wastage Loss', value: toPeso(ov.totalWastageLoss), trend: 'neutral', sub: 'Spoilage valuation', icon: <DeleteSweepRoundedIcon />, accent: 'stat-accent-sage' },
+          { label: 'Return Rate', value: '2.4%', trend: 'neutral', sub: 'Avg vs total orders', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-brown' },
+          { label: 'Total Monetary Loss', value: toPeso(ov.totalReturnLoss + ov.totalWastageLoss), trend: 'neutral', sub: 'Combined risk value', icon: <MonetizationOnRoundedIcon />, accent: 'stat-accent-rust' },
         ];
       default:
         return [];
@@ -136,22 +203,113 @@ function HqReportsView({
               </Grid>
             ))
           ) : (
-            cards.map((c, i) => (
+            cards.map((c: any, i) => (
               <Grid key={i} size={{ xs: 12, sm: 6, lg: 3 }}>
                 <StatCard
                   label={c.label}
                   value={c.value}
-                  trend="neutral"
+                  trend={c.trend ?? 'neutral'}
                   trendValue={c.sub}
                   icon={c.icon}
                   accentClass={c.accent}
                   iconBg={i % 2 === 0 ? "linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)" : "linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"}
+                  onClick={c.onClick}
                 />
               </Grid>
             ))
           )}
         </Grid>
       </Box>
+
+      {/* ── Detail Modal ── */}
+      <Dialog 
+        open={detailModal.open} 
+        onClose={closeDetail}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            bgcolor: '#FCF9F6',
+            backgroundImage: 'none',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          m: 0, p: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(107, 76, 42, 0.08)'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              color: '#6B4C2A', 
+              opacity: 0.8,
+              '& svg': { fontSize: 20 }
+            }}>
+              {detailModal.icon}
+            </Box>
+            <Typography sx={{ fontWeight: 800, color: '#6B4C2A', fontSize: '0.95rem' }}>
+              {detailModal.title} Breakdown
+            </Typography>
+          </Box>
+          <IconButton onClick={closeDetail} sx={{ color: '#6B4C2A' }}>
+            <CloseRoundedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <List sx={{ py: 0 }}>
+            {!detailModal.data || detailModal.data.items.length === 0 ? (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                  No records to display for this metric.
+                </Typography>
+              </Box>
+            ) : (
+              detailModal.data.items.map((item, idx) => (
+                <Box key={item.id}>
+                  <ListItem 
+                    sx={{ 
+                      py: 1.2, px: 3, 
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'rgba(107, 76, 42, 0.04)' }
+                    }}
+                    onClick={() => {
+                      closeDetail();
+                      if (item.id.startsWith('ORD-')) {
+                        navigate({ to: '/orders' });
+                      } else if (item.id.startsWith('BATCH-')) {
+                        navigate({ to: '/hq-inventory' });
+                      } else if (item.id.startsWith('LOG-')) {
+                        navigate({ to: '/hq-inventory' });
+                      } else if (item.id.startsWith('RET-')) {
+                        navigate({ to: '/returns' });
+                      }
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography sx={{ fontWeight: 700, color: '#6B4C2A', fontSize: '0.82rem' }}>
+                          {item.id} — {item.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {item.subtitle} {item.date && `• ${new Date(item.date).toLocaleDateString()}`}
+                        </Typography>
+                      }
+                    />
+                    <ArrowForwardIosRoundedIcon sx={{ fontSize: 12, color: 'rgba(107, 76, 42, 0.3)' }} />
+                  </ListItem>
+                  {idx < (detailModal.data?.items.length ?? 0) - 1 && <Divider sx={{ opacity: 0.5 }} />}
+                </Box>
+              ))
+            )}
+          </List>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Tabs & Controls Row ── */}
       <Box sx={{ 

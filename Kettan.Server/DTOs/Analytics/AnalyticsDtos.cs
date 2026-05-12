@@ -318,3 +318,51 @@ public class ReturnStatsDto
     public StatMetricDto InTransitOrArrived { get; set; } = new();
     public StatMetricDto Completed { get; set; } = new();
 }
+
+public class BranchStatsDto
+{
+    public StatMetricDto MonitoredBranches { get; set; } = new();
+    public StatMetricDto BranchesLowOnStock { get; set; } = new();
+    public StatMetricDto TotalBranches { get; set; } = new();
+    public StatMetricDto InactiveBranches { get; set; } = new();
+}
+
+public class InventoryStatsDto
+{
+    public StatMetricDto TotalActiveSkus { get; set; } = new();
+    public StatMetricDto LowStockAlerts { get; set; } = new();
+    public StatMetricDto PendingRestocks { get; set; } = new();
+    public StatMetricDto InventoryValue { get; set; } = new();
+}
+
+public class MenuStatsDto
+{
+    public StatMetricDto TotalItems { get; set; } = new();
+    public StatMetricDto ActiveItems { get; set; } = new();
+    public StatMetricDto InactiveItems { get; set; } = new();
+    public StatMetricDto OutOfStockItems { get; set; } = new();
+}
+
+public class StaffStatsDto
+{
+    public StatMetricDto TotalStaff { get; set; } = new();
+    public StatMetricDto ActiveStaff { get; set; } = new();
+    public StatMetricDto InactiveStaff { get; set; } = new();
+    public StatMetricDto ArchivedStaff { get; set; } = new();
+}
+
+public class AuditStatsDto
+{
+    public StatMetricDto TotalEvents { get; set; } = new();
+    public StatMetricDto CreatedEvents { get; set; } = new();
+    public StatMetricDto ActiveUsers { get; set; } = new();
+    public StatMetricDto ArchivalEvents { get; set; } = new();
+}
+
+public class FinanceStatsDto
+{
+    public StatMetricDto TotalFulfillmentCost { get; set; } = new();
+    public StatMetricDto ChainInventoryValue { get; set; } = new();
+    public StatMetricDto TotalWastageLoss { get; set; } = new();
+    public StatMetricDto ReturnsCreditLoss { get; set; } = new();
+}

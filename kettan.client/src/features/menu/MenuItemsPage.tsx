@@ -12,10 +12,15 @@ import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { StatCard } from '../../components/UI/StatCard';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
+import { IconButton, Dialog, DialogTitle, DialogContent, List, ListItem, ListItemText, Divider, Typography } from '@mui/material';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
+import { useNavigate } from '@tanstack/react-router';
 import type { MenuItem } from './types';
 import { MenuItemCard } from './components/MenuItemCard';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { fetchMenuItems, type MenuItemDto } from './menuItemsApi';
+import { fetchMenuStats, type MenuStatsDto, type StatMetricDto } from '../reports/reportsApi';
 import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 import { useAuthStore } from '../../store/useAuthStore';
 import { isHqRole } from '../../utils/roleHelpers';
@@ -92,8 +97,24 @@ export function MenuItemsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [menuStats, setMenuStats] = useState<MenuStatsDto | null>(null);
   const { user } = useAuthStore();
   const showAdminActions = user?.role ? isHqRole(user.role) : false;
+  const navigate = useNavigate();
+
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    title: string;
+    icon: React.ReactNode;
+    data: StatMetricDto | null;
+  }>({ open: false, title: '', icon: null, data: null });
+
+  const openDetail = (title: string, data: StatMetricDto | null | undefined, icon: React.ReactNode) => {
+    if (!data) return;
+    setDetailModal({ open: true, title, icon, data });
+  };
+
+  const closeDetail = () => setDetailModal(prev => ({ ...prev, open: false }));
 
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
@@ -101,12 +122,14 @@ export function MenuItemsPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [menuRows, invRows] = await Promise.all([
+        const [menuRows, invRows, stats] = await Promise.all([
           fetchMenuItems(),
-          fetchInventoryItems(undefined, { hqOnly: false })
+          fetchInventoryItems(undefined, { hqOnly: false }),
+          fetchMenuStats()
         ]);
         setMenuItems(menuRows);
         setInventory(invRows);
+        setMenuStats(stats);
       } catch (err: unknown) {
         setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
@@ -128,52 +151,141 @@ export function MenuItemsPage() {
   return (
     <Box sx={{ pb: 3 }}>
       {/* Stat Cards */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            label="Total Items"
-            value={menuItems.length.toString()}
-            trend="up"
-            trendValue="+1"
-            icon={<LocalCafeRoundedIcon />}
-            accentClass="stat-accent-brown"
-            iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
-          />
+      <Box sx={{ mb: 4 }}>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Total Items"
+              value={menuStats?.totalItems.currentValue.toString() ?? menuItems.length.toString()}
+              trend={menuStats?.totalItems.trend ?? 'up'}
+              trendValue={`${menuStats?.totalItems.percentageChange ?? 0}% vs last week`}
+              icon={<LocalCafeRoundedIcon />}
+              accentClass="stat-accent-brown"
+              iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+              onClick={() => openDetail('Total Menu Items', menuStats?.totalItems, <LocalCafeRoundedIcon />)}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Active"
+              value={menuStats?.activeItems.currentValue.toString() ?? activeCount.toString()}
+              trend={menuStats?.activeItems.trend ?? 'up'}
+              trendValue={`${menuStats?.activeItems.percentageChange ?? 0}% vs last week`}
+              icon={<CheckCircleRoundedIcon />}
+              accentClass="stat-accent-sage"
+              iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+              onClick={() => openDetail('Active Items', menuStats?.activeItems, <CheckCircleRoundedIcon />)}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Inactive"
+              value={menuStats?.inactiveItems.currentValue.toString() ?? inactiveCount.toString()}
+              trend={menuStats?.inactiveItems.trend ?? 'down'}
+              trendValue={`${menuStats?.inactiveItems.percentageChange ?? 0}% vs last week`}
+              icon={<CancelRoundedIcon />}
+              accentClass="stat-accent-gold"
+              iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+              onClick={() => openDetail('Inactive Items', menuStats?.inactiveItems, <CancelRoundedIcon />)}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              label="Out of Stock"
+              value={menuStats?.outOfStockItems.currentValue.toString() ?? outOfStockCount.toString()}
+              trend={menuStats?.outOfStockItems.trend ?? 'up'}
+              trendValue={`${menuStats?.outOfStockItems.percentageChange ?? 0}% vs last week`}
+              icon={<ErrorOutlineRoundedIcon />}
+              accentClass="stat-accent-error"
+              iconBg="linear-gradient(135deg, #E65C5C 0%, #F58B8B 100%)"
+              onClick={() => openDetail('Out of Stock Menu', menuStats?.outOfStockItems, <ErrorOutlineRoundedIcon />)}
+            />
+          </Grid>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            label="Active"
-            value={activeCount.toString()}
-            trend="up"
-            trendValue="+2"
-            icon={<CheckCircleRoundedIcon />}
-            accentClass="stat-accent-sage"
-            iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            label="Inactive"
-            value={inactiveCount.toString()}
-            trend="down"
-            trendValue="-1"
-            icon={<CancelRoundedIcon />}
-            accentClass="stat-accent-gold"
-            iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            label="Out of Stock"
-            value={outOfStockCount.toString()}
-            trend="up"
-            trendValue="+3"
-            icon={<ErrorOutlineRoundedIcon />}
-            accentClass="stat-accent-error"
-            iconBg="linear-gradient(135deg, #E65C5C 0%, #F58B8B 100%)"
-          />
-        </Grid>
-      </Grid>
+      </Box>
+
+      {/* ── Detail Modal ── */}
+      <Dialog 
+        open={detailModal.open} 
+        onClose={closeDetail}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            bgcolor: '#FCF9F6',
+            backgroundImage: 'none',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          m: 0, p: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(107, 76, 42, 0.08)'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              color: '#6B4C2A', 
+              opacity: 0.8,
+              '& svg': { fontSize: 20 }
+            }}>
+              {detailModal.icon}
+            </Box>
+            <Typography sx={{ fontWeight: 800, color: '#6B4C2A', fontSize: '0.95rem' }}>
+              {detailModal.title} Breakdown
+            </Typography>
+          </Box>
+          <IconButton onClick={closeDetail} sx={{ color: '#6B4C2A' }}>
+            <CloseRoundedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <List sx={{ py: 0 }}>
+            {!detailModal.data || detailModal.data.items.length === 0 ? (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                  No records to display for this metric.
+                </Typography>
+              </Box>
+            ) : (
+              detailModal.data.items.map((item, idx) => (
+                <Box key={item.id}>
+                  <ListItem 
+                    sx={{ 
+                      py: 1.2, px: 3, 
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'rgba(107, 76, 42, 0.04)' }
+                    }}
+                    onClick={() => {
+                      closeDetail();
+                      const menuItemId = item.id.replace('MNU-', '');
+                      navigate({ to: '/menu/$menuItemId', params: { menuItemId } });
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography sx={{ fontWeight: 700, color: '#6B4C2A', fontSize: '0.82rem' }}>
+                          {item.id} — {item.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {item.subtitle} {item.date && `• ${new Date(item.date).toLocaleDateString()}`}
+                        </Typography>
+                      }
+                    />
+                    <ArrowForwardIosRoundedIcon sx={{ fontSize: 12, color: 'rgba(107, 76, 42, 0.3)' }} />
+                  </ListItem>
+                  {idx < (detailModal.data?.items.length ?? 0) - 1 && <Divider sx={{ opacity: 0.5 }} />}
+                </Box>
+              ))
+            )}
+          </List>
+        </DialogContent>
+      </Dialog>
 
       {/* Filter and Grid */}
       <Box sx={{ mb: 4, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
