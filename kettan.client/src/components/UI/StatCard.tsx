@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, ButtonBase } from '@mui/material';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
 
@@ -12,97 +12,118 @@ export interface StatCardProps {
   icon: React.ReactNode;
   accentClass: string;
   iconBg: string;
+  onClick?: () => void;
 }
 
-export function StatCard({ label, value, sub, trend, trendValue, icon, accentClass, iconBg }: StatCardProps) {
+export function StatCard({ label, value, sub, trend, trendValue, icon, accentClass, iconBg, onClick }: StatCardProps) {
   return (
-    <Box
-      className={`hover-lift glass-card ${accentClass}`}
+    <ButtonBase
+      onClick={onClick}
+      component="div"
       sx={{
-        borderRadius: '14px',
-        background: (theme) => theme.custom.gradients.card,
-        p: 3,
-        display: 'flex',
-        flexDirection: 'column',
+        width: '100%',
         height: '100%',
-        gap: 1.5,
-        cursor: 'default',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-        '&::after': {
-          marginTop: 'auto !important'
-        }
+        display: 'block',
+        textAlign: 'left',
+        borderRadius: '14px',
+        overflow: 'hidden',
+        cursor: onClick ? 'pointer' : 'default',
+        '&:hover': onClick ? {
+          '& .stat-card-inner': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 12px 24px rgba(0,0,0,0.08)',
+          },
+          '& .stat-icon-box': {
+            transform: 'scale(1.1)',
+          }
+        } : {}
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <Box>
-          <Typography
-            sx={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: 'text.secondary',
-              mb: 0.5,
-            }}
-          >
-            {label}
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: 28,
-              fontWeight: 700,
-              color: 'text.primary',
-              letterSpacing: '-0.03em',
-              lineHeight: 1,
-            }}
-          >
-            {value}
-          </Typography>
-          {sub && (
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>
-              {sub}
+      <Box
+        className={`stat-card-inner glass-card ${accentClass}`}
+        sx={{
+          borderRadius: '14px',
+          background: (theme) => theme.custom.gradients.card,
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          gap: 1.5,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          transition: 'all 0.2s ease-in-out',
+          '&::after': {
+            marginTop: 'auto !important'
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Box>
+            <Typography
+              sx={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'text.secondary',
+                mb: 0.5,
+              }}
+            >
+              {label}
             </Typography>
-          )}
+            <Typography
+              sx={{
+                fontSize: 28,
+                fontWeight: 700,
+                color: 'text.primary',
+                letterSpacing: '-0.03em',
+                lineHeight: 1,
+              }}
+            >
+              {value}
+            </Typography>
+            {sub && (
+              <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>
+                {sub}
+              </Typography>
+            )}
+          </Box>
+   
+          <Box
+            className="stat-icon-box"
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: '12px',
+              background: iconBg,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'transform 0.2s ease-in-out',
+              '& svg': { fontSize: 22, color: '#FAF5EF' },
+            }}
+          >
+            {icon}
+          </Box>
         </Box>
-
-        <Box
-          sx={{
-            width: 44,
-            height: 44,
-            borderRadius: '12px',
-            background: iconBg,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            '& svg': { fontSize: 22, color: '#FAF5EF' },
-          }}
-        >
-          {icon}
-        </Box>
+  
+        {(trend || trendValue) && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+            {trend === 'up' && <TrendingUpRoundedIcon sx={{ fontSize: 14, color: '#546B3F' }} />}
+            {trend === 'down' && <TrendingDownRoundedIcon sx={{ fontSize: 14, color: '#B91C1C' }} />}
+            
+            <Typography
+              sx={{
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: trend === 'up' ? '#546B3F' : trend === 'down' ? '#B91C1C' : 'text.secondary',
+              }}
+            >
+              {trendValue}
+            </Typography>
+          </Box>
+        )}
       </Box>
-
-      {(trend || trendValue) && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-          {trend === 'up' && <TrendingUpRoundedIcon sx={{ fontSize: 14, color: '#546B3F' }} />}
-          {trend === 'down' && <TrendingDownRoundedIcon sx={{ fontSize: 14, color: '#B91C1C' }} />}
-          
-          <Typography
-            sx={{
-              fontSize: 11.5,
-              fontWeight: 600,
-              color: trend === 'up' ? '#546B3F' : trend === 'down' ? '#B91C1C' : 'text.secondary',
-            }}
-          >
-            {trendValue}
-          </Typography>
-          {trend !== 'neutral' && trend !== null && (
-            <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-              vs last week
-            </Typography>
-          )}
-        </Box>
-      )}
-    </Box>
+    </ButtonBase>
   );
 }

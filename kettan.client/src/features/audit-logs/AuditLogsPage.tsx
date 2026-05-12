@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { api } from '../../utils/api';
 import { Box, Typography, useTheme } from '@mui/material';
 import FeedRoundedIcon from '@mui/icons-material/FeedRounded';
@@ -32,22 +32,22 @@ interface AuditLogResponse {
   data: AuditLogEntry[];
 }
 
-function actionStyle(action: string) {
+function getActionColor(action: string, theme: any) {
   const normalized = action.toLowerCase();
 
   if (normalized.includes('deleted') || normalized.includes('deactivat')) {
-    return { color: '#B91C1C', bg: 'rgba(185,28,28,0.12)' };
+    return theme.palette.error.main;
   }
 
   if (normalized.includes('created') || normalized.includes('activat')) {
-    return { color: '#047857', bg: 'rgba(4,120,87,0.12)' };
+    return theme.palette.success.main;
   }
 
   if (normalized.includes('updated')) {
-    return { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
+    return theme.palette.primary.main;
   }
 
-  return { color: '#2563EB', bg: 'rgba(37,99,235,0.12)' };
+  return theme.palette.info.main;
 }
 
 function defaultStartDate() {
@@ -71,8 +71,13 @@ export function AuditLogsPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
+  const [page] = useState(1);
+  const [pageSize] = useState(50);
+  const fetching = useRef(false);
 
   const loadRows = useCallback(async () => {
+    if (fetching.current) return;
+    fetching.current = true;
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -80,7 +85,8 @@ export function AuditLogsPage() {
       if (actionFilter) params.set('action', actionFilter);
       if (startDate) params.set('startDate', startDate);
       if (endDate) params.set('endDate', endDate);
-      params.set('pageSize', '200');
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
 
       const res = await api.get(`/api/audit-logs?${params}`);
       
@@ -92,14 +98,15 @@ export function AuditLogsPage() {
       setRows([]);
     } finally {
       setLoading(false);
+      fetching.current = false;
     }
-  }, [search, actionFilter, startDate, endDate]);
+  }, [search, actionFilter, startDate, endDate, page, pageSize]);
 
   useEffect(() => { loadRows(); }, [loadRows]);
 
   const actionOptions = useMemo(() => {
     const actions = Array.from(new Set(rows.map((row) => row.action)));
-    return actions.map((action) => ({ value: action, label: action }));
+    return actions.map((action) => ({ value: action, label: action.toUpperCase() }));
   }, [rows]);
 
   const roleOptions = useMemo(() => {
@@ -109,11 +116,17 @@ export function AuditLogsPage() {
 
   const filteredRows = useMemo(() => {
     let result = rows;
+    
+    // Default filter: Remove navigation noise (GET requests) unless searching or filtered by action
+    if (!search && !actionFilter) {
+      result = result.filter(row => row.httpMethod !== 'GET' || row.entityName !== 'Request');
+    }
+
     if (roleFilter) {
       result = result.filter((row) => row.actorRole === roleFilter);
     }
     return result;
-  }, [rows, roleFilter]);
+  }, [rows, roleFilter, search, actionFilter]);
 
   const sortedRows = useMemo(() => {
     const copy = [...filteredRows];
@@ -152,7 +165,7 @@ export function AuditLogsPage() {
     },
     {
       key: 'entityName',
-      label: 'Event',
+      label: 'EVENT',
       width: '4fr',
       sortable: true,
       render: (row) => {
@@ -161,80 +174,56 @@ export function AuditLogsPage() {
           ? humanizeRoute(row.route || '', row.httpMethod || 'GET')
           : humanizeEntityAction(row.action, row.entityName, row.entityId);
         
-        const style = actionStyle(row.action);
-
         return (
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.primary', letterSpacing: '0.01em' }}>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: 'text.primary', letterSpacing: '0.01em' }}>
                 {title}
               </Typography>
-              {!isRequest && (
-                <Typography 
-                  sx={{ 
-                    fontSize: 10, 
-                    fontWeight: 800, 
-                    color: style.color,
-                    backgroundColor: style.bg,
-                    px: 0.6,
-                    py: 0.1,
-                    borderRadius: 0.5,
-                    textTransform: 'uppercase'
-                  }}
-                >
-                  {row.action}
-                </Typography>
-              )}
             </Box>
-            <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.3, fontWeight: 500, opacity: 0.8 }}>
-              {row.eventCategory} • {row.module || 'General'}
-            </Typography>
           </Box>
         );
       },
     },
     {
       key: 'context',
-      label: 'Context & Changes',
+      label: 'CONTEXT & CHANGES',
       width: '4fr',
       sortable: false,
       render: (row) => {
         const changes = parseChanges(row.oldValues || null, row.newValues || null);
+        const isRequest = row.action === 'HttpRequest' || row.entityName === 'Request';
+        const hasOutcome = row.outcome && row.outcome !== 'Unknown';
         
+        const badgeText = (!isRequest && !hasOutcome) ? row.action : (row.outcome || 'Unknown');
+        const badgeColor = (!isRequest && !hasOutcome) 
+          ? getActionColor(row.action, theme) 
+          : (row.outcome === 'Success' ? theme.palette.success.main : theme.palette.error.main);
+
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, py: 0.8 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                <Typography 
                  sx={{ 
-                   fontSize: 11, 
-                   fontWeight: 800, 
-                   px: 0.8, 
-                   py: 0.2, 
-                   borderRadius: 1,
-                   backgroundColor: row.outcome === 'Success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                   color: row.outcome === 'Success' ? 'success.main' : 'error.main',
-                   textTransform: 'uppercase'
+                   fontSize: 13, 
+                   fontWeight: 600, 
+                   color: badgeColor,
+                   display: 'inline-block'
                  }}
                >
-                 {row.outcome || 'Unknown'}
+                 {badgeText}
                </Typography>
                {row.outcome !== 'Success' && row.errorMessage && (
                  <Typography sx={{ fontSize: 11, fontWeight: 500, color: 'error.main', opacity: 0.8 }}>
                    {row.errorCode ? `[${row.errorCode}] ` : ''}{row.errorMessage}
                  </Typography>
                )}
-               {row.statusCode && (
-                 <Typography sx={{ fontSize: 11, fontWeight: 600, color: 'text.disabled' }}>
-                   HTTP {row.statusCode}
-                 </Typography>
-               )}
-            </Box>
+
 
             {changes.length > 0 ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, mt: 0.5 }}>
                 {changes.slice(0, 3).map((change, idx) => (
                   <Typography key={idx} sx={{ fontSize: 11.5, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>{change.field}:</Box>
+                    <Box component="span" sx={{ fontWeight: 500, color: 'text.primary' }}>{change.field}:</Box>
                     {change.oldValue !== null && (
                       <Box component="span" sx={{ textDecoration: 'line-through', opacity: 0.6 }}>{String(change.oldValue)}</Box>
                     )}
@@ -259,24 +248,24 @@ export function AuditLogsPage() {
     },
     {
       key: 'actorName',
-      label: 'User',
+      label: 'USER',
       width: '2fr',
       sortable: true,
       render: (row) => (
-        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: 'text.primary' }}>
+        <Typography sx={{ fontSize: 13.5, fontWeight: 500, color: 'text.primary' }}>
           {row.actorName}
         </Typography>
       ),
     },
     {
       key: 'actorRole',
-      label: 'Role',
+      label: 'ROLE',
       width: '1.2fr',
       sortable: true,
       render: (row) => {
         const roleStyle = theme.custom.roles[row.actorRole] || { text: theme.palette.text.secondary };
         return (
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: roleStyle.text }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 500, color: roleStyle.text }}>
             {row.actorRole}
           </Typography>
         );
@@ -295,7 +284,7 @@ export function AuditLogsPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, gap: 2.5, mb: 4 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2.5, mb: 4 }}>
         <StatCard
           label="Total Events"
           value={totalCount}
@@ -340,16 +329,18 @@ export function AuditLogsPage() {
           alignItems: 'center',
           mb: 2.5,
           gap: 1.2,
-          flexWrap: 'nowrap',
-          overflowX: 'auto',
-          pb: 0.5,
+          flexWrap: 'wrap',
         }}
       >
         <SearchInput
           placeholder="Search action, entity, actor..."
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          sx={{ minWidth: 280, maxWidth: 420, flexShrink: 0 }}
+          sx={{ 
+            minWidth: { xs: '100%', sm: 280 }, 
+            maxWidth: { sm: 420 }, 
+            flexShrink: 1 
+          }}
         />
 
         <DateRangePicker
@@ -393,7 +384,7 @@ export function AuditLogsPage() {
           options={roleOptions}
         />
 
-        <Button onClick={loadRows} sx={{ flexShrink: 0, ml: 'auto' }}>
+        <Button onClick={loadRows} sx={{ flexShrink: 0, ml: { xs: 0, lg: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
           Refresh Logs
         </Button>
       </Box>

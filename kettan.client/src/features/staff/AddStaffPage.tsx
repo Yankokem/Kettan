@@ -13,6 +13,7 @@ import { PageHeader } from '../../components/UI/PageHeader';
 import { FormActions } from '../../components/Form/FormActions';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { fetchBranches, type BranchDto } from '../branches/branchesApi';
+import { isBranchRole } from '../../utils/roleHelpers';
 
 interface StaffFormData {
   firstName: string;
@@ -32,7 +33,7 @@ const ROLE_OPTIONS: Array<{ value: StaffFormData['role']; label: string }> = [
   { value: 'HqStaff', label: 'HQ Staff' },
   { value: 'BranchOwner', label: 'Branch Owner' },
   { value: 'BranchManager', label: 'Branch Manager' },
-  { value: 'StoreStaff', label: 'Store Staff' },
+  { value: 'StoreStaff', label: 'Branch Staff' },
 ];
 
 export function AddStaffPage() {
@@ -175,8 +176,8 @@ export function AddStaffPage() {
     }
   };
 
-  const isBranchRole = formData.role === 'BranchManager' || formData.role === 'BranchOwner' || formData.role === 'StoreStaff';
-  const showPendingWarning = isBranchRole && !formData.branchId;
+  const isBranch = isBranchRole(formData.role);
+  const showPendingWarning = isBranch && !formData.branchId;
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -381,7 +382,7 @@ export function AddStaffPage() {
             </Grid>
 
             {/* Only show Branch selection for Branch-specific roles */}
-            {formData.role && (formData.role === 'BranchOwner' || formData.role === 'BranchManager' || formData.role === 'StoreStaff') && (
+            {formData.role && isBranchRole(formData.role) && (
               <Grid size={{ xs: 12 }}>
                 <Box>
                   <FormDropdown

@@ -7,7 +7,6 @@ import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useLocation, useNavigate } from '@tanstack/react-router';
-import { NotificationBell } from '../UI/NotificationBell';
 import { useAuthStore } from '../../store/useAuthStore';
 
 interface HeaderProps {
@@ -191,13 +190,6 @@ export function Header({ onDrawerToggle, drawerWidth }: HeaderProps) {
 
         {/* Right side */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-
-          {/* Notifications */}
-          <NotificationBell />
-
-          {/* Divider */}
-          <Box sx={{ width: '3px', height: 24, background: '#6B4C2A', opacity: 0.4, mx: 1.5 }} />
-
           {/* Account Group */}
           <Box 
             onClick={handleMenuOpen}

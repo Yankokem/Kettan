@@ -74,7 +74,7 @@ public class SupplyRequestService : ISupplyRequestService
             .OrderByDescending(r => r.UpdatedAt)
             .ToListAsync();
 
-        return requests.Select(MapToDto).ToList();
+        return requests.Distinct().Select(MapToDto).ToList();
     }
 
     public async Task<SupplyRequestDto?> GetByIdAsync(int requestId)

@@ -9,6 +9,8 @@ export interface MenuCategory {
   name: string;
   displayOrder: number;
   isActive: boolean;
+  isDeleted: boolean;
+  deletedAt?: string | null;
   createdAt: string;
 }
 
@@ -54,4 +56,8 @@ export async function updateMenuCategory(categoryId: number, input: MenuCategory
 
 export async function deleteMenuCategory(categoryId: number): Promise<void> {
   return request<void>(`/api/menu-categories/${categoryId}`, { method: 'DELETE' });
+}
+
+export async function unarchiveMenuCategory(categoryId: number): Promise<void> {
+  return request<void>(`/api/menu-categories/${categoryId}/unarchive`, { method: 'POST' });
 }

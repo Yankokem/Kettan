@@ -33,7 +33,7 @@ const ROLE_OPTIONS: Array<{ value: AddStaffFormValues['role']; label: string }> 
   { value: 'HqStaff', label: 'HQ Staff' },
   { value: 'BranchOwner', label: 'Branch Owner' },
   { value: 'BranchManager', label: 'Branch Manager' },
-  { value: 'StoreStaff', label: 'Store Staff' },
+  { value: 'StoreStaff', label: 'Branch Staff' },
 ];
 
 function buildInitialFormValues(): AddStaffFormValues {

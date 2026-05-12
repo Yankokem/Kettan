@@ -1,5 +1,6 @@
 import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import UnarchiveRoundedIcon from '@mui/icons-material/UnarchiveRounded';
 import DragIndicatorRoundedIcon from '@mui/icons-material/DragIndicatorRounded';
 import type { InventoryCategory } from '../itemCategoryApi';
 
@@ -7,10 +8,13 @@ interface ItemCategoryCardProps {
   category: InventoryCategory;
   selected: boolean;
   onSelect: () => void;
-  onDelete: () => void;
+  onArchive: () => void;
+  onUnarchive: () => void;
 }
 
-export function ItemCategoryCard({ category, selected, onSelect, onDelete }: ItemCategoryCardProps) {
+export function ItemCategoryCard({ category, selected, onSelect, onArchive, onUnarchive }: ItemCategoryCardProps) {
+  const isArchived = category.isDeleted;
+
   return (
     <Paper
       elevation={0}
@@ -23,6 +27,8 @@ export function ItemCategoryCard({ category, selected, onSelect, onDelete }: Ite
         background: (theme) => selected ? 'rgba(201, 168, 77, 0.08)' : theme.custom.gradients.card,
         cursor: 'pointer',
         transition: 'all 0.18s ease',
+        opacity: isArchived ? 0.7 : 1,
+        filter: isArchived ? 'grayscale(0.4)' : 'none',
         '&:hover': {
           borderColor: 'primary.main',
           boxShadow: '0 8px 22px rgba(0, 0, 0, 0.05)',
@@ -32,9 +38,25 @@ export function ItemCategoryCard({ category, selected, onSelect, onDelete }: Ite
     >
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5 }}>
         <Box>
-          <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
-            {category.name}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
+              {category.name}
+            </Typography>
+            {isArchived && (
+              <Chip 
+                label="Archived" 
+                size="small" 
+                sx={{ 
+                  height: 18, 
+                  fontSize: 10, 
+                  fontWeight: 700,
+                  bgcolor: 'rgba(107, 114, 128, 0.1)',
+                  color: '#6B7280',
+                  border: '1px solid rgba(107, 114, 128, 0.2)'
+                }} 
+              />
+            )}
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mt: 0.9 }}>
             <DragIndicatorRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
             <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
@@ -45,21 +67,30 @@ export function ItemCategoryCard({ category, selected, onSelect, onDelete }: Ite
 
         <IconButton
           size="small"
-          aria-label={`Delete ${category.name}`}
+          aria-label={isArchived ? `Restore ${category.name}` : `Archive ${category.name}`}
           onClick={(event) => {
             event.stopPropagation();
-            onDelete();
+            if (isArchived) {
+              onUnarchive();
+            } else {
+              onArchive();
+            }
           }}
           sx={{
             width: 30,
             height: 30,
-            color: '#B91C1C',
-            border: '1px solid rgba(185, 28, 28, 0.25)',
-            bgcolor: 'rgba(185, 28, 28, 0.04)',
-            '&:hover': { bgcolor: 'rgba(185, 28, 28, 0.1)' },
+            color: isArchived ? '#059669' : '#D97706',
+            border: '1px solid',
+            borderColor: isArchived ? 'rgba(5, 150, 105, 0.25)' : 'rgba(217, 119, 6, 0.25)',
+            bgcolor: isArchived ? 'rgba(5, 150, 105, 0.04)' : 'rgba(217, 119, 6, 0.04)',
+            '&:hover': { bgcolor: isArchived ? 'rgba(5, 150, 105, 0.1)' : 'rgba(217, 119, 6, 0.1)' },
           }}
         >
-          <DeleteOutlineRoundedIcon sx={{ fontSize: 17 }} />
+          {isArchived ? (
+            <UnarchiveRoundedIcon sx={{ fontSize: 17 }} />
+          ) : (
+            <ArchiveRoundedIcon sx={{ fontSize: 17 }} />
+          )}
         </IconButton>
       </Box>
 

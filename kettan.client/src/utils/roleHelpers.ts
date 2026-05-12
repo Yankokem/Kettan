@@ -24,7 +24,7 @@ export const getRoleDisplayName = (role: string): string => {
     HqStaff: 'HQ Staff',
     BranchOwner: 'Branch Owner',
     BranchManager: 'Branch Manager',
-    StoreStaff: 'Store Staff',
+    StoreStaff: 'Branch Staff',
   };
   return roleMap[role] || role;
 };
@@ -57,7 +57,7 @@ export const isHqRole = (role: string): boolean => {
  * Check if role is branch-based (BranchOwner, BranchManager)
  */
 export const isBranchRole = (role: string): boolean => {
-  return ['BranchOwner', 'BranchManager'].includes(role);
+  return ['BranchOwner', 'BranchManager', 'StoreStaff'].includes(role);
 };
 
 /**

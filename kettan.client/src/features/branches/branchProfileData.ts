@@ -73,9 +73,9 @@ export const toBranchFormData = (branch: Branch): BranchFormData => ({
 export const mapBranch = (dto: any): Branch => ({
   id: dto.branchId,
   name: dto.name,
-  address: dto.location || 'N/A',
+  address: dto.location || dto.address || 'N/A',
   city: dto.city || 'N/A',
-  contactNumber: dto.contactNumber || 'N/A',
+  contactNumber: dto.contactNumber || dto.contactNo || 'N/A',
   openTime: dto.openTime || '08:00',
   closeTime: dto.closeTime || '22:00',
   ownerUserId: dto.ownerUserId?.toString(),

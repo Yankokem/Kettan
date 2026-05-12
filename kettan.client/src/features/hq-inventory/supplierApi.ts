@@ -8,6 +8,8 @@ export interface Supplier {
   phone?: string | null;
   address?: string | null;
   isActive: boolean;
+  isDeleted: boolean;
+  deletedAt?: string | null;
   createdAt: string;
 }
 
@@ -59,4 +61,8 @@ export async function updateSupplier(supplierId: number, input: SupplierFormData
 
 export async function deleteSupplier(supplierId: number): Promise<void> {
   return request<void>(`/api/suppliers/${supplierId}`, { method: 'DELETE' });
+}
+
+export async function unarchiveSupplier(supplierId: number): Promise<void> {
+  return request<void>(`/api/suppliers/${supplierId}/unarchive`, { method: 'POST' });
 }

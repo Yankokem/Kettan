@@ -5,10 +5,9 @@ import { PageHeader } from '../../components/UI/PageHeader';
 import { Chip } from '@mui/material';
 import { Button } from '../../components/UI/Button';
 import {
-  BRANCH_MANAGER_OPTIONS,
-  BRANCH_OWNER_OPTIONS,
   BRANCHES_MOCK,
 } from './mockData';
+import { api } from '../../utils/api';
 import {
   BRANCH_PROFILE_TABS,
   getKpisForTab,
@@ -26,6 +25,8 @@ import {
   fetchBranchInventory,
   fetchBranchStaff,
   fetchBranchTransactions,
+  updateBranch,
+  type UpdateBranchDto,
 } from './branchesApi';
 import { BranchProfileHero } from './components/profile/BranchProfileHero';
 import { BranchProfileTabHeader } from './components/profile/BranchProfileTabHeader';
@@ -52,15 +53,6 @@ const STATUS_OPTIONS = [
   { value: 'setup', label: 'Setup Pending' },
 ];
 
-const OWNER_OPTIONS = [
-  { value: '', label: 'Unassigned (Optional)' },
-  ...BRANCH_OWNER_OPTIONS,
-];
-
-const MANAGER_OPTIONS = [
-  { value: '', label: 'Select a manager...' },
-  ...BRANCH_MANAGER_OPTIONS,
-];
 
 export function BranchProfilePage() {
   const navigate = useNavigate();
@@ -73,6 +65,7 @@ export function BranchProfilePage() {
   const [transactions, setTransactions] = useState<BranchTransactionRow[]>([]);
   const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItemDto[]>([]);
+  const [users, setUsers] = useState<Array<{ userId: number; firstName: string; lastName: string; role: string }>>([]);
   
   const [branchLoading, setBranchLoading] = useState(true);
   const [tabLoading, setTabLoading] = useState(false);
@@ -100,6 +93,16 @@ export function BranchProfilePage() {
       setBranchLoading(false);
     }
   }, [parsedBranchId]);
+
+  // Phase 1.5: Load Users for assignments
+  const loadUsers = useCallback(async () => {
+    try {
+      const response = await api.get('/api/users');
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    }
+  }, []);
 
   // Phase 2: Lazy Load Tab Content
   const loadTabContent = useCallback(async (tab: BranchProfileTabKey) => {
@@ -143,7 +146,8 @@ export function BranchProfilePage() {
 
   useEffect(() => {
     loadBranchInfo();
-  }, [loadBranchInfo]);
+    loadUsers();
+  }, [loadBranchInfo, loadUsers]);
 
   useEffect(() => {
     // Load content for active tab whenever it changes
@@ -164,6 +168,20 @@ export function BranchProfilePage() {
 
   const branchCode = selectedBranch ? `BR-${selectedBranch.id.toString().padStart(5, '0')}` : '';
   const branchOpen = formData ? isOpenNow(formData.openTime, formData.closeTime) : false;
+
+  const ownerOptions = useMemo(() => [
+    { value: '', label: 'Unassigned (Optional)' },
+    ...users
+      .filter((u) => u.role === 'BranchOwner')
+      .map((u) => ({ value: String(u.userId), label: `${u.firstName} ${u.lastName}` })),
+  ], [users]);
+
+  const managerOptions = useMemo(() => [
+    { value: '', label: 'Select a manager...' },
+    ...users
+      .filter((u) => u.role === 'BranchManager')
+      .map((u) => ({ value: String(u.userId), label: `${u.firstName} ${u.lastName}` })),
+  ], [users]);
 
   const cityOptions = useMemo(() => {
     const knownCities = Array.from(new Set(BRANCHES_MOCK.map((branch) => branch.city).filter(Boolean)));
@@ -238,19 +256,38 @@ export function BranchProfilePage() {
     });
   };
 
-  const handleSave = () => {
-    if (!editDraft) {
+  const handleSave = async () => {
+    if (!editDraft || !selectedBranch) {
       return;
     }
 
-    console.log('Saving branch profile:', {
-      branchId: selectedBranch?.id,
-      ...editDraft,
-    });
+    try {
+      const updateDto: UpdateBranchDto = {
+        name: editDraft.name.trim(),
+        location: [editDraft.address.trim(), editDraft.city.trim()].filter(Boolean).join(', '),
+        address: editDraft.address.trim(),
+        city: editDraft.city.trim(),
+        contactNumber: editDraft.contactNumber.trim(),
+        openTime: editDraft.openTime,
+        closeTime: editDraft.closeTime,
+        ownerUserId: editDraft.ownerUserId,
+        managerUserId: editDraft.managerUserId,
+        isActive: editDraft.status === 'active',
+        imageUrl: editDraft.imageUrl,
+      };
 
-    setFormData(editDraft);
-    setIsEditModalOpen(false);
-    setShowSavedNotice(true);
+      await updateBranch(selectedBranch.id, updateDto);
+      
+      setFormData(editDraft);
+      setIsEditModalOpen(false);
+      setShowSavedNotice(true);
+      
+      // Reload to get fresh data from server
+      void loadBranchInfo();
+    } catch (error) {
+      console.error('Failed to save branch profile:', error);
+      alert('Failed to save changes. Please try again.');
+    }
   };
 
   const handleCloseEditModal = () => {
@@ -314,8 +351,8 @@ export function BranchProfilePage() {
           <BranchDetailsTab
             formData={formData}
             statusOptions={STATUS_OPTIONS}
-            ownerOptions={OWNER_OPTIONS}
-            managerOptions={MANAGER_OPTIONS}
+            ownerOptions={ownerOptions}
+            managerOptions={managerOptions}
             loading={tabLoading}
           />
         ) : null}
@@ -347,8 +384,8 @@ export function BranchProfilePage() {
         formData={editDraft}
         statusOptions={STATUS_OPTIONS}
         cityOptions={cityOptions}
-        ownerOptions={OWNER_OPTIONS}
-        managerOptions={MANAGER_OPTIONS}
+        ownerOptions={ownerOptions}
+        managerOptions={managerOptions}
         onClose={handleCloseEditModal}
         onSave={handleSave}
         onUpdate={updateEditDraft}

@@ -10,6 +10,8 @@ export interface InventoryCategory {
   description?: string | null;
   displayOrder: number;
   isActive: boolean;
+  isDeleted: boolean;
+  deletedAt?: string | null;
   createdAt: string;
 }
 
@@ -56,4 +58,8 @@ export async function updateItemCategory(categoryId: number, input: ItemCategory
 
 export async function deleteItemCategory(categoryId: number): Promise<void> {
   return request<void>(`/api/inventory-categories/${categoryId}`, { method: 'DELETE' });
+}
+
+export async function unarchiveItemCategory(categoryId: number): Promise<void> {
+  return request<void>(`/api/inventory-categories/${categoryId}/unarchive`, { method: 'POST' });
 }

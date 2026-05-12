@@ -319,3 +319,53 @@ export async function fetchHqSupplyTrend(
 ): Promise<BranchTrendDto[]> {
   return get<BranchTrendDto[]>(`/api/reports/hq/supply-trend${qs({ startDate, endDate })}`);
 }
+
+// ── Dashboard Statistics ──────────────────────────────────────────────────
+
+export interface StatItemDto {
+  id: string;
+  title: string;
+  subtitle: string;
+  date: string | null;
+}
+
+export interface StatMetricDto {
+  currentValue: number;
+  lastWeekValue: number;
+  percentageChange: number;
+  trend: 'up' | 'down';
+  items: StatItemDto[];
+}
+
+export interface DashboardStatsDto {
+  pendingSupplyOrders: StatMetricDto;
+  lowStockItems: StatMetricDto;
+  activeShipments: StatMetricDto;
+  pendingReturns: StatMetricDto;
+}
+
+export interface OrderProcessingStatsDto {
+  pendingFulfillment: StatMetricDto;
+  ordersPicking: StatMetricDto;
+  inTransit: StatMetricDto;
+  totalFulfillmentCost: StatMetricDto;
+}
+
+export interface ReturnStatsDto {
+  totalReturns: StatMetricDto;
+  awaitingAction: StatMetricDto;
+  inTransitOrArrived: StatMetricDto;
+  completed: StatMetricDto;
+}
+
+export async function fetchDashboardStats(branchId?: number): Promise<DashboardStatsDto> {
+  return get<DashboardStatsDto>(`/api/reports/dashboard-stats${branchId ? `?branchId=${branchId}` : ''}`);
+}
+
+export async function fetchOrderProcessingStats(): Promise<OrderProcessingStatsDto> {
+  return get<OrderProcessingStatsDto>('/api/reports/order-processing-stats');
+}
+
+export async function fetchReturnStats(): Promise<ReturnStatsDto> {
+  return get<ReturnStatsDto>('/api/reports/return-stats');
+}

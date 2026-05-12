@@ -21,7 +21,7 @@ Kettan is a Business-to-Business (B2B) platform. Its customers are coffee shop c
 | **Database** | Microsoft SQL Server + Entity Framework Core |
 | **Authentication** | ASP.NET Core Identity + JWT |
 | **Multi-Tenancy** | Tenant-aware query filtering via discriminator / tenant ID |
-| **Third-Party APIs** | **PayMongo** (Subscription Billing), **Mailtrap** (Email Notifications), **Cloudinary** (Media/Image Storage) |
+| **Third-Party APIs** | **PayMongo** (Subscription Billing), **Gmail SMTP** (Email Notifications), **Cloudinary** (Media/Image Storage) |
 
 ---
 
@@ -35,19 +35,19 @@ Kettan replaces manual group chats and spreadsheets with a centralized Order Ful
 2. **Low Stock Detection**: The system checks stock against configurable branch thresholds. If stock falls below the threshold, it triggers an alert (Mailtrap) and auto-drafts a supply request.
 3. **Supply Request**: Branch Managers review and submit the request to HQ.
 4. **Order Processing**: HQ Managers review incoming requests. They can Full Approve, Partially Fulfill, or Reject.
-5. **Picking & Packing**: HQ Staff are guided through retrieving items by batch (enforcing FIFO) and packing them.
+5. **Picking & Packing**: HQ Staff are guided through retrieving items and packing them.
 6. **Dispatch**: HQ Staff assign a registered Courier and Vehicle to the order and dispatch it.
-7. **Delivery**: The Branch Manager receives the items and confirms delivery in the system, automatically transferring the batch ownership from HQ to the Branch.
+7. **Delivery**: The Branch Manager receives the items and confirms delivery in the system, automatically transferring the stock ownership from HQ to the Branch.
 
 ### 2.2 Core Modules
 
 | Module | Description |
 |---|---|
-| **Inventory Management** | Tracks stock at HQ and per branch by batch ID and expiry date. Enforces FIFO. Uses EOQ algorithm for optimal reorder quantity. |
+| **Inventory Management** | Tracks stock at HQ and per branch. Uses EOQ algorithm for optimal reorder quantity. |
 | **Order Processing** | Receives and validates supply requests. Routes for approval based on rules. |
 | **Picking, Packing & Shipping** | HQ fulfillment workflow. Manages dispatch logistics using registered couriers and vehicles. |
 | **Returns Management** | Handles branch-initiated returns for damaged/incorrect goods (Replace, Credit, Reject). |
-| **Finance & Reports** | Aggregates fulfillment costs, branch performance metrics (Weighted Scoring), and inventory valuation. Note: No actual money changes hands between HQ and Branch. |
+| **Finance & Reports** | Aggregates fulfillment costs, branch performance metrics (Weighted Scoring), and inventory valuation via Weighted Average Costing (WAC). Note: No actual money changes hands between HQ and Branch. |
 | **Subscription & Billing** | Manages tenant subscription tiers via PayMongo. Enforced by middleware. |
 
 ---
@@ -65,6 +65,7 @@ Kettan uses a strict Role-Based Access Control (RBAC) system.
 *   **HQ Staff**: Processes and fulfills orders, handles picking, packing, and dispatch.
 *   **Branch Owner**: Oversees branch financials and fulfillment performance (Read-only on operations).
 *   **Branch Manager**: Logs consumption, submits/tracks supply orders, confirms deliveries, files returns.
+*   **Branch Staff**: Handles day-to-side branch operations, point-of-sales tasks, and basic restock logging.
 
 ---
 
@@ -75,14 +76,13 @@ The database uses Entity Framework Core with global query filters to enforce ten
 ### 4.1 Inventory & Catalog
 
 *   `Item`: The base product. Tracks `ItemType`, `ItemCategory`, `UnitOfMeasure`, `UnitCost`. 
-*   `Batch`: Tracks physical stock instances. Has `ExpiryDate` and `CurrentQuantity`. If `BranchId` is null, it's at HQ.
 *   `MenuItem` & `MenuItemIngredient`: Represents sellable recipes. Consumes `Items` based on defined `QuantityPerUnit`.
 *   `InventoryTransaction`: Ledger of all movements (Restock, Adjustment, Transfer, Consumption).
 
 ### 4.2 Order Fulfillment
 
 *   `SupplyRequest` & `SupplyRequestItem`: Branch-initiated requests.
-*   `Order` & `OrderAllocation`: HQ-approved orders. Allocations link to specific `Batches` for FIFO tracking.
+*   `Order` & `OrderAllocation`: HQ-approved orders. Allocations reserve specific quantities from HQ stock.
 *   `Shipment`: Delivery record linking the `Order` to a `Courier` and `Vehicle`.
 *   `OrderStatusHistory`: Timeline logging every status transition.
 *   `Return` & `ReturnItem`: Branch-initiated damage/error claims.
@@ -102,12 +102,12 @@ The backend uses a thin-controller, fat-service architecture.
 
 | Service | Responsibility |
 |---|---|
-| `InventoryService` | FIFO deduction engine, stock-in/out logic, batch transferring. |
+| `InventoryService` | Stock deduction engine, stock-in/out logic, branch transferring. |
 | `OrderService` | State machine for supply requests → orders → shipments → deliveries. |
 | `ConsumptionService` | Recipe-based sales deductions and direct manual entry deductions. |
 | `SubscriptionService` | PayMongo checkout session generation, webhook handling, and middleware enforcement. |
-| `EmailService` | Mailtrap integration for Welcome Emails, Low Stock Alerts, and OTPs. |
-| `AnalyticsService` | EOQ (Economic Order Quantity) and Weighted Branch Performance Scoring. |
+| `EmailService` | Gmail SMTP integration for Welcome Emails, Low Stock Alerts, and OTPs. |
+| `AnalyticsService` | EOQ (Economic Order Quantity), Weighted Average Costing (WAC), and Weighted Branch Performance Scoring. |
 
 ---
 

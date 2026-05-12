@@ -21,6 +21,10 @@ import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { OrderRowActionsMenu, type OrderActionStatus } from './components/OrderRowActionsMenu';
 import { fetchOrders, fetchHqDispatches, fetchIncomingShipments, fetchSupplyRequests, type BranchOrder, type SupplyRequest } from '../branch-operations/api';
+import { fetchOrderProcessingStats, type OrderProcessingStatsDto, type StatMetricDto, type StatItemDto } from '../reports/reportsApi';
+import { Dialog, DialogTitle, DialogContent, List, ListItem, ListItemText, Divider, IconButton } from '@mui/material';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
 
 function defaultStartDate() {
   const date = new Date();
@@ -281,8 +285,25 @@ export function OrdersPage() {
   const [activeStatusTab, setActiveStatusTab] = useState<ActiveStatusTab>(() => getDefaultActiveStatusByRole(user?.role));
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [stats, setStats] = useState<OrderProcessingStatsDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    title: string;
+    icon: React.ReactNode;
+    items: StatItemDto[];
+  }>({ open: false, title: '', icon: null, items: [] });
+
+  const openDetail = (title: string, metric: StatMetricDto, icon: React.ReactNode) => {
+    setDetailModal({
+      open: true,
+      title,
+      icon,
+      items: metric.items
+    });
+  };
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -290,10 +311,13 @@ export function OrdersPage() {
         setIsLoading(true);
         setError(null);
         
-        const [ordersRows, requestsRows] = await Promise.all([
+        const [ordersRows, requestsRows, statsData] = await Promise.all([
           isHqUser ? fetchOrders() : fetchIncomingShipments(),
-          fetchSupplyRequests() 
+          fetchSupplyRequests(),
+          isHqUser ? fetchOrderProcessingStats() : Promise.resolve(null)
         ]);
+
+        if (statsData) setStats(statsData);
 
         const mappedOrders: OrderItem[] = ordersRows.map((row: BranchOrder) => ({
           id: String(row.orderId),
@@ -509,45 +533,49 @@ export function OrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Pending Fulfillment"
-              value={orders.filter((o) => ['Approved', 'PartiallyApproved', 'Processing'].includes(o.status)).length.toString()}
-              trend="up"
-              trendValue="1.5%"
+              value={stats?.pendingFulfillment.currentValue.toString() || orders.filter((o) => ['Approved', 'PartiallyApproved', 'Processing'].includes(o.status)).length.toString()}
+              trend={stats?.pendingFulfillment.trend || "up"}
+              trendValue={`${stats?.pendingFulfillment.percentageChange || 0}% vs last week`}
               icon={<AccessTimeRoundedIcon />}
               accentClass="stat-accent-rust"
               iconBg="linear-gradient(135deg, #D48C6B 0%, #EAA989 100%)"
+              onClick={stats ? () => openDetail("Pending Fulfillment", stats.pendingFulfillment, <AccessTimeRoundedIcon />) : undefined}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Orders Picking"
-              value={orders.filter((o) => o.status === 'Picking' || o.status === 'Allocated' || o.status === 'Packed').length.toString()}
-              trend="up"
-              trendValue="2.4%"
+              value={stats?.ordersPicking.currentValue.toString() || orders.filter((o) => o.status === 'Picking' || o.status === 'Allocated' || o.status === 'Packed').length.toString()}
+              trend={stats?.ordersPicking.trend || "up"}
+              trendValue={`${stats?.ordersPicking.percentageChange || 0}% vs last week`}
               icon={<LocalMallRoundedIcon />}
               accentClass="stat-accent-sand"
               iconBg="linear-gradient(135deg, #D1BFA8 0%, #E6DFD4 100%)"
+              onClick={stats ? () => openDetail("Orders Picking", stats.ordersPicking, <LocalMallRoundedIcon />) : undefined}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="In Transit"
-              value={orders.filter((o) => o.status === 'Dispatched' || o.status === 'InTransit').length.toString()}
-              trend="up"
-              trendValue="5.1%"
+              value={stats?.inTransit.currentValue.toString() || orders.filter((o) => o.status === 'Dispatched' || o.status === 'InTransit').length.toString()}
+              trend={stats?.inTransit.trend || "up"}
+              trendValue={`${stats?.inTransit.percentageChange || 0}% vs last week`}
               icon={<LocalShippingRoundedIcon />}
               accentClass="stat-accent-brown"
               iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+              onClick={stats ? () => openDetail("In Transit", stats.inTransit, <LocalShippingRoundedIcon />) : undefined}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Total Fulfillment Cost"
-              value={`₱${orders.reduce((acc, o) => acc + o.totalCost, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-              trend="up"
-              trendValue="1.2%"
+              value={stats ? `₱${stats.totalFulfillmentCost.currentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `₱${orders.reduce((acc, o) => acc + o.totalCost, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              trend={stats?.totalFulfillmentCost.trend || "up"}
+              trendValue={`${stats?.totalFulfillmentCost.percentageChange || 0}% vs last week`}
               icon={<MonetizationOnRoundedIcon />}
               accentClass="stat-accent-sage"
               iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+              onClick={stats ? () => openDetail("Fulfillment Cost", stats.totalFulfillmentCost, <MonetizationOnRoundedIcon />) : undefined}
             />
           </Grid>
         </Grid>
@@ -649,6 +677,90 @@ export function OrdersPage() {
         emptyMessage={isLoading ? 'Loading orders...' : 'No orders match the selected filters.'}
         emptyIcon={<Inventory2RoundedIcon />}
       />
+
+      <Dialog
+        open={detailModal.open}
+        onClose={() => setDetailModal(prev => ({ ...prev, open: false }))}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            bgcolor: '#FCF9F6',
+            backgroundImage: 'none',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          m: 0, p: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(107, 76, 42, 0.08)'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              color: '#6B4C2A', 
+              opacity: 0.8,
+              '& svg': { fontSize: 20 }
+            }}>
+              {detailModal.icon}
+            </Box>
+            <Typography sx={{ fontWeight: 800, color: '#6B4C2A', fontSize: '0.95rem' }}>
+              {detailModal.title} Breakdown
+            </Typography>
+          </Box>
+          <IconButton 
+            onClick={() => setDetailModal(prev => ({ ...prev, open: false }))}
+            sx={{ color: '#6B4C2A' }}
+          >
+            <CloseRoundedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <List sx={{ py: 0 }}>
+            {detailModal.items.length === 0 ? (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                  No records to display for this metric.
+                </Typography>
+              </Box>
+            ) : (
+              detailModal.items.map((item, idx) => (
+                <Box key={item.id}>
+                  <ListItem 
+                    sx={{ 
+                      py: 1.2, px: 3, 
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'rgba(107, 76, 42, 0.04)' }
+                    }}
+                    onClick={() => {
+                      setDetailModal(prev => ({ ...prev, open: false }));
+                      openDetails(item.id);
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography sx={{ fontWeight: 700, color: '#6B4C2A', fontSize: '0.82rem' }}>
+                          {item.id} — {item.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {item.subtitle} {item.date && `• ${new Date(item.date).toLocaleDateString()}`}
+                        </Typography>
+                      }
+                    />
+                    <ArrowForwardIosRoundedIcon sx={{ fontSize: 12, color: 'rgba(107, 76, 42, 0.3)' }} />
+                  </ListItem>
+                  {idx < detailModal.items.length - 1 && <Divider sx={{ opacity: 0.5 }} />}
+                </Box>
+              ))
+            )}
+          </List>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

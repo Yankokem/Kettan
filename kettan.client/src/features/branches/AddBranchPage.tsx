@@ -70,12 +70,16 @@ export function AddBranchPage() {
 
   const ownerOptions = [
     { value: '', label: 'Select an owner...' },
-    ...users.map(u => ({ value: String(u.userId), label: `${u.firstName} ${u.lastName} (${u.role})` }))
+    ...users
+      .filter((u) => u.role === 'BranchOwner')
+      .map((u) => ({ value: String(u.userId), label: `${u.firstName} ${u.lastName}` })),
   ];
 
   const managerOptions = [
     { value: '', label: 'Select a manager...' },
-    ...users.map(u => ({ value: String(u.userId), label: `${u.firstName} ${u.lastName} (${u.role})` }))
+    ...users
+      .filter((u) => u.role === 'BranchManager')
+      .map((u) => ({ value: String(u.userId), label: `${u.firstName} ${u.lastName}` })),
   ];
 
   const handleSubmit = async () => {
@@ -150,6 +154,13 @@ export function AddBranchPage() {
       await createBranch({
         name: formData.name.trim(),
         location: [formData.address.trim(), formData.city.trim()].filter(Boolean).join(', '),
+        address: formData.address.trim(),
+        city: formData.city.trim(),
+        contactNumber: formData.contactNumber.trim(),
+        openTime: formData.openTime,
+        closeTime: formData.closeTime,
+        ownerUserId: formData.ownerUserId,
+        managerUserId: formData.managerUserId,
         imageUrl,
       });
 

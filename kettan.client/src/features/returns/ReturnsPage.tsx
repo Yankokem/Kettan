@@ -9,11 +9,9 @@ import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 import Divider from '@mui/material/Divider';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
-import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
-import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
-import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
-import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, List, ListItem, Divider } from '@mui/material';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
 import type { AxiosError } from 'axios';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -24,6 +22,7 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { SearchInput } from '../../components/UI/SearchInput';
 import { StatCard } from '../../components/UI/StatCard';
 import { fetchReturns, type ReturnRecord } from '../branch-operations/api';
+import { fetchReturnStats, type ReturnStatsDto, type StatMetricDto } from '../reports/reportsApi';
 import { useAuthStore } from '../../store/useAuthStore';
 
 function getErrorMessage(error: unknown): string {
@@ -161,13 +160,32 @@ export function ReturnsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
+  const [returnStats, setReturnStats] = useState<ReturnStatsDto | null>(null);
+
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    title: string;
+    icon: React.ReactNode;
+    data: StatMetricDto | null;
+  }>({ open: false, title: '', icon: null, data: null });
+
+  const openDetail = (title: string, data: StatMetricDto | null | undefined, icon: React.ReactNode) => {
+    if (!data) return;
+    setDetailModal({ open: true, title, icon, data });
+  };
+
+  const closeDetail = () => setDetailModal(prev => ({ ...prev, open: false }));
 
   const loadRows = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const results = await fetchReturns(statusFilter ? { status: statusFilter } : undefined);
+      const [results, stats] = await Promise.all([
+        fetchReturns(statusFilter ? { status: statusFilter } : undefined),
+        fetchReturnStats()
+      ]);
       setRows(Array.isArray(results) ? results : []);
+      setReturnStats(stats);
     } catch (loadError) {
       setError(getErrorMessage(loadError));
     } finally {
@@ -357,49 +375,138 @@ export function ReturnsPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Total Returns"
-              value={safeRows.length}
+              value={returnStats?.totalReturns.currentValue ?? safeRows.length}
               icon={<AssignmentReturnRoundedIcon />}
-              trend="up"
-              trendValue="All time"
+              trend={returnStats?.totalReturns.trend ?? 'up'}
+              trendValue={`${returnStats?.totalReturns.percentageChange ?? 0}% vs last week`}
               accentClass="stat-accent-brown"
               iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+              onClick={() => openDetail('Total Returns', returnStats?.totalReturns, <AssignmentReturnRoundedIcon />)}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Awaiting Action"
-              value={safeRows.filter((r) => ACTIVE_STATUSES.has(r.status)).length}
+              value={returnStats?.awaitingAction.currentValue ?? safeRows.filter((r) => ACTIVE_STATUSES.has(r.status)).length}
               icon={<PendingActionsRoundedIcon />}
-              trend="up"
-              trendValue="In progress"
+              trend={returnStats?.awaitingAction.trend ?? 'up'}
+              trendValue={`${returnStats?.awaitingAction.percentageChange ?? 0}% vs last week`}
               accentClass="stat-accent-gold"
               iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+              onClick={() => openDetail('Awaiting Action', returnStats?.awaitingAction, <PendingActionsRoundedIcon />)}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="In Transit / Arrived"
-              value={safeRows.filter((r) => r.status === 'Dispatched' || r.status === 'Arrived').length}
+              value={returnStats?.inTransitOrArrived.currentValue ?? safeRows.filter((r) => r.status === 'Dispatched' || r.status === 'Arrived').length}
               icon={<LocalShippingRoundedIcon />}
-              trend="up"
-              trendValue="On the way"
+              trend={returnStats?.inTransitOrArrived.trend ?? 'up'}
+              trendValue={`${returnStats?.inTransitOrArrived.percentageChange ?? 0}% vs last week`}
               accentClass="stat-accent-sage"
               iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+              onClick={() => openDetail('In Transit / Arrived', returnStats?.inTransitOrArrived, <LocalShippingRoundedIcon />)}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Completed"
-              value={safeRows.filter((r) => r.status === 'Completed').length}
+              value={returnStats?.completed.currentValue ?? safeRows.filter((r) => r.status === 'Completed').length}
               icon={<TaskAltRoundedIcon />}
-              trend="up"
-              trendValue="Resolved"
+              trend={returnStats?.completed.trend ?? 'up'}
+              trendValue={`${returnStats?.completed.percentageChange ?? 0}% vs last week`}
               accentClass="stat-accent-sage"
               iconBg="linear-gradient(135deg, #4A7C59 0%, #8FBB9F 100%)"
+              onClick={() => openDetail('Completed', returnStats?.completed, <TaskAltRoundedIcon />)}
             />
           </Grid>
         </Grid>
       </Box>
+
+      {/* ── Detail Modal ── */}
+      <Dialog 
+        open={detailModal.open} 
+        onClose={closeDetail}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            bgcolor: '#FCF9F6',
+            backgroundImage: 'none',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          m: 0, p: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(107, 76, 42, 0.08)'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              color: '#6B4C2A', 
+              opacity: 0.8,
+              '& svg': { fontSize: 20 }
+            }}>
+              {detailModal.icon}
+            </Box>
+            <Typography sx={{ fontWeight: 800, color: '#6B4C2A', fontSize: '0.95rem' }}>
+              {detailModal.title} Breakdown
+            </Typography>
+          </Box>
+          <IconButton onClick={closeDetail} sx={{ color: '#6B4C2A' }}>
+            <CloseRoundedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <List sx={{ py: 0 }}>
+            {!detailModal.data || detailModal.data.items.length === 0 ? (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                  No records to display for this metric.
+                </Typography>
+              </Box>
+            ) : (
+              detailModal.data.items.map((item, idx) => (
+                <Box key={item.id}>
+                  <ListItem 
+                    sx={{ 
+                      py: 1.2, px: 3, 
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'rgba(107, 76, 42, 0.04)' }
+                    }}
+                    onClick={() => {
+                      closeDetail();
+                      navigate({ 
+                        to: '/returns/$returnId', 
+                        params: { returnId: item.id.replace('RT-', '') } 
+                      });
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography sx={{ fontWeight: 700, color: '#6B4C2A', fontSize: '0.82rem' }}>
+                          {item.id} — {item.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {item.subtitle} {item.date && `• ${new Date(item.date).toLocaleDateString()}`}
+                        </Typography>
+                      }
+                    />
+                    <ArrowForwardIosRoundedIcon sx={{ fontSize: 12, color: 'rgba(107, 76, 42, 0.3)' }} />
+                  </ListItem>
+                  {idx < (detailModal.data?.items.length ?? 0) - 1 && <Divider sx={{ opacity: 0.5 }} />}
+                </Box>
+              ))
+            )}
+          </List>
+        </DialogContent>
+      </Dialog>
 
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5, gap: 1.2, flexWrap: 'wrap' }}>
         <SearchInput

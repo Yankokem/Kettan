@@ -30,12 +30,10 @@ public class SuppliersController : ControllerBase
             return Forbid();
         }
 
-        var query = _context.Suppliers.AsQueryable();
-
-        if (!includeInactive)
-        {
-            query = query.Where(s => s.IsActive);
-        }
+        var query = _context.Suppliers
+            .IgnoreQueryFilters()
+            .Where(s => s.TenantId == _currentUser.TenantId.Value)
+            .AsQueryable();
 
         var rows = await query
             .OrderBy(s => s.Name)
@@ -200,6 +198,7 @@ public class SuppliersController : ControllerBase
             Phone = supplier.Phone,
             Address = supplier.Address,
             IsActive = supplier.IsActive,
+            IsDeleted = supplier.IsDeleted,
             CreatedAt = supplier.CreatedAt
         };
     }

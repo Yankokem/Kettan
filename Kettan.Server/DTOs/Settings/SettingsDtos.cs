@@ -7,6 +7,7 @@ public class ItemCategoryDto
     public string? Description { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
+    public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -25,6 +26,7 @@ public class InventoryCategoryDto
     public string? Description { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
+    public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -43,6 +45,7 @@ public class MenuCategoryDto
     public string Name { get; set; } = string.Empty;
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
+    public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -59,6 +62,7 @@ public class MenuTagDto
     public string Name { get; set; } = string.Empty;
     public string? Color { get; set; }
     public bool IsActive { get; set; }
+    public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

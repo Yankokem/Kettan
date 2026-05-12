@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/UI/PageHeader';
 import { FormActions } from '../../components/Form/FormActions';
 import { ProfileImageUploader } from '../../components/UI/ProfileImageUploader';
 import { fetchBranches, type BranchDto } from '../branches/branchesApi';
+import { isBranchRole } from '../../utils/roleHelpers';
 
 interface StaffFormData {
   firstName: string;
@@ -31,7 +32,7 @@ const ROLE_OPTIONS: Array<{ value: StaffFormData['role']; label: string }> = [
   { value: 'HqStaff', label: 'HQ Staff' },
   { value: 'BranchOwner', label: 'Branch Owner' },
   { value: 'BranchManager', label: 'Branch Manager' },
-  { value: 'StoreStaff', label: 'Store Staff' },
+  { value: 'StoreStaff', label: 'Branch Staff' },
 ];
 
 export function EditStaffPage() {
@@ -226,8 +227,8 @@ export function EditStaffPage() {
     }
   };
 
-  const isBranchRole = formData.role === 'BranchManager' || formData.role === 'BranchOwner' || formData.role === 'StoreStaff';
-  const showPendingWarning = isBranchRole && !formData.branchId;
+  const isBranch = isBranchRole(formData.role);
+  const showPendingWarning = isBranch && !formData.branchId;
 
   if (isLoading) {
     return (
@@ -401,7 +402,7 @@ export function EditStaffPage() {
 
           {showPendingWarning && (
             <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
-              The account's status is Pending and cannot log in until assigned to a branch.
+              {isBranch && !formData.branchId && "The account's status is Pending and cannot log in until assigned to a branch."}
             </Alert>
           )}
 

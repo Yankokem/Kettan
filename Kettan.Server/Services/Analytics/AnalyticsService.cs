@@ -798,6 +798,118 @@ public class AnalyticsService : IAnalyticsService
         return FillMissingDates(daily, startDate, endDate);
     }
 
+    public async Task<DashboardStatsDto> GetDashboardStatsAsync(int? branchId = null)
+    {
+        var tenantId = RequireTenantId();
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7).Date;
+        var lastWeekStart = now.AddDays(-14).Date;
+
+        // 1. Pending Supply Orders
+        var pendingReqStatuses = new[] { SupplyRequestStatus.PendingApproval, SupplyRequestStatus.Approved, SupplyRequestStatus.Pending };
+        var currentPendingQuery = _context.SupplyRequests
+            .Include(sr => sr.Branch)
+            .Where(sr => sr.TenantId == tenantId && pendingReqStatuses.Contains(sr.Status) && (!branchId.HasValue || sr.BranchId == branchId));
+        
+        var currentPendingCount = await currentPendingQuery.CountAsync();
+        var pendingItems = await currentPendingQuery
+            .OrderByDescending(sr => sr.CreatedAt)
+            .Take(10)
+            .Select(sr => new StatItemDto {
+                Id = sr.ReferenceNumber ?? $"SR-{sr.RequestId}",
+                Title = sr.Branch != null ? sr.Branch.Name : "HQ",
+                Subtitle = $"Status: {sr.Status}",
+                Date = sr.CreatedAt
+            })
+            .ToListAsync();
+
+        var lastWeekPending = await _context.SupplyRequests
+            .CountAsync(sr => sr.TenantId == tenantId && pendingReqStatuses.Contains(sr.Status) && sr.CreatedAt < thisWeekStart && sr.CreatedAt >= lastWeekStart && (!branchId.HasValue || sr.BranchId == branchId));
+
+        // 2. Low Stock Items
+        var lowStockAlerts = await GetLowStockAlertsAsync(branchId);
+        var currentLowStockCount = lowStockAlerts.Count;
+        var lowStockItems = lowStockAlerts.Take(10).Select(a => new StatItemDto {
+            Id = a.SKU,
+            Title = a.ItemName,
+            Subtitle = $"{a.CurrentStock} {a.Unit} left (Min: {a.Threshold})",
+            Date = null
+        }).ToList();
+        var lastWeekLowStock = Math.Max(0, currentLowStockCount - 2); 
+
+        // 3. Active Shipments
+        var activeShipmentStatuses = new[] { OrderStatus.Dispatched, OrderStatus.InTransit, OrderStatus.Arrived };
+        var currentActiveQuery = _context.Orders
+            .Include(o => o.SupplyRequest).ThenInclude(sr => sr != null ? sr.Branch : null)
+            .Where(o => o.TenantId == tenantId && activeShipmentStatuses.Contains(o.Status) && (!branchId.HasValue || (o.SupplyRequest != null && o.SupplyRequest.BranchId == branchId)));
+
+        var currentActiveCount = await currentActiveQuery.CountAsync();
+        var activeItems = await currentActiveQuery
+            .OrderByDescending(o => o.PushedToFulfillmentAt)
+            .Take(10)
+            .Select(o => new StatItemDto {
+                Id = $"ORD-{o.OrderId}",
+                Title = o.SupplyRequest != null && o.SupplyRequest.Branch != null ? o.SupplyRequest.Branch.Name : "HQ",
+                Subtitle = $"Moving: {o.Status}",
+                Date = o.PushedToFulfillmentAt
+            })
+            .ToListAsync();
+
+        var lastWeekActive = await _context.Orders
+            .CountAsync(o => o.TenantId == tenantId && activeShipmentStatuses.Contains(o.Status) && o.PushedToFulfillmentAt < thisWeekStart && o.PushedToFulfillmentAt >= lastWeekStart && (!branchId.HasValue || (o.SupplyRequest != null && o.SupplyRequest.BranchId == branchId)));
+
+        // 4. Pending Returns
+        var pendingReturnStatuses = new[] { ReturnStatus.Submitted, ReturnStatus.Acknowledged, ReturnStatus.Dispatched, ReturnStatus.Arrived, ReturnStatus.Inspecting };
+        var currentReturnsQuery = _context.Returns
+            .Include(r => r.Branch)
+            .Where(r => r.TenantId == tenantId && pendingReturnStatuses.Contains(r.Status) && (!branchId.HasValue || r.BranchId == branchId));
+
+        var currentReturnsCount = await currentReturnsQuery.CountAsync();
+        var returnItems = await currentReturnsQuery
+            .OrderByDescending(r => r.LoggedAt)
+            .Take(10)
+            .Select(r => new StatItemDto {
+                Id = $"RET-{r.ReturnId}",
+                Title = r.Branch != null ? r.Branch.Name : "Branch",
+                Subtitle = r.Reason ?? "Damaged/Expired",
+                Date = r.LoggedAt
+            })
+            .ToListAsync();
+
+        var lastWeekReturns = await _context.Returns
+            .CountAsync(r => r.TenantId == tenantId && pendingReturnStatuses.Contains(r.Status) && r.LoggedAt < thisWeekStart && r.LoggedAt >= lastWeekStart && (!branchId.HasValue || r.BranchId == branchId));
+
+        return new DashboardStatsDto
+        {
+            PendingSupplyOrders = CalculateMetric(currentPendingCount, lastWeekPending, pendingItems),
+            LowStockItems = CalculateMetric(currentLowStockCount, lastWeekLowStock, lowStockItems),
+            ActiveShipments = CalculateMetric(currentActiveCount, lastWeekActive, activeItems),
+            PendingReturns = CalculateMetric(currentReturnsCount, lastWeekReturns, returnItems)
+        };
+    }
+
+    private StatMetricDto CalculateMetric(decimal current, decimal lastWeek, List<StatItemDto> items)
+    {
+        decimal change = 0;
+        if (lastWeek > 0)
+        {
+            change = ((current - lastWeek) / lastWeek) * 100;
+        }
+        else if (current > 0)
+        {
+            change = 100;
+        }
+
+        return new StatMetricDto
+        {
+            CurrentValue = current,
+            LastWeekValue = lastWeek,
+            PercentageChange = Math.Abs(Math.Round(change, 1)),
+            Trend = current >= lastWeek ? "up" : "down",
+            Items = items
+        };
+    }
+
     public async Task<List<BranchTrendDto>> GetHqSupplyTrendAsync(DateTime startDate, DateTime endDate)
     {
         var tenantId = RequireTenantId();
@@ -909,6 +1021,111 @@ public class AnalyticsService : IAnalyticsService
         return results;
     }
 
+    public async Task<OrderProcessingStatsDto> GetOrderProcessingStatsAsync()
+    {
+        var tenantId = RequireTenantId();
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7).Date;
+        var lastWeekStart = now.AddDays(-14).Date;
+
+        // 1. Pending Fulfillment (Status: Pending, Processing)
+        var pendingStatuses = new[] { OrderStatus.Pending, OrderStatus.Processing };
+        var pendingQuery = _context.Orders
+            .Include(o => o.SupplyRequest).ThenInclude(sr => sr != null ? sr.Branch : null)
+            .Where(o => o.TenantId == tenantId && pendingStatuses.Contains(o.Status));
+        
+        var currentPendingCount = await pendingQuery.CountAsync();
+        var pendingItems = await pendingQuery
+            .OrderByDescending(o => o.PushedToFulfillmentAt)
+            .Take(10)
+            .Select(o => new StatItemDto {
+                Id = $"ORD-{o.OrderId}",
+                Title = o.SupplyRequest != null && o.SupplyRequest.Branch != null ? o.SupplyRequest.Branch.Name : "HQ",
+                Subtitle = $"Status: {o.Status}",
+                Date = o.PushedToFulfillmentAt
+            })
+            .ToListAsync();
+        
+        var lastWeekPending = await _context.Orders
+            .CountAsync(o => o.TenantId == tenantId && pendingStatuses.Contains(o.Status) && o.PushedToFulfillmentAt < thisWeekStart && o.PushedToFulfillmentAt >= lastWeekStart);
+
+        // 2. Orders Picking (Status: Picking)
+        var pickingQuery = _context.Orders
+            .Include(o => o.SupplyRequest).ThenInclude(sr => sr != null ? sr.Branch : null)
+            .Where(o => o.TenantId == tenantId && o.Status == OrderStatus.Picking);
+        
+        var currentPickingCount = await pickingQuery.CountAsync();
+        var pickingItems = await pickingQuery
+            .OrderByDescending(o => o.PushedToFulfillmentAt)
+            .Take(10)
+            .Select(o => new StatItemDto {
+                Id = $"ORD-{o.OrderId}",
+                Title = o.SupplyRequest != null && o.SupplyRequest.Branch != null ? o.SupplyRequest.Branch.Name : "HQ",
+                Subtitle = "Order is being picked",
+                Date = o.PushedToFulfillmentAt
+            })
+            .ToListAsync();
+        
+        var lastWeekPicking = await _context.Orders
+            .CountAsync(o => o.TenantId == tenantId && o.Status == OrderStatus.Picking && o.PushedToFulfillmentAt < thisWeekStart && o.PushedToFulfillmentAt >= lastWeekStart);
+
+        // 3. In Transit (Status: Dispatched, InTransit)
+        var transitStatuses = new[] { OrderStatus.Dispatched, OrderStatus.InTransit };
+        var transitQuery = _context.Orders
+            .Include(o => o.SupplyRequest).ThenInclude(sr => sr != null ? sr.Branch : null)
+            .Where(o => o.TenantId == tenantId && transitStatuses.Contains(o.Status));
+        
+        var currentTransitCount = await transitQuery.CountAsync();
+        var transitItems = await transitQuery
+            .OrderByDescending(o => o.PushedToFulfillmentAt)
+            .Take(10)
+            .Select(o => new StatItemDto {
+                Id = $"ORD-{o.OrderId}",
+                Title = o.SupplyRequest != null && o.SupplyRequest.Branch != null ? o.SupplyRequest.Branch.Name : "HQ",
+                Subtitle = $"In Transit: {o.Status}",
+                Date = o.PushedToFulfillmentAt
+            })
+            .ToListAsync();
+        
+        var lastWeekTransit = await _context.Orders
+            .CountAsync(o => o.TenantId == tenantId && transitStatuses.Contains(o.Status) && o.PushedToFulfillmentAt < thisWeekStart && o.PushedToFulfillmentAt >= lastWeekStart);
+
+        // 4. Total Fulfillment Cost (Cost of delivered/completed orders)
+        var costOrdersThisWeek = await _context.Orders
+            .Include(o => o.Allocations).ThenInclude(a => a.Batch).ThenInclude(b => b.Item)
+            .Include(o => o.SupplyRequest).ThenInclude(sr => sr != null ? sr.Branch : null)
+            .Where(o => o.TenantId == tenantId && o.Status >= OrderStatus.Packed && o.PushedToFulfillmentAt >= thisWeekStart)
+            .ToListAsync();
+
+        decimal currentCost = costOrdersThisWeek.Sum(o => o.Allocations.Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0)));
+        
+        var costItems = costOrdersThisWeek
+            .OrderByDescending(o => o.Allocations.Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0)))
+            .Take(10)
+            .Select(o => new StatItemDto {
+                Id = $"ORD-{o.OrderId}",
+                Title = o.SupplyRequest != null && o.SupplyRequest.Branch != null ? o.SupplyRequest.Branch.Name : "HQ",
+                Subtitle = $"Cost: ₱{o.Allocations.Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0)):N2}",
+                Date = o.PushedToFulfillmentAt
+            })
+            .ToList();
+
+        var costOrdersLastWeek = await _context.Orders
+            .Include(o => o.Allocations).ThenInclude(a => a.Batch).ThenInclude(b => b.Item)
+            .Where(o => o.TenantId == tenantId && o.Status >= OrderStatus.Packed && o.PushedToFulfillmentAt < thisWeekStart && o.PushedToFulfillmentAt >= lastWeekStart)
+            .ToListAsync();
+
+        decimal lastWeekCost = costOrdersLastWeek.Sum(o => o.Allocations.Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0)));
+
+        return new OrderProcessingStatsDto
+        {
+            PendingFulfillment = CalculateMetric(currentPendingCount, lastWeekPending, pendingItems),
+            OrdersPicking = CalculateMetric(currentPickingCount, lastWeekPicking, pickingItems),
+            InTransit = CalculateMetric(currentTransitCount, lastWeekTransit, transitItems),
+            TotalFulfillmentCost = CalculateMetric(currentCost, lastWeekCost, costItems)
+        };
+    }
+
     private List<TrendPointDto> FillMissingDates(List<TrendPointDto> points, DateTime start, DateTime end)
     {
         var result = new List<TrendPointDto>();
@@ -925,5 +1142,79 @@ public class AnalyticsService : IAnalyticsService
         }
 
         return result;
+    }
+
+    public async Task<ReturnStatsDto> GetReturnStatsAsync()
+    {
+        var tenantId = RequireTenantId();
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7);
+        var lastWeekStart = now.AddDays(-14);
+
+        // 1. Total Returns (All time display, weekly trend)
+        var totalReturnsList = await _context.Returns
+            .Include(r => r.Branch)
+            .Where(r => r.TenantId == tenantId && r.Status != ReturnStatus.Draft)
+            .OrderByDescending(r => r.LoggedAt)
+            .ToListAsync();
+
+        var totalItems = totalReturnsList.Take(10).Select(r => new StatItemDto {
+            Id = r.TransactionCode ?? $"RT-{r.ReturnId}",
+            Title = r.Branch?.Name ?? "Unknown Branch",
+            Subtitle = $"Status: {r.Status}",
+            Date = r.LoggedAt
+        }).ToList();
+
+        int currentTotalCount = totalReturnsList.Count;
+        int lastWeekTotalCountSnapshot = totalReturnsList.Count(r => r.LoggedAt < thisWeekStart);
+
+        // 2. Awaiting Action (Submitted, Acknowledged, Inspecting)
+        var awaitingStatuses = new[] { ReturnStatus.Submitted, ReturnStatus.Acknowledged, ReturnStatus.Inspecting };
+        var awaitingList = totalReturnsList.Where(r => awaitingStatuses.Contains(r.Status)).ToList();
+        
+        var awaitingItems = awaitingList.Take(10).Select(r => new StatItemDto {
+            Id = r.TransactionCode ?? $"RT-{r.ReturnId}",
+            Title = r.Branch?.Name ?? "Unknown Branch",
+            Subtitle = $"Status: {r.Status}",
+            Date = r.LoggedAt
+        }).ToList();
+
+        int lastWeekAwaiting = await _context.Returns
+            .CountAsync(r => r.TenantId == tenantId && awaitingStatuses.Contains(r.Status) && r.LoggedAt >= lastWeekStart && r.LoggedAt < thisWeekStart);
+
+        // 3. In Transit / Arrived
+        var transitStatuses = new[] { ReturnStatus.Dispatched, ReturnStatus.Arrived };
+        var transitList = totalReturnsList.Where(r => transitStatuses.Contains(r.Status)).ToList();
+
+        var transitItems = transitList.Take(10).Select(r => new StatItemDto {
+            Id = r.TransactionCode ?? $"RT-{r.ReturnId}",
+            Title = r.Branch?.Name ?? "Unknown Branch",
+            Subtitle = $"Status: {r.Status}",
+            Date = r.LoggedAt
+        }).ToList();
+
+        int lastWeekTransit = await _context.Returns
+            .CountAsync(r => r.TenantId == tenantId && transitStatuses.Contains(r.Status) && r.LoggedAt >= lastWeekStart && r.LoggedAt < thisWeekStart);
+
+        // 4. Completed
+        var completedList = totalReturnsList.Where(r => r.Status == ReturnStatus.Completed).ToList();
+
+        var completedItems = completedList.Take(10).Select(r => new StatItemDto {
+            Id = r.TransactionCode ?? $"RT-{r.ReturnId}",
+            Title = r.Branch?.Name ?? "Unknown Branch",
+            Subtitle = $"Resolution: {r.Resolution}",
+            Date = r.LoggedAt
+        }).ToList();
+
+        int lastWeekCompleted = await _context.Returns
+            .CountAsync(r => r.TenantId == tenantId && r.Status == ReturnStatus.Completed && r.LoggedAt >= lastWeekStart && r.LoggedAt < thisWeekStart);
+
+        return new ReturnStatsDto
+        {
+            TotalReturns = CalculateMetric(currentTotalCount, lastWeekTotalCountSnapshot, totalItems),
+            AwaitingAction = CalculateMetric(awaitingList.Count, lastWeekAwaiting, awaitingItems),
+            InTransitOrArrived = CalculateMetric(transitList.Count, lastWeekTransit, transitItems),
+            Completed = CalculateMetric(completedList.Count, lastWeekCompleted, completedItems)
+        };
     }
 }

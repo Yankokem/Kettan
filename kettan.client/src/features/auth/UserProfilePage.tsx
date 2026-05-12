@@ -381,7 +381,7 @@ export function UserProfilePage() {
                     {profileData.role === 'HqStaff' && 'Access to headquarters operations'}
                     {profileData.role === 'BranchOwner' && 'Oversee branch operations and performance'}
                     {profileData.role === 'BranchManager' && 'Manage day-to-day branch activities'}
-                    {profileData.role === 'StoreStaff' && 'Handle store operations and customer service'}
+                    {profileData.role === 'StoreStaff' && 'Handle branch operations and customer service'}
                   </Typography>
                 </Box>
               </Box>

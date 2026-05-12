@@ -31,4 +31,7 @@ public interface IAnalyticsService
     Task<List<TrendPointDto>> GetBranchSalesTrendAsync(int branchId, DateTime startDate, DateTime endDate);
     Task<List<BranchTrendDto>> GetHqSupplyTrendAsync(DateTime startDate, DateTime endDate);
     Task<List<LowStockAlertDto>> GetLowStockAlertsAsync(int? branchId = null);
+    Task<DashboardStatsDto> GetDashboardStatsAsync(int? branchId = null);
+    Task<OrderProcessingStatsDto> GetOrderProcessingStatsAsync();
+    Task<ReturnStatsDto> GetReturnStatsAsync();
 }

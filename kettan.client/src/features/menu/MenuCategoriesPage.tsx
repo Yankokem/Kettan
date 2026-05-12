@@ -5,14 +5,15 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
-import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
+import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
+import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import UnarchiveRoundedIcon from '@mui/icons-material/UnarchiveRounded';
 
 import { PageHeader } from '../../components/UI/PageHeader';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
-import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
+import { useToast } from '../../components/UI/ToastProvider';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
@@ -20,9 +21,17 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { MenuCategoryCard } from './components/MenuCategoryCard';
-import { createMenuCategory, listMenuCategories, deleteMenuCategory, updateMenuCategory, type MenuCategory, type MenuCategoryFormData } from './menuCategoryApi';
+import { 
+  createMenuCategory, 
+  listMenuCategories, 
+  deleteMenuCategory as archiveMenuCategory, 
+  unarchiveMenuCategory,
+  updateMenuCategory, 
+  type MenuCategory, 
+  type MenuCategoryFormData 
+} from './menuCategoryApi';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+type StatusFilter = 'all' | 'active' | 'inactive' | 'archived';
 type SortFilter = 'order-asc' | 'order-desc' | 'name-asc' | 'name-desc';
 type CategoryViewMode = 'cards' | 'table';
 
@@ -42,8 +51,8 @@ export function MenuCategoriesPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortFilter, setSortFilter] = useState<SortFilter>('order-asc');
   const [viewMode, setViewMode] = useState<CategoryViewMode>('cards');
-  const [deleteTarget, setDeleteTarget] = useState<MenuCategory | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const reloadCategories = async () => {
     try {
@@ -72,9 +81,14 @@ export function MenuCategoriesPage() {
     const filtered = categories.filter((category) => {
       const matchesQuery = !query || category.name.toLowerCase().includes(query);
       const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && category.isActive) ||
-        (statusFilter === 'inactive' && !category.isActive);
+        statusFilter === 'all' 
+          ? !category.isDeleted
+          : statusFilter === 'archived'
+            ? category.isDeleted
+            : !category.isDeleted && (
+                (statusFilter === 'active' && category.isActive) ||
+                (statusFilter === 'inactive' && !category.isActive)
+              );
 
       return matchesQuery && matchesStatus;
     });
@@ -135,19 +149,29 @@ export function MenuCategoriesPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-
+  const handleArchive = async (category: MenuCategory) => {
     setLoading(true);
     try {
-      await deleteMenuCategory(deleteTarget.categoryId);
-      if (selectedCategoryId === deleteTarget.categoryId) {
+      await archiveMenuCategory(category.categoryId);
+      if (selectedCategoryId === category.categoryId) {
         resetForm();
       }
-      setDeleteTarget(null);
+      showToast(`${category.name} archived successfully.`);
       await reloadCategories();
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to delete category');
+      showToast(err instanceof Error ? err.message : 'Failed to archive category', 'error');
+      setLoading(false);
+    }
+  };
+
+  const handleUnarchive = async (category: MenuCategory) => {
+    setLoading(true);
+    try {
+      await unarchiveMenuCategory(category.categoryId);
+      showToast(`${category.name} restored successfully.`);
+      await reloadCategories();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to restore category', 'error');
       setLoading(false);
     }
   };
@@ -196,21 +220,30 @@ export function MenuCategoriesPage() {
       render: (category) => (
         <IconButton
           size="small"
-          aria-label={`Delete ${category.name}`}
+          aria-label={category.isDeleted ? `Restore ${category.name}` : `Archive ${category.name}`}
           onClick={(event) => {
             event.stopPropagation();
-            setDeleteTarget(category);
+            if (category.isDeleted) {
+              handleUnarchive(category);
+            } else {
+              handleArchive(category);
+            }
           }}
           sx={{
             width: 30,
             height: 30,
-            color: '#B91C1C',
-            border: '1px solid rgba(185, 28, 28, 0.25)',
-            bgcolor: 'rgba(185, 28, 28, 0.04)',
-            '&:hover': { bgcolor: 'rgba(185, 28, 28, 0.1)' },
+            color: category.isDeleted ? '#059669' : '#D97706',
+            border: '1px solid',
+            borderColor: category.isDeleted ? 'rgba(5, 150, 105, 0.25)' : 'rgba(217, 119, 6, 0.25)',
+            bgcolor: category.isDeleted ? 'rgba(5, 150, 105, 0.04)' : 'rgba(217, 119, 6, 0.04)',
+            '&:hover': { bgcolor: category.isDeleted ? 'rgba(5, 150, 105, 0.1)' : 'rgba(217, 119, 6, 0.1)' },
           }}
         >
-          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+          {category.isDeleted ? (
+            <UnarchiveRoundedIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <ArchiveRoundedIcon sx={{ fontSize: 16 }} />
+          )}
         </IconButton>
       ),
     },
@@ -220,87 +253,98 @@ export function MenuCategoriesPage() {
     <Box sx={{ pb: 3 }}>
       <PageHeader 
         title="Menu Category Management" 
-        description="Left panel is for add/edit. Click a category card on the right to edit it."
+        description="Add or edit menu categories on the left. Click cards on the right to modify them."
         backTo="/menu"
       />
 
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '14px', overflow: 'hidden' }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
-          <Box
-            sx={{
-              width: { xs: '100%', lg: '38%' },
-              p: 3,
-              borderRight: { xs: 'none', lg: '1px solid' },
-              borderBottom: { xs: '1px solid', lg: 'none' },
-              borderColor: 'divider',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 2.2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CategoryRoundedIcon sx={{ fontSize: 20, color: '#6B4C2A' }} />
-                <Typography sx={{ fontSize: 15.5, fontWeight: 700 }}>
-                  {selectedCategory ? 'Edit Category' : 'Add Category'}
-                </Typography>
-              </Box>
-              {selectedCategory ? (
-                <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={resetForm}>
-                  New
-                </Button>
-              ) : null}
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', lg: '38%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '14px',
+            p: 3,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 2.2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CategoryRoundedIcon sx={{ fontSize: 20, color: '#6B4C2A' }} />
+              <Typography sx={{ fontSize: 15.5, fontWeight: 700 }}>
+                {selectedCategory ? 'Edit Category' : 'Add Category'}
+              </Typography>
             </Box>
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2 }}>
-              <FormTextField
-                label="Category Name"
-                placeholder="e.g. Non-Coffee"
-                value={form.name}
-                onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-                inputProps={{ maxLength: 100 }}
-              />
-
-              <FormTextField
-                label="Display Order"
-                type="number"
-                value={form.displayOrder}
-                onChange={(event) => {
-                  const nextValue = Number(event.target.value);
-                  setForm((prev) => ({ ...prev, displayOrder: Number.isNaN(nextValue) ? 0 : nextValue }));
-                }}
-                inputProps={{ min: 0 }}
-              />
-
-              <FormDropdown
-                label="Status"
-                value={form.isActive ? 'true' : 'false'}
-                onChange={(event) => setForm((prev) => ({ ...prev, isActive: String(event.target.value) === 'true' }))}
-                options={[
-                  { value: 'true', label: 'Active' },
-                  { value: 'false', label: 'Inactive' },
-                ]}
-              />
-            </Box>
-
-            {errorMessage ? (
-              <Typography sx={{ fontSize: 12.5, color: 'error.main', mt: 1.4 }}>{errorMessage}</Typography>
+            {selectedCategory ? (
+              <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={resetForm}>
+                New
+              </Button>
             ) : null}
-
-            <Box sx={{ mt: 2.7, display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-              <Button onClick={handleSave} loading={loading}>
-                {selectedCategory ? 'Update Category' : 'Save Category'}
-              </Button>
-              <Button variant="outlined" startIcon={<ReplayRoundedIcon />} onClick={resetForm} disabled={loading}>
-                Reset
-              </Button>
-            </Box>
           </Box>
 
-          <Box sx={{ width: { xs: '100%', lg: '62%' }, p: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap', mb: 2.2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2 }}>
+            <FormTextField
+              label="Category Name"
+              placeholder="e.g. Non-Coffee"
+              value={form.name}
+              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+              inputProps={{ maxLength: 100 }}
+            />
+
+            <FormTextField
+              label="Display Order"
+              type="number"
+              value={form.displayOrder}
+              onChange={(event) => {
+                const nextValue = Number(event.target.value);
+                setForm((prev) => ({ ...prev, displayOrder: Number.isNaN(nextValue) ? 0 : nextValue }));
+              }}
+              inputProps={{ min: 0 }}
+            />
+
+            <FormDropdown
+              label="Status"
+              value={form.isActive ? 'true' : 'false'}
+              onChange={(event) => setForm((prev) => ({ ...prev, isActive: String(event.target.value) === 'true' }))}
+              options={[
+                { value: 'true', label: 'Active' },
+                { value: 'false', label: 'Inactive' },
+              ]}
+            />
+          </Box>
+
+          {errorMessage ? (
+            <Typography sx={{ fontSize: 12.5, color: 'error.main', mt: 1.4 }}>{errorMessage}</Typography>
+          ) : null}
+
+          <Box sx={{ mt: 2.7, display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
+            <Button onClick={handleSave} loading={loading}>
+              {selectedCategory ? 'Update Category' : 'Save Category'}
+            </Button>
+            <Button variant="outlined" startIcon={<ReplayRoundedIcon />} onClick={resetForm} disabled={loading}>
+              Reset
+            </Button>
+          </Box>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '14px',
+            p: 3,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.2, mb: 2.2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flex: 1 }}>
               <SearchInput
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search menu categories..."
-                sx={{ minWidth: 250, maxWidth: 340 }}
+                sx={{ maxWidth: 420, flex: 1 }}
               />
 
               <FilterDropdown
@@ -327,73 +371,66 @@ export function MenuCategoriesPage() {
                   { value: 'all', label: 'All Statuses' },
                   { value: 'active', label: 'Active' },
                   { value: 'inactive', label: 'Inactive' },
+                  { value: 'archived', label: 'Archived' },
                 ]}
-              />
-
-              <ViewToggle
-                value={viewMode}
-                options={[
-                  { value: 'cards' as const, label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> },
-                  { value: 'table' as const, label: '', icon: <TableRowsRoundedIcon sx={{ fontSize: 16 }} /> },
-                ]}
-                onChange={(val) => setViewMode(val)}
               />
             </Box>
 
-            <DataStateWrapper
-              loading={loading && categories.length === 0}
-              error={error}
-              isEmpty={visibleCategories.length === 0}
-              emptyTitle="No categories found"
-              emptyMessage={search ? "We couldn't find any menu categories matching your search." : "There are no menu categories defined yet."}
-              emptyIcon={<CategoryRoundedIcon />}
-            >
-              {viewMode === 'cards' ? (
-                <Box
-                  sx={{
-                    maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
-                    overflowY: { xs: 'visible', lg: 'auto' },
-                    pr: { xs: 0, lg: 0.8 },
-                  }}
-                >
-                  <Grid container spacing={1.8}>
-                    {visibleCategories.map((category) => (
-                      <Grid key={category.categoryId} size={{ xs: 12, md: 4 }}>
-                        <MenuCategoryCard
-                          category={category}
-                          selected={selectedCategoryId === category.categoryId}
-                          onSelect={() => handleSelectCategory(category)}
-                          onDelete={() => setDeleteTarget(category)}
-                        />
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Box>
-              ) : (
-                <DataTable
-                  data={visibleCategories}
-                  columns={tableColumns}
-                  keyExtractor={(category) => category.categoryId.toString()}
-                  emptyMessage="No categories found for your filters."
-                  defaultRowsPerPage={10}
-                  pageSizes={[10, 25, 50]}
-                  onRowClick={(category) => handleSelectCategory(category)}
-                />
-              )}
-            </DataStateWrapper>
+            <ViewToggle
+              value={viewMode}
+              options={[
+                { value: 'cards', label: '', icon: <ViewModuleRoundedIcon sx={{ fontSize: 16 }} /> },
+                { value: 'table', label: '', icon: <ViewListRoundedIcon sx={{ fontSize: 16 }} /> },
+              ]}
+              onChange={setViewMode}
+            />
           </Box>
-        </Box>
-      </Paper>
 
-      <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        title="Delete menu category"
-        message={`Delete ${deleteTarget?.name || 'this category'}? This action is permanent.`}
-        confirmText="Delete"
-        confirmColor="error"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
+          <DataStateWrapper
+            loading={loading && categories.length === 0}
+            error={error}
+            isEmpty={visibleCategories.length === 0}
+            emptyTitle="No categories found"
+            emptyMessage={search ? "We couldn't find any menu categories matching your search." : "There are no menu categories defined yet."}
+            emptyIcon={<CategoryRoundedIcon />}
+          >
+            {viewMode === 'cards' ? (
+              <Box
+                sx={{
+                  maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
+                  overflowY: { xs: 'visible', lg: 'auto' },
+                  pr: { xs: 0, lg: 0.8 },
+                  pt: 1,
+                }}
+              >
+                <Grid container spacing={1.8} sx={{ overflow: 'visible' }}>
+                  {visibleCategories.map((category) => (
+                    <Grid key={category.categoryId} size={{ xs: 12, md: 6 }}>
+                      <MenuCategoryCard
+                        category={category}
+                        selected={selectedCategoryId === category.categoryId}
+                        onSelect={() => handleSelectCategory(category)}
+                        onArchive={() => handleArchive(category)}
+                        onUnarchive={() => handleUnarchive(category)}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            ) : (
+              <DataTable
+                data={visibleCategories}
+                columns={tableColumns}
+                keyExtractor={(category) => category.categoryId.toString()}
+                emptyMessage="No categories found for your filters."
+                defaultRowsPerPage={10}
+                pageSizes={[10, 25, 50]}
+                onRowClick={(category) => handleSelectCategory(category)}
+              />
+            )}
+          </DataStateWrapper>
+        </Paper>
+      </Box>
     </Box>
   );
 }

@@ -59,6 +59,12 @@ public class AuditRequestMiddleware
 
             var route = context.Request.Path.Value ?? "";
             var method = context.Request.Method;
+            
+            // Optimization: Skip logging successful GET requests to reduce noise and DB load
+            if (method == "GET" && statusCode >= 200 && statusCode < 300)
+            {
+                return;
+            }
 
             var log = new AuditLog
             {

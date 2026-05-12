@@ -275,3 +275,46 @@ public class LowStockAlertDto
     public decimal Threshold { get; set; }
     public string Unit { get; set; } = string.Empty;
 }
+
+// ── Dashboard Statistics ──────────────────────────────────────────────────
+
+public class StatItemDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty; 
+    public string Subtitle { get; set; } = string.Empty; 
+    public DateTime? Date { get; set; }
+}
+
+public class StatMetricDto
+{
+    public decimal CurrentValue { get; set; }
+    public decimal LastWeekValue { get; set; }
+    public decimal PercentageChange { get; set; }
+    public string Trend { get; set; } = "up"; // "up" or "down"
+    public List<StatItemDto> Items { get; set; } = new();
+}
+
+public class DashboardStatsDto
+{
+    public StatMetricDto PendingSupplyOrders { get; set; } = new();
+    public StatMetricDto LowStockItems { get; set; } = new();
+    public StatMetricDto ActiveShipments { get; set; } = new();
+    public StatMetricDto PendingReturns { get; set; } = new();
+}
+
+public class OrderProcessingStatsDto
+{
+    public StatMetricDto PendingFulfillment { get; set; } = new();
+    public StatMetricDto OrdersPicking { get; set; } = new();
+    public StatMetricDto InTransit { get; set; } = new();
+    public StatMetricDto TotalFulfillmentCost { get; set; } = new();
+}
+
+public class ReturnStatsDto
+{
+    public StatMetricDto TotalReturns { get; set; } = new();
+    public StatMetricDto AwaitingAction { get; set; } = new();
+    public StatMetricDto InTransitOrArrived { get; set; } = new();
+    public StatMetricDto Completed { get; set; } = new();
+}

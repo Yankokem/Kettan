@@ -10,6 +10,8 @@ export interface Vehicle {
   vehicleType: string;
   description?: string | null;
   isActive: boolean;
+  isDeleted: boolean;
+  deletedAt?: string | null;
   createdAt: string;
 }
 
@@ -59,5 +61,9 @@ export async function updateVehicle(vehicleId: number, input: VehicleFormData): 
 
 export async function deleteVehicle(vehicleId: number): Promise<void> {
   return request<void>(`/api/vehicles/${vehicleId}`, { method: 'DELETE' });
+}
+
+export async function unarchiveVehicle(vehicleId: number): Promise<void> {
+  return request<void>(`/api/vehicles/${vehicleId}/unarchive`, { method: 'POST' });
 }
 

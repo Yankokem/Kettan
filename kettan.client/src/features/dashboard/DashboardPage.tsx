@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Box, Typography, Chip } from '@mui/material';
+import { useEffect, useMemo, useState, Fragment } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { Box, Typography, Chip, Dialog, DialogTitle, DialogContent, IconButton, List, ListItem, ListItemText, Divider } from '@mui/material';
 import LocalShippingRoundedIcon    from '@mui/icons-material/LocalShippingRounded';
 import SettingsBackupRestoreRoundedIcon from '@mui/icons-material/SettingsBackupRestoreRounded';
 import LocalMallRoundedIcon        from '@mui/icons-material/LocalMallRounded';
@@ -7,6 +8,8 @@ import WarningAmberRoundedIcon     from '@mui/icons-material/WarningAmberRounded
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import RadioButtonCheckedRoundedIcon from '@mui/icons-material/RadioButtonCheckedRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
 
 import { StatCard } from '../../components/UI/StatCard';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
@@ -19,6 +22,7 @@ import { FulfillmentStatus } from './components/FulfillmentStatus';
 import { DashboardChart } from './components/DashboardChart';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { fetchBranchOrders, type BranchOrder } from '../branch-operations/api';
+import { fetchDashboardStats, type DashboardStatsDto, type StatMetricDto } from '../reports/reportsApi';
 
 // ── Recent Activity Row ────────────────────────────────────────────────────
 interface ActivityItem {
@@ -119,6 +123,7 @@ const ACTIVITY_QUICK_FILTERS = [
 ];
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const userRole = user?.role ?? '';
   const isHq = isHqRole(userRole);
@@ -127,11 +132,16 @@ export function DashboardPage() {
   const [activityStatusFilter, setActivityStatusFilter] = useState('');
   const [activityBranchFilter, setActivityBranchFilter] = useState('');
   const [activityRows, setActivityRows] = useState<ActivityItem[]>([]);
+  const [stats, setStats] = useState<DashboardStatsDto | null>(null);
 
   useEffect(() => {
-    const loadActivity = async () => {
+    const loadDashboardData = async () => {
       try {
-        const orders = await fetchBranchOrders();
+        const [orders, dashboardStats] = await Promise.all([
+          fetchBranchOrders(),
+          fetchDashboardStats()
+        ]);
+        
         setActivityRows(
           orders
             .slice(0, 11)
@@ -143,13 +153,34 @@ export function DashboardPage() {
               time: new Date(order.pushedToFulfillmentAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
             })),
         );
-      } catch {
+        setStats(dashboardStats);
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
         setActivityRows([]);
       }
     };
 
-    void loadActivity();
+    void loadDashboardData();
   }, []);
+
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    title: string;
+    icon: React.ReactNode;
+    data: StatMetricDto | null;
+  }>({ open: false, title: '', icon: null, data: null });
+
+  const openDetail = (title: string, data: StatMetricDto | null | undefined, icon: React.ReactNode) => {
+    console.log('Click on card:', title);
+    if (!data) {
+      console.warn('Metric data is missing for:', title);
+      setDetailModal({ open: true, title, icon, data: null });
+      return;
+    }
+    setDetailModal({ open: true, title, icon, data });
+  };
+
+  const closeDetail = () => setDetailModal(prev => ({ ...prev, open: false }));
 
   const baseActivity = useMemo(() => (isBranch ? activityRows.slice(0, 4) : activityRows), [activityRows, isBranch]);
   const filteredActivity = baseActivity.filter((row) => {
@@ -175,45 +206,147 @@ export function DashboardPage() {
       >
         <StatCard
           label="Pending Supply Orders"
-          value={14}
-          sub="Requires fulfillment"
-          trend="up"
-          trendValue="+3"
+          value={stats?.pendingSupplyOrders.currentValue ?? 0}
+          trend={stats?.pendingSupplyOrders.trend ?? 'up'}
+          trendValue={`${stats?.pendingSupplyOrders.percentageChange ?? 0}% vs last week`}
           icon={<LocalMallRoundedIcon />}
           accentClass="stat-accent-brown"
           iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
+          onClick={() => {
+            console.log('Clicked card 1');
+            openDetail('Pending Supply Orders', stats?.pendingSupplyOrders, <LocalMallRoundedIcon />);
+          }}
         />
         <StatCard
           label="Low Stock Items"
-          value={12}
-          sub="3 at critical levels"
-          trend="up"
-          trendValue="+2"
+          value={stats?.lowStockItems.currentValue ?? 0}
+          trend={stats?.lowStockItems.trend ?? 'up'}
+          trendValue={`${stats?.lowStockItems.percentageChange ?? 0}% vs last week`}
           icon={<WarningAmberRoundedIcon />}
           accentClass="stat-accent-gold"
           iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
+          onClick={() => {
+            console.log('Clicked card 2');
+            openDetail('Low Stock Items', stats?.lowStockItems, <WarningAmberRoundedIcon />);
+          }}
         />
         <StatCard
           label="Active Shipments"
-          value={8}
-          sub="In transit today"
-          trend="up"
-          trendValue="+5"
+          value={stats?.activeShipments.currentValue ?? 0}
+          trend={stats?.activeShipments.trend ?? 'up'}
+          trendValue={`${stats?.activeShipments.percentageChange ?? 0}% vs last week`}
           icon={<LocalShippingRoundedIcon />}
           accentClass="stat-accent-sage"
           iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
+          onClick={() => {
+            console.log('Clicked card 3');
+            openDetail('Active Shipments', stats?.activeShipments, <LocalShippingRoundedIcon />);
+          }}
         />
         <StatCard
           label="Pending Returns"
-          value={2}
-          sub="Awaiting review"
-          trend="down"
-          trendValue="-2"
+          value={stats?.pendingReturns.currentValue ?? 0}
+          trend={stats?.pendingReturns.trend ?? 'up'}
+          trendValue={`${stats?.pendingReturns.percentageChange ?? 0}% vs last week`}
           icon={<SettingsBackupRestoreRoundedIcon />}
           accentClass="stat-accent-brown"
           iconBg="linear-gradient(135deg, #C9A84C 0%, #E8D3A9 100%)"
+          onClick={() => {
+            console.log('Clicked card 4');
+            openDetail('Pending Returns', stats?.pendingReturns, <SettingsBackupRestoreRoundedIcon />);
+          }}
         />
       </Box>
+
+      {/* ── Detail Modal ── */}
+      <Dialog 
+        open={detailModal.open} 
+        onClose={closeDetail}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            bgcolor: '#FCF9F6',
+            backgroundImage: 'none',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          m: 0, p: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(107, 76, 42, 0.08)'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              color: '#6B4C2A', 
+              opacity: 0.8,
+              '& svg': { fontSize: 20 }
+            }}>
+              {detailModal.icon}
+            </Box>
+            <Typography sx={{ fontWeight: 800, color: '#6B4C2A', fontSize: '0.95rem' }}>
+              {detailModal.title} Breakdown
+            </Typography>
+          </Box>
+          <IconButton onClick={closeDetail} sx={{ color: '#6B4C2A' }}>
+            <CloseRoundedIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <List sx={{ py: 0 }}>
+            {!detailModal.data || detailModal.data.items.length === 0 ? (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                  No records to display for this metric.
+                </Typography>
+              </Box>
+            ) : (
+              detailModal.data.items.map((item, idx) => (
+                <Box key={item.id}>
+                  <ListItem 
+                    sx={{ 
+                      py: 1.2, px: 3, 
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'rgba(107, 76, 42, 0.04)' }
+                    }}
+                    onClick={() => {
+                      closeDetail();
+                      if (detailModal.title === 'Low Stock Items') {
+                        navigate({ to: '/hq-inventory' });
+                      } else if (item.id.startsWith('RET-')) {
+                         navigate({ to: '/returns' });
+                      } else if (item.id.startsWith('ORD-')) {
+                         navigate({ to: `/orders/${item.id.replace('ORD-', '')}` });
+                      } else {
+                         navigate({ to: '/supply-requests' });
+                      }
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography sx={{ fontWeight: 700, color: '#6B4C2A', fontSize: '0.82rem' }}>
+                          {item.id} — {item.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {item.subtitle} {item.date && `• ${new Date(item.date).toLocaleDateString()}`}
+                        </Typography>
+                      }
+                    />
+                    <ArrowForwardIosRoundedIcon sx={{ fontSize: 12, color: 'rgba(107, 76, 42, 0.3)' }} />
+                  </ListItem>
+                  {idx < (detailModal.data?.items.length ?? 0) - 1 && <Divider sx={{ opacity: 0.5 }} />}
+                </Box>
+              ))
+            )}
+          </List>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Main Dashboard Grid - Role-Based Content ── */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>

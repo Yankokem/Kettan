@@ -5,24 +5,33 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
+import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import UnarchiveRoundedIcon from '@mui/icons-material/UnarchiveRounded';
 
 import { PageHeader } from '../../components/UI/PageHeader';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
-import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
+import { useToast } from '../../components/UI/ToastProvider';
+import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
-import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { VehicleCard } from './components/VehicleCard';
-import { createVehicle, listVehicles, deleteVehicle, updateVehicle, type Vehicle, type VehicleFormData } from './vehicleApi';
+import { 
+  createVehicle, 
+  listVehicles, 
+  deleteVehicle as archiveVehicle, 
+  unarchiveVehicle,
+  updateVehicle, 
+  type Vehicle, 
+  type VehicleFormData 
+} from './vehicleApi';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+type StatusFilter = 'all' | 'active' | 'inactive' | 'archived';
 type SortFilter = 'plate-asc' | 'plate-desc' | 'type-asc' | 'type-desc';
 type VehicleViewMode = 'cards' | 'table';
 
@@ -55,8 +64,8 @@ export function VehicleManagementPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortFilter, setSortFilter] = useState<SortFilter>('plate-asc');
   const [viewMode, setViewMode] = useState<VehicleViewMode>('cards');
-  const [deleteTarget, setDeleteTarget] = useState<Vehicle | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const fetchData = async () => {
     try {
@@ -90,9 +99,14 @@ export function VehicleManagementPage() {
         (v.description || '').toLowerCase().includes(query);
 
       const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && v.isActive) ||
-        (statusFilter === 'inactive' && !v.isActive);
+        statusFilter === 'all' 
+          ? !v.isDeleted
+          : statusFilter === 'archived'
+            ? v.isDeleted
+            : !v.isDeleted && (
+                (statusFilter === 'active' && v.isActive) ||
+                (statusFilter === 'inactive' && !v.isActive)
+              );
 
       return matchesQuery && matchesStatus;
     });
@@ -156,19 +170,29 @@ export function VehicleManagementPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-
+  const handleArchive = async (vehicle: Vehicle) => {
     setLoading(true);
     try {
-      await deleteVehicle(deleteTarget.vehicleId);
-      if (selectedVehicleId === deleteTarget.vehicleId) {
+      await archiveVehicle(vehicle.vehicleId);
+      if (selectedVehicleId === vehicle.vehicleId) {
         resetForm();
       }
-      setDeleteTarget(null);
+      showToast(`${vehicle.plateNumber} archived successfully.`);
       await fetchData();
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to delete vehicle');
+      showToast(err instanceof Error ? err.message : 'Failed to archive vehicle', 'error');
+      setLoading(false);
+    }
+  };
+
+  const handleUnarchive = async (vehicle: Vehicle) => {
+    setLoading(true);
+    try {
+      await unarchiveVehicle(vehicle.vehicleId);
+      showToast(`${vehicle.plateNumber} restored successfully.`);
+      await fetchData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to restore vehicle', 'error');
       setLoading(false);
     }
   };
@@ -217,24 +241,33 @@ export function VehicleManagementPage() {
       label: 'Actions',
       width: 90,
       align: 'right',
-      render: (v) => (
+      render: (vehicle) => (
         <IconButton
           size="small"
-          aria-label={`Delete ${v.plateNumber}`}
+          aria-label={vehicle.isDeleted ? `Restore ${vehicle.plateNumber}` : `Archive ${vehicle.plateNumber}`}
           onClick={(event) => {
             event.stopPropagation();
-            setDeleteTarget(v);
+            if (vehicle.isDeleted) {
+              handleUnarchive(vehicle);
+            } else {
+              handleArchive(vehicle);
+            }
           }}
           sx={{
             width: 30,
             height: 30,
-            color: '#B91C1C',
-            border: '1px solid rgba(185, 28, 28, 0.25)',
-            bgcolor: 'rgba(185, 28, 28, 0.04)',
-            '&:hover': { bgcolor: 'rgba(185, 28, 28, 0.1)' },
+            color: vehicle.isDeleted ? '#059669' : '#D97706',
+            border: '1px solid',
+            borderColor: vehicle.isDeleted ? 'rgba(5, 150, 105, 0.25)' : 'rgba(217, 119, 6, 0.25)',
+            bgcolor: vehicle.isDeleted ? 'rgba(5, 150, 105, 0.04)' : 'rgba(217, 119, 6, 0.04)',
+            '&:hover': { bgcolor: vehicle.isDeleted ? 'rgba(5, 150, 105, 0.1)' : 'rgba(217, 119, 6, 0.1)' },
           }}
         >
-          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+          {vehicle.isDeleted ? (
+            <UnarchiveRoundedIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <ArchiveRoundedIcon sx={{ fontSize: 16 }} />
+          )}
         </IconButton>
       ),
     },
@@ -366,6 +399,7 @@ export function VehicleManagementPage() {
                     { value: 'all', label: 'All Statuses' },
                     { value: 'active', label: 'Active' },
                     { value: 'inactive', label: 'Inactive' },
+                    { value: 'archived', label: 'Archived' },
                   ]}
                 />
               </Box>
@@ -387,7 +421,7 @@ export function VehicleManagementPage() {
                     maxHeight: { xs: 'none', lg: 'calc(100vh - 320px)' },
                     overflowY: { xs: 'visible', lg: 'auto' },
                     pr: { xs: 0, lg: 0.8 },
-                    pt: 1, // Prevent clipping on hover
+                    pt: 1,
                   }}
                 >
                   <Grid container spacing={1.8} sx={{ overflow: 'visible' }}>
@@ -397,7 +431,8 @@ export function VehicleManagementPage() {
                           vehicle={v}
                           selected={selectedVehicleId === v.vehicleId}
                           onSelect={() => handleSelectVehicle(v)}
-                          onDelete={() => setDeleteTarget(v)}
+                          onArchive={() => handleArchive(v)}
+                          onUnarchive={() => handleUnarchive(v)}
                         />
                       </Grid>
                     ))}
@@ -417,17 +452,6 @@ export function VehicleManagementPage() {
             </DataStateWrapper>
           </Card>
         </Box>
-
-      <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        title="Delete vehicle"
-        message={`Delete ${deleteTarget?.plateNumber || 'this vehicle'}? This action is permanent.`}
-        confirmText="Delete"
-        confirmColor="error"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
     </Box>
   );
 }
-

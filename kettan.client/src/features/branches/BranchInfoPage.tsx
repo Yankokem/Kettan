@@ -30,7 +30,7 @@ function DetailRow({ label, value, icon: Icon }: { label: string; value: string;
   return (
     <Box sx={{ py: 1.1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.45 }}>
-        {Icon && <Icon sx={{ fontSize: 13, color: 'text.secondary' }} />}
+        {Icon && <Icon sx={{ fontSize: 13, color: '#6B4C2A' }} />}
         <Typography
           sx={{
             fontSize: 10.5,
@@ -288,7 +288,7 @@ export function BranchInfoPage() {
                   <>
                     <Chip
                       icon={<MapRoundedIcon fontSize="small" />}
-                      label={branch?.city || 'City N/A'}
+                      label={branch?.city && branch.city !== 'N/A' ? branch.city : 'Location Unspecified'}
                       size="small"
                       sx={{
                         bgcolor: 'background.paper',
@@ -342,15 +342,15 @@ export function BranchInfoPage() {
                 ) : (
                   <>
                     <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                      <AccessTimeRoundedIcon sx={{ fontSize: 14 }} />
+                      <AccessTimeRoundedIcon sx={{ fontSize: 14, color: '#6B4C2A' }} />
                       {branch ? `${formatSchedule(branch.openTime)} - ${formatSchedule(branch.closeTime)}` : 'Schedule Not Set'}
                     </Typography>
                     <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                      <CallRoundedIcon sx={{ fontSize: 14 }} />
+                      <CallRoundedIcon sx={{ fontSize: 14, color: '#6B4C2A' }} />
                       {branch?.contactNumber || 'No Contact Number'}
                     </Typography>
                     <Typography sx={{ fontSize: 12.5, color: 'text.secondary', display: 'inline-flex', alignItems: 'center', gap: 0.7 }}>
-                      <PeopleRoundedIcon sx={{ fontSize: 14 }} />
+                      <PeopleRoundedIcon sx={{ fontSize: 14, color: '#6B4C2A' }} />
                       {staff.length} Active Staff Members
                     </Typography>
                   </>

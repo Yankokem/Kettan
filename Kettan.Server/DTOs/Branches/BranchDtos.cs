@@ -28,6 +28,13 @@ public class CreateBranchDto
 {
     public required string Name { get; set; }
     public string? Location { get; set; }
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? ContactNumber { get; set; }
+    public string? OpenTime { get; set; }
+    public string? CloseTime { get; set; }
+    public int? OwnerUserId { get; set; }
+    public int? ManagerUserId { get; set; }
     public string? CustomThresholds { get; set; }
     public string? ImageUrl { get; set; }
 }
@@ -36,6 +43,13 @@ public class UpdateBranchDto
 {
     public required string Name { get; set; }
     public string? Location { get; set; }
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? ContactNumber { get; set; }
+    public string? OpenTime { get; set; }
+    public string? CloseTime { get; set; }
+    public int? OwnerUserId { get; set; }
+    public int? ManagerUserId { get; set; }
     public string? CustomThresholds { get; set; }
     public string? ImageUrl { get; set; }
     public bool IsActive { get; set; }

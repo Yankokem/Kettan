@@ -31,6 +31,8 @@ public class SettingsController : ControllerBase
         }
 
         var rows = await _context.ItemCategories
+            .IgnoreQueryFilters()
+            .Where(c => c.TenantId == _currentUser.TenantId.Value)
             .OrderBy(c => c.DisplayOrder)
             .ThenBy(c => c.Name)
             .Select(c => new ItemCategoryDto
@@ -40,6 +42,7 @@ public class SettingsController : ControllerBase
                 Description = c.Description,
                 DisplayOrder = c.DisplayOrder,
                 IsActive = c.IsActive,
+                IsDeleted = c.IsDeleted,
                 CreatedAt = c.CreatedAt
             })
             .ToListAsync();
@@ -87,6 +90,7 @@ public class SettingsController : ControllerBase
                 Description = row.Description,
                 DisplayOrder = row.DisplayOrder,
                 IsActive = row.IsActive,
+                IsDeleted = row.IsDeleted,
                 CreatedAt = row.CreatedAt
             });
         }
@@ -136,6 +140,7 @@ public class SettingsController : ControllerBase
                 Description = row.Description,
                 DisplayOrder = row.DisplayOrder,
                 IsActive = row.IsActive,
+                IsDeleted = row.IsDeleted,
                 CreatedAt = row.CreatedAt
             });
         }
@@ -183,6 +188,8 @@ public class SettingsController : ControllerBase
         }
 
         var rows = await _context.InventoryCategories
+            .IgnoreQueryFilters()
+            .Where(c => c.TenantId == _currentUser.TenantId.Value)
             .OrderBy(c => c.DisplayOrder)
             .ThenBy(c => c.Name)
             .Select(c => new InventoryCategoryDto
@@ -192,6 +199,7 @@ public class SettingsController : ControllerBase
                 Description = c.Description,
                 DisplayOrder = c.DisplayOrder,
                 IsActive = c.IsActive,
+                IsDeleted = c.IsDeleted,
                 CreatedAt = c.CreatedAt
             })
             .ToListAsync();
@@ -239,6 +247,7 @@ public class SettingsController : ControllerBase
                 Description = row.Description,
                 DisplayOrder = row.DisplayOrder,
                 IsActive = row.IsActive,
+                IsDeleted = row.IsDeleted,
                 CreatedAt = row.CreatedAt
             });
         }
@@ -288,6 +297,7 @@ public class SettingsController : ControllerBase
                 Description = row.Description,
                 DisplayOrder = row.DisplayOrder,
                 IsActive = row.IsActive,
+                IsDeleted = row.IsDeleted,
                 CreatedAt = row.CreatedAt
             });
         }
@@ -336,6 +346,8 @@ public class SettingsController : ControllerBase
         }
 
         var rows = await _context.MenuCategories
+            .IgnoreQueryFilters()
+            .Where(c => c.TenantId == _currentUser.TenantId.Value)
             .OrderBy(c => c.DisplayOrder)
             .ThenBy(c => c.Name)
             .Select(c => new MenuCategoryDto
@@ -344,6 +356,7 @@ public class SettingsController : ControllerBase
                 Name = c.Name,
                 DisplayOrder = c.DisplayOrder,
                 IsActive = c.IsActive,
+                IsDeleted = c.IsDeleted,
                 CreatedAt = c.CreatedAt
             })
             .ToListAsync();
@@ -389,6 +402,7 @@ public class SettingsController : ControllerBase
                 Name = row.Name,
                 DisplayOrder = row.DisplayOrder,
                 IsActive = row.IsActive,
+                IsDeleted = row.IsDeleted,
                 CreatedAt = row.CreatedAt
             });
         }
@@ -436,6 +450,7 @@ public class SettingsController : ControllerBase
                 Name = row.Name,
                 DisplayOrder = row.DisplayOrder,
                 IsActive = row.IsActive,
+                IsDeleted = row.IsDeleted,
                 CreatedAt = row.CreatedAt
             });
         }
@@ -483,13 +498,16 @@ public class SettingsController : ControllerBase
         }
 
         var rows = await _context.MenuTags
-            .OrderBy(t => t.Name)
+            .IgnoreQueryFilters()
+            .Where(c => c.TenantId == _currentUser.TenantId.Value)
+            .OrderBy(c => c.Name)
             .Select(t => new MenuTagDto
             {
                 TagId = t.TagId,
                 Name = t.Name,
                 Color = t.Color,
                 IsActive = t.IsActive,
+                IsDeleted = t.IsDeleted,
                 CreatedAt = t.CreatedAt
             })
             .ToListAsync();
@@ -540,6 +558,7 @@ public class SettingsController : ControllerBase
                 Name = row.Name,
                 Color = row.Color,
                 IsActive = row.IsActive,
+                IsDeleted = row.IsDeleted,
                 CreatedAt = row.CreatedAt
             });
         }
@@ -592,6 +611,7 @@ public class SettingsController : ControllerBase
                 Name = row.Name,
                 Color = row.Color,
                 IsActive = row.IsActive,
+                IsDeleted = row.IsDeleted,
                 CreatedAt = row.CreatedAt
             });
         }

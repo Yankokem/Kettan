@@ -233,6 +233,46 @@ public class ReportsController : ControllerBase
         return Ok(alerts);
     }
 
+    [HttpGet("dashboard-stats")]
+    public async Task<ActionResult<DashboardStatsDto>> GetDashboardStats([FromQuery] int? branchId = null)
+    {
+        // If branchId not provided in query, use current user's branchId if they are a branch user
+        var targetBranchId = branchId ?? _currentUser.BranchId;
+        
+        var stats = await _service.GetDashboardStatsAsync(targetBranchId);
+        return Ok(stats);
+    }
+
+    [HttpGet("order-processing-stats")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<OrderProcessingStatsDto>> GetOrderProcessingStats()
+    {
+        try
+        {
+            var stats = await _service.GetOrderProcessingStatsAsync();
+            return Ok(stats);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("return-stats")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchManager,BranchStaff")]
+    public async Task<ActionResult<ReturnStatsDto>> GetReturnStats()
+    {
+        try
+        {
+            var stats = await _service.GetReturnStatsAsync();
+            return Ok(stats);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     // ── Export endpoints ─────────────────────────────────────────────────────
 
     [HttpGet("inventory/export")]

@@ -206,15 +206,15 @@ export function BranchCard({ branch, onClick, alertCount }: BranchCardProps) {
       {/* Card Details Section */}
       <Box sx={{ p: 2.5, pt: 2, display: 'flex', flexDirection: 'column', gap: 2, flexGrow: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-          <LocationOnRoundedIcon sx={{ fontSize: 18, color: '#8C6B43', mt: 0.1 }} />
-          <Typography sx={{ fontSize: 13.5, color: 'text.secondary', lineHeight: 1.4, fontWeight: 500 }}>
-            {branch.address}, {branch.city}
+          <LocationOnRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A', mt: 0.1 }} />
+          <Typography sx={{ fontSize: 13.5, color: '#6B4C2A', lineHeight: 1.4, fontWeight: 500 }}>
+            {branch.address}{branch.city && branch.city !== 'N/A' ? `, ${branch.city}` : ''}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <LocalPhoneRoundedIcon sx={{ fontSize: 18, color: '#8C6B43' }} />
-          <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 600 }}>
-            Contact: {branch.contactNumber || 'N/A'}
+          <LocalPhoneRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+          <Typography sx={{ fontSize: 13, color: '#6B4C2A', fontWeight: 600 }}>
+            {branch.contactNumber || 'N/A'}
           </Typography>
         </Box>
       </Box>

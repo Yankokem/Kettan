@@ -355,7 +355,7 @@ export function DataTable<T>({
 
       {/* Scrollable table content area */}
       <Box sx={{ overflowX: 'auto', flexGrow: 1, minHeight: 0 }}>
-        <Box sx={{ minWidth: 'max-content' }}>
+        <Box sx={{ minWidth: '100%' }}>
           {/* Table header */}
           <Box
             sx={{

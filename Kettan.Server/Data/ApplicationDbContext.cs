@@ -138,6 +138,14 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<MenuItemTag>()
             .HasKey(mt => new { mt.MenuItemId, mt.TagId });
 
+        // AuditLog Indexes for performance
+        modelBuilder.Entity<AuditLog>()
+            .HasIndex(a => a.TenantId);
+        modelBuilder.Entity<AuditLog>()
+            .HasIndex(a => a.OccurredAt);
+        modelBuilder.Entity<AuditLog>()
+            .HasIndex(a => new { a.TenantId, a.OccurredAt });
+
         // BundleItem self-reference check (NoSelfReference constraint cannot be easily added here without raw SQL, 
         // but we handle the relationships here)
         modelBuilder.Entity<BundleItem>()

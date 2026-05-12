@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
-import { Snackbar, Alert, type AlertColor } from '@mui/material';
+import { createContext, useContext, type ReactNode } from 'react';
+import { type AlertColor } from '@mui/material';
 
 interface ToastContextType {
   showToast: (message: string, severity?: AlertColor) => void;
@@ -7,35 +7,18 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+/**
+ * ToastProvider — Notifications disabled as per user request.
+ * Interface maintained for code compatibility, but no-ops all calls.
+ */
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState('');
-  const [severity, setSeverity] = useState<AlertColor>('success');
-
-  const showToast = (msg: string, sev: AlertColor = 'success') => {
-    setMessage(msg);
-    setSeverity(sev);
-    setOpen(true);
-  };
-
-  const handleClose = (_?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') return;
-    setOpen(false);
+  const showToast = (_msg: string, _sev: AlertColor = 'success') => {
+    // NO-OP: Toast notifications are disabled
   };
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <Snackbar 
-        open={open} 
-        autoHideDuration={6000} 
-        onClose={handleClose} 
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert onClose={handleClose} severity={severity} variant="filled" sx={{ width: '100%', fontWeight: 500 }}>
-          {message}
-        </Alert>
-      </Snackbar>
     </ToastContext.Provider>
   );
 }

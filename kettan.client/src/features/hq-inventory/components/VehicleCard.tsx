@@ -1,18 +1,22 @@
-import { Box, Chip, IconButton, Paper, Typography } from '@mui/material';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import LocalShippingRoundedIcon from '@mui/icons-material/LocalShippingRounded';
+import { Box, Card, Chip, IconButton, Typography } from '@mui/material';
+import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import UnarchiveRoundedIcon from '@mui/icons-material/UnarchiveRounded';
+import DirectionsCarRoundedIcon from '@mui/icons-material/DirectionsCarRounded';
 import type { Vehicle } from '../vehicleApi';
 
 interface VehicleCardProps {
   vehicle: Vehicle;
   selected: boolean;
   onSelect: () => void;
-  onDelete: () => void;
+  onArchive: () => void;
+  onUnarchive: () => void;
 }
 
-export function VehicleCard({ vehicle, selected, onSelect, onDelete }: VehicleCardProps) {
+export function VehicleCard({ vehicle, selected, onSelect, onArchive, onUnarchive }: VehicleCardProps) {
+  const isArchived = vehicle.isDeleted;
+
   return (
-    <Paper
+    <Card
       elevation={0}
       onClick={onSelect}
       sx={{
@@ -23,6 +27,8 @@ export function VehicleCard({ vehicle, selected, onSelect, onDelete }: VehicleCa
         background: (theme) => selected ? 'rgba(201, 168, 77, 0.08)' : theme.custom.gradients.card,
         cursor: 'pointer',
         transition: 'all 0.18s ease',
+        opacity: isArchived ? 0.7 : 1,
+        filter: isArchived ? 'grayscale(0.4)' : 'none',
         '&:hover': {
           borderColor: 'primary.main',
           boxShadow: '0 8px 22px rgba(0, 0, 0, 0.05)',
@@ -31,60 +37,81 @@ export function VehicleCard({ vehicle, selected, onSelect, onDelete }: VehicleCa
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5 }}>
-        <Box>
-          <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', lineHeight: 1.2, display: 'flex', alignItems: 'center' }}>
-            {vehicle.plateNumber}
-            <Box
-              component="span"
-              sx={{
-                fontSize: 10.5,
-                fontWeight: 600,
-                color: 'text.secondary',
-                ml: 1.2,
-                px: 0.8,
-                py: 0.2,
-                borderRadius: '4px',
-                bgcolor: 'action.hover',
-                fontFamily: 'monospace',
-                letterSpacing: '0.02em'
-              }}
-            >
-              #{vehicle.vehicleId}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '10px',
+              bgcolor: 'rgba(107, 76, 42, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#6B4C2A',
+            }}
+          >
+            <DirectionsCarRoundedIcon sx={{ fontSize: 20 }} />
+          </Box>
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
+                {vehicle.plateNumber}
+              </Typography>
+              {isArchived && (
+                <Chip 
+                  label="Archived" 
+                  size="small" 
+                  sx={{ 
+                    height: 18, 
+                    fontSize: 10, 
+                    fontWeight: 700,
+                    bgcolor: 'rgba(107, 114, 128, 0.1)',
+                    color: '#6B7280',
+                    border: '1px solid rgba(107, 114, 128, 0.2)'
+                  }} 
+                />
+              )}
             </Box>
-          </Typography>
-
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.4 }}>
+              {vehicle.vehicleType}
+            </Typography>
+          </Box>
         </Box>
 
         <IconButton
           size="small"
-          aria-label={`Delete ${vehicle.plateNumber}`}
+          aria-label={isArchived ? `Restore ${vehicle.plateNumber}` : `Archive ${vehicle.plateNumber}`}
           onClick={(event) => {
             event.stopPropagation();
-            onDelete();
+            if (isArchived) {
+              onUnarchive();
+            } else {
+              onArchive();
+            }
           }}
           sx={{
             width: 30,
             height: 30,
-            color: '#B91C1C',
-            border: '1px solid rgba(185, 28, 28, 0.25)',
-            bgcolor: 'rgba(185, 28, 28, 0.04)',
-            '&:hover': { bgcolor: 'rgba(185, 28, 28, 0.1)' },
+            color: isArchived ? '#059669' : '#D97706',
+            border: '1px solid',
+            borderColor: isArchived ? 'rgba(5, 150, 105, 0.25)' : 'rgba(217, 119, 6, 0.25)',
+            bgcolor: isArchived ? 'rgba(5, 150, 105, 0.04)' : 'rgba(217, 119, 6, 0.04)',
+            '&:hover': { bgcolor: isArchived ? 'rgba(5, 150, 105, 0.1)' : 'rgba(217, 119, 6, 0.1)' },
           }}
         >
-          <DeleteOutlineRoundedIcon sx={{ fontSize: 17 }} />
+          {isArchived ? (
+            <UnarchiveRoundedIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <ArchiveRoundedIcon sx={{ fontSize: 16 }} />
+          )}
         </IconButton>
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 1.2 }}>
-        <LocalShippingRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-        <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
-          {vehicle.vehicleType}
+      {vehicle.description && (
+        <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 1.2 }}>
+          {vehicle.description}
         </Typography>
-      </Box>
-
-      <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 1.2, minHeight: 38 }}>
-        {vehicle.description || 'No description provided.'}
-      </Typography>
+      )}
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.4 }}>
         <Chip
@@ -103,6 +130,6 @@ export function VehicleCard({ vehicle, selected, onSelect, onDelete }: VehicleCa
           Added {new Date(vehicle.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </Typography>
       </Box>
-    </Paper>
+    </Card>
   );
 }

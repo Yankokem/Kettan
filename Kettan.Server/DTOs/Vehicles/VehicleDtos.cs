@@ -10,6 +10,7 @@ public class VehicleDto
     public string VehicleType { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsActive { get; set; }
+    public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

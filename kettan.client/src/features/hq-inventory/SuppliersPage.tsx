@@ -5,24 +5,33 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
+import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import UnarchiveRoundedIcon from '@mui/icons-material/UnarchiveRounded';
 
 import { PageHeader } from '../../components/UI/PageHeader';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
-import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
+import { useToast } from '../../components/UI/ToastProvider';
+import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
 import { FilterDropdown } from '../../components/UI/FilterAndSort';
-import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { SupplierCard } from './components/SupplierCard';
-import { createSupplier, listSuppliers, deleteSupplier, updateSupplier, type Supplier, type SupplierFormData } from './supplierApi';
+import { 
+  createSupplier, 
+  listSuppliers, 
+  deleteSupplier as archiveSupplier, 
+  unarchiveSupplier,
+  updateSupplier, 
+  type Supplier, 
+  type SupplierFormData 
+} from './supplierApi';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+type StatusFilter = 'all' | 'active' | 'inactive' | 'archived';
 type SortFilter = 'name-asc' | 'name-desc' | 'recent';
 type SupplierViewMode = 'cards' | 'table';
 
@@ -50,8 +59,8 @@ export function SuppliersPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortFilter, setSortFilter] = useState<SortFilter>('name-asc');
   const [viewMode, setViewMode] = useState<SupplierViewMode>('cards');
-  const [deleteTarget, setDeleteTarget] = useState<Supplier | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const fetchData = async () => {
     try {
@@ -60,6 +69,17 @@ export function SuppliersPage() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load data'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reloadSuppliers = async () => {
+    try {
+      const sData = await listSuppliers(true);
+      setSuppliers(sData);
+    } catch (err) {
+      // silent
     } finally {
       setLoading(false);
     }
@@ -77,17 +97,22 @@ export function SuppliersPage() {
   const visibleSuppliers = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    const filtered = suppliers.filter((s) => {
+    const filtered = suppliers.filter((supplier) => {
       const matchesQuery =
         !query ||
-        s.name.toLowerCase().includes(query) ||
-        (s.contactPerson || '').toLowerCase().includes(query) ||
-        (s.email || '').toLowerCase().includes(query);
+        supplier.name.toLowerCase().includes(query) ||
+        (supplier.contactPerson || '').toLowerCase().includes(query) ||
+        (supplier.email || '').toLowerCase().includes(query);
 
       const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && s.isActive) ||
-        (statusFilter === 'inactive' && !s.isActive);
+        statusFilter === 'all' 
+          ? !supplier.isDeleted
+          : statusFilter === 'archived'
+            ? supplier.isDeleted
+            : !supplier.isDeleted && (
+                (statusFilter === 'active' && supplier.isActive) ||
+                (statusFilter === 'inactive' && !supplier.isActive)
+              );
 
       return matchesQuery && matchesStatus;
     });
@@ -148,19 +173,29 @@ export function SuppliersPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-
+  const handleArchive = async (supplier: Supplier) => {
     setLoading(true);
     try {
-      await deleteSupplier(deleteTarget.supplierId);
-      if (selectedSupplierId === deleteTarget.supplierId) {
+      await archiveSupplier(supplier.supplierId);
+      if (selectedSupplierId === supplier.supplierId) {
         resetForm();
       }
-      setDeleteTarget(null);
-      await fetchData();
+      showToast(`${supplier.name} archived successfully.`);
+      await reloadSuppliers();
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to delete supplier');
+      showToast(err instanceof Error ? err.message : 'Failed to archive supplier', 'error');
+      setLoading(false);
+    }
+  };
+
+  const handleUnarchive = async (supplier: Supplier) => {
+    setLoading(true);
+    try {
+      await unarchiveSupplier(supplier.supplierId);
+      showToast(`${supplier.name} restored successfully.`);
+      await reloadSuppliers();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to restore supplier', 'error');
       setLoading(false);
     }
   };
@@ -211,24 +246,33 @@ export function SuppliersPage() {
       label: 'Actions',
       width: 90,
       align: 'right',
-      render: (s) => (
+      render: (supplier) => (
         <IconButton
           size="small"
-          aria-label={`Delete ${s.name}`}
+          aria-label={supplier.isDeleted ? `Restore ${supplier.name}` : `Archive ${supplier.name}`}
           onClick={(event) => {
             event.stopPropagation();
-            setDeleteTarget(s);
+            if (supplier.isDeleted) {
+              handleUnarchive(supplier);
+            } else {
+              handleArchive(supplier);
+            }
           }}
           sx={{
             width: 30,
             height: 30,
-            color: '#B91C1C',
-            border: '1px solid rgba(185, 28, 28, 0.25)',
-            bgcolor: 'rgba(185, 28, 28, 0.04)',
-            '&:hover': { bgcolor: 'rgba(185, 28, 28, 0.1)' },
+            color: supplier.isDeleted ? '#059669' : '#D97706',
+            border: '1px solid',
+            borderColor: supplier.isDeleted ? 'rgba(5, 150, 105, 0.25)' : 'rgba(217, 119, 6, 0.25)',
+            bgcolor: supplier.isDeleted ? 'rgba(5, 150, 105, 0.04)' : 'rgba(217, 119, 6, 0.04)',
+            '&:hover': { bgcolor: supplier.isDeleted ? 'rgba(5, 150, 105, 0.1)' : 'rgba(217, 119, 6, 0.1)' },
           }}
         >
-          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+          {supplier.isDeleted ? (
+            <UnarchiveRoundedIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <ArchiveRoundedIcon sx={{ fontSize: 16 }} />
+          )}
         </IconButton>
       ),
     },
@@ -374,6 +418,7 @@ export function SuppliersPage() {
                     { value: 'all', label: 'All Statuses' },
                     { value: 'active', label: 'Active' },
                     { value: 'inactive', label: 'Inactive' },
+                    { value: 'archived', label: 'Archived' },
                   ]}
                 />
               </Box>
@@ -399,13 +444,14 @@ export function SuppliersPage() {
                   }}
                 >
                   <Grid container spacing={1.8} sx={{ overflow: 'visible' }}>
-                    {visibleSuppliers.map((s) => (
-                      <Grid key={s.supplierId} size={{ xs: 12, md: 6 }}>
+                    {visibleSuppliers.map((supplier) => (
+                      <Grid key={supplier.supplierId} size={{ xs: 12, md: 6 }}>
                         <SupplierCard
-                          supplier={s}
-                          selected={selectedSupplierId === s.supplierId}
-                          onSelect={() => handleSelectSupplier(s)}
-                          onDelete={() => setDeleteTarget(s)}
+                          supplier={supplier}
+                          selected={selectedSupplierId === supplier.supplierId}
+                          onSelect={() => handleSelectSupplier(supplier)}
+                          onArchive={() => handleArchive(supplier)}
+                          onUnarchive={() => handleUnarchive(supplier)}
                         />
                       </Grid>
                     ))}
@@ -425,16 +471,6 @@ export function SuppliersPage() {
             </DataStateWrapper>
           </Card>
         </Box>
-
-      <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        title="Delete supplier"
-        message={`Delete ${deleteTarget?.name || 'this supplier'}? This action is permanent.`}
-        confirmText="Delete"
-        confirmColor="error"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
-    </Box>
-  );
+      </Box>
+    );
 }

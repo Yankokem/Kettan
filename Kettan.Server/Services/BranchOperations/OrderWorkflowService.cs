@@ -79,7 +79,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             .OrderByDescending(o => o.PushedToFulfillmentAt)
             .ToListAsync();
 
-        return orders.Select(MapToBranchOrderDto).ToList();
+        return orders.Distinct().Select(MapToBranchOrderDto).ToList();
     }
 
     public async Task<OrderDetailDto> CreateHqOrderAsync(CreateOrderDto dto)
@@ -779,7 +779,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         }
 
         var orders = await query.OrderByDescending(o => o.PushedToFulfillmentAt).ToListAsync();
-        return orders.Select(MapToBranchOrderDto).ToList();
+        return orders.Distinct().Select(MapToBranchOrderDto).ToList();
     }
 
     private static BranchOrderDto MapToBranchOrderDto(Order order)

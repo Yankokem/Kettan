@@ -98,6 +98,12 @@ public class BranchesController : ControllerBase
             TenantId = branch.TenantId,
             Name = branch.Name,
             Location = branch.Location,
+            Address = branch.Address,
+            City = branch.City,
+            ContactNumber = branch.ContactNumber,
+            OpenTime = branch.OpenTime.HasValue ? branch.OpenTime.Value.ToString("HH:mm") : null,
+            CloseTime = branch.CloseTime.HasValue ? branch.CloseTime.Value.ToString("HH:mm") : null,
+            OwnerUserId = branch.OwnerUserId,
             CustomThresholds = branch.CustomThresholds,
             IsActive = branch.IsActive,
             ImageUrl = branch.ImageUrl,
@@ -123,6 +129,13 @@ public class BranchesController : ControllerBase
                 TenantId = tenantId,
                 Name = dto.Name,
                 Location = dto.Location,
+                Address = dto.Address,
+                City = dto.City,
+                ContactNumber = dto.ContactNumber,
+                OpenTime = dto.OpenTime != null ? TimeOnly.Parse(dto.OpenTime) : null,
+                CloseTime = dto.CloseTime != null ? TimeOnly.Parse(dto.CloseTime) : null,
+                OwnerUserId = dto.OwnerUserId,
+                ManagerUserId = dto.ManagerUserId,
                 CustomThresholds = dto.CustomThresholds,
                 ImageUrl = dto.ImageUrl,
                 IsActive = true,
@@ -177,6 +190,13 @@ public class BranchesController : ControllerBase
 
         branch.Name = dto.Name;
         branch.Location = dto.Location;
+        branch.Address = dto.Address;
+        branch.City = dto.City;
+        branch.ContactNumber = dto.ContactNumber;
+        branch.OpenTime = dto.OpenTime != null ? TimeOnly.Parse(dto.OpenTime) : null;
+        branch.CloseTime = dto.CloseTime != null ? TimeOnly.Parse(dto.CloseTime) : null;
+        branch.OwnerUserId = dto.OwnerUserId;
+        branch.ManagerUserId = dto.ManagerUserId;
         branch.CustomThresholds = dto.CustomThresholds;
         branch.ImageUrl = dto.ImageUrl;
         branch.IsActive = dto.IsActive;

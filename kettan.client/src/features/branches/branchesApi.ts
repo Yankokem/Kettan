@@ -28,6 +28,13 @@ export interface BranchDto {
 export interface CreateBranchDto {
   name: string;
   location?: string | null;
+  address?: string;
+  city?: string;
+  contactNumber?: string;
+  openTime?: string;
+  closeTime?: string;
+  ownerUserId?: number | string;
+  managerUserId?: number | string;
   customThresholds?: string | null;
   imageUrl?: string | null;
 }
@@ -35,6 +42,13 @@ export interface CreateBranchDto {
 export interface UpdateBranchDto {
   name: string;
   location?: string | null;
+  address?: string;
+  city?: string;
+  contactNumber?: string;
+  openTime?: string;
+  closeTime?: string;
+  ownerUserId?: number | string;
+  managerUserId?: number | string;
   customThresholds?: string | null;
   isActive: boolean;
   imageUrl?: string | null;

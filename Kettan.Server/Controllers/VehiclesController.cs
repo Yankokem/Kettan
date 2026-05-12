@@ -31,12 +31,10 @@ public class VehiclesController : ControllerBase
             return Forbid();
         }
 
-        var query = _context.Vehicles.AsQueryable();
-
-        if (!includeInactive)
-        {
-            query = query.Where(v => v.IsActive);
-        }
+        var query = _context.Vehicles
+            .IgnoreQueryFilters()
+            .Where(v => v.TenantId == _currentUser.TenantId.Value)
+            .AsQueryable();
 
         var rows = await query
             .OrderBy(v => v.PlateNumber)
@@ -206,6 +204,7 @@ public class VehiclesController : ControllerBase
             VehicleType = vehicle.VehicleType.ToString(),
             Description = vehicle.Description,
             IsActive = vehicle.IsActive,
+            IsDeleted = vehicle.IsDeleted,
             CreatedAt = vehicle.CreatedAt
         };
     }

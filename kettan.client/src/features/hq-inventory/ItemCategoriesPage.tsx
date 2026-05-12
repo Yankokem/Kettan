@@ -5,14 +5,15 @@ import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import ArchiveRoundedIcon from '@mui/icons-material/ArchiveRounded';
+import UnarchiveRoundedIcon from '@mui/icons-material/UnarchiveRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 
 import { PageHeader } from '../../components/UI/PageHeader';
 import { Button } from '../../components/UI/Button';
 import { SearchInput } from '../../components/UI/SearchInput';
-import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
+import { useToast } from '../../components/UI/ToastProvider';
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { FormTextField } from '../../components/Form/FormTextField';
 import { FormDropdown } from '../../components/Form/FormDropdown';
@@ -20,10 +21,17 @@ import { FilterDropdown } from '../../components/UI/FilterAndSort';
 import { ViewToggle } from '../../components/UI/ViewToggle';
 import { DataStateWrapper } from '../../components/UI/DataStateWrapper';
 import { ItemCategoryCard } from './components/ItemCategoryCard';
-import { createItemCategory, listItemCategories, deleteItemCategory, updateItemCategory, type InventoryCategory } from './itemCategoryApi';
+import { 
+  createItemCategory, 
+  listItemCategories, 
+  deleteItemCategory as archiveItemCategory, 
+  unarchiveItemCategory,
+  updateItemCategory, 
+  type InventoryCategory 
+} from './itemCategoryApi';
 import type { ItemCategoryFormData } from './types';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+type StatusFilter = 'all' | 'active' | 'inactive' | 'archived';
 type SortFilter = 'order-asc' | 'order-desc' | 'name-asc' | 'name-desc';
 type CategoryViewMode = 'cards' | 'table';
 
@@ -44,8 +52,8 @@ export function ItemCategoriesPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortFilter, setSortFilter] = useState<SortFilter>('order-asc');
   const [viewMode, setViewMode] = useState<CategoryViewMode>('cards');
-  const [deleteTarget, setDeleteTarget] = useState<InventoryCategory | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const reloadCategories = async () => {
     try {
@@ -78,9 +86,14 @@ export function ItemCategoriesPage() {
         (category.description || '').toLowerCase().includes(query);
 
       const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && category.isActive) ||
-        (statusFilter === 'inactive' && !category.isActive);
+        statusFilter === 'all' 
+          ? !category.isDeleted
+          : statusFilter === 'archived'
+            ? category.isDeleted
+            : !category.isDeleted && (
+                (statusFilter === 'active' && category.isActive) ||
+                (statusFilter === 'inactive' && !category.isActive)
+              );
 
       return matchesQuery && matchesStatus;
     });
@@ -145,19 +158,29 @@ export function ItemCategoriesPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-
+  const handleArchive = async (category: InventoryCategory) => {
     setLoading(true);
     try {
-      await deleteItemCategory(deleteTarget.categoryId);
-      if (selectedCategoryId === deleteTarget.categoryId) {
+      await archiveItemCategory(category.categoryId);
+      if (selectedCategoryId === category.categoryId) {
         resetForm();
       }
-      setDeleteTarget(null);
+      showToast(`${category.name} archived successfully.`);
       await reloadCategories();
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to delete category');
+      showToast(err instanceof Error ? err.message : 'Failed to archive category', 'error');
+      setLoading(false);
+    }
+  };
+
+  const handleUnarchive = async (category: InventoryCategory) => {
+    setLoading(true);
+    try {
+      await unarchiveItemCategory(category.categoryId);
+      showToast(`${category.name} restored successfully.`);
+      await reloadCategories();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to restore category', 'error');
       setLoading(false);
     }
   };
@@ -212,21 +235,30 @@ export function ItemCategoriesPage() {
       render: (category) => (
         <IconButton
           size="small"
-          aria-label={`Delete ${category.name}`}
+          aria-label={category.isDeleted ? `Restore ${category.name}` : `Archive ${category.name}`}
           onClick={(event) => {
             event.stopPropagation();
-            setDeleteTarget(category);
+            if (category.isDeleted) {
+              handleUnarchive(category);
+            } else {
+              handleArchive(category);
+            }
           }}
           sx={{
             width: 30,
             height: 30,
-            color: '#B91C1C',
-            border: '1px solid rgba(185, 28, 28, 0.25)',
-            bgcolor: 'rgba(185, 28, 28, 0.04)',
-            '&:hover': { bgcolor: 'rgba(185, 28, 28, 0.1)' },
+            color: category.isDeleted ? '#059669' : '#D97706',
+            border: '1px solid',
+            borderColor: category.isDeleted ? 'rgba(5, 150, 105, 0.25)' : 'rgba(217, 119, 6, 0.25)',
+            bgcolor: category.isDeleted ? 'rgba(5, 150, 105, 0.04)' : 'rgba(217, 119, 6, 0.04)',
+            '&:hover': { bgcolor: category.isDeleted ? 'rgba(5, 150, 105, 0.1)' : 'rgba(217, 119, 6, 0.1)' },
           }}
         >
-          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+          {category.isDeleted ? (
+            <UnarchiveRoundedIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <ArchiveRoundedIcon sx={{ fontSize: 16 }} />
+          )}
         </IconButton>
       ),
     },
@@ -355,17 +387,18 @@ export function ItemCategoriesPage() {
                 />
 
                 <FilterDropdown
-                  label="Status"
-                  icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
-                  value={statusFilter}
-                  onChange={(value) => setStatusFilter(value as StatusFilter)}
-                  minWidth={150}
-                  options={[
-                    { value: 'all', label: 'All Statuses' },
-                    { value: 'active', label: 'Active' },
-                    { value: 'inactive', label: 'Inactive' },
-                  ]}
-                />
+                label="Status"
+                icon={<TuneRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />}
+                value={statusFilter}
+                onChange={(value) => setStatusFilter(value as StatusFilter)}
+                minWidth={150}
+                options={[
+                  { value: 'all', label: 'All Statuses' },
+                  { value: 'active', label: 'Active' },
+                  { value: 'inactive', label: 'Inactive' },
+                  { value: 'archived', label: 'Archived' },
+                ]}
+              />
               </Box>
 
               <ViewToggle
@@ -402,7 +435,8 @@ export function ItemCategoriesPage() {
                           category={category}
                           selected={selectedCategoryId === category.categoryId}
                           onSelect={() => handleSelectCategory(category)}
-                          onDelete={() => setDeleteTarget(category)}
+                          onArchive={() => handleArchive(category)}
+                          onUnarchive={() => handleUnarchive(category)}
                         />
                       </Grid>
                     ))}
@@ -422,16 +456,6 @@ export function ItemCategoriesPage() {
             </DataStateWrapper>
           </Paper>
         </Box>
-
-      <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        title="Delete item category"
-        message={`Delete ${deleteTarget?.name || 'this category'}? This action is permanent.`}
-        confirmText="Delete"
-        confirmColor="error"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
-    </Box>
-  );
+      </Box>
+    );
 }
