@@ -75,21 +75,11 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
   const columns: ColumnDef<InventoryTransaction>[] = useMemo(() => {
     const baseColumns: ColumnDef<InventoryTransaction>[] = [
       {
-        key: 'id',
-        label: 'ID',
-        gridWidth: compact ? 'none' : '0.8fr', // Hidden on compact view if desired, or small width
-        render: (row) => (
-          <Typography sx={{ fontSize: 13, fontFamily: 'Courier New, monospace', color: 'text.primary', fontWeight: 600 }}>
-            {row.transactionCode || `TXN-${row.id}`}
-          </Typography>
-        ),
-      },
-      {
         key: 'timestamp',
         label: 'Date',
-        gridWidth: compact ? '1.4fr' : '1.2fr',
+        gridWidth: compact ? '1.5fr' : '1.2fr',
         render: (row) => (
-          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', whiteSpace: 'nowrap' }}>
+          <Typography sx={{ fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap' }}>
             {formatDate(row.timestamp)}
           </Typography>
         ),
@@ -97,12 +87,11 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
       {
         key: 'transactionType',
         label: 'Type',
-        gridWidth: compact ? '1.1fr' : '1fr',
+        gridWidth: compact ? '1.5fr' : '1fr',
         render: (row) => {
           const config = TYPE_CONFIG[row.transactionType];
           let label = config.label;
 
-          // Provide more specific labels based on context
           const remarks = row.remarks?.toLowerCase() || '';
           if (row.transactionType === 'Restock') {
             if (remarks.includes('request')) label = 'Supply Request';
@@ -127,6 +116,16 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
           );
         },
       },
+      {
+        key: 'id',
+        label: 'ID',
+        gridWidth: compact ? '1.2fr' : '0.8fr',
+        render: (row) => (
+          <Typography sx={{ fontSize: 12.5, fontFamily: 'Courier New, monospace', color: 'text.primary', fontWeight: 600 }}>
+            {row.transactionCode || `TXN-${row.id}`}
+          </Typography>
+        ),
+      },
     ];
 
     if (!compact) {
@@ -147,6 +146,21 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
     }
 
     baseColumns.push({
+      key: 'userName',
+      label: 'By',
+      gridWidth: compact ? '1.5fr' : '1fr',
+      render: (row) => {
+        const name = row.userName?.trim();
+        const displayName = name ? (name.length > 20 ? name.substring(0, 17) + '...' : name) : 'System';
+        return (
+          <Typography sx={{ fontSize: 12.5, color: (!name || name === 'Auto') ? 'text.secondary' : 'text.primary', fontStyle: (!name || name === 'Auto') ? 'italic' : 'normal', whiteSpace: 'nowrap' }}>
+            {displayName}
+          </Typography>
+        );
+      },
+    });
+
+    baseColumns.push({
       key: 'quantityChange',
       label: 'Qty',
       align: 'right',
@@ -163,21 +177,6 @@ export function TransactionsTable({ transactions, onRowClick, compact = false }:
             }}
           >
             {formatQuantity(row.quantityChange, row.item?.unit)}
-          </Typography>
-        );
-      },
-    });
-
-    baseColumns.push({
-      key: 'userName',
-      label: 'By',
-      gridWidth: compact ? '1.2fr' : '1fr',
-      render: (row) => {
-        const name = row.userName?.trim();
-        const displayName = name ? (name.length > 20 ? name.substring(0, 17) + '...' : name) : 'System';
-        return (
-          <Typography sx={{ fontSize: 12.5, color: (!name || name === 'Auto') ? 'text.secondary' : 'text.primary', fontStyle: (!name || name === 'Auto') ? 'italic' : 'normal', whiteSpace: 'nowrap' }}>
-            {displayName}
           </Typography>
         );
       },

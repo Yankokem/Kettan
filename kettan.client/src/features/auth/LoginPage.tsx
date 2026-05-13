@@ -171,9 +171,8 @@ export function LoginPage() {
           transition={{ duration: 0.5 }}
         >
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <img src={logo} alt="Kettan" width="24" height="24" style={{ borderRadius: "50%" }} />
-            <span style={{ fontWeight: 800, fontSize: "16px", color: "#2C1A0E", letterSpacing: "0.1em" }}>KETTAN</span>
+          <div className="lg:hidden flex items-center mb-8">
+            <img src={logo} alt="Kettan" width="120" />
           </div>
 
           <Link

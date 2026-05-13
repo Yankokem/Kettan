@@ -29,7 +29,7 @@ public class ConsumptionController : ControllerBase
     }
 
     [HttpPost("sales")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<ConsumptionLogDto>> LogSales([FromBody] LogSalesConsumptionDto dto)
     {
         try
@@ -44,7 +44,7 @@ public class ConsumptionController : ControllerBase
     }
 
     [HttpPost("preview-sales")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<List<PreviewDeductionDto>>> PreviewSales([FromBody] LogSalesConsumptionDto dto)
     {
         try
@@ -59,7 +59,7 @@ public class ConsumptionController : ControllerBase
     }
 
     [HttpPost("direct")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<ConsumptionLogDto>> LogDirect([FromBody] LogDirectConsumptionDto dto)
     {
         try

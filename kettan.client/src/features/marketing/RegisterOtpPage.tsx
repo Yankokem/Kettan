@@ -122,12 +122,8 @@ export function RegisterOtpPage() {
       <div className="w-full max-w-md px-6 py-12">
         <StaticMotionDiv initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           {/* Logo */}
-          <div className="flex items-center gap-2 mb-8 justify-center">
-            <img src={logo} alt="Kettan" width="32" height="32" style={{ borderRadius: "50%" }} />
-            <div>
-              <div style={{ fontWeight: 800, fontSize: "14px", color: "#2C1A0E", letterSpacing: "0.15em" }}>KETTAN</div>
-              <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
-            </div>
+          <div className="flex items-center mb-8 justify-center">
+            <img src={logo} alt="Kettan" width="160" />
           </div>
 
           <Link to={`/market/register?plan=${encodeURIComponent(planId)}` as any} className="inline-flex items-center gap-1.5 mb-7 text-sm" style={{ color: "#8C6B43", fontWeight: 500 }}>

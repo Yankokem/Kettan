@@ -146,6 +146,6 @@ export function MarketingNavbar() {
 
 function KettanLogo() {
   return (
-    <img src={logo} alt="Kettan" width="170" height="170" />
+    <img src={logo} alt="Kettan" width="170" />
   );
 }

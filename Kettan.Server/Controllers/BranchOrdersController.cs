@@ -34,7 +34,7 @@ public class BranchOrdersController : ControllerBase
     }
 
     [HttpPost("{orderId:int}/confirm-delivery")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<IActionResult> ConfirmDelivery(int orderId, [FromBody] ConfirmDeliveryDto dto)
     {
         try

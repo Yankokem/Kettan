@@ -247,7 +247,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost("{id:int}/stock-in")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<BatchDto>> StockIn(int id, [FromBody] StockInDto dto)
     {
         var item = await _context.Items.FirstOrDefaultAsync(i => i.ItemId == id);
@@ -287,7 +287,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost("{id:int}/stock-out")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<StockOutResultDto>> StockOut(int id, [FromBody] StockOutDto dto)
     {
         var itemExists = await _context.Items.AnyAsync(i => i.ItemId == id);
@@ -320,7 +320,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost("branch/threshold")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
+    [Authorize(Roles = "BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult> SetBranchThreshold([FromBody] SetBranchThresholdRequest request)
     {
         if (!_currentUser.TenantId.HasValue || !_currentUser.BranchId.HasValue)

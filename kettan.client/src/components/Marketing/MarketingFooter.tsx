@@ -14,24 +14,8 @@ export function MarketingFooter() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <img src={logo} alt="Kettan" width="28" height="28" style={{ borderRadius: "50%" }} />
-              <div>
-                <div
-                  style={{
-                    fontWeight: 800,
-                    fontSize: "14px",
-                    color: "#F5F0E8",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  KETTAN
-                </div>
-                <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                  Cafe Chain Operations
-                </div>
-              </div>
+            <div className="flex items-center mb-6">
+              <img src={logo} alt="Kettan" width="130" />
             </div>
             <p style={{ color: "#A39C93", fontSize: "14px", lineHeight: 1.7, maxWidth: "220px" }}>
               The all-in-one SaaS platform for multi-branch coffee chain operations.

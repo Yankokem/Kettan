@@ -72,6 +72,7 @@ public class SupplyRequestService : ISupplyRequestService
 
         var requests = await query
             .OrderByDescending(r => r.UpdatedAt)
+            .AsSplitQuery()
             .ToListAsync();
 
         return requests.Distinct().Select(MapToDto).ToList();

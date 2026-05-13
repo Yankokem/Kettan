@@ -314,73 +314,107 @@ export function CompanyProfilePage() {
         <Box
           sx={{
             position: 'relative',
-            height: 140,
-            background: 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)',
+            height: 180,
+            background: 'linear-gradient(135deg, #6B4C2A 0%, #8C6B43 40%, #F0E6D3 100%)',
+            display: 'flex',
+            alignItems: 'flex-end',
+            px: { xs: 3, sm: 4 },
+            pb: 2.5,
           }}
         >
           <Box
             sx={{
               position: 'absolute',
               inset: 0,
-              opacity: 0.08,
+              opacity: 0.1,
               backgroundImage: 'radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)',
-              backgroundSize: '28px 28px',
+              backgroundSize: '32px 32px',
             }}
           />
 
           <Box
             sx={{
-              position: 'absolute',
-              bottom: 12,
-              left: { xs: 3, sm: '184px' },
-              right: { xs: 3, sm: '420px' },
+              position: 'relative',
+              zIndex: 1,
+              ml: '154px',
+              width: '100%',
             }}
           >
             <Typography
               sx={{
-                fontSize: { xs: 20, sm: 30 },
-                fontWeight: 800,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.1,
-                color: '#2C1A0E',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                fontSize: { xs: 24, sm: 36 },
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+                lineHeight: 1,
+                color: '#FFFFFF',
+                textShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                mb: 0.5
               }}
             >
-              {loading ? <Skeleton width={200} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} /> : profile.name}
+              {loading ? <Skeleton width={280} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} /> : profile.name}
             </Typography>
+            {!loading && (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Chip
+                  label={profile.planName}
+                  size="small"
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: '#FFFFFF',
+                    borderRadius: '4px',
+                    height: 20,
+                    fontWeight: 800,
+                    fontSize: 10,
+                    backdropFilter: 'blur(4px)',
+                  }}
+                />
+                <Chip
+                  label={profile.organizationId}
+                  size="small"
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.15)',
+                    color: 'rgba(255,255,255,0.9)',
+                    borderRadius: '4px',
+                    height: 20,
+                    fontWeight: 800,
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                    backdropFilter: 'blur(4px)',
+                  }}
+                />
+              </Box>
+            )}
           </Box>
         </Box>
 
         <Box sx={{ px: { xs: 3, sm: 4 }, pb: 3.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2.5, mt: -5, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5, mt: -10, flexWrap: 'wrap' }}>
             {loading ? (
-              <Skeleton variant="rounded" sx={{ width: 132, height: 132, borderRadius: '14px', border: '5px solid', borderColor: 'background.paper' }} />
+              <Skeleton variant="rounded" sx={{ width: 140, height: 140, borderRadius: '18px', border: '6px solid', borderColor: 'background.paper' }} />
             ) : (
               <Avatar
                 variant="rounded"
                 src={profile.logoUrl ?? undefined}
                 sx={{
-                  width: 132,
-                  height: 132,
-                  borderRadius: '14px',
+                  width: 140,
+                  height: 140,
+                  borderRadius: '18px',
                   bgcolor: '#FAF5EF',
-                  border: '5px solid',
+                  border: '6px solid',
                   borderColor: 'background.paper',
                   color: '#6B4C2A',
                   flexShrink: 0,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                  fontSize: 48,
-                  fontWeight: 800
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
+                  fontSize: 54,
+                  fontWeight: 900
                 }}
               >
-                {!profile.logoUrl && <BusinessRoundedIcon sx={{ fontSize: 54 }} />}
+                {!profile.logoUrl && <BusinessRoundedIcon sx={{ fontSize: 64 }} />}
               </Avatar>
             )}
 
-            <Box sx={{ minWidth: 0, flex: 1, pt: 4 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ minWidth: 0, flex: 1, pt: 11.5 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1.5, mt: -6.5 }}>
                 <Box>
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
                     {loading ? (

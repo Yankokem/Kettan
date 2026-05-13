@@ -43,7 +43,13 @@ public class OrdersController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            Console.WriteLine("MULTI BRANCH EXP: " + ex);
+            return BadRequest(new { message = ex.Message, stack = ex.StackTrace, inner = ex.InnerException?.Message });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("MULTI BRANCH OTHER EXP: " + ex);
+            return BadRequest(new { message = ex.Message, stack = ex.StackTrace });
         }
     }
 
@@ -85,7 +91,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("incoming-shipments")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<List<BranchOrderDto>>> GetIncomingShipments([FromQuery] string? status = null)
     {
         var rows = await _service.ListIncomingShipmentsAsync(status);
@@ -172,7 +178,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPut("{id:int}/deliver")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<IActionResult> ConfirmDelivered(int id, [FromBody] ConfirmDeliveryDto dto)
     {
         try
@@ -236,7 +242,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost("{id:int}/workflow/arrive")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<OrderDetailDto>> ConfirmArrival(int id)
     {
         var result = await _service.ConfirmArrivalAsync(id);
@@ -245,7 +251,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost("{id:int}/workflow/complete")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<OrderDetailDto>> CompleteTransaction(int id, [FromBody] BranchCheckSubmitDto dto)
     {
         try

@@ -174,15 +174,16 @@ export function PricingPage() {
                     Start Free Trial
                   </Button>
                 ) : (
-                  <Button
-                    href="mailto:sales@kettan.io"
-                    fullWidth
-                    variant="outlined"
-                    size="large"
-                    sx={{ borderColor: "#6B4C2A", color: "#6B4C2A" }}
-                  >
-                    Contact Sales
-                  </Button>
+                <Button
+                  component={Link}
+                  to={`/register?plan=${plan.id}` as "/register"}
+                  fullWidth
+                  variant="outlined"
+                  size="large"
+                  sx={{ borderColor: "#6B4C2A", color: "#6B4C2A" }}
+                >
+                  Get Started
+                </Button>
                 )}
               </Paper>
             </Grid>

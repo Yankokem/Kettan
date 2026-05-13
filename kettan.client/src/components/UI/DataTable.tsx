@@ -45,6 +45,7 @@ export interface DataTableProps<T> {
   rowSx?: (row: T, index: number) => any;
   isLoading?: boolean;
   fulfillment?: boolean;
+  columnGap?: number;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -73,6 +74,7 @@ export function DataTable<T>({
   rowSx,
   isLoading = false,
   fulfillment = false,
+  columnGap = 2,
 }: DataTableProps<T>) {
   const effectiveDefaultPageSize = defaultRowsPerPage ?? defaultPageSize;
   const effectivePageSizes = rowsPerPageOptions ?? pageSizes;
@@ -355,13 +357,13 @@ export function DataTable<T>({
 
       {/* Scrollable table content area */}
       <Box sx={{ overflowX: 'auto', flexGrow: 1, minHeight: 0 }}>
-        <Box sx={{ minWidth: '100%' }}>
+        <Box sx={{ width: 'fit-content', minWidth: '100%' }}>
           {/* Table header */}
           <Box
             sx={{
               display: 'grid',
               gridTemplateColumns,
-              columnGap: 2,
+              columnGap,
               px: fulfillment ? 2.5 : 3,
               py: fulfillment ? 1.5 : 1.3,
               position: 'relative',
@@ -426,7 +428,7 @@ export function DataTable<T>({
                 sx={{
                   display: 'grid',
                   gridTemplateColumns,
-                  columnGap: 2,
+                  columnGap,
                   px: 3,
                   py: 2,
                   borderBottom: fulfillment ? '1px dashed' : 1,
@@ -449,7 +451,7 @@ export function DataTable<T>({
                 sx={{
                   display: 'grid',
                   gridTemplateColumns,
-                  columnGap: 2,
+                  columnGap,
                   px: fulfillment ? 2.5 : 3,
                   py: fulfillment ? 1.75 : 1.75,
                   alignItems: 'center',

@@ -45,8 +45,10 @@ public class InventoryService : IInventoryService
 
         var item = await GetTenantItemAsync(itemId, tenantId);
 
+        var branchId = _currentUser.BranchId;
+
         // --- Weighted Average Costing (WAC) Logic ---
-        var currentStock = await GetStockLevelAsync(itemId, null);
+        var currentStock = await GetStockLevelAsync(itemId, branchId);
         
         item.PreviousUnitCost = item.UnitCost;
         if (currentStock > 0)
@@ -91,7 +93,7 @@ public class InventoryService : IInventoryService
         {
             TenantId = tenantId,
             ItemId = itemId,
-            BranchId = null,
+            BranchId = branchId,
             BatchNumber = batchNumber.Trim(),
             ExpiryDate = expiryDate.Date,
             CurrentQuantity = quantity,
@@ -138,7 +140,7 @@ public class InventoryService : IInventoryService
 
         return DeductStockAsync(
             itemId,
-            branchId: null,
+            branchId: _currentUser.BranchId,
             quantity,
             transactionType: TransactionType.PhysicalCount,
             remarks: note,

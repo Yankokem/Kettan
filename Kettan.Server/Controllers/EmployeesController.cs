@@ -78,7 +78,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<EmployeeDto>> CreateEmployee([FromBody] CreateEmployeeDto dto)
     {
         if (!_currentUser.TenantId.HasValue)
@@ -128,7 +128,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager,StoreStaff")]
     public async Task<IActionResult> UpdateEmployee(int id, [FromBody] UpdateEmployeeDto dto)
     {
         if (!_currentUser.TenantId.HasValue)
@@ -174,7 +174,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager,StoreStaff")]
     public async Task<IActionResult> DeleteEmployee(int id)
     {
         if (!_currentUser.TenantId.HasValue)
@@ -203,7 +203,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPatch("{id:int}/status")]
-    [Authorize(Roles = "TenantAdmin,HqManager,BranchOwner,BranchManager")]
+    [Authorize(Roles = "TenantAdmin,HqManager,BranchOwner,BranchManager,StoreStaff")]
     public async Task<IActionResult> UpdateEmployeeStatus(int id, [FromBody] EmployeeStatus status)
     {
         if (!_currentUser.TenantId.HasValue)

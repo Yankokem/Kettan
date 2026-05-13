@@ -33,9 +33,9 @@ public interface IAnalyticsService
     Task<List<LowStockAlertDto>> GetLowStockAlertsAsync(int? branchId = null);
     Task<DashboardStatsDto> GetDashboardStatsAsync(int? branchId = null);
     Task<OrderProcessingStatsDto> GetOrderProcessingStatsAsync();
-    Task<ReturnStatsDto> GetReturnStatsAsync();
+    Task<ReturnStatsDto> GetReturnStatsAsync(int? branchId = null);
     Task<BranchStatsDto> GetBranchStatsAsync();
-    Task<InventoryStatsDto> GetInventoryStatsAsync();
+    Task<InventoryStatsDto> GetInventoryStatsAsync(int? branchId = null);
     Task<MenuStatsDto> GetMenuStatsAsync();
     Task<StaffStatsDto> GetStaffStatsAsync();
     Task<AuditStatsDto> GetAuditStatsAsync();

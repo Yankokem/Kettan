@@ -77,6 +77,7 @@ public class OrderWorkflowService : IOrderWorkflowService
 
         var orders = await query
             .OrderByDescending(o => o.PushedToFulfillmentAt)
+            .AsSplitQuery()
             .ToListAsync();
 
         return orders.Distinct().Select(MapToBranchOrderDto).ToList();
@@ -96,8 +97,10 @@ public class OrderWorkflowService : IOrderWorkflowService
             throw new InvalidOperationException("Target branch was not found.");
         }
 
-        var itemCostLookup = await ValidateCreateOrderItemsAsync(dto.Items, tenantId);
+        var itemMetadataLookup = await ValidateCreateOrderItemsAsync(dto.Items, tenantId);
         var now = DateTime.UtcNow;
+
+        var itemCostLookup = itemMetadataLookup.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.UnitCost);
 
         await using var tx = await _context.Database.BeginTransactionAsync();
 
@@ -179,12 +182,32 @@ public class OrderWorkflowService : IOrderWorkflowService
             QuantityRequested = i.QuantityRequested
         })
             .ToList();
-        var itemCostLookup = await ValidateCreateOrderItemsAsync(createItems, tenantId);
+        var itemMetadataLookup = await ValidateCreateOrderItemsAsync(createItems, tenantId);
+        // Pre-validate HQ inventory levels for multi-branch push: ensure HQ has enough
+        // stock to fulfill (quantityRequested * branchCount) for every item.
+        var shortages = new List<string>();
+        foreach (var it in createItems)
+        {
+            var requiredTotal = it.QuantityRequested * branchIds.Count;
+            var hqStock = await _inventoryService.GetStockLevelAsync(it.ItemId, null);
+            if (requiredTotal > hqStock)
+            {
+                var itemName = itemMetadataLookup.TryGetValue(it.ItemId, out var metadata) ? metadata.Name : $"Item {it.ItemId}";
+                shortages.Add($"'{itemName}': need {requiredTotal}, only {hqStock} available in HQ");
+            }
+        }
+
+        if (shortages.Any())
+        {
+            throw new InvalidOperationException($"Insufficient HQ stock for selected items: {string.Join(", ", shortages)}");
+        }
 
         var now = DateTime.UtcNow;
         var requestType = Enum.TryParse<RequestType>(dto.RequestType, true, out var parsedType) ? parsedType : RequestType.HqInitiated;
         var priority = Enum.TryParse<Priority>(dto.Priority, true, out var parsedPriority) ? parsedPriority : Priority.Normal;
         var dispatchWindow = Enum.TryParse<DispatchWindow>(dto.DispatchWindow, true, out var parsedDispatchWindow) ? parsedDispatchWindow : DispatchWindow.Today;
+
+        var itemCostLookup = itemMetadataLookup.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.UnitCost);
 
         await using var tx = await _context.Database.BeginTransactionAsync();
 
@@ -268,6 +291,8 @@ public class OrderWorkflowService : IOrderWorkflowService
         EnsureTenantContext();
 
         var batch = await _context.SupplyPushBatches
+            .AsNoTracking()
+            .AsSplitQuery()
             .Include(b => b.Items)
                 .ThenInclude(i => i.Item)
             .Include(b => b.Orders)
@@ -288,6 +313,9 @@ public class OrderWorkflowService : IOrderWorkflowService
             return null;
         }
 
+        var safeOrders = batch.Orders ?? new List<Order>();
+        var safeItems = batch.Items ?? new List<SupplyPushBatchItem>();
+
         var detail = new MultiBranchSupplyPushDetailDto
         {
             SupplyPushBatchId = batch.SupplyPushBatchId,
@@ -300,10 +328,10 @@ public class OrderWorkflowService : IOrderWorkflowService
             Notes = batch.Notes,
             CreatedAt = batch.CreatedAt,
             UpdatedAt = batch.UpdatedAt,
-            TotalBranches = batch.Orders.Count,
-            CompletedBranches = batch.Orders.Count(o => o.Status == OrderStatus.Completed),
-            CancelledBranches = batch.Orders.Count(o => o.Status == OrderStatus.Cancelled),
-            StatusBreakdown = batch.Orders
+            TotalBranches = safeOrders.Count,
+            CompletedBranches = safeOrders.Count(o => o.Status == OrderStatus.Completed),
+            CancelledBranches = safeOrders.Count(o => o.Status == OrderStatus.Cancelled),
+            StatusBreakdown = safeOrders
                 .GroupBy(o => o.Status)
                 .OrderBy(g => g.Key.ToString())
                 .Select(g => new SupplyPushBatchStatusCountDto
@@ -312,7 +340,7 @@ public class OrderWorkflowService : IOrderWorkflowService
                     Count = g.Count()
                 })
                 .ToList(),
-            Items = batch.Items
+            Items = safeItems
                 .Select(i => new SupplyPushBatchItemDto
                 {
                     ItemId = i.ItemId,
@@ -322,7 +350,7 @@ public class OrderWorkflowService : IOrderWorkflowService
                     UnitCostSnapshot = i.UnitCostSnapshot
                 })
                 .ToList(),
-            BranchOrders = batch.Orders
+            BranchOrders = safeOrders
                 .OrderByDescending(o => o.PushedToFulfillmentAt)
                 .Select(MapToBranchOrderDto)
                 .ToList()
@@ -753,8 +781,11 @@ public class OrderWorkflowService : IOrderWorkflowService
             query = query.Where(o => o.Status == parsedStatus);
         }
 
-        var orders = await query.OrderByDescending(o => o.PushedToFulfillmentAt).ToListAsync();
-        return orders.Select(MapToBranchOrderDto).ToList();
+        var orders = await query.OrderByDescending(o => o.PushedToFulfillmentAt)
+            .AsSplitQuery()
+            .ToListAsync();
+
+        return orders.Distinct().Select(MapToBranchOrderDto).ToList();
     }
 
     public async Task<List<BranchOrderDto>> ListIncomingShipmentsAsync(string? status = null)
@@ -1731,7 +1762,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         };
     }
 
-    private async Task<Dictionary<int, decimal>> ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items, int tenantId)
+    private async Task<Dictionary<int, (decimal UnitCost, string Name)>> ValidateCreateOrderItemsAsync(IEnumerable<CreateOrderItemDto> items, int tenantId)
     {
         if (items == null)
         {
@@ -1755,17 +1786,17 @@ public class OrderWorkflowService : IOrderWorkflowService
             throw new InvalidOperationException("Duplicate item lines are not allowed.");
         }
 
-        var validIds = await _context.Items
+        var validItems = await _context.Items
             .Where(i => i.TenantId == tenantId && itemIds.Contains(i.ItemId))
-            .Select(i => new { i.ItemId, i.UnitCost })
+            .Select(i => new { i.ItemId, i.UnitCost, i.Name })
             .ToListAsync();
 
-        if (validIds.Count != itemIds.Count)
+        if (validItems.Count != itemIds.Count)
         {
             throw new InvalidOperationException("One or more requested items are invalid.");
         }
 
-        return validIds.ToDictionary(i => i.ItemId, i => i.UnitCost);
+        return validItems.ToDictionary(i => i.ItemId, i => (i.UnitCost, i.Name));
     }
 
     private int EnsureTenantContext()

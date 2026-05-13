@@ -52,7 +52,7 @@ export function InventoryPage() {
       const [liveItems, globalTransactions, stats] = await Promise.all([
         fetchInventoryItems(undefined, isBranchUser && branchId ? { branchId } : undefined),
         fetchGlobalTransactions(isBranchUser && branchId ? { branchId } : undefined),
-        fetchInventoryStats()
+        fetchInventoryStats(isBranchUser && branchId ? branchId : undefined)
       ]);
       
       setItems(liveItems);

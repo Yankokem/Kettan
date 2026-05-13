@@ -1144,7 +1144,7 @@ public class AnalyticsService : IAnalyticsService
         return result;
     }
 
-    public async Task<ReturnStatsDto> GetReturnStatsAsync()
+    public async Task<ReturnStatsDto> GetReturnStatsAsync(int? branchId = null)
     {
         var tenantId = RequireTenantId();
         var now = DateTime.UtcNow;
@@ -1152,9 +1152,16 @@ public class AnalyticsService : IAnalyticsService
         var lastWeekStart = now.AddDays(-14);
 
         // 1. Total Returns (All time display, weekly trend)
-        var totalReturnsList = await _context.Returns
+        var totalReturnsQuery = _context.Returns
             .Include(r => r.Branch)
-            .Where(r => r.TenantId == tenantId && r.Status != ReturnStatus.Draft)
+            .Where(r => r.TenantId == tenantId && r.Status != ReturnStatus.Draft);
+        
+        if (branchId.HasValue)
+        {
+            totalReturnsQuery = totalReturnsQuery.Where(r => r.BranchId == branchId.Value);
+        }
+
+        var totalReturnsList = await totalReturnsQuery
             .OrderByDescending(r => r.LoggedAt)
             .ToListAsync();
 
@@ -1179,8 +1186,15 @@ public class AnalyticsService : IAnalyticsService
             Date = r.LoggedAt
         }).ToList();
 
-        int lastWeekAwaiting = await _context.Returns
-            .CountAsync(r => r.TenantId == tenantId && awaitingStatuses.Contains(r.Status) && r.LoggedAt >= lastWeekStart && r.LoggedAt < thisWeekStart);
+        var lastWeekAwaitingQuery = _context.Returns
+            .Where(r => r.TenantId == tenantId && awaitingStatuses.Contains(r.Status) && r.LoggedAt >= lastWeekStart && r.LoggedAt < thisWeekStart);
+
+        if (branchId.HasValue)
+        {
+            lastWeekAwaitingQuery = lastWeekAwaitingQuery.Where(r => r.BranchId == branchId.Value);
+        }
+
+        int lastWeekAwaiting = await lastWeekAwaitingQuery.CountAsync();
 
         // 3. In Transit / Arrived
         var transitStatuses = new[] { ReturnStatus.Dispatched, ReturnStatus.Arrived };
@@ -1193,8 +1207,15 @@ public class AnalyticsService : IAnalyticsService
             Date = r.LoggedAt
         }).ToList();
 
-        int lastWeekTransit = await _context.Returns
-            .CountAsync(r => r.TenantId == tenantId && transitStatuses.Contains(r.Status) && r.LoggedAt >= lastWeekStart && r.LoggedAt < thisWeekStart);
+        var lastWeekTransitQuery = _context.Returns
+            .Where(r => r.TenantId == tenantId && transitStatuses.Contains(r.Status) && r.LoggedAt >= lastWeekStart && r.LoggedAt < thisWeekStart);
+
+        if (branchId.HasValue)
+        {
+            lastWeekTransitQuery = lastWeekTransitQuery.Where(r => r.BranchId == branchId.Value);
+        }
+
+        int lastWeekTransit = await lastWeekTransitQuery.CountAsync();
 
         // 4. Completed
         var completedList = totalReturnsList.Where(r => r.Status == ReturnStatus.Completed).ToList();
@@ -1206,8 +1227,15 @@ public class AnalyticsService : IAnalyticsService
             Date = r.LoggedAt
         }).ToList();
 
-        int lastWeekCompleted = await _context.Returns
-            .CountAsync(r => r.TenantId == tenantId && r.Status == ReturnStatus.Completed && r.LoggedAt >= lastWeekStart && r.LoggedAt < thisWeekStart);
+        var lastWeekCompletedQuery = _context.Returns
+            .Where(r => r.TenantId == tenantId && r.Status == ReturnStatus.Completed && r.LoggedAt >= lastWeekStart && r.LoggedAt < thisWeekStart);
+
+        if (branchId.HasValue)
+        {
+            lastWeekCompletedQuery = lastWeekCompletedQuery.Where(r => r.BranchId == branchId.Value);
+        }
+
+        int lastWeekCompleted = await lastWeekCompletedQuery.CountAsync();
 
         return new ReturnStatsDto
         {
@@ -1295,30 +1323,30 @@ public class AnalyticsService : IAnalyticsService
         };
     }
 
-    public async Task<InventoryStatsDto> GetInventoryStatsAsync()
+    public async Task<InventoryStatsDto> GetInventoryStatsAsync(int? branchId = null)
     {
         var tenantId = RequireTenantId();
         var now = DateTime.UtcNow;
         var thisWeekStart = now.AddDays(-7);
         var lastWeekStart = now.AddDays(-14);
 
-        // HQ Inventory refers to batches with BranchId == null
-        var hqBatches = await _context.Batches
+        // Inventory refers to batches for the specific branch or HQ (null)
+        var batches = await _context.Batches
             .Include(b => b.Item)
-            .Where(b => b.TenantId == tenantId && b.BranchId == null)
+            .Where(b => b.TenantId == tenantId && b.BranchId == branchId)
             .ToListAsync();
 
         // 1. Total Active SKUs
-        var activeSkus = hqBatches.Select(b => b.Item).DistinctBy(i => i!.ItemId).ToList();
+        var activeSkus = batches.Select(b => b.Item).DistinctBy(i => i!.ItemId).ToList();
         var skuItems = activeSkus.Take(10).Select(i => new StatItemDto {
             Id = i!.SKU ?? $"SKU-{i.ItemId}",
             Title = i.Name,
-            Subtitle = $"{hqBatches.Where(b => b.ItemId == i.ItemId).Sum(b => b.CurrentQuantity)} {i.Unit} in stock",
+            Subtitle = $"{batches.Where(b => b.ItemId == i.ItemId).Sum(b => b.CurrentQuantity)} {i.Unit} in stock",
             Date = i.CreatedAt
         }).ToList();
 
-        // 2. Low Stock Alerts (HQ)
-        var lowStockBatches = hqBatches.Where(b => b.CurrentQuantity <= (b.Item?.DefaultThreshold ?? 10)).ToList();
+        // 2. Low Stock Alerts
+        var lowStockBatches = batches.Where(b => b.CurrentQuantity <= (b.Item?.DefaultThreshold ?? 10)).ToList();
         var lowStockItems = lowStockBatches.Take(10).Select(b => new StatItemDto {
             Id = b.BatchNumber ?? $"BT-{b.BatchId}",
             Title = b.Item?.Name ?? "Unknown Item",
@@ -1327,35 +1355,58 @@ public class AnalyticsService : IAnalyticsService
         }).ToList();
 
         // 3. Pending Restocks
-        // Assuming pending restocks are Orders with SourceBranchId == null (from supplier) and status < Received
-        // Or SupplyRequests with BranchId == null?
-        // Actually, let's look at PurchaseOrders if they exist, or Orders with no RequestId.
-        var pendingOrders = await _context.Orders
-            .Where(o => o.TenantId == tenantId && o.RequestId == 0 && o.Status < OrderStatus.Arrived)
-            .OrderByDescending(o => o.PushedToFulfillmentAt)
-            .ToListAsync();
+        List<StatItemDto> pendingItems;
+        int pendingCount;
+        int lastWeekPending;
 
-        var pendingItems = pendingOrders.Take(10).Select(o => new StatItemDto {
-            Id = $"ORD-{o.OrderId}",
-            Title = "Supplier Order",
-            Subtitle = $"Status: {o.Status}",
-            Date = o.PushedToFulfillmentAt
-        }).ToList();
+        if (branchId.HasValue)
+        {
+            // For branches, pending restocks are their SupplyRequests not yet fulfilled
+            var pendingRequests = await _context.SupplyRequests
+                .Where(r => r.TenantId == tenantId && r.BranchId == branchId && r.Status != SupplyRequestStatus.Fulfilled && r.Status != SupplyRequestStatus.Cancelled)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            pendingCount = pendingRequests.Count;
+            pendingItems = pendingRequests.Take(10).Select(r => new StatItemDto {
+                Id = r.ReferenceNumber ?? $"REQ-{r.RequestId}",
+                Title = "Supply Request",
+                Subtitle = $"Status: {r.Status}",
+                Date = r.CreatedAt
+            }).ToList();
+            lastWeekPending = pendingRequests.Count(r => r.CreatedAt < thisWeekStart);
+        }
+        else
+        {
+            // For HQ, pending restocks are Orders with no RequestId (supplier orders)
+            var pendingOrders = await _context.Orders
+                .Where(o => o.TenantId == tenantId && o.RequestId == 0 && o.Status < OrderStatus.Arrived)
+                .OrderByDescending(o => o.PushedToFulfillmentAt)
+                .ToListAsync();
+
+            pendingCount = pendingOrders.Count;
+            pendingItems = pendingOrders.Take(10).Select(o => new StatItemDto {
+                Id = $"ORD-{o.OrderId}",
+                Title = "Supplier Order",
+                Subtitle = $"Status: {o.Status}",
+                Date = o.PushedToFulfillmentAt
+            }).ToList();
+            lastWeekPending = pendingOrders.Count(o => o.PushedToFulfillmentAt < thisWeekStart);
+        }
 
         // 4. Inventory Value
-        decimal totalValue = hqBatches.Sum(b => b.CurrentQuantity * (b.Item?.UnitCost ?? 0));
+        decimal totalValue = batches.Sum(b => b.CurrentQuantity * (b.Item?.UnitCost ?? 0));
         
         // Trends
         int lastWeekSkus = activeSkus.Count(i => i!.CreatedAt < thisWeekStart);
-        int lastWeekLowStock = 0; // Snapshot not available
-        int lastWeekPending = pendingOrders.Count(o => o.PushedToFulfillmentAt < thisWeekStart);
-        decimal lastWeekValue = totalValue; // Snapshot not available
+        int lastWeekLowStock = 0; 
+        decimal lastWeekValue = totalValue; 
 
         return new InventoryStatsDto
         {
             TotalActiveSkus = CalculateMetric(activeSkus.Count, lastWeekSkus, skuItems),
             LowStockAlerts = CalculateMetric(lowStockBatches.Count, lastWeekLowStock, lowStockItems),
-            PendingRestocks = CalculateMetric(pendingOrders.Count, lastWeekPending, pendingItems),
+            PendingRestocks = CalculateMetric(pendingCount, lastWeekPending, pendingItems),
             InventoryValue = CalculateMetric(totalValue, lastWeekValue, [])
         };
     }

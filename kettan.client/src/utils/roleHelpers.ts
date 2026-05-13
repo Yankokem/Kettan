@@ -66,20 +66,20 @@ export const isBranchRole = (role: string): boolean => {
  */
 export const canAccessModule = (userRole: string, module: string): boolean => {
   const permissions: Record<string, string[]> = {
-    'dashboard': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
+    'dashboard': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
     'order-processing': ['TenantAdmin', 'HqManager', 'HqStaff'],
-    'hq-inventory': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
+    'hq-inventory': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
     'menu': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
     'consumption': ['BranchOwner', 'BranchManager', 'StoreStaff'],
     'branches': ['TenantAdmin', 'HqManager', 'HqStaff'],
-    'staff': ['TenantAdmin', 'HqManager', 'HqStaff'],
+    'staff': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
     'reports': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager', 'StoreStaff'],
-    'returns': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager'],
-    'supply-requests': ['HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
+    'returns': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager', 'StoreStaff'],
+    'supply-requests': ['HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
     'settings': ['TenantAdmin'],
     'company-profile': ['TenantAdmin'],
-    'branch-profile': ['BranchOwner', 'BranchManager'],
-    'audit-logs': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager'],
+    'branch-profile': ['BranchOwner', 'BranchManager', 'StoreStaff'],
+    'audit-logs': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager', 'StoreStaff'],
   };
   
   return permissions[module]?.includes(userRole) ?? false;
@@ -99,20 +99,20 @@ export const canPerformAction = (
   // Module-specific action permissions
   const actionPermissions: Record<string, Record<string, string[]>> = {
     'consumption': {
-      'view': ['BranchOwner', 'BranchManager'],
-      'create': ['BranchManager'],
+      'view': ['BranchOwner', 'BranchManager', 'StoreStaff'],
+      'create': ['BranchManager', 'BranchOwner', 'StoreStaff'],
       'edit': [],
       'delete': [],
     },
     'supply-requests': {
-      'view': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
-      'create': ['TenantAdmin', 'BranchOwner', 'BranchManager'],
-      'edit': ['TenantAdmin', 'BranchOwner', 'BranchManager'],
+      'view': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
+      'create': ['TenantAdmin', 'BranchOwner', 'BranchManager', 'StoreStaff'],
+      'edit': ['TenantAdmin', 'BranchOwner', 'BranchManager', 'StoreStaff'],
       'delete': [],
     },
     'returns': {
-      'view': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager'],
-      'create': ['TenantAdmin', 'BranchOwner', 'BranchManager'],
+      'view': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager', 'StoreStaff'],
+      'create': ['TenantAdmin', 'BranchOwner', 'BranchManager', 'StoreStaff'],
       'edit': ['TenantAdmin', 'HqManager'],
       'delete': [],
     },

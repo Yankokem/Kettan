@@ -4,7 +4,7 @@ import { Box, TextField, Button, Typography, Paper, Alert, CircularProgress, Inp
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import logo from "../../assets/logo.png";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -78,11 +78,8 @@ export function RegisterPage() {
           borderColor: "divider",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-          <LocalCafeIcon sx={{ color: "#6B4C2A", fontSize: 28 }} />
-          <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: "0.1em", color: "#2C1A0E" }}>
-            KETTAN
-          </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
+          <img src={logo} alt="Kettan" width="140" />
         </Box>
 
         <Button

@@ -408,16 +408,16 @@ export async function fetchOrderProcessingStats(): Promise<OrderProcessingStatsD
   return get<OrderProcessingStatsDto>('/api/reports/order-processing-stats');
 }
 
-export async function fetchReturnStats(): Promise<ReturnStatsDto> {
-  return get<ReturnStatsDto>('/api/reports/return-stats');
+export async function fetchReturnStats(branchId?: number): Promise<ReturnStatsDto> {
+  return get<ReturnStatsDto>(`/api/reports/return-stats${branchId ? `?branchId=${branchId}` : ''}`);
 }
 
 export async function fetchBranchStats(): Promise<BranchStatsDto> {
   return get<BranchStatsDto>('/api/reports/branch-stats');
 }
 
-export async function fetchInventoryStats(): Promise<InventoryStatsDto> {
-  return get<InventoryStatsDto>('/api/reports/inventory-stats');
+export async function fetchInventoryStats(branchId?: number): Promise<InventoryStatsDto> {
+  return get<InventoryStatsDto>(`/api/reports/inventory-stats${branchId ? `?branchId=${branchId}` : ''}`);
 }
 
 export async function fetchMenuStats(): Promise<MenuStatsDto> {

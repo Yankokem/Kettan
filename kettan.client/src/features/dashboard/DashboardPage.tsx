@@ -128,7 +128,7 @@ export function DashboardPage() {
   const userRole = user?.role ?? '';
   const isHq = isHqRole(userRole);
   const isBranch = isBranchRole(userRole);
-  const isTenantAdmin = userRole === 'TenantAdmin';
+
   const [activityStatusFilter, setActivityStatusFilter] = useState('');
   const [activityBranchFilter, setActivityBranchFilter] = useState('');
   const [activityRows, setActivityRows] = useState<ActivityItem[]>([]);
@@ -444,16 +444,7 @@ export function DashboardPage() {
           </>
         )}
 
-        {/* TenantAdmin-specific: Additional subscription status widget */}
-        {isTenantAdmin && (
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2.5 }}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                TenantAdmin-specific widgets (subscription status, advanced analytics) can be added here.
-              </Typography>
-            </Box>
-          </Box>
-        )}
+
         
       </Box>
     </Box>

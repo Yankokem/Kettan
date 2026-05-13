@@ -17,9 +17,17 @@ interface InventorySelectionModalProps {
   onItemsSelected: (items: { item: InventoryItem; quantity: number; notes: string }[]) => void;
   inventory: InventoryItem[];
   showStock?: boolean;
+  branchCount?: number;
 }
 
-export function InventorySelectionModal({ open, onClose, onItemsSelected, inventory, showStock = true }: InventorySelectionModalProps) {
+export function InventorySelectionModal({ 
+  open, 
+  onClose, 
+  onItemsSelected, 
+  inventory, 
+  showStock = true,
+  branchCount = 1
+}: InventorySelectionModalProps) {
   const [search, setSearch] = useState('');
   const [selectedItems, setSelectedItems] = useState<Map<string, { quantity: number; notes: string }>>(new Map());
   
@@ -119,7 +127,8 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
       sortable: true,
       render: (item: InventoryItem) => {
         const selectedQty = selectedItems.get(item.id)?.quantity || 0;
-        const projectedStock = item.hqStock - selectedQty;
+        const totalSelected = selectedQty * branchCount;
+        const projectedStock = item.hqStock - totalSelected;
         const isOverdrawn = projectedStock < 0;
 
         return (
@@ -144,7 +153,7 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
             </Typography>
             {isOverdrawn && (
               <Typography sx={{ fontSize: 10, color: 'error.main', fontWeight: 500 }}>
-                Insufficient Stock
+                Insufficient for {branchCount} branches
               </Typography>
             )}
           </Box>
@@ -283,7 +292,10 @@ export function InventorySelectionModal({ open, onClose, onItemsSelected, invent
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Chip
-                          label={`${quantity} ${item.unit}`}
+                          label={branchCount > 1 
+                            ? `${quantity} x ${branchCount} = ${quantity * branchCount} ${item.unit}`
+                            : `${quantity} ${item.unit}`
+                          }
                           size="small"
                           sx={{
                             height: 24,

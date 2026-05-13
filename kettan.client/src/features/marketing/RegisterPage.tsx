@@ -83,12 +83,8 @@ export function RegisterPage() {
           transition={{ duration: 0.5 }}
         >
           {/* Logo */}
-          <div className="flex items-center gap-2 mb-8 justify-center">
-            <img src={logo} alt="Kettan" width="32" height="32" style={{ borderRadius: "50%" }} />
-            <div>
-              <div style={{ fontWeight: 800, fontSize: "14px", color: "#2C1A0E", letterSpacing: "0.15em" }}>KETTAN</div>
-              <div style={{ fontSize: "7px", color: "#8C6B43", letterSpacing: "0.08em", textTransform: "uppercase" }}>Cafe Chain Operations</div>
-            </div>
+          <div className="flex items-center mb-8 justify-center">
+            <img src={logo} alt="Kettan" width="160" />
           </div>
 
           <Link

@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { StaticAnimatePresence, StaticMotionDiv } from "./noMotion";
 import { Check, X, ChevronDown, ArrowRight, Star, Zap, Building2, Globe } from "lucide-react";
@@ -19,10 +19,9 @@ const plans = [
     popular: false,
     branches: "Up to 5",
     users: "Up to 35",
-    support: "Email",
     cta: "Get Started",
-    ctaBg: "#6B4C2A",
-    ctaColor: "#FFFFFF",
+    ctaBg: "#F0E6D3",
+    ctaColor: "#6B4C2A",
     modules: [
       "All Kettan Modules Included",
       "Order Processing",
@@ -39,8 +38,8 @@ const plans = [
     id: "growth",
     name: "Growth",
     icon: Building2,
-    color: "#FFFFFF",
-    bg: "#2C1A0E",
+    color: "#6B4C2A",
+    bg: "#F0E6D3",
     tagline: "For growing multi-branch chains",
     target: "Up to 10 branches",
     monthlyPrice: 7999,
@@ -50,10 +49,9 @@ const plans = [
     popular: true,
     branches: "Up to 10",
     users: "Up to 70",
-    support: "Email + Chat",
     cta: "Get Started",
-    ctaBg: "#C9A84C",
-    ctaColor: "#2C1A0E",
+    ctaBg: "#6B4C2A",
+    ctaColor: "#FFFFFF",
     modules: [
       "All Kettan Modules Included",
       "Order Processing",
@@ -70,9 +68,9 @@ const plans = [
     id: "enterprise",
     name: "Enterprise",
     icon: Globe,
-    color: "#6B4C2A",
-    bg: "#FFFFFF",
-    tagline: "Unlimited scale, premium support",
+    color: "#FFFFFF",
+    bg: "#2C1A0E",
+    tagline: "Unlimited scale for large operations",
     target: "Up to 20 branches",
     monthlyPrice: 14999,
     annualPrice: 143990,
@@ -81,10 +79,9 @@ const plans = [
     popular: false,
     branches: "Up to 20",
     users: "Up to 140",
-    support: "Dedicated Account Manager",
-    cta: "Contact Sales",
-    ctaBg: "#546B3F",
-    ctaColor: "#FFFFFF",
+    cta: "Get Started",
+    ctaBg: "#C9A84C",
+    ctaColor: "#2C1A0E",
     modules: [
       "All Kettan Modules Included",
       "Order Processing",
@@ -108,17 +105,14 @@ const allFeatures = [
   { name: "Inventory Management", starter: true, growth: true, enterprise: true },
   { name: "Consumption Logging", starter: true, growth: true, enterprise: true },
   { name: "User & Role Management", starter: true, growth: true, enterprise: true },
-  { name: "Notifications & Alerts", starter: true, growth: true, enterprise: true },
   { name: "HR & Staff Management", starter: true, growth: true, enterprise: true },
   { name: "Finance & Reports", starter: true, growth: true, enterprise: true },
   { name: "Tenant & Branch Management", starter: true, growth: true, enterprise: true },
   { name: "Settings & Configuration", starter: true, growth: true, enterprise: true },
-  { name: "Support & Helpdesk", starter: true, growth: true, enterprise: true },
   { name: "Platform Analytics", starter: true, growth: true, enterprise: true },
   { name: "Audit Logs & Monitoring", starter: true, growth: true, enterprise: true },
   { name: "Subscription & Billing", starter: true, growth: true, enterprise: true },
   { name: "Supplier Portal", starter: true, growth: true, enterprise: true },
-  { name: "Priority Support", starter: true, growth: true, enterprise: true },
   { name: "API Access", starter: true, growth: true, enterprise: true },
 ];
 
@@ -126,10 +120,6 @@ const faqs = [
   {
     q: "Can I upgrade my plan later?",
     a: "Yes, you can upgrade at any time. The difference is prorated - you only pay the difference for the remaining billing period.",
-  },
-  {
-    q: "Is there a free trial?",
-    a: "We offer a 14-day free trial on any plan. No credit card required to start. You'll only be billed after your trial period ends.",
   },
   {
     q: "What payment methods do you accept?",
@@ -141,7 +131,7 @@ const faqs = [
   },
   {
     q: "What happens when I exceed my branch limit?",
-    a: "You'll receive a notification prompting you to upgrade. New branch creation is blocked until you upgrade.",
+    a: "You'll be prompted to upgrade to a higher tier to accommodate more branches. New branch creation is temporarily restricted until your plan is updated.",
   },
   {
     q: "Is the pricing in Philippine Peso?",
@@ -160,8 +150,8 @@ function PlanCard({ plan, isAnnual }: { plan: typeof plans[0]; isAnnual: boolean
       style={{
         backgroundColor: plan.bg,
         border: plan.popular ? "2px solid #C9A84C" : "1px solid rgba(107,76,42,0.15)",
-        boxShadow: plan.popular
-          ? "0 20px 60px rgba(44,26,14,0.25)"
+        boxShadow: plan.bg === "#2C1A0E"
+          ? "0 20px 60px rgba(44,26,14,0.35)"
           : "0 4px 20px rgba(107,76,42,0.08)",
       }}
       whileHover={{ y: -4 }}
@@ -181,16 +171,16 @@ function PlanCard({ plan, isAnnual }: { plan: typeof plans[0]; isAnnual: boolean
       <div className="mb-6">
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
-          style={{ backgroundColor: plan.popular ? "rgba(201,168,76,0.2)" : "rgba(107,76,42,0.08)" }}
+          style={{ backgroundColor: plan.bg === "#2C1A0E" ? "rgba(201,168,76,0.15)" : "rgba(107,76,42,0.08)" }}
         >
-          <Icon size={20} style={{ color: plan.popular ? "#C9A84C" : "#6B4C2A" }} />
+          <Icon size={20} style={{ color: plan.bg === "#2C1A0E" ? "#C9A84C" : "#6B4C2A" }} />
         </div>
         <div className="flex items-center gap-2 mb-1">
-          <h3 style={{ fontWeight: 800, fontSize: "1.2rem", color: plan.popular ? "#F5F0E8" : "#2C1A0E" }}>
+          <h3 style={{ fontWeight: 800, fontSize: "1.2rem", color: plan.color }}>
             {plan.name}
           </h3>
         </div>
-        <p style={{ fontSize: "13px", color: plan.popular ? "#A39C93" : "#8C6B43", marginBottom: "14px" }}>
+        <p style={{ fontSize: "13px", color: plan.bg === "#2C1A0E" ? "#A39C93" : "#8C6B43", marginBottom: "14px" }}>
           {plan.tagline}
         </p>
 
@@ -203,10 +193,10 @@ function PlanCard({ plan, isAnnual }: { plan: typeof plans[0]; isAnnual: boolean
             transition={{ duration: 0.2 }}
           >
             <div className="flex items-end gap-1">
-              <span style={{ fontSize: "2.2rem", fontWeight: 800, color: plan.popular ? "#F5F0E8" : "#2C1A0E", letterSpacing: "-0.03em" }}>
+              <span style={{ fontSize: "2.2rem", fontWeight: 800, color: plan.color, letterSpacing: "-0.03em" }}>
                 {price}
               </span>
-              <span style={{ fontSize: "14px", color: plan.popular ? "#A39C93" : "#8C6B43", marginBottom: "5px" }}>
+              <span style={{ fontSize: "14px", color: plan.bg === "#2C1A0E" ? "#A39C93" : "#8C6B43", marginBottom: "5px" }}>
                 {period}
               </span>
             </div>
@@ -221,19 +211,18 @@ function PlanCard({ plan, isAnnual }: { plan: typeof plans[0]; isAnnual: boolean
 
       {/* Limits */}
       <div
-        className="rounded-xl p-4 mb-6 grid grid-cols-3 gap-2"
-        style={{ backgroundColor: plan.popular ? "rgba(255,255,255,0.06)" : "rgba(107,76,42,0.04)" }}
+        className="rounded-xl p-4 mb-6 grid grid-cols-2 gap-2"
+        style={{ backgroundColor: plan.bg === "#2C1A0E" ? "rgba(255,255,255,0.06)" : "rgba(107,76,42,0.04)" }}
       >
         {[
           { label: "Branches", value: plan.branches },
           { label: "Users", value: plan.users },
-          { label: "Support", value: plan.support },
         ].map(({ label, value }) => (
           <div key={label} className="text-center">
-            <div style={{ fontWeight: 700, fontSize: "12px", color: plan.popular ? "#F5F0E8" : "#2C1A0E" }}>
+            <div style={{ fontWeight: 700, fontSize: "12px", color: plan.color }}>
               {value}
             </div>
-            <div style={{ fontSize: "10px", color: plan.popular ? "#6B5A4E" : "#8C6B43", fontWeight: 500, marginTop: "1px" }}>
+            <div style={{ fontSize: "10px", color: plan.bg === "#2C1A0E" ? "#6B5A4E" : "#8C6B43", fontWeight: 500, marginTop: "1px" }}>
               {label}
             </div>
           </div>
@@ -244,47 +233,26 @@ function PlanCard({ plan, isAnnual }: { plan: typeof plans[0]; isAnnual: boolean
       <ul className="space-y-2 flex-1 mb-7">
         {plan.modules.map((m) => (
           <li key={m} className="flex items-center gap-2.5">
-            <Check size={14} style={{ color: plan.popular ? "#C9A84C" : "#546B3F", flexShrink: 0 }} />
-            <span style={{ fontSize: "13px", color: plan.popular ? "#C9A87D" : "#5C4A37" }}>{m}</span>
+            <Check size={14} style={{ color: plan.bg === "#2C1A0E" ? "#C9A84C" : "#546B3F", flexShrink: 0 }} />
+            <span style={{ fontSize: "13px", color: plan.bg === "#2C1A0E" ? "#C9A87D" : "#5C4A37" }}>{m}</span>
           </li>
         ))}
       </ul>
 
       {/* CTA */}
-      {plan.id === "enterprise" ? (
-        <a
-          href="mailto:sales@kettan.io"
-          className="block w-full text-center px-5 py-3.5 rounded-xl transition-all duration-200"
-          style={{
-            backgroundColor: plan.ctaBg,
-            color: plan.ctaColor,
-            fontWeight: 700,
-            fontSize: "14px",
-            boxShadow: plan.popular ? "0 4px 16px rgba(201,168,76,0.3)" : "none",
-          }}
-        >
-          {plan.cta} -&gt;
-        </a>
-      ) : (
-        <Link
-          to={`/market/register?plan=${plan.id}` as "/market/register"}
-          className="block w-full text-center px-5 py-3.5 rounded-xl transition-all duration-200"
-          style={{
-            backgroundColor: plan.ctaBg,
-            color: plan.ctaColor,
-            fontWeight: 700,
-            fontSize: "14px",
-            boxShadow: plan.popular ? "0 4px 16px rgba(201,168,76,0.3)" : "none",
-          }}
-        >
-          {plan.cta} -&gt;
-        </Link>
-      )}
-      {plan.id !== "enterprise" && (
-        <p style={{ textAlign: "center", fontSize: "11px", color: plan.popular ? "#6B5A4E" : "#A39C93", marginTop: "8px" }}>
-          14-day free trial - No credit card required
-        </p>
-      )}
+      <Link
+        to={`/market/register?plan=${plan.id}` as "/market/register"}
+        className="block w-full text-center px-5 py-3.5 rounded-xl transition-all duration-200"
+        style={{
+          backgroundColor: plan.ctaBg,
+          color: plan.ctaColor,
+          fontWeight: 700,
+          fontSize: "14px",
+          boxShadow: plan.bg === "#2C1A0E" ? "0 4px 16px rgba(201,168,76,0.3)" : "none",
+        }}
+      >
+        {plan.cta} -&gt;
+      </Link>
     </StaticMotionDiv>
   );
 }

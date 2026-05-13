@@ -11,7 +11,7 @@ namespace Kettan.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager")]
+[Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager,StoreStaff")]
 public class ReportsController : ControllerBase
 {
     private readonly IAnalyticsService _service;
@@ -164,7 +164,7 @@ public class ReportsController : ControllerBase
     // ── Branch endpoints ──────────────────────────────────────────────────
 
     [HttpGet("branch/overview")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
+    [Authorize(Roles = "BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<BranchOverviewDto>> GetBranchOverview([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var branchId = _currentUser.BranchId;
@@ -174,7 +174,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("branch/inventory-summary")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
+    [Authorize(Roles = "BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<InventorySummaryDto>> GetBranchInventorySummary()
     {
         var branchId = _currentUser.BranchId;
@@ -184,7 +184,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("branch/wastage")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
+    [Authorize(Roles = "BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<List<WastageRecordDto>>> GetBranchWastage([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var branchId = _currentUser.BranchId;
@@ -194,7 +194,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("branch/supply-history")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
+    [Authorize(Roles = "BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<List<BranchSupplyHistoryDto>>> GetBranchSupplyHistory([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var branchId = _currentUser.BranchId;
@@ -204,7 +204,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("branch/performance")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
+    [Authorize(Roles = "BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<BranchPerformanceDetailDto>> GetBranchPerformance([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var branchId = _currentUser.BranchId;
@@ -214,7 +214,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("branch/sales-trend")]
-    [Authorize(Roles = "BranchOwner,BranchManager")]
+    [Authorize(Roles = "BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<List<TrendPointDto>>> GetBranchSalesTrend([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var branchId = _currentUser.BranchId;
@@ -224,7 +224,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("branch/low-stock")]
-    [Authorize(Roles = "BranchOwner,BranchManager,BranchStaff")]
+    [Authorize(Roles = "BranchOwner,BranchManager,StoreStaff")]
     public async Task<ActionResult<List<LowStockAlertDto>>> GetBranchLowStock()
     {
         var branchId = _currentUser.BranchId;
@@ -259,12 +259,13 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("return-stats")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchManager,BranchStaff")]
-    public async Task<ActionResult<ReturnStatsDto>> GetReturnStats()
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager,StoreStaff")]
+    public async Task<ActionResult<ReturnStatsDto>> GetReturnStats([FromQuery] int? branchId = null)
     {
         try
         {
-            var stats = await _service.GetReturnStatsAsync();
+            var targetBranchId = branchId ?? _currentUser.BranchId;
+            var stats = await _service.GetReturnStatsAsync(targetBranchId);
             return Ok(stats);
         }
         catch (InvalidOperationException ex)
@@ -289,12 +290,13 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("inventory-stats")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<InventoryStatsDto>> GetInventoryStats()
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager,StoreStaff")]
+    public async Task<ActionResult<InventoryStatsDto>> GetInventoryStats([FromQuery] int? branchId = null)
     {
         try
         {
-            var stats = await _service.GetInventoryStatsAsync();
+            var targetBranchId = branchId ?? _currentUser.BranchId;
+            var stats = await _service.GetInventoryStatsAsync(targetBranchId);
             return Ok(stats);
         }
         catch (InvalidOperationException ex)

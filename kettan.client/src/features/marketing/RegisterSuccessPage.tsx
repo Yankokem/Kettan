@@ -30,9 +30,8 @@ export function RegisterSuccessPage() {
           <CheckCircle2 size={44} style={{ color: "#546B3F" }} />
         </StaticMotionDiv>
 
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <img src={logo} alt="Kettan" width="24" height="24" style={{ borderRadius: "50%" }} />
-          <span style={{ fontWeight: 800, fontSize: "13px", color: "#2C1A0E", letterSpacing: "0.15em" }}>KETTAN</span>
+        <div className="flex items-center justify-center mb-6">
+          <img src={logo} alt="Kettan" width="140" />
         </div>
 
         <h1

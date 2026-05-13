@@ -37,7 +37,7 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpGet("eligible-orders")]
-    [Authorize(Roles = "TenantAdmin,HqManager,BranchManager,BranchOwner")]
+    [Authorize(Roles = "TenantAdmin,HqManager,BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<List<ReturnEligibleOrderDto>>> GetEligibleOrders()
     {
         var rows = await _service.GetEligibleOrdersAsync();
@@ -45,7 +45,7 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpGet("eligible-orders/{orderId:int}")]
-    [Authorize(Roles = "TenantAdmin,HqManager,BranchManager,BranchOwner")]
+    [Authorize(Roles = "TenantAdmin,HqManager,BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<ReturnEligibleOrderDto>> GetEligibleOrderDetail(int orderId)
     {
         var row = await _service.GetEligibleOrderDetailAsync(orderId);
@@ -58,7 +58,7 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpPost("drafts")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<ReturnDto>> CreateDraft([FromBody] CreateReturnDraftDto dto)
     {
         try
@@ -73,7 +73,7 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpPut("{id:int}/draft")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<ReturnDto>> UpdateDraft(int id, [FromBody] UpdateReturnDraftDto dto)
     {
         try
@@ -93,7 +93,7 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpPost("{id:int}/submit")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<ReturnDto>> SubmitReturn(int id, [FromBody] SubmitReturnDto? dto = null)
     {
         try
@@ -173,7 +173,7 @@ public class ReturnsController : ControllerBase
     }
 
     [HttpPost("{id:int}/dispatch")]
-    [Authorize(Roles = "BranchManager,BranchOwner")]
+    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
     public async Task<ActionResult<ReturnDto>> ConfirmDispatch(int id, [FromBody] ConfirmReturnDispatchDto? dto = null)
     {
         try
