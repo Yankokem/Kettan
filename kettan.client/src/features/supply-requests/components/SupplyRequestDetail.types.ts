@@ -50,6 +50,7 @@ export interface SupplyRequestTimelineEntry {
 
 export interface SupplyRequestDetailViewModel {
   requestNumber: string;
+  transactionCode: string;
   subject?: string;
   status: SupplyRequestLifecycleStatus;
   branchName: string;

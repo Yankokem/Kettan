@@ -15,6 +15,7 @@ public class ReturnEligibleOrderDto
     public int BranchId { get; set; }
     public string BranchName { get; set; } = string.Empty;
     public string? ReferenceNumber { get; set; }
+    public string TransactionCode { get; set; } = string.Empty;
     public DateTime DeliveredAt { get; set; }
     public List<ReturnEligibleOrderItemDto> Items { get; set; } = [];
 }
@@ -61,6 +62,7 @@ public class ReturnDto
     public string TransactionCode { get; set; } = string.Empty;
     public int ReturnId { get; set; }
     public int OrderId { get; set; }
+    public string OrderTransactionCode { get; set; } = string.Empty;
     public string? Subject { get; set; }
     public int BranchId { get; set; }
     public string BranchName { get; set; } = string.Empty;

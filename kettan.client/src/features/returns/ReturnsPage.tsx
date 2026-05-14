@@ -279,7 +279,7 @@ export function ReturnsPage() {
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          ORD-{row.orderId}
+          {row.orderTransactionCode || `ORD-${row.orderId}`}
         </Typography>
       ),
     },

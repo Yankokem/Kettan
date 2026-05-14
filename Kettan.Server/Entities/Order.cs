@@ -47,11 +47,6 @@ public class Order : ITenantEntity
     [MaxLength(200)]
     public string? DispatchReason { get; set; }
 
-    public int? SupplyPushBatchId { get; set; }
-
-    [ForeignKey(nameof(SupplyPushBatchId))]
-    public SupplyPushBatch? SupplyPushBatch { get; set; }
-
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
 

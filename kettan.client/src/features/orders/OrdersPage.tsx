@@ -54,8 +54,6 @@ interface OrderItem {
   requestId?: number;
   isHqInitiated?: boolean;
   dispatchReason?: string | null;
-  supplyPushBatchId?: number | null;
-  supplyPushBatchCode?: string | null;
 }
 
 const STATUS_MAP: Record<string, { color: string; bg: string }> = {
@@ -106,7 +104,6 @@ function getDefaultActiveStatusByRole(_role?: string): ActiveStatusTab {
 
 function getColumns(
   onViewDetails: (orderId: string) => void,
-  onViewBatch: (batchId: number) => void,
   onApprove: (orderId: string) => void,
   onReject: (orderId: string) => void,
   isHqUser: boolean
@@ -137,34 +134,6 @@ function getColumns(
           {row.transactionCode || (row.id.startsWith('SR-') ? row.id : `ORD-${row.id}`)}
         </Typography>
       ),
-    },
-    {
-      key: 'supplyPushBatchCode',
-      label: 'Batch',
-      width: 120,
-      render: (row) => {
-        const supplyPushBatchId = row.supplyPushBatchId;
-        if (!supplyPushBatchId || !row.supplyPushBatchCode) {
-          return <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>—</Typography>;
-        }
-
-        if (!isHqUser) {
-          return (
-            <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 700, fontFamily: 'monospace' }}>
-              {row.supplyPushBatchCode}
-            </Typography>
-          );
-        }
-
-        return (
-          <Typography
-            sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 700, fontFamily: 'monospace', cursor: 'pointer' }}
-            onClick={() => onViewBatch(supplyPushBatchId)}
-          >
-            {row.supplyPushBatchCode}
-          </Typography>
-        );
-      },
     },
     {
       key: 'date',
@@ -333,8 +302,6 @@ export function OrdersPage() {
           status: row.status as OrderActionStatus,
           date: row.pushedToFulfillmentAt,
           requestId: row.requestId,
-          supplyPushBatchId: row.supplyPushBatchId ?? null,
-          supplyPushBatchCode: row.supplyPushBatchCode ?? null,
         }));
 
         // SIMPLE FILTER: Show everything EXCEPT Pending, Draft, and AutoDrafted
@@ -364,8 +331,6 @@ export function OrdersPage() {
             status: row.status as OrderActionStatus,
             date: row.createdAt,
             actionedBy: row.requestedByName,
-            supplyPushBatchId: null,
-            supplyPushBatchCode: null,
           }));
 
         const finalMerged = [...mappedRequests, ...mappedOrders];
@@ -394,8 +359,6 @@ export function OrdersPage() {
               requestId: row.requestId,
               isHqInitiated: true,
               dispatchReason: row.dispatchReason,
-              supplyPushBatchId: row.supplyPushBatchId ?? null,
-              supplyPushBatchCode: row.supplyPushBatchCode ?? null,
             }));
             
             const mergedList = [...finalMerged, ...mappedOutbound];
@@ -461,7 +424,6 @@ export function OrdersPage() {
     const matchesQuery =
       query.length === 0 ||
       order.id.toLowerCase().includes(query) ||
-      (order.supplyPushBatchCode || '').toLowerCase().includes(query) ||
       order.branch.toLowerCase().includes(query) ||
       order.subject.toLowerCase().includes(query) ||
       (order.actionedBy || '').toLowerCase().includes(query);
@@ -515,15 +477,7 @@ export function OrdersPage() {
     openDetails(id);
   };
 
-  const openBatch = (batchId: number) => {
-    if (!Number.isInteger(batchId) || batchId <= 0) {
-      setError('Invalid multi-branch batch reference.');
-      return;
-    }
-    navigate({ to: '/orders/multi-branch/$batchId', params: { batchId: String(batchId) } });
-  };
-
-  const columns = getColumns(openDetails, openBatch, handleApprove, handleReject, isHqUser);
+  const columns = getColumns(openDetails, handleApprove, handleReject, isHqUser);
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -596,7 +550,7 @@ export function OrdersPage() {
           name="search"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search order ID, batch, branch, or actor..."
+            placeholder="Search order ID, branch, or actor..."
           sx={{ 
             minWidth: { xs: '100%', sm: 240, md: 280 }, 
             maxWidth: { sm: 360 },

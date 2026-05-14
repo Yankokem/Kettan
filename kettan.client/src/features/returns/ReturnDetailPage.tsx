@@ -618,7 +618,7 @@ function CompleteReturnTransactionDialog({
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 1.5 }}>
             <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Return ID</Typography>
             <Typography sx={{ fontSize: 13, fontWeight: 800, textAlign: 'right', color: '#3E2723', fontFamily: 'monospace' }}>
-              RT-{row.returnId}
+              {row.transactionCode}
             </Typography>
 
             <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Date Arrived at HQ</Typography>
@@ -1124,11 +1124,10 @@ export function ReturnDetailPage() {
           <BackButton to="/returns" size="small" />
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-              <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>#{row.returnId}</Typography>
-              <StatusChip status={row.status} />
+              <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>Return Reconciliation</Typography>
             </Box>
             <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>
-              Reverse logistics management, quality inspection, and item disposition for <strong>{row.branchName}</strong>.
+              Manage item returns and inspections for <strong>{row.branchName}</strong>.
             </Typography>
           </Box>
         </Box>
@@ -1340,8 +1339,8 @@ export function ReturnDetailPage() {
                   <AssignmentRoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
                   <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Return Details</Typography>
               </Box>
-              <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>Return RT-{row.returnId}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.secondary', mt: -0.5 }}>From Order #{row.orderId}</Typography>
+              <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>{row.transactionCode}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.secondary', mt: -0.5 }}>From Order ORD-{row.orderId}</Typography>
           </Box>
 
 

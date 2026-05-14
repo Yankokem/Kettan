@@ -38,8 +38,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; } = null!;
     public DbSet<ReturnItem> ReturnItems { get; set; } = null!;
     public DbSet<Notification> Notifications { get; set; } = null!;
-    public DbSet<SupplyPushBatch> SupplyPushBatches { get; set; } = null!;
-    public DbSet<SupplyPushBatchItem> SupplyPushBatchItems { get; set; } = null!;
     
     // New Entities
     public DbSet<BranchItemSetting> BranchItemSettings { get; set; } = null!;
@@ -88,10 +86,6 @@ public class ApplicationDbContext : DbContext
             .IsUnique()
             .HasFilter("[TransactionCode] IS NOT NULL AND [TransactionCode] != ''");
 
-        modelBuilder.Entity<SupplyPushBatch>()
-            .HasIndex(spb => new { spb.TenantId, spb.TransactionCode })
-            .IsUnique()
-            .HasFilter("[TransactionCode] IS NOT NULL AND [TransactionCode] != ''");
 
         modelBuilder.Entity<Return>()
             .HasIndex(r => new { r.TenantId, r.TransactionCode })
@@ -130,9 +124,6 @@ public class ApplicationDbContext : DbContext
             .HasIndex(e => new { e.BranchId, e.ItemId })
             .IsUnique();
 
-        modelBuilder.Entity<SupplyPushBatchItem>()
-            .HasIndex(e => new { e.SupplyPushBatchId, e.ItemId })
-            .IsUnique();
 
         // MenuItemTag Composite Key
         modelBuilder.Entity<MenuItemTag>()
@@ -225,8 +216,6 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<ReturnItem>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
         modelBuilder.Entity<MenuItemIngredient>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
         modelBuilder.Entity<BranchItemSetting>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
-        modelBuilder.Entity<SupplyPushBatch>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
-        modelBuilder.Entity<SupplyPushBatchItem>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
 
         // Models with IsDeleted but NO ITenantEntity
         modelBuilder.Entity<Tenant>().HasQueryFilter(e => !e.IsDeleted);
@@ -305,17 +294,6 @@ public class ApplicationDbContext : DbContext
             .Property(e => e.DispatchWindow)
             .HasConversion<byte>();
 
-        modelBuilder.Entity<SupplyPushBatch>()
-            .Property(e => e.RequestType)
-            .HasConversion<byte>();
-
-        modelBuilder.Entity<SupplyPushBatch>()
-            .Property(e => e.Priority)
-            .HasConversion<byte>();
-
-        modelBuilder.Entity<SupplyPushBatch>()
-            .Property(e => e.DispatchWindow)
-            .HasConversion<byte>();
 
         modelBuilder.Entity<Return>()
             .Property(e => e.Resolution)

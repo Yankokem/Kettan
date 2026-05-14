@@ -43,6 +43,8 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   '/':          'Kettan · Café Chain Operations',
   '/supply-requests': 'Create and submit branch replenishment requests to HQ.',
   '/consumption': 'Track branch stock consumption from direct use and sales.',
+  '/orders':    'Manage picking, packing, and fulfillment of branch supply orders.',
+  '/returns':   'Monitor and process branch return requests and item inspections.',
   '/branches':  'Manage branch operations, network details, and network growth.',
   '/branches/add': 'Register a new branch within the tenant network.',
   '/company-profile': 'Manage your company profile and billing.',

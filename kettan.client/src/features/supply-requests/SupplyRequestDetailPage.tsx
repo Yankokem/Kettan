@@ -34,10 +34,11 @@ import type { SupplyRequestDetailViewModel, SupplyRequestDetailItem, SupplyReque
 const POLL_INTERVAL_MS = 10_000;
 
 function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewModel {
-  const requestNumber = request.referenceNumber || `SR-${String(request.requestId).padStart(5, '0')}`;
+  const requestNumber = request.transactionCode || request.referenceNumber || `SR-${String(request.requestId).padStart(5, '0')}`;
   
   return {
     requestNumber,
+    transactionCode: request.transactionCode,
     subject: request.subject ?? undefined,
     status: (request.orderStatus || request.status) as SupplyRequestDetailViewModel['status'],
     branchName: request.branchName,
@@ -55,7 +56,7 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
     totalApprovedValue: request.totalApprovedValue,
     totalFulfilledValue: request.totalFulfilledValue,
     linkedOrderId: request.orderId?.toString(),
-    orderStatus: request.orderStatus,
+    orderStatus: request.orderStatus ?? undefined,
     items: request.items.map((item) => ({
       id: String(item.requestItemId),
       name: item.itemName,
@@ -471,8 +472,8 @@ export function SupplyRequestDetailPage() {
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 1.2 }}>
               <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Request ID</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 800, textAlign: 'right', color: 'text.primary' }}>
-                #{requestId}
+              <Typography sx={{ fontSize: 13, fontWeight: 800, textAlign: 'right', color: '#3E2723', fontFamily: 'monospace' }}>
+                {request.transactionCode}
               </Typography>
 
               <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Date Arrived</Typography>

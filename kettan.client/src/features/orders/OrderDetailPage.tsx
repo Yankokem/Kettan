@@ -342,45 +342,11 @@ export function OrderDetailPage() {
               <Typography
                 sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}
               >
-                #{order.orderId}
+                Fulfillment Pipeline
               </Typography>
-              <Chip
-                label={orderStatus.replace(/([A-Z])/g, ' $1').trim()}
-                icon={
-                  orderStatus === 'Processing' ? (
-                    <AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} />
-                  ) : undefined
-                }
-                size="small"
-                sx={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  bgcolor:
-                    orderStatus === 'Cancelled'
-                      ? 'rgba(185,28,28,0.1)'
-                      : orderStatus === 'Completed'
-                      ? 'rgba(22,163,74,0.1)'
-                      : 'rgba(37,99,235,0.12)',
-                  color:
-                    orderStatus === 'Cancelled'
-                      ? '#B91C1C'
-                      : orderStatus === 'Completed'
-                      ? '#15803d'
-                      : '#2563EB',
-                  border: `1px solid ${
-                    orderStatus === 'Cancelled'
-                      ? 'rgba(185,28,28,0.28)'
-                      : orderStatus === 'Completed'
-                      ? 'rgba(22,163,74,0.28)'
-                      : 'rgba(37,99,235,0.28)'
-                  }`,
-                }}
-              />
             </Box>
             <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>
-              {order.isHqInitiated
-                ? <>HQ-initiated supply dispatch to <strong>{order.branchName}</strong>. Reason: {order.dispatchReason || 'Manual'}.</>
-                : <>Workflow management for order fulfillment, picking, and dispatch to <strong>{order.branchName}</strong>.</>}
+              Manage order fulfillment and dispatch for <strong>{order.branchName}</strong>.
             </Typography>
           </Box>
         </Box>

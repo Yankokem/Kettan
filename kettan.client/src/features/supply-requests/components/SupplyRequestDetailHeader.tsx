@@ -61,31 +61,11 @@ export function SupplyRequestDetailHeader({
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
             <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
-              #{requestId}
+              Replenishment Tracking
             </Typography>
-            <Chip
-              label={getSupplyRequestStatusLabel((orderStatus || status) as any)}
-              icon={status === 'PendingApproval' ? <AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} /> : undefined}
-              size="small"
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                bgcolor: statusColor.bg,
-                color: statusColor.color,
-                border: `1px solid ${statusColor.color}28`,
-                ...( ['Approved', 'Processing', 'Picking', 'Packing', 'Packed'].includes(status) && {
-                  animation: 'pulse 2s infinite',
-                  '@keyframes pulse': {
-                    '0%': { opacity: 1, boxShadow: `0 0 0 0 ${statusColor.color}40` },
-                    '70%': { opacity: 0.8, boxShadow: `0 0 0 10px ${statusColor.color}00` },
-                    '100%': { opacity: 1, boxShadow: `0 0 0 0 ${statusColor.color}00` }
-                  }
-                })
-              }}
-            />
           </Box>
           <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 0.2 }}>
-            Manage request lifecycle and item reconciliation for <strong>{branchName}</strong>.
+            View and manage branch replenishment request for <strong>{branchName}</strong>.
           </Typography>
         </Box>
       </Box>

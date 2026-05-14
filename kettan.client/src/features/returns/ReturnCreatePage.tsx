@@ -408,7 +408,7 @@ export function ReturnCreatePage() {
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
                             <Typography sx={{ fontSize: 13, fontWeight: 700, color: isLinked ? 'text.disabled' : '#6B4C2A' }}>
-                              #{o.orderId}
+                              {o.transactionCode || `ORD-${o.orderId}`}
                             </Typography>
                             {isLinked && (
                               <Chip 
@@ -540,7 +540,9 @@ export function ReturnCreatePage() {
                 <Box>
                   <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#6B4C2A' }}>Item Composer</Typography>
                   <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 500 }}>
-                    {selectedOrderId ? `Items from Order #${selectedOrderId}` : 'Select an order to load items'}
+                    {selectedOrderId 
+                      ? `Items from Order ${eligibleOrders.find(o => o.orderId === selectedOrderId)?.transactionCode || `ORD-${selectedOrderId}`}` 
+                      : 'Select an order to load items'}
                   </Typography>
                 </Box>
               </Box>

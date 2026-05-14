@@ -51,6 +51,7 @@ public class ReturnService : IReturnService
     {
         var query = _context.Returns
             .Include(r => r.Branch)
+            .Include(r => r.Order)
             .Include(r => r.SubmittedBy_User)
             .Include(r => r.PickupVehicle)
             .Include(r => r.Items)
@@ -998,6 +999,7 @@ public class ReturnService : IReturnService
             BranchId = request?.BranchId ?? 0,
             BranchName = request?.Branch?.Name ?? string.Empty,
             ReferenceNumber = request?.ReferenceNumber,
+            TransactionCode = row.TransactionCode,
             DeliveredAt = deliveredAt,
             Items = (request?.Items ?? [])
                 .Select(i => new ReturnEligibleOrderItemDto
@@ -1018,6 +1020,7 @@ public class ReturnService : IReturnService
 
         var row = await _context.Returns
             .Include(r => r.Branch)
+            .Include(r => r.Order)
             .Include(r => r.PickupVehicle)
             .Include(r => r.Items)
                 .ThenInclude(i => i.Item)
@@ -1235,6 +1238,7 @@ public class ReturnService : IReturnService
             TransactionCode = row.TransactionCode,
             ReturnId = row.ReturnId,
             OrderId = row.OrderId,
+            OrderTransactionCode = row.Order?.TransactionCode ?? string.Empty,
             Subject = row.Subject,
             BranchId = row.BranchId,
             BranchName = row.Branch?.Name ?? string.Empty,
