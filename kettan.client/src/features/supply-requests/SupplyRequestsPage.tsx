@@ -167,7 +167,7 @@ export function SupplyRequestsPage() {
 
   const role = user?.role ?? '';
   const isHq = role === 'TenantAdmin' || role === 'HqManager' || role === 'HqStaff';
-  const isBranch = role === 'BranchManager' || role === 'BranchOwner' || role === 'StoreStaff';
+  const isBranch = role === 'BranchManager' || role === 'BranchOwner';
 
   const canAccessPage = isHq || isBranch;
   const canCreateRequests = isBranch;
@@ -250,25 +250,18 @@ export function SupplyRequestsPage() {
       raw: r
     })) : [];
 
-    // Filter out dispatches that are already linked to a supply request we're already displaying
-    const existingRequestIds = new Set(requests.map(r => r.raw.requestId));
-
-    const dispatches = Array.isArray(incomingShipments) 
-      ? incomingShipments
-          .filter(o => !o.requestId || !existingRequestIds.has(o.requestId))
-          .map(o => ({
-            ...o,
-            id: o.transactionCode || `SD-${o.orderId}`,
-            type: 'Dispatch' as const,
-            displayId: o.transactionCode || `SD-${o.orderId}`,
-            date: o.pushedToFulfillmentAt,
-            itemsCount: o.itemsCount,
-            filedBy: 'HQ Dispatch',
-            value: o.totalFulfilledValue || o.fulfillmentCost || 0,
-            sla: o.dispatchScheduleStatus,
-            raw: o
-          })) 
-      : [];
+    const dispatches = Array.isArray(incomingShipments) ? incomingShipments.map(o => ({
+      ...o,
+      id: o.transactionCode || `SD-${o.orderId}`,
+      type: 'Dispatch' as const,
+      displayId: o.transactionCode || `SD-${o.orderId}`,
+      date: o.pushedToFulfillmentAt,
+      itemsCount: o.itemsCount,
+      filedBy: 'HQ Dispatch',
+      value: o.totalFulfilledValue || o.fulfillmentCost || 0,
+      sla: o.dispatchScheduleStatus,
+      raw: o
+    })) : [];
 
     return [...requests, ...dispatches];
   }, [rows, incomingShipments]);

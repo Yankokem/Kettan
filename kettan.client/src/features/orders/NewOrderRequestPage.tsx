@@ -1,19 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Checkbox,
-  Divider,
-  FormControl,
-  Grid,
-  ListItemText,
-  MenuItem,
-  OutlinedInput,
-  Paper,
-  Select,
-  TextField as MuiTextField,
-  Typography
-} from '@mui/material';
+import { Alert, Box, Divider, Grid, Paper, TextField as MuiTextField, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
@@ -31,7 +17,7 @@ import { Dropdown } from '../../components/UI/Dropdown';
 import { useAuthStore } from '../../store/useAuthStore';
 import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 import { fetchBranches } from '../branches/branchesApi';
-import { createMultiBranchSupplyPush, createOrder } from '../branch-operations/api';
+import { createOrder } from '../branch-operations/api';
 
 import { SelectedItemsTable } from './components/SelectedItemsTable';
 import { InventorySelectionModal } from './components/InventorySelectionModal';
@@ -52,6 +38,11 @@ const REQUEST_TYPES = [
   { value: 'event', label: 'Promo or Event Loadout' },
 ];
 
+const DISPATCH_WINDOWS = [
+  { value: 'next_4h', label: 'Next 4 Hours' },
+  { value: 'today', label: 'Within Today' },
+  { value: 'next_day', label: 'Next Business Day' },
+];
 
 export function NewOrderRequestPage() {
   const navigate = useNavigate({ from: '/orders/new' });
@@ -63,9 +54,10 @@ export function NewOrderRequestPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState(BRANCHES[0].value);
   const [selectedPriority, setSelectedPriority] = useState(REQUEST_PRIORITIES[0].value);
   const [requestType, setRequestType] = useState(REQUEST_TYPES[0].value);
+  const [dispatchWindow, setDispatchWindow] = useState(DISPATCH_WINDOWS[1].value);
   const [dispatchDate, setDispatchDate] = useState(new Date().toISOString().split('T')[0]);
   const [subject, setSubject] = useState('');
   const [requestNotes, setRequestNotes] = useState('');
@@ -79,8 +71,8 @@ export function NewOrderRequestPage() {
   );
 
   const atRiskLines = useMemo(
-    () => selectedItems.filter((line) => (line.quantity * (selectedBranches.length || 1)) > line.item.hqStock).length,
-    [selectedItems, selectedBranches.length]
+    () => selectedItems.filter((line) => line.quantity > line.item.hqStock).length,
+    [selectedItems]
   );
 
   const estimatedCost = useMemo(
@@ -105,7 +97,7 @@ export function NewOrderRequestPage() {
 
         setBranchOptions(mappedBranches.length > 0 ? mappedBranches : [{ value: '', label: 'No active branches' }]);
         if (mappedBranches.length > 0) {
-          setSelectedBranches((prev) => (prev.length > 0 ? prev : [String(mappedBranches[0].value)]));
+          setSelectedBranch((prev) => (prev ? prev : mappedBranches[0].value));
         }
 
         const mappedInventory: InventoryItem[] = items.map((item) => ({
@@ -164,70 +156,26 @@ export function NewOrderRequestPage() {
         return;
       }
 
-      if (selectedBranches.length === 0) {
-        setError('Please select at least one destination branch.');
+      if (!selectedBranch) {
+        setError('Please select a destination branch.');
         return;
       }
 
-      const branchIds = selectedBranches
-        .map((value) => Number(value))
-        .filter((value) => Number.isInteger(value) && value > 0);
-      if (branchIds.length !== selectedBranches.length) {
-        setError('Please select valid destination branches.');
+      if (selectedItems.length === 0) {
+        setError('Please add at least one item to your request.');
         return;
       }
-
-        if (selectedItems.length === 0) {
-          setError('Please add at least one item to your request.');
-          return;
-        }
-
-        // Frontend pre-validation: ensure HQ has enough stock for total required across all selected branches
-        const shortages: string[] = [];
-        const branchCount = branchIds.length || 1;
-        selectedItems.forEach((line) => {
-          const totalNeeded = Number(line.quantity) * branchCount;
-          const hqStock = line.item.hqStock ?? 0;
-          if (totalNeeded > hqStock) {
-            shortages.push(`${line.item.name}: need ${totalNeeded}, available ${hqStock}`);
-          }
-        });
-
-        if (shortages.length > 0) {
-          setError(`Insufficient HQ stock for ${selectedBranches.length > 1 ? 'multi-branch ' : ''}fulfillment: ${shortages.join(', ')}`);
-          setIsSaving(false);
-          return;
-        }
 
       try {
         setIsSaving(true);
         setError(null);
 
-        if (branchIds.length === 1) {
-          const created = await createOrder({
-            branchId: branchIds[0],
-            subject: subject.trim() || undefined,
-            requestType,
-            priority: selectedPriority,
-            dispatchWindow: 'today',
-            dispatchDate: dispatchDate ? new Date(`${dispatchDate}T00:00:00`).toISOString() : undefined,
-            notes: requestNotes || undefined,
-            items: selectedItems.map((line) => ({
-              itemId: Number(line.item.id),
-              quantityRequested: Number(line.quantity),
-            })),
-          });
-
-          navigate({ to: '/orders/$orderId', params: { orderId: String(created.orderId) } });
-          return;
-        }
-
-        const createdBatch = await createMultiBranchSupplyPush({
-          branchIds,
+        const created = await createOrder({
+          branchId: Number(selectedBranch),
           subject: subject.trim() || undefined,
           requestType,
           priority: selectedPriority,
-          dispatchWindow: 'today',
+          dispatchWindow,
           dispatchDate: dispatchDate ? new Date(`${dispatchDate}T00:00:00`).toISOString() : undefined,
           notes: requestNotes || undefined,
           items: selectedItems.map((line) => ({
@@ -236,20 +184,9 @@ export function NewOrderRequestPage() {
           })),
         });
 
-        const createdBatchId = Number(createdBatch.supplyPushBatchId);
-        if (!Number.isInteger(createdBatchId) || createdBatchId <= 0) {
-          setError('Batch was created but no valid batch ID was returned.');
-          return;
-        }
-
-        navigate({
-          to: '/orders/multi-branch/$batchId',
-          params: { batchId: String(createdBatchId) }
-        });
-      } catch (err: any) {
-        console.error(err);
-        const serverMsg = err.response?.data?.message || err.message || 'Failed to submit internal request.';
-        setError(serverMsg);
+        navigate({ to: '/orders/$orderId', params: { orderId: String(created.orderId) } });
+      } catch {
+        setError('Failed to submit internal request.');
       } finally {
         setIsSaving(false);
       }
@@ -303,50 +240,12 @@ export function NewOrderRequestPage() {
                     Destination Branch
                   </Typography>
                 </Box>
-                <FormControl size="small" fullWidth>
-                  <Select
-                    multiple
-                    value={selectedBranches}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setSelectedBranches(typeof value === 'string' ? value.split(',') : (value as string[]));
-                    }}
-                    input={<OutlinedInput />}
-                    renderValue={(selected) => {
-                      const selectedValues = selected as string[];
-                      return branchOptions
-                        .filter((option) => selectedValues.includes(String(option.value)))
-                        .map((option) => option.label)
-                        .join(', ');
-                    }}
-                    sx={{
-                      borderRadius: '14px',
-                      fontSize: 14,
-                      fontWeight: 500,
-                      bgcolor: 'background.paper',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'divider',
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'rgba(107, 76, 42, 0.5)',
-                      },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#C9A84C',
-                        borderWidth: '1px',
-                      },
-                    }}
-                  >
-                    {branchOptions.map((option) => {
-                      const value = String(option.value);
-                      return (
-                        <MenuItem key={value} value={value}>
-                          <Checkbox checked={selectedBranches.includes(value)} />
-                          <ListItemText primary={option.label} />
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
-                </FormControl>
+                <Dropdown
+                  options={branchOptions}
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value as string)}
+                  fullWidth
+                />
               </Box>
             </Grid>
 
@@ -384,6 +283,22 @@ export function NewOrderRequestPage() {
               </Box>
             </Grid>
 
+            <Grid size={{ xs: 12 }}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                  <ScheduleSendRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Dispatch Window
+                  </Typography>
+                </Box>
+                <Dropdown
+                  options={DISPATCH_WINDOWS}
+                  value={dispatchWindow}
+                  onChange={(e) => setDispatchWindow(e.target.value as string)}
+                  fullWidth
+                />
+              </Box>
+            </Grid>
 
             <Grid size={{ xs: 12 }}>
               <Box>
@@ -534,7 +449,6 @@ export function NewOrderRequestPage() {
                 items={selectedItems}
                 onRemoveItem={handleRemoveItem}
                 onUpdateQuantity={handleUpdateQuantity}
-                branchCount={selectedBranches.length}
               />
 
               {atRiskLines > 0 && (
@@ -571,7 +485,6 @@ export function NewOrderRequestPage() {
         onClose={() => setIsModalOpen(false)}
         inventory={inventory}
         onItemsSelected={handleItemsSelected}
-        branchCount={selectedBranches.length || 1}
       />
     </Box>
   );

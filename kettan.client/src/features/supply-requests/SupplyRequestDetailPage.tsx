@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import * as signalR from '@microsoft/signalr';
 import { Box, Typography, Alert, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
@@ -115,7 +116,7 @@ export function SupplyRequestDetailPage() {
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
 
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null); // Kept for legacy if needed, but primary is SignalR
 
   const loadData = useCallback(async (silent = false) => {
     if (!requestId) return;
@@ -186,12 +187,44 @@ export function SupplyRequestDetailPage() {
     void loadData(false);
   }, [loadData]);
 
-  // Real-time polling
+  // ── Real-time Status Sync via SignalR ──
+  useEffect(() => {
+    if (!requestId) return;
+
+    const url = import.meta.env.VITE_API_URL || '';
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`${url}/hub/workflow`, {
+            withCredentials: true,
+            accessTokenFactory: () => useAuthStore.getState().token || ''
+        })
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on('ReceiveStatusUpdate', (updatedId: number) => {
+        if (Number(updatedId) === Number(requestId)) {
+            void loadData(true);
+        }
+    });
+
+    connection.start()
+        .then(() => {
+            void connection.invoke('JoinSupplyRequest', Number(requestId));
+        })
+        .catch(err => console.error('Supply Request Detail SignalR Error: ', err));
+
+    return () => {
+        if (connection.state === signalR.HubConnectionState.Connected) {
+            void connection.invoke('LeaveSupplyRequest', Number(requestId))
+                .finally(() => void connection.stop());
+        }
+    };
+  }, [requestId, loadData]);
+
+  // Fallback Polling (Reduced frequency since SignalR is primary)
   useEffect(() => {
     pollTimerRef.current = setInterval(() => {
       void loadData(true);
-    }, POLL_INTERVAL_MS);
-
+    }, 30_000); // 30s fallback
     return () => {
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
     };
@@ -369,7 +402,13 @@ export function SupplyRequestDetailPage() {
         />
       )}
 
-      {showStepper ? <OrderFulfillmentStepper status={request.status} timeline={request.timeline} /> : null}
+      {showStepper ? (
+        <OrderFulfillmentStepper 
+          status={request.status} 
+          timeline={request.timeline} 
+          variant={request.requestType === 'HqInitiated' ? 'hq-dispatch' : 'default'}
+        />
+      ) : null}
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '400px 1fr' }, gap: 3 }}>
         <Box>

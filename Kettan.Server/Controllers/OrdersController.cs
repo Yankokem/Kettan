@@ -32,54 +32,12 @@ public class OrdersController : ControllerBase
         }
     }
 
-    [HttpPost("multi-branch-push")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<MultiBranchSupplyPushDetailDto>> CreateMultiBranchPush([FromBody] CreateMultiBranchSupplyPushDto dto)
-    {
-        try
-        {
-            var created = await _service.CreateMultiBranchSupplyPushAsync(dto);
-            return CreatedAtAction(nameof(GetMultiBranchPushById), new { batchId = created.SupplyPushBatchId }, created);
-        }
-        catch (InvalidOperationException ex)
-        {
-            Console.WriteLine("MULTI BRANCH EXP: " + ex);
-            return BadRequest(new { message = ex.Message, stack = ex.StackTrace, inner = ex.InnerException?.Message });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("MULTI BRANCH OTHER EXP: " + ex);
-            return BadRequest(new { message = ex.Message, stack = ex.StackTrace });
-        }
-    }
-
     [HttpGet]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
     public async Task<ActionResult<List<BranchOrderDto>>> GetOrders([FromQuery] string? status = null)
     {
         var rows = await _service.ListBranchOrdersAsync(status);
         return Ok(rows);
-    }
-
-    [HttpGet("multi-branch-pushes")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<List<MultiBranchSupplyPushDto>>> GetMultiBranchPushes([FromQuery] string? status = null)
-    {
-        var rows = await _service.ListMultiBranchSupplyPushesAsync(status);
-        return Ok(rows);
-    }
-
-    [HttpGet("multi-branch-pushes/{batchId:int}")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
-    public async Task<ActionResult<MultiBranchSupplyPushDetailDto>> GetMultiBranchPushById(int batchId)
-    {
-        var row = await _service.GetMultiBranchSupplyPushByIdAsync(batchId);
-        if (row == null)
-        {
-            return NotFound();
-        }
-
-        return Ok(row);
     }
 
     [HttpGet("hq-dispatches")]
@@ -91,7 +49,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("incoming-shipments")]
-    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
+    [Authorize(Roles = "BranchManager,BranchOwner")]
     public async Task<ActionResult<List<BranchOrderDto>>> GetIncomingShipments([FromQuery] string? status = null)
     {
         var rows = await _service.ListIncomingShipmentsAsync(status);
@@ -178,7 +136,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPut("{id:int}/deliver")]
-    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
+    [Authorize(Roles = "BranchManager,BranchOwner")]
     public async Task<IActionResult> ConfirmDelivered(int id, [FromBody] ConfirmDeliveryDto dto)
     {
         try
@@ -242,7 +200,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost("{id:int}/workflow/arrive")]
-    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
+    [Authorize(Roles = "BranchManager,BranchOwner")]
     public async Task<ActionResult<OrderDetailDto>> ConfirmArrival(int id)
     {
         var result = await _service.ConfirmArrivalAsync(id);
@@ -251,7 +209,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost("{id:int}/workflow/complete")]
-    [Authorize(Roles = "BranchManager,BranchOwner,StoreStaff")]
+    [Authorize(Roles = "BranchManager,BranchOwner")]
     public async Task<ActionResult<OrderDetailDto>> CompleteTransaction(int id, [FromBody] BranchCheckSubmitDto dto)
     {
         try
