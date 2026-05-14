@@ -22,6 +22,7 @@ export interface SupplyRequestDetailHeaderProps {
   status: SupplyRequestLifecycleStatus;
   branchName: string;
   role: string;
+  orderStatus?: string;
   isSubmitting?: boolean;
   onSubmitDraft?: () => void;
   onApprove?: () => void;
@@ -37,6 +38,7 @@ export function SupplyRequestDetailHeader({
   status,
   branchName,
   role,
+  orderStatus,
   isSubmitting,
   onSubmitDraft,
   onApprove,
@@ -62,7 +64,7 @@ export function SupplyRequestDetailHeader({
               #{requestId}
             </Typography>
             <Chip
-              label={getSupplyRequestStatusLabel(status)}
+              label={getSupplyRequestStatusLabel((orderStatus || status) as any)}
               icon={status === 'PendingApproval' ? <AccessTimeFilledRoundedIcon sx={{ fontSize: 14 }} /> : undefined}
               size="small"
               sx={{

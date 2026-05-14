@@ -54,6 +54,7 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
     totalApprovedValue: request.totalApprovedValue,
     totalFulfilledValue: request.totalFulfilledValue,
     linkedOrderId: request.orderId?.toString(),
+    orderStatus: request.orderStatus,
     items: request.items.map((item) => ({
       id: String(item.requestItemId),
       name: item.itemName,
@@ -292,6 +293,7 @@ export function SupplyRequestDetailPage() {
         requestId={requestId!}
         requestNumber={request.requestNumber}
         status={request.status}
+        orderStatus={request.orderStatus}
         branchName={request.branchName}
         role={user?.role || ''}
         isSubmitting={actionLoading}
@@ -527,12 +529,14 @@ export function SupplyRequestDetailPage() {
           immediately after approval (before the order is fully propagated), linkedOrderId
           may momentarily cause a 403 — passing null lets the modal show empty state
           instead of throwing an error at the page level. */}
-      <SharedFloatingChat 
-        contextType="supply-request"
-        id={Number(requestId)}
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-      />
+      {request.linkedOrderId && (
+        <SharedFloatingChat 
+          contextType="order"
+          id={Number(request.linkedOrderId)}
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+        />
+      )}
     </Box>
   );
 }

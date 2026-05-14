@@ -65,6 +65,7 @@ export interface SupplyRequestDetailViewModel {
   totalApprovedValue?: number;
   totalFulfilledValue?: number;
   linkedOrderId?: string;
+  orderStatus?: string;
   items: SupplyRequestDetailItem[];
   timeline: SupplyRequestTimelineEntry[];
 

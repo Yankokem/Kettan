@@ -291,7 +291,6 @@ public class OrderWorkflowService : IOrderWorkflowService
         EnsureTenantContext();
 
         var batch = await _context.SupplyPushBatches
-            .AsNoTracking()
             .AsSplitQuery()
             .Include(b => b.Items)
                 .ThenInclude(i => i.Item)
@@ -304,8 +303,6 @@ public class OrderWorkflowService : IOrderWorkflowService
                         .ThenInclude(i => i.Item)
             .Include(b => b.Orders)
                 .ThenInclude(o => o.Shipment)
-            .Include(b => b.Orders)
-                .ThenInclude(o => o.SupplyPushBatch)
             .FirstOrDefaultAsync(b => b.SupplyPushBatchId == batchId);
 
         if (batch == null)

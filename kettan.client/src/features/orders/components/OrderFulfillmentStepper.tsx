@@ -8,16 +8,18 @@ import WhereToVoteRoundedIcon from '@mui/icons-material/WhereToVoteRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import DoneAllRoundedIcon from '@mui/icons-material/DoneAllRounded';
 import type { SupplyRequestTimelineEntry } from '../../supply-requests/components/SupplyRequestDetail.types';
 
 const DEFAULT_STEPS = [
   { key: 'PendingApproval', label: 'Requested', icon: <AccessTimeFilledRoundedIcon sx={{ fontSize: 30 }} /> },
   { key: 'Approved', label: 'Approved', icon: <CheckCircleRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Processing', label: 'Preparing', icon: <SettingsRoundedIcon sx={{ fontSize: 30 }} /> },
   { key: 'Picking', label: 'Picking', icon: <Inventory2RoundedIcon sx={{ fontSize: 30 }} /> },
-  { key: 'Packed', label: 'Packed', icon: <BackpackRoundedIcon sx={{ fontSize: 30 }} /> },
-  { key: 'Dispatched', label: 'Dispatched', icon: <LocalShippingRoundedIcon sx={{ fontSize: 30 }} /> },
-  { key: 'Arrived', label: 'Arrived', icon: <WhereToVoteRoundedIcon sx={{ fontSize: 30 }} /> },
-  { key: 'Completed', label: 'Completed', icon: <TaskAltRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Packing', label: 'Packing', icon: <InventoryRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Dispatched', label: 'In Transit', icon: <LocalShippingRoundedIcon sx={{ fontSize: 30 }} /> },
+  { key: 'Completed', label: 'Delivered', icon: <DoneAllRoundedIcon sx={{ fontSize: 30 }} /> },
 ];
 
 const HQ_DISPATCH_STEPS = [
@@ -54,20 +56,21 @@ function getStepIndex(status: string, variant: 'default' | 'hq-dispatch' = 'defa
     AutoDrafted: -1,
     PendingApproval: 0,
     Approved: 1,
-    Processing: 1,
-    Picking: 2,
-    Allocated: 2,
-    Packing: 3,
-    Packed: 3,
-    Dispatched: 4,
-    InTransit: 4,
-    Arrived: 5,
-    Delivered: 5,
+    Processing: 2,
+    Picking: 3,
+    Allocated: 3,
+    Packing: 4,
+    Packed: 4,
+    Dispatched: 5,
+    InTransit: 5,
+    Arrived: 6,
     Completed: 6,
-    Rejected: 0,
-    Returned: 6,
+    Delivered: 6,
+    Cancelled: -1,
+    Rejected: -1,
     PartiallyApproved: 1,
     Fulfilled: 6,
+    Returned: 6,
   };
   return mapping[status] ?? 0;
 }

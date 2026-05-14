@@ -57,7 +57,7 @@ export const isHqRole = (role: string): boolean => {
  * Check if role is branch-based (BranchOwner, BranchManager)
  */
 export const isBranchRole = (role: string): boolean => {
-  return ['BranchOwner', 'BranchManager', 'StoreStaff'].includes(role);
+  return ['BranchOwner', 'BranchManager'].includes(role);
 };
 
 /**
@@ -66,20 +66,20 @@ export const isBranchRole = (role: string): boolean => {
  */
 export const canAccessModule = (userRole: string, module: string): boolean => {
   const permissions: Record<string, string[]> = {
-    'dashboard': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
+    'dashboard': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
     'order-processing': ['TenantAdmin', 'HqManager', 'HqStaff'],
-    'hq-inventory': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
-    'menu': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
-    'consumption': ['BranchOwner', 'BranchManager', 'StoreStaff'],
+    'hq-inventory': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
+    'menu': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
+    'consumption': ['BranchOwner', 'BranchManager'],
     'branches': ['TenantAdmin', 'HqManager', 'HqStaff'],
-    'staff': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
-    'reports': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager', 'StoreStaff'],
-    'returns': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager', 'StoreStaff'],
-    'supply-requests': ['HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
+    'staff': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
+    'reports': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager'],
+    'returns': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager'],
+    'supply-requests': ['HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
     'settings': ['TenantAdmin'],
     'company-profile': ['TenantAdmin'],
-    'branch-profile': ['BranchOwner', 'BranchManager', 'StoreStaff'],
-    'audit-logs': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager', 'StoreStaff'],
+    'branch-profile': ['BranchOwner', 'BranchManager'],
+    'audit-logs': ['SuperAdmin', 'TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager'],
   };
   
   return permissions[module]?.includes(userRole) ?? false;
@@ -99,20 +99,20 @@ export const canPerformAction = (
   // Module-specific action permissions
   const actionPermissions: Record<string, Record<string, string[]>> = {
     'consumption': {
-      'view': ['BranchOwner', 'BranchManager', 'StoreStaff'],
-      'create': ['BranchManager', 'BranchOwner', 'StoreStaff'],
+      'view': ['BranchOwner', 'BranchManager'],
+      'create': ['BranchManager', 'BranchOwner'],
       'edit': [],
       'delete': [],
     },
     'supply-requests': {
-      'view': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager', 'StoreStaff'],
-      'create': ['TenantAdmin', 'BranchOwner', 'BranchManager', 'StoreStaff'],
-      'edit': ['TenantAdmin', 'BranchOwner', 'BranchManager', 'StoreStaff'],
+      'view': ['TenantAdmin', 'HqManager', 'HqStaff', 'BranchOwner', 'BranchManager'],
+      'create': ['TenantAdmin', 'BranchOwner', 'BranchManager'],
+      'edit': ['TenantAdmin', 'BranchOwner', 'BranchManager'],
       'delete': [],
     },
     'returns': {
-      'view': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager', 'StoreStaff'],
-      'create': ['TenantAdmin', 'BranchOwner', 'BranchManager', 'StoreStaff'],
+      'view': ['TenantAdmin', 'HqManager', 'BranchOwner', 'BranchManager'],
+      'create': ['TenantAdmin', 'BranchOwner', 'BranchManager'],
       'edit': ['TenantAdmin', 'HqManager'],
       'delete': [],
     },
