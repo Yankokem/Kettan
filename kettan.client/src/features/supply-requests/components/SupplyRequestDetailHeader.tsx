@@ -1,5 +1,4 @@
-import { Box, Chip, Typography } from '@mui/material';
-import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
+import { Box, Typography } from '@mui/material';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
@@ -10,10 +9,6 @@ import { useNavigate } from '@tanstack/react-router';
 
 import { BackButton } from '../../../components/UI/BackButton';
 import { Button } from '../../../components/UI/Button';
-import {
-  getSupplyRequestStatusLabel,
-  SUPPLY_REQUEST_STATUS_COLORS,
-} from './SupplyRequestDetail.constants';
 import type { SupplyRequestLifecycleStatus } from './SupplyRequestDetail.types';
 
 export interface SupplyRequestDetailHeaderProps {
@@ -22,7 +17,6 @@ export interface SupplyRequestDetailHeaderProps {
   status: SupplyRequestLifecycleStatus;
   branchName: string;
   role: string;
-  orderStatus?: string;
   isSubmitting?: boolean;
   onSubmitDraft?: () => void;
   onApprove?: () => void;
@@ -38,7 +32,6 @@ export function SupplyRequestDetailHeader({
   status,
   branchName,
   role,
-  orderStatus,
   isSubmitting,
   onSubmitDraft,
   onApprove,
@@ -49,7 +42,6 @@ export function SupplyRequestDetailHeader({
   onCompleteTransaction,
 }: SupplyRequestDetailHeaderProps) {
   const navigate = useNavigate();
-  const statusColor = SUPPLY_REQUEST_STATUS_COLORS[status] || { color: '#64748B', bg: 'rgba(100,116,139,0.12)' };
 
   const isHq = ['TenantAdmin', 'HqManager', 'HqStaff'].includes(role);
   const isBranch = ['BranchManager', 'BranchOwner'].includes(role);

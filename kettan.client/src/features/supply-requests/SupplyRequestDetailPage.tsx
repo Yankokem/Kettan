@@ -30,8 +30,7 @@ import {
 } from '@mui/icons-material';
 import type { SupplyRequestDetailViewModel, SupplyRequestDetailItem, SupplyRequestTimelineEntry } from './components/SupplyRequestDetail.types';
 
-// Poll interval for real-time status updates (ms)
-const POLL_INTERVAL_MS = 10_000;
+
 
 function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewModel {
   const requestNumber = request.transactionCode || request.referenceNumber || `SR-${String(request.requestId).padStart(5, '0')}`;
@@ -327,7 +326,6 @@ export function SupplyRequestDetailPage() {
         requestId={requestId!}
         requestNumber={request.requestNumber}
         status={request.status}
-        orderStatus={request.orderStatus}
         branchName={request.branchName}
         role={user?.role || ''}
         isSubmitting={actionLoading}

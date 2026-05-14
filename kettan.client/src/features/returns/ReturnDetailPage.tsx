@@ -4,7 +4,6 @@ import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
 import {
   Alert,
   Box,
-  Chip,
   Dialog,
   DialogContent,
   MenuItem,
@@ -119,16 +118,6 @@ function scheduleColor(status?: string | null): string {
   return '#6B7280';
 }
 
-function StatusChip({ status }: { status: string }) {
-  const s = statusStyle(status);
-  return (
-    <Chip
-      label={s.label}
-      size="small"
-      sx={{ fontSize: 11.5, fontWeight: 700, bgcolor: s.bg, color: s.color, border: `1px solid ${s.color}2b` }}
-    />
-  );
-}
 
 // --- Helper for vehicle icons ---
 const getVehicleIcon = (type: string) => {

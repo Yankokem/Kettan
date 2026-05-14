@@ -38,6 +38,7 @@ export function getSupplyRequestStatusLabel(status: SupplyRequestLifecycleStatus
 const SAMPLE_DETAIL_BY_REQUEST_ID: Record<number, SupplyRequestDetailViewModel> = {
   8900: {
     requestNumber: 'SR-08900',
+    transactionCode: 'SR-08900',
     status: 'Draft',
     branchName: 'Downtown Main',
     requestedByName: 'Maria Santos',
@@ -88,6 +89,7 @@ const SAMPLE_DETAIL_BY_REQUEST_ID: Record<number, SupplyRequestDetailViewModel> 
   },
   8894: {
     requestNumber: 'SR-08894',
+    transactionCode: 'SR-08894',
     status: 'PendingApproval',
     branchName: 'Downtown Main',
     requestedByName: 'Maria Santos',
@@ -153,6 +155,7 @@ const SAMPLE_DETAIL_BY_REQUEST_ID: Record<number, SupplyRequestDetailViewModel> 
   },
   8891: {
     requestNumber: 'SR-08891',
+    transactionCode: 'SR-08891',
     status: 'Approved',
     branchName: 'Riverside Branch',
     requestedByName: 'Alex Morgan',
@@ -215,6 +218,7 @@ const SAMPLE_DETAIL_BY_REQUEST_ID: Record<number, SupplyRequestDetailViewModel> 
   },
   8870: {
     requestNumber: 'SR-08870',
+    transactionCode: 'SR-08870',
     status: 'Rejected',
     branchName: 'Northpoint Kiosk',
     requestedByName: 'Jamie Cruz',

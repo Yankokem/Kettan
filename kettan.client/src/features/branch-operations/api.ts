@@ -399,12 +399,6 @@ function normalizeOrderStatus(status: string): string {
   return status;
 }
 
-function normalizeBranchOrder(row: BranchOrder): BranchOrder {
-  return {
-    ...row,
-    status: normalizeOrderStatus(row.status),
-  };
-}
 
 export async function fetchSupplyRequests(status?: string): Promise<SupplyRequest[]> {
   const response = await api.get<SupplyRequest[]>('/api/SupplyRequests', {
