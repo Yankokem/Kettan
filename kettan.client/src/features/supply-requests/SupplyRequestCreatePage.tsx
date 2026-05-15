@@ -6,7 +6,9 @@ import TagRoundedIcon from '@mui/icons-material/TagRounded';
 import PriorityHighRoundedIcon from '@mui/icons-material/PriorityHighRounded';
 import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
-import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
+import ShoppingBagRoundedIcon from '@mui/icons-material/ShoppingBagRounded';
 import type { AxiosError } from 'axios';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -27,6 +29,7 @@ interface RequestLineItem {
   itemName: string;
   itemSku: string;
   quantityRequested: number;
+  unitCost: number;
 }
 
 function getErrorMessage(error: unknown): string {
@@ -104,6 +107,16 @@ export function SupplyRequestCreatePage() {
     void loadInventory();
     void loadNextRequestId();
   }, []);
+  
+  const totalUnits = useMemo(
+    () => requestLines.reduce((sum, line) => sum + line.quantityRequested, 0),
+    [requestLines]
+  );
+
+  const estimatedCost = useMemo(
+    () => requestLines.reduce((sum, line) => sum + line.quantityRequested * (line.unitCost ?? 0), 0),
+    [requestLines]
+  );
 
   const resetForm = () => {
     setRequestLines([]);
@@ -199,6 +212,7 @@ export function SupplyRequestCreatePage() {
           itemName: selected.item.name,
           itemSku: selected.item.sku,
           quantityRequested: parsedQty,
+          unitCost: selected.item.unitCost ?? 0,
         });
       }
 
@@ -282,137 +296,134 @@ export function SupplyRequestCreatePage() {
         <Paper
           elevation={0}
           sx={{
-            width: { xs: '100%', md: '42%' },
+            width: { xs: '100%', md: '35%' },
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: '14px',
-            p: { xs: 3, md: 4 },
+            borderRadius: '16px',
+            bgcolor: '#FFFFFF',
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gap: 0,
           }}
         >
-          {/* Reference Section */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
-            <TagRoundedIcon sx={{ fontSize: 18 }} />
-            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Request Reference</Typography>
-          </Box>
-
-          <Grid container spacing={2.5} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.45 }}>
-                  Request ID
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    p: 1.5,
-                    borderRadius: 2,
-                    bgcolor: nextRequestId ? 'rgba(201,168,76,0.08)' : 'rgba(107,76,42,0.05)',
-                    border: '1px solid',
-                    borderColor: nextRequestId ? 'rgba(201,168,76,0.2)' : 'rgba(107,76,42,0.15)',
-                  }}
-                >
-                  <TagRoundedIcon sx={{ fontSize: 16, color: nextRequestId ? '#6B4C2A' : 'text.secondary' }} />
-                  {nextRequestId ? (
-                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#6B4C2A' }}>
-                      SR-{nextRequestId.toString().padStart(5, '0')}
-                    </Typography>
-                  ) : (
-                    <Typography sx={{ fontSize: 12.5, fontStyle: 'italic', color: 'text.secondary' }}>
-                      Loading...
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Request Configuration */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
-            <PriorityHighRoundedIcon sx={{ fontSize: 18 }} />
-            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Request Configuration</Typography>
-          </Box>
-
-          <Grid container spacing={2.5}>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                label="Subject / Title"
-                value={subject}
-                onChange={(event) => setSubject(event.target.value)}
-                placeholder="Example: Weekend restock - milk and cups"
-                slotProps={{ htmlInput: { maxLength: 80 } }}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <PriorityHighRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Priority Level
-                  </Typography>
-                </Box>
-                <Dropdown
-                  value={priority}
-                  onChange={(event) => setPriority(String(event.target.value))}
-                  options={[
-                    { value: 'low', label: 'Low Priority' },
-                    { value: 'normal', label: 'Normal Priority' },
-                    { value: 'high', label: 'High Priority' },
-                  ]}
-                />
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <CalendarTodayRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Preferred Delivery Date
-                  </Typography>
-                </Box>
-                <TextField
-                  type="date"
-                  value={dispatchDate}
-                  onChange={(event) => setDispatchDate(event.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  placeholder="mm/dd/yyyy"
-                />
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <NotesRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Additional Notes
-                  </Typography>
-                </Box>
-                <TextField
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  multiline
-                  rows={3}
-                  placeholder="Add any special instructions or notes..."
-                />
-              </Box>
-            </Grid>
-          </Grid>
-
-          {error ? (
-            <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 2, p: 1.5, bgcolor: 'error.lighter', borderRadius: 2 }}>
-              {error}
+          <Box sx={{ p: 2, bgcolor: '#FAF7F2', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <AssignmentRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Request Configuration
             </Typography>
-          ) : null}
+          </Box>
+
+          <Box sx={{ p: 3 }}>
+            <Grid container spacing={2.5}>
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ShoppingBagRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                  <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    Subject / Title
+                  </Typography>
+                </Box>
+                <TextField
+                  value={subject}
+                  onChange={(event) => setSubject(event.target.value)}
+                  placeholder="Example: Weekend restock - milk and cups"
+                  fullWidth
+                  slotProps={{ htmlInput: { maxLength: 80 } }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <PriorityHighRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                    <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Priority Level
+                    </Typography>
+                  </Box>
+                  <Dropdown
+                    value={priority}
+                    onChange={(event) => setPriority(String(event.target.value))}
+                    options={[
+                      { value: 'low', label: 'Low Priority' },
+                      { value: 'normal', label: 'Normal Priority' },
+                      { value: 'high', label: 'High Priority' },
+                    ]}
+                  />
+                </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <CalendarTodayRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                    <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Preferred Delivery Date
+                    </Typography>
+                  </Box>
+                  <TextField
+                    type="date"
+                    value={dispatchDate}
+                    onChange={(event) => setDispatchDate(event.target.value)}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    placeholder="mm/dd/yyyy"
+                    fullWidth
+                  />
+                </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <NotesRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                    <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Additional Notes
+                    </Typography>
+                  </Box>
+                  <TextField
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    multiline
+                    rows={3}
+                    placeholder="Add any special instructions or notes..."
+                    fullWidth
+                  />
+                </Box>
+              </Grid>
+            </Grid>
+
+            {error ? (
+              <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 2, p: 1.5, bgcolor: 'error.lighter', borderRadius: 2 }}>
+                {error}
+              </Typography>
+            ) : null}
+
+            <Divider sx={{ my: 3, opacity: 0.6 }} />
+
+            {/* Request Summary Section */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+              <Inventory2RoundedIcon sx={{ fontSize: 18 }} />
+              <Typography sx={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Request Summary
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Line Items</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#2E7D32' }}>{requestLines.length}</Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Requested Units</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#2E7D32' }}>{totalUnits}</Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Estimated Cost</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#2E7D32' }}>₱{estimatedCost.toFixed(2)}</Typography>
+              </Box>
+            </Box>
+          </Box>
         </Paper>
 
         {/* Right card — Item Composer */}
@@ -422,20 +433,28 @@ export function SupplyRequestCreatePage() {
             flex: 1,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: '14px',
-            p: { xs: 3, md: 4 },
+            borderRadius: '16px',
+            bgcolor: '#FFFFFF',
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gap: 3,
+            minHeight: 500
           }}
         >
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
-              <InventoryRoundedIcon sx={{ fontSize: 18 }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Item Composer</Typography>
+          <Box sx={{ p: 2.5, bgcolor: '#FAF7F2', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Inventory2RoundedIcon sx={{ fontSize: 20, color: '#6B4C2A' }} />
+              <Box>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#6B4C2A' }}>Item Composer</Typography>
+                <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 500 }}>
+                  Select items to add to your supply request
+                </Typography>
+              </Box>
             </Box>
+          </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
+          <Box sx={{ flex: 1, p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 3 }}>
               <Button
                 variant="outlined"
                 onClick={() => setIsItemModalOpen(true)}
@@ -454,11 +473,26 @@ export function SupplyRequestCreatePage() {
             />
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, pt: 2 }}>
+          <Box sx={{ p: 3, bgcolor: '#FAFAFA', borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
             <Button variant="outlined" onClick={() => navigate({ to: '/supply-requests' })}>
               Cancel
             </Button>
-            <Button startIcon={<AddShoppingCartRoundedIcon />} onClick={() => void handleCreate()} disabled={isSaving || requestLines.length === 0}>
+            <Button
+              startIcon={<AddShoppingCartRoundedIcon />}
+              onClick={() => void handleCreate()}
+              disabled={isSaving || requestLines.length === 0}
+              sx={{ 
+                bgcolor: '#6B4C2A', 
+                color: 'white',
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                fontWeight: 800,
+                fontSize: 15,
+                '&:hover': { bgcolor: '#543B21' },
+                '&.Mui-disabled': { bgcolor: 'rgba(107,76,42,0.3)', color: 'rgba(255,255,255,0.7)' }
+              }}
+            >
               {isSaving ? 'Submitting...' : 'Create and Submit'}
             </Button>
           </Box>

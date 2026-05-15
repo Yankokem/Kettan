@@ -107,7 +107,9 @@ public class ConsumptionService : IConsumptionService
                 Shift = log.Shift?.ToString(),
                 LogDate = log.LogDate,
                 Remarks = log.Remarks,
-                CreatedAt = log.CreatedAt
+                CreatedAt = log.CreatedAt,
+                ItemsCount = log.Items.Count,
+                TotalQuantity = log.Items.Sum(i => i.Quantity)
             };
         }
         catch
@@ -179,7 +181,9 @@ public class ConsumptionService : IConsumptionService
                 Shift = log.Shift?.ToString(),
                 LogDate = log.LogDate,
                 Remarks = log.Remarks,
-                CreatedAt = log.CreatedAt
+                CreatedAt = log.CreatedAt,
+                ItemsCount = log.Items.Count,
+                TotalQuantity = log.Items.Sum(i => i.Quantity)
             };
         }
         catch
@@ -218,6 +222,11 @@ public class ConsumptionService : IConsumptionService
         }
 
         return await query
+            .Include(c => c.LoggedBy_User)
+            .Include(c => c.Items)
+                .ThenInclude(i => i.MenuItem)
+            .Include(c => c.Items)
+                .ThenInclude(i => i.Item)
             .OrderByDescending(c => c.LogDate)
             .Select(c => new ConsumptionLogDto
             {
@@ -227,7 +236,15 @@ public class ConsumptionService : IConsumptionService
                 Shift = c.Shift.HasValue ? c.Shift.Value.ToString() : null,
                 LogDate = c.LogDate,
                 Remarks = c.Remarks,
-                CreatedAt = c.CreatedAt
+                CreatedAt = c.CreatedAt,
+                ItemsCount = c.Items.Count,
+                TotalQuantity = c.Items.Sum(i => i.Quantity),
+                LoggedByName = c.LoggedBy_User != null ? c.LoggedBy_User.Name : "System",
+                SummaryItems = c.Items.Select(i => new ConsumptionLogSummaryItemDto
+                {
+                    Name = i.MenuItem != null ? i.MenuItem.Name : (i.Item != null ? i.Item.Name : "Unknown"),
+                    Quantity = i.Quantity
+                }).ToList()
             })
             .ToListAsync();
     }

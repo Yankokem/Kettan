@@ -9,7 +9,9 @@ import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
 import PriorityHighRoundedIcon from '@mui/icons-material/PriorityHighRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
+import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
 
 import { BackButton } from '../../components/UI/BackButton';
 import { Button } from '../../components/UI/Button';
@@ -33,7 +35,7 @@ const REQUEST_PRIORITIES = [
 ];
 
 const REQUEST_TYPES = [
-  { value: 'manual', label: 'Manual Internal Request' },
+  { value: 'manual', label: 'Manual Internal Push' },
   { value: 'replenishment', label: 'Low-Stock Replenishment' },
   { value: 'event', label: 'Promo or Event Loadout' },
 ];
@@ -214,202 +216,149 @@ export function NewOrderRequestPage() {
         <Paper
           elevation={0}
           sx={{
-            width: { xs: '100%', md: '42%' },
+            width: { xs: '100%', md: '35%' },
             flexShrink: 0,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: '14px',
-            p: { xs: 3, md: 4 },
+            borderRadius: '16px',
+            bgcolor: '#FFFFFF',
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gap: 0,
           }}
         >
-          {/* Request Context Section */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
-            <CategoryRoundedIcon sx={{ fontSize: 18 }} />
-            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Request Context</Typography>
+          <Box sx={{ p: 2, bgcolor: '#FAF7F2', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <AssignmentRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Push Context
+            </Typography>
           </Box>
 
-          <Grid container spacing={2.5} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <StorefrontRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Destination Branch
-                  </Typography>
+          <Box sx={{ p: 3 }}>
+            <Grid container spacing={2.5} sx={{ mb: 3 }}>
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <StorefrontRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                    <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Destination Branch
+                    </Typography>
+                  </Box>
+                  <Dropdown
+                    options={branchOptions}
+                    value={selectedBranch}
+                    onChange={(e) => setSelectedBranch(e.target.value as string)}
+                    fullWidth
+                  />
                 </Box>
-                <Dropdown
-                  options={branchOptions}
-                  value={selectedBranch}
-                  onChange={(e) => setSelectedBranch(e.target.value as string)}
-                  fullWidth
-                />
-              </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <CategoryRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                    <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Dispatch Subject
+                    </Typography>
+                  </Box>
+                  <MuiTextField
+                    fullWidth
+                    size="small"
+                    value={subject}
+                    onChange={(event) => setSubject(event.target.value)}
+                    inputProps={{ maxLength: 80 }}
+                    placeholder="Example: Pre-weekend stock push"
+                  />
+                </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <CategoryRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                    <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Push Type
+                    </Typography>
+                  </Box>
+                  <Dropdown
+                    options={REQUEST_TYPES}
+                    value={requestType}
+                    onChange={(e) => setRequestType(e.target.value as string)}
+                    fullWidth
+                  />
+                </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <CalendarMonthRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                    <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Expected Dispatch Date
+                    </Typography>
+                  </Box>
+                  <MuiTextField
+                    type="date"
+                    fullWidth
+                    size="small"
+                    value={dispatchDate}
+                    onChange={(event) => setDispatchDate(event.target.value)}
+                  />
+                </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <NotesRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                    <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Operational Notes
+                    </Typography>
+                  </Box>
+                  <MuiTextField
+                    fullWidth
+                    multiline
+                    minRows={3}
+                    placeholder="Example: prioritize milk and cups for weekend volume..."
+                    value={requestNotes}
+                    onChange={(event) => setRequestNotes(event.target.value)}
+                  />
+                </Box>
+              </Grid>
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <PriorityHighRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Priority Level
-                  </Typography>
-                </Box>
-                <Dropdown
-                  options={REQUEST_PRIORITIES}
-                  value={selectedPriority}
-                  onChange={(e) => setSelectedPriority(e.target.value as string)}
-                  fullWidth
-                />
-              </Box>
-            </Grid>
+            <Divider sx={{ my: 3, opacity: 0.6 }} />
 
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <CategoryRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Request Type
-                  </Typography>
-                </Box>
-                <Dropdown
-                  options={REQUEST_TYPES}
-                  value={requestType}
-                  onChange={(e) => setRequestType(e.target.value as string)}
-                  fullWidth
-                />
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <ScheduleSendRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Dispatch Window
-                  </Typography>
-                </Box>
-                <Dropdown
-                  options={DISPATCH_WINDOWS}
-                  value={dispatchWindow}
-                  onChange={(e) => setDispatchWindow(e.target.value as string)}
-                  fullWidth
-                />
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <CalendarMonthRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Expected Dispatch Date
-                  </Typography>
-                </Box>
-                <MuiTextField
-                  type="date"
-                  fullWidth
-                  size="small"
-                  value={dispatchDate}
-                  onChange={(event) => setDispatchDate(event.target.value)}
-                />
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <PersonOutlineIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Requesting Personnel
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    bgcolor: 'action.hover',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                  }}
-                >
-                  <Typography sx={{ fontSize: 13, color: 'text.primary' }}>
-                    {requesterLabel}
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <CategoryRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Dispatch Subject
-                  </Typography>
-                </Box>
-                <MuiTextField
-                  fullWidth
-                  size="small"
-                  value={subject}
-                  onChange={(event) => setSubject(event.target.value)}
-                  inputProps={{ maxLength: 80 }}
-                  placeholder="Example: Pre-weekend stock push"
-                />
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                  <NotesRoundedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Operational Notes
-                  </Typography>
-                </Box>
-                <MuiTextField
-                  fullWidth
-                  multiline
-                  minRows={3}
-                  placeholder="Example: prioritize milk and cups for weekend volume; partial fulfillment is acceptable for syrups."
-                  value={requestNotes}
-                  onChange={(event) => setRequestNotes(event.target.value)}
-                />
-              </Box>
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Request Summary Section */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
-            <InventoryRoundedIcon sx={{ fontSize: 18 }} />
-            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Request Summary</Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Line Items</Typography>
-              <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{selectedItems.length}</Typography>
+            {/* Request Summary Section */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+              <InventoryRoundedIcon sx={{ fontSize: 18 }} />
+              <Typography sx={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Push Summary
+              </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Requested Units</Typography>
-              <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{totalUnits}</Typography>
-            </Box>
-
-            {atRiskLines > 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography sx={{ fontSize: 12, color: '#F59E0B' }}>At-Risk Lines</Typography>
-                <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#F59E0B' }}>{atRiskLines}</Typography>
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Line Items</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#2E7D32' }}>{selectedItems.length}</Typography>
               </Box>
-            )}
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Estimated Cost</Typography>
-              <Typography sx={{ fontSize: 15, fontWeight: 700 }}>₱{estimatedCost.toFixed(2)}</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Units to Push</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#2E7D32' }}>{totalUnits}</Typography>
+              </Box>
+
+              {atRiskLines > 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography sx={{ fontSize: 12, color: '#F59E0B', fontWeight: 600 }}>At-Risk Lines</Typography>
+                  <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#F59E0B' }}>{atRiskLines}</Typography>
+                </Box>
+              )}
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Estimated Cost</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#2E7D32' }}>₱{estimatedCost.toFixed(2)}</Typography>
+              </Box>
             </Box>
           </Box>
         </Paper>
@@ -421,62 +370,79 @@ export function NewOrderRequestPage() {
             flex: 1,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: '14px',
-            p: { xs: 3, md: 4 },
+            borderRadius: '16px',
+            bgcolor: '#FFFFFF',
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gap: 3,
+            minHeight: 500
           }}
         >
-          <form onSubmit={handleSubmit}>
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
-                <InventoryRoundedIcon sx={{ fontSize: 18 }} />
-                <Typography sx={{ fontSize: 14, fontWeight: 700 }}>Requested Items</Typography>
+          <Box sx={{ p: 2.5, bgcolor: '#FAF7F2', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Inventory2RoundedIcon sx={{ fontSize: 20, color: '#6B4C2A' }} />
+              <Box>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#6B4C2A' }}>Items to Push</Typography>
+                <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 500 }}>
+                  Build the shipment inventory for this supply push
+                </Typography>
               </Box>
-
-              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
-                <Button
-                  onClick={(e) => { e.preventDefault(); setIsModalOpen(true); }}
-                  variant="outlined"
-                  startIcon={<AddCircleOutlineRoundedIcon />}
-                >
-                  Add Items
-                </Button>
-              </Box>
-
-              <SelectedItemsTable
-                items={selectedItems}
-                onRemoveItem={handleRemoveItem}
-                onUpdateQuantity={handleUpdateQuantity}
-              />
-
-              {atRiskLines > 0 && (
-                <Alert severity="warning" sx={{ mt: 3 }} icon={<ScheduleSendRoundedIcon fontSize="inherit" />}>
-                  {atRiskLines} line item(s) exceed available HQ stock. You can still submit this request, but fulfillment may be partial.
-                </Alert>
-              )}
-
-              {error && (
-                <Alert severity="error" sx={{ mt: 3 }}>
-                  {error}
-                </Alert>
-              )}
             </Box>
+          </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, pt: 2 }}>
-              <Button variant="outlined" onClick={() => navigate({ to: '/orders' })}>
-                Cancel
-              </Button>
+          <Box sx={{ flex: 1, p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 3 }}>
               <Button
-                type="submit"
-                variant="contained"
-                disabled={isSaving}
+                onClick={(e) => { e.preventDefault(); setIsModalOpen(true); }}
+                variant="outlined"
+                startIcon={<AddCircleOutlineRoundedIcon />}
               >
-                {isSaving ? 'Submitting...' : 'Submit Internal Request'}
+                Add Items
               </Button>
             </Box>
-          </form>
+
+            <SelectedItemsTable
+              items={selectedItems}
+              onRemoveItem={handleRemoveItem}
+              onUpdateQuantity={handleUpdateQuantity}
+            />
+
+            {atRiskLines > 0 && (
+              <Alert severity="warning" sx={{ mt: 3, borderRadius: '12px' }} icon={<ScheduleSendRoundedIcon fontSize="inherit" />}>
+                {atRiskLines} line item(s) exceed available HQ stock.
+              </Alert>
+            )}
+
+            {error && (
+              <Alert severity="error" sx={{ mt: 3, borderRadius: '12px' }}>
+                {error}
+              </Alert>
+            )}
+          </Box>
+
+          <Box sx={{ p: 3, bgcolor: '#FAFAFA', borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button variant="outlined" onClick={() => navigate({ to: '/orders' })}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              disabled={isSaving || selectedItems.length === 0}
+              sx={{ 
+                bgcolor: '#6B4C2A', 
+                color: 'white',
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                fontWeight: 800,
+                fontSize: 15,
+                '&:hover': { bgcolor: '#543B21' },
+                '&.Mui-disabled': { bgcolor: 'rgba(107,76,42,0.3)', color: 'rgba(255,255,255,0.7)' }
+              }}
+            >
+              {isSaving ? 'Submitting...' : 'Submit Supply Push'}
+            </Button>
+          </Box>
         </Paper>
       </Box>
 

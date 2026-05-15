@@ -63,6 +63,11 @@ export interface CreateSupplyRequestPayload {
   }>;
 }
 
+export interface ConsumptionLogSummaryItem {
+  name: string;
+  quantity: number;
+}
+
 export interface ConsumptionLog {
   consumptionLogId: number;
   branchId: number;
@@ -71,6 +76,10 @@ export interface ConsumptionLog {
   logDate: string;
   remarks: string | null;
   createdAt: string;
+  itemsCount: number;
+  totalQuantity: number;
+  loggedByName: string;
+  summaryItems: ConsumptionLogSummaryItem[];
 }
 
 // ── RETURNS TYPES ──
@@ -144,6 +153,7 @@ export interface ReturnEligibleOrderItem {
   itemSku: string;
   quantityDelivered: number;
   branchStock: number;
+  unitCost: number;
 }
 
 export interface ReturnEligibleOrder {

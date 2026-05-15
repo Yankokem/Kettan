@@ -60,6 +60,7 @@ interface ItemLine {
   itemSku: string;
   quantityDelivered: number;
   branchStock: number;
+  unitCost: number;
   selected: boolean;
   quantityReturned: string;
   reasonCode: string;
@@ -89,7 +90,6 @@ export function ReturnCreatePage() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | ''>('');
   const [, setOrderDetail] = useState<ReturnEligibleOrder | null>(null);
   const [orderDetailLoading, setOrderDetailLoading] = useState(false);
-
   // Step 2 — item lines
   const [lines, setLines] = useState<ItemLine[]>([]);
   const [nextReturnId, setNextReturnId] = useState<number | null>(null);
@@ -98,8 +98,17 @@ export function ReturnCreatePage() {
   const [reason, setReason] = useState('');
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
 
-  // We keep resolution and reason for general context, but not photoUrls
-  // since images are now per-item.
+  const selectedLines = lines.filter((l) => l.selected);
+
+  const totalReturnUnits = useMemo(
+    () => selectedLines.reduce((sum, line) => sum + (Number(line.quantityReturned) || 0), 0),
+    [selectedLines]
+  );
+
+  const estimatedLoss = useMemo(
+    () => selectedLines.reduce((sum, line) => sum + (Number(line.quantityReturned) || 0) * (line.unitCost ?? 0), 0),
+    [selectedLines]
+  );
 
   // Draft tracking
   const [draftId] = useState<number | null>(null);
@@ -159,6 +168,7 @@ export function ReturnCreatePage() {
             itemSku: i.itemSku,
             quantityDelivered: i.quantityDelivered,
             branchStock: i.branchStock,
+            unitCost: i.unitCost ?? 0,
             selected: false,
             quantityReturned: '',
             reasonCode: 'Damaged',
@@ -174,8 +184,6 @@ export function ReturnCreatePage() {
       }
     })();
   }, [selectedOrderId]);
-
-  const selectedLines = lines.filter((l) => l.selected);
 
   const toggleLine = (itemId: number) => {
     setError(null);
@@ -308,166 +316,48 @@ export function ReturnCreatePage() {
         </Box>
       </Box>
 
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, alignItems: 'flex-start' }}>
         {/* Left Container: Configuration */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Box sx={{ display: 'grid', gap: 3 }}>
-            <Paper 
-              elevation={0} 
-              sx={{ 
-                borderRadius: '16px', 
-                border: '1px solid', 
-                borderColor: 'divider',
-                background: '#FFFFFF',
-                overflow: 'hidden'
-              }}
-            >
-              <Box sx={{ p: 2, bgcolor: '#FAF7F2', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <AssignmentRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
-                <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Return Configuration
+        <Paper
+          elevation={0}
+          sx={{
+            width: { xs: '100%', md: '35%' },
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '16px',
+            bgcolor: '#FFFFFF',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <Box sx={{ p: 2, bgcolor: '#FAF7F2', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <AssignmentRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Return Configuration
+            </Typography>
+          </Box>
+
+          <Box sx={{ p: 3 }}>
+            {/* Order Selection */}
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <ShoppingBagRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  Linked Order
                 </Typography>
               </Box>
-              
-              <Box sx={{ p: 3 }}>
-                {/* Return Reference */}
-                <Box sx={{ mb: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                  <TagRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
-                  <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Reference ID
-                  </Typography>
+              {ordersLoading ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, p: 1 }}>
+                  <CircularProgress size={14} thickness={6} sx={{ color: '#6B4C2A' }} />
+                  <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Fetching eligible orders...</Typography>
                 </Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    p: 1.5,
-                    borderRadius: 2,
-                    bgcolor: nextReturnId ? 'rgba(107,76,42,0.05)' : 'rgba(0,0,0,0.02)',
-                    border: '1px solid',
-                    borderColor: nextReturnId ? 'rgba(107,76,42,0.1)' : 'rgba(0,0,0,0.05)',
-                  }}
-                >
-                  <TagRoundedIcon sx={{ fontSize: 16, color: nextReturnId ? '#6B4C2A' : 'text.secondary' }} />
-                  {nextReturnId ? (
-                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#6B4C2A' }}>
-                      RET-{nextReturnId.toString().padStart(5, '0')}
-                    </Typography>
-                  ) : (
-                    <Typography sx={{ fontSize: 12.5, fontStyle: 'italic', color: 'text.secondary' }}>
-                      Calculating...
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-
-              {/* Order Selection */}
-              <Box sx={{ mb: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                  <ShoppingBagRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
-                  <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Linked Order
-                  </Typography>
-                </Box>
-                {ordersLoading ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, p: 1 }}>
-                    <CircularProgress size={14} thickness={6} sx={{ color: '#6B4C2A' }} />
-                    <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>Fetching eligible orders...</Typography>
-                  </Box>
-                ) : (
-                  <Select
-                    value={selectedOrderId}
-                    onChange={(e) => setSelectedOrderId(e.target.value as number)}
-                    displayEmpty
-                    size="small"
-                    fullWidth
-                    sx={{ 
-                      fontSize: 14, 
-                      fontWeight: 600,
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.08)' }
-                    }}
-                  >
-                    <MenuItem value="" disabled>
-                      <em>Select a delivered order...</em>
-                    </MenuItem>
-                    {eligibleOrders.map((o) => {
-                      const isLinked = linkedOrderIds.has(o.orderId);
-                      const returnStatus = getReturnStatusForOrder(o.orderId);
-                      
-                      return (
-                        <MenuItem 
-                          key={o.orderId} 
-                          value={o.orderId}
-                          disabled={isLinked}
-                          sx={{
-                            opacity: isLinked ? 0.6 : 1,
-                            '&.Mui-disabled': { color: 'text.disabled' }
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                            <Typography sx={{ fontSize: 13, fontWeight: 700, color: isLinked ? 'text.disabled' : '#6B4C2A' }}>
-                              {o.transactionCode || `ORD-${o.orderId}`}
-                            </Typography>
-                            {isLinked && (
-                              <Chip 
-                                label={returnStatus === 'Completed' ? 'Already Returned' : 'Return Pending'} 
-                                size="small" 
-                                sx={{ 
-                                  height: 18, 
-                                  fontSize: 10, 
-                                  fontWeight: 700,
-                                  bgcolor: 'rgba(0,0,0,0.05)',
-                                  color: 'text.secondary',
-                                  ml: 1
-                                }} 
-                              />
-                            )}
-                            <Typography sx={{ fontSize: 12, color: 'text.secondary', ml: 'auto' }}>
-                              {new Date(o.deliveredAt).toLocaleDateString()}
-                            </Typography>
-                          </Box>
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
-                )}
-                {orderDetailLoading && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5, pl: 1 }}>
-                    <CircularProgress size={12} thickness={6} sx={{ color: '#6B4C2A' }} />
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Loading items...</Typography>
-                  </Box>
-                )}
-              </Box>
-
-              <Divider sx={{ my: 3, opacity: 0.6 }} />
-
-              {/* Resolution Configuration */}
-              <Box sx={{ mb: 3 }}>
-                <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>
-                  Subject / Title
-                </Typography>
-                <TextField
-                  placeholder="Example: Damaged delivery from morning shift"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  fullWidth
-                  slotProps={{ htmlInput: { maxLength: 80 } }}
-                />
-              </Box>
-
-              {/* Resolution Configuration */}
-              <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                  <ErrorOutlineRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
-                  <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Expected Resolution
-                  </Typography>
-                </Box>
+              ) : (
                 <Select
-                  value={resolution}
-                  onChange={(e) => setResolution(e.target.value)}
+                  value={selectedOrderId}
+                  onChange={(e) => setSelectedOrderId(e.target.value as number)}
+                  displayEmpty
                   size="small"
                   fullWidth
                   sx={{ 
@@ -476,64 +366,157 @@ export function ReturnCreatePage() {
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.08)' }
                   }}
                 >
-                  {RESOLUTION_OPTIONS.map((r) => (
-                    <MenuItem key={r.value} value={r.value} sx={{ fontSize: 13, fontWeight: 500 }}>
-                      {r.label}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="" disabled>
+                    <em>Select a delivered order...</em>
+                  </MenuItem>
+                  {eligibleOrders.map((o) => {
+                    const isLinked = linkedOrderIds.has(o.orderId);
+                    const returnStatus = getReturnStatusForOrder(o.orderId);
+                    
+                    return (
+                      <MenuItem 
+                        key={o.orderId} 
+                        value={o.orderId}
+                        disabled={isLinked}
+                        sx={{
+                          opacity: isLinked ? 0.6 : 1,
+                          '&.Mui-disabled': { color: 'text.disabled' }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: isLinked ? 'text.disabled' : '#6B4C2A' }}>
+                            {o.transactionCode || `ORD-${o.orderId}`}
+                          </Typography>
+                          {isLinked && (
+                            <Chip 
+                              label={returnStatus === 'Completed' ? 'Already Returned' : 'Return Pending'} 
+                              size="small" 
+                              sx={{ 
+                                height: 18, 
+                                fontSize: 10, 
+                                fontWeight: 700,
+                                bgcolor: 'rgba(0,0,0,0.05)',
+                                color: 'text.secondary',
+                                ml: 1
+                              }} 
+                            />
+                          )}
+                          <Typography sx={{ fontSize: 12, color: 'text.secondary', ml: 'auto' }}>
+                            {new Date(o.deliveredAt).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>
-                  Additional Notes
-                </Typography>
-                <TextField
-                  placeholder="Provide context for the return..."
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  multiline
-                  rows={3}
-                  fullWidth
-                />
-              </Box>
+              )}
+              {orderDetailLoading && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5, pl: 1 }}>
+                  <CircularProgress size={12} thickness={6} sx={{ color: '#6B4C2A' }} />
+                  <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Loading items...</Typography>
+                </Box>
+              )}
             </Box>
-          </Paper>
 
-          </Box>
-        </Grid>
+            <Divider sx={{ my: 3, opacity: 0.6 }} />
 
-        {/* Right Container: Item Composer */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            {error && (
-              <Paper 
-                elevation={0} 
+            {/* Resolution Configuration */}
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>
+                Subject / Title
+              </Typography>
+              <TextField
+                placeholder="Example: Damaged delivery from morning shift"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                fullWidth
+                slotProps={{ htmlInput: { maxLength: 80 } }}
+              />
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <ErrorOutlineRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  Expected Resolution
+                </Typography>
+              </Box>
+              <Select
+                value={resolution}
+                onChange={(e) => setResolution(e.target.value)}
+                size="small"
+                fullWidth
                 sx={{ 
-                  p: 2, 
-                  borderRadius: '12px', 
-                  bgcolor: 'rgba(239,68,68,0.05)', 
-                  border: '1px solid rgba(239,68,68,0.2)',
-                  display: 'flex',
-                  gap: 1.5
+                  fontSize: 14, 
+                  fontWeight: 600,
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.08)' }
                 }}
               >
-                <ErrorOutlineRoundedIcon sx={{ color: 'error.main', fontSize: 18, mt: 0.2 }} />
-                <Typography sx={{ fontSize: 13, color: 'error.dark', fontWeight: 500 }}>{error}</Typography>
-              </Paper>
-            )}
-            <Paper 
-              elevation={0} 
-            sx={{ 
-              borderRadius: '16px', 
-              border: '1px solid', 
-              borderColor: 'divider',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: 500
-            }}
-          >
+                {RESOLUTION_OPTIONS.map((r) => (
+                  <MenuItem key={r.value} value={r.value} sx={{ fontSize: 13, fontWeight: 500 }}>
+                    {r.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>
+                Additional Notes
+              </Typography>
+              <TextField
+                placeholder="Provide context for the return..."
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                multiline
+                rows={3}
+                fullWidth
+              />
+            </Box>
+
+            <Divider sx={{ my: 3, opacity: 0.6 }} />
+
+            {/* Return Summary Section */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, color: '#6B4C2A' }}>
+              <Inventory2RoundedIcon sx={{ fontSize: 18 }} />
+              <Typography sx={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Return Summary
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Line Items</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#D32F2F' }}>{selectedLines.length}</Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Units to Return</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#D32F2F' }}>{totalReturnUnits}</Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, color: '#6B4C2A', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Estimated Loss</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#D32F2F' }}>₱{estimatedLoss.toFixed(2)}</Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Right Container: Item Composer */}
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            flex: 1,
+            borderRadius: '16px', 
+            border: '1px solid', 
+            borderColor: 'divider',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 500
+          }}
+        >
             <Box sx={{ p: 2.5, bgcolor: '#FAF7F2', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Inventory2RoundedIcon sx={{ fontSize: 20, color: '#6B4C2A' }} />
@@ -607,9 +590,7 @@ export function ReturnCreatePage() {
               </Button>
             </Box>
           </Paper>
-          </Box>
-        </Grid>
-      </Grid>
+      </Box>
       <LoadingOverlay open={isSaving} />
     </Box>
   );

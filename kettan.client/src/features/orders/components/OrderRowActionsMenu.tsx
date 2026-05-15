@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IconButton, ListItemIcon, Menu, MenuItem, Typography } from '@mui/material';
+import { IconButton, ListItemIcon, Menu, MenuItem, Typography, Divider } from '@mui/material';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
@@ -117,13 +117,6 @@ export function OrderRowActionsMenu({
           </MenuItem>
         ) : null}
 
-        <MenuItem onClick={(event) => runAction(event, () => navigator.clipboard.writeText(orderId))}>
-          <ListItemIcon>
-            <ContentCopyRoundedIcon fontSize="small" sx={{ color: '#64748B' }} />
-          </ListItemIcon>
-          <Typography sx={{ color: '#64748B', fontSize: 14, fontWeight: 500 }}>Copy ID</Typography>
-        </MenuItem>
-
         {isHqUser && isPending && (
           <MenuItem onClick={(event) => runAction(event, () => onReject(orderId))}>
             <ListItemIcon>
@@ -141,6 +134,15 @@ export function OrderRowActionsMenu({
             <Typography sx={{ color: '#DC2626', fontSize: 14, fontWeight: 500 }}>Cancel Order</Typography>
           </MenuItem>
         )}
+
+        <Divider sx={{ my: 1 }} />
+
+        <MenuItem onClick={(event) => runAction(event, () => navigator.clipboard.writeText(orderId))}>
+          <ListItemIcon>
+            <ContentCopyRoundedIcon fontSize="small" sx={{ color: '#64748B' }} />
+          </ListItemIcon>
+          <Typography sx={{ color: '#64748B', fontSize: 14, fontWeight: 500 }}>Copy ID</Typography>
+        </MenuItem>
       </Menu>
     </>
   );

@@ -29,6 +29,12 @@ public class LogDirectConsumptionDto
     public List<DirectConsumptionLineDto> Items { get; set; } = [];
 }
 
+public class ConsumptionLogSummaryItemDto
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+}
+
 public class ConsumptionLogDto
 {
     public int ConsumptionLogId { get; set; }
@@ -38,6 +44,10 @@ public class ConsumptionLogDto
     public DateTime LogDate { get; set; }
     public string? Remarks { get; set; }
     public DateTime CreatedAt { get; set; }
+    public int ItemsCount { get; set; }
+    public decimal TotalQuantity { get; set; }
+    public string LoggedByName { get; set; } = string.Empty;
+    public List<ConsumptionLogSummaryItemDto> SummaryItems { get; set; } = [];
 }
 
 public class PreviewDeductionDto

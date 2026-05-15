@@ -16,6 +16,7 @@ import { fetchMenuItem, updateMenuItem, type MenuItemDto, type CreateMenuItemDto
 import { listMenuCategories, type MenuCategory } from './menuCategoryApi';
 import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 import type { InventoryItemOption, MenuItemFormData, MenuVariant } from './types';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const STATUS_OPTIONS = [
   { value: 'Active', label: 'Active' },
@@ -67,6 +68,10 @@ function toProfileFormData(item: MenuItemDto, options: InventoryItemOption[] = [
 
 export function MenuItemProfilePage() {
   const { menuItemId } = useParams({ strict: false });
+
+  const { user } = useAuthStore();
+  const userRole = user?.role ?? '';
+  const isBranchUser = userRole === 'BranchManager' || userRole === 'BranchStaff' || userRole === 'BranchOwner';
 
   const [menuItem, setMenuItem] = useState<MenuItemDto | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -179,6 +184,16 @@ export function MenuItemProfilePage() {
       }
 
       const basePrice = getLowestVariantPrice(formData.variants);
+      
+      // We populate root-level ingredients from the first variant to avoid "No ingredient mapping" errors
+      // on systems that aren't yet fully variant-aware in consumption logging.
+      const firstVariantIngredients = formData.variants[0]?.ingredients ?? [];
+      const rootIngredients = firstVariantIngredients.map(ing => ({
+        itemId: parseInt(ing.itemId),
+        quantityPerUnit: ing.qtyPerUnit,
+        unitOfMeasure: ing.uom || ''
+      }));
+
       const payload: CreateMenuItemDto = {
         name: formData.name,
         categoryId: parseInt(formData.category),
@@ -186,7 +201,7 @@ export function MenuItemProfilePage() {
         imageUrl: uploadedImageUrl,
         basePrice,
         status: formData.status,
-        ingredients: [],
+        ingredients: rootIngredients,
         variants: formData.variants.map((variant, idx) => ({
           name: variant.name,
           pricingMode: 'absolute',
@@ -233,18 +248,18 @@ export function MenuItemProfilePage() {
     : null;
 
   const header = (
-    <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+    <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1.25 }}>
       <BackButton to="/menu" />
       <Box sx={{ flex: 1 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
+        <Typography sx={{ fontSize: 17, fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
           {displayTitle}
         </Typography>
-        <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 0.5 }}>
+        <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
           Review menu item details, variant pricing, and ingredient stock levels.
         </Typography>
       </Box>
-      {!isEditing && !isLoading && isDataReady && menuItem && (
-        <Button variant="contained" startIcon={<EditRoundedIcon />} onClick={() => setIsEditing(true)}>
+      {!isEditing && !isLoading && isDataReady && menuItem && !isBranchUser && (
+        <Button variant="contained" startIcon={<EditRoundedIcon />} onClick={() => setIsEditing(true)} sx={{ height: 40 }}>
           Edit Menu Item
         </Button>
       )}
@@ -397,7 +412,7 @@ export function MenuItemProfilePage() {
           ) : (
             <>
               {/* Item Name */}
-              <Typography sx={{ fontSize: 22, fontWeight: 700, color: 'text.primary', mb: 1.5, lineHeight: 1.3 }}>
+              <Typography sx={{ fontSize: 18, fontWeight: 700, color: 'text.primary', mb: 1.2, lineHeight: 1.3 }}>
                 {displayTitle}
               </Typography>
 

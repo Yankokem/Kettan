@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Grid, Paper, Typography } from '@mui/material';
+import { Box, Chip, Grid, Paper, Typography, Tooltip, Stack, Divider } from '@mui/material';
 import ScaleRoundedIcon from '@mui/icons-material/ScaleRounded';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import TodayRoundedIcon from '@mui/icons-material/TodayRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
 import type { AxiosError } from 'axios';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -42,9 +44,6 @@ function defaultEndDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function methodChipStyle() {
-  return { color: '#2563EB', bg: 'rgba(37,99,235,0.10)', border: 'rgba(37,99,235,0.25)' };
-}
 
 export function ConsumptionPage() {
   const navigate = useNavigate();
@@ -126,7 +125,7 @@ export function ConsumptionPage() {
   const columns: ColumnDef<ConsumptionLog>[] = [
     {
       key: 'consumptionLogId',
-      label: 'Log ID',
+      label: 'LOG ID',
       width: 110,
       sortable: true,
       render: (row) => (
@@ -136,42 +135,101 @@ export function ConsumptionPage() {
       ),
     },
     {
-      key: 'method',
-      label: 'Method',
-      width: 130,
-      render: (row) => {
-        const style = methodChipStyle();
-        return (
-          <Chip
-            icon={<LocalCafeRoundedIcon sx={{ fontSize: 15 }} />}
-            label={row.method || 'Sales'}
-            size="small"
-            sx={{
-              fontSize: 11.5,
-              fontWeight: 600,
-              color: style.color,
-              bgcolor: style.bg,
-              border: `1px solid ${style.border}`,
-            }}
-          />
-        );
-      },
+      key: 'loggedByName',
+      label: 'LOGGED BY',
+      width: 150,
+      render: (row) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AccountCircleRoundedIcon sx={{ fontSize: 18, color: '#8C6B43' }} />
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>
+            {row.loggedByName || 'System'}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      key: 'itemsCount',
+      label: 'ITEMS',
+      width: 100,
+      render: (row) => (
+        <Tooltip
+          title={
+            <Box sx={{ p: 1, minWidth: 160, maxWidth: 240 }}>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 1, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' }}>
+                Included Items
+              </Typography>
+              <Stack
+                divider={<Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />}
+                spacing={0.8}
+                sx={{ 
+                  maxHeight: 180, 
+                  overflowY: 'auto',
+                  pr: 0.5,
+                  '&::-webkit-scrollbar': { width: 4 },
+                  '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2 }
+                }}
+              >
+                {row.summaryItems?.map((item, idx) => (
+                  <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                    <Typography sx={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>{item.name}</Typography>
+                    <Typography sx={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
+                      {item.quantity}
+                    </Typography>
+                  </Box>
+                ))}
+                {(!row.summaryItems || row.summaryItems.length === 0) && (
+                  <Typography sx={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+                    No items listed
+                  </Typography>
+                )}
+              </Stack>
+            </Box>
+          }
+          arrow
+          placement="top"
+        >
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, cursor: 'help', p: 0.5, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>
+              {row.itemsCount ?? 0}
+            </Typography>
+            <KeyboardArrowDownRoundedIcon sx={{ fontSize: 16, color: '#6B4C2A' }} />
+          </Box>
+        </Tooltip>
+      ),
+    },
+    {
+      key: 'totalQuantity',
+      label: 'TOTAL QTY',
+      width: 120,
+      align: 'center',
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#2E7D32' }}>
+          {row.totalQuantity?.toFixed(1) ?? '0.0'}
+        </Typography>
+      ),
     },
     {
       key: 'remarks',
-      label: 'Remarks',
+      label: 'REMARKS',
       sortable: true,
       render: (row) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{row.remarks || '--'}</Typography>,
     },
     {
       key: 'logDate',
-      label: 'Log Date',
-      width: 140,
+      label: 'LOG DATE & TIME',
+      width: 200,
       sortable: true,
       sortAccessor: (row) => new Date(row.logDate).getTime(),
       render: (row) => (
         <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>
-          {new Date(row.logDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          {new Date(row.logDate).toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })}
         </Typography>
       ),
     },

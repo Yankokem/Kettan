@@ -44,7 +44,7 @@ import { RegisterOtpPage } from '../features/marketing/RegisterOtpPage';
 import { RegisterOnboardingPage } from '../features/marketing/RegisterOnboardingPage';
 import { RegisterSuccessPage } from '../features/marketing/RegisterSuccessPage';
 import { useAuthStore } from '../store/useAuthStore';
-import { canAccessModule } from '../utils/roleHelpers';
+import { canAccessModule, isBranchRole } from '../utils/roleHelpers';
 import { TenantsPage } from '../features/super-admin/TenantsPage';
 import { TenantProfilePage } from '../features/super-admin/TenantProfilePage';
 import { AnalyticsPage } from '../features/analytics/AnalyticsPage';
@@ -256,18 +256,45 @@ const ordersRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/orders',
   component: OrdersPage,
+  beforeLoad: () => {
+    const role = useAuthStore.getState().user?.role;
+    if (role && isBranchRole(role)) {
+      throw redirect({ to: '/supply-requests' });
+    }
+    if (!role || !canAccessModule(role, 'order-processing')) {
+      throw redirect({ to: '/' });
+    }
+  },
 });
 
 const newOrderRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/orders/new',
   component: NewOrderRequestPage,
+  beforeLoad: () => {
+    const role = useAuthStore.getState().user?.role;
+    if (role && isBranchRole(role)) {
+      throw redirect({ to: '/supply-requests' });
+    }
+    if (!role || !canAccessModule(role, 'order-processing')) {
+      throw redirect({ to: '/' });
+    }
+  },
 });
 
 const orderDetailRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/orders/$orderId',
   component: OrderDetailPage,
+  beforeLoad: () => {
+    const role = useAuthStore.getState().user?.role;
+    if (role && isBranchRole(role)) {
+      throw redirect({ to: '/supply-requests' });
+    }
+    if (!role || !canAccessModule(role, 'order-processing')) {
+      throw redirect({ to: '/' });
+    }
+  },
 });
 
 

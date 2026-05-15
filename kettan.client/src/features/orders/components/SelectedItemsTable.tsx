@@ -59,7 +59,7 @@ export function SelectedItemsTable({ items, onRemoveItem, onUpdateQuantity, bran
     },
     {
       key: 'quantity',
-      label: 'Request Qty',
+      label: 'Push Qty',
       align: 'right',
       width: 'minmax(80px, 0.8fr)',
       render: (row) => (

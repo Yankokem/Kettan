@@ -306,7 +306,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("menu-stats")]
-    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff,BranchOwner,BranchManager")]
     public async Task<ActionResult<MenuStatsDto>> GetMenuStats()
     {
         try

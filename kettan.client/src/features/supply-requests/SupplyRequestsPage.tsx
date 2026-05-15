@@ -19,8 +19,7 @@ import IconButton from '@mui/material/IconButton';
 
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
-import StoreRoundedIcon from '@mui/icons-material/StoreRounded';
-import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
@@ -136,25 +135,21 @@ function ActionsMenu({ row, type }: { row: any; type: 'Request' | 'Dispatch' }) 
         }}
       >
         <MenuItem onClick={() => { handleClose(); navigate({ to: viewPath, params: viewParams }); }}>
-          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          <ListItemIcon><VisibilityRoundedIcon fontSize="small" sx={{ color: '#3B82F6' }} /></ListItemIcon>
+          <ListItemText primary="View Details" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#3B82F6' }} />
         </MenuItem>
         
         {type === 'Request' && (
           <MenuItem onClick={() => { handleClose(); navigate({ to: '/branches/$branchId', params: { branchId: String(row.branchId) } }); }}>
-            <ListItemIcon><StoreRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-            <ListItemText primary="View Branch" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+            <ListItemIcon><OpenInNewRoundedIcon fontSize="small" sx={{ color: '#16A34A' }} /></ListItemIcon>
+            <ListItemText primary="View Branch" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#16A34A' }} />
           </MenuItem>
         )}
 
-        <MenuItem onClick={() => { handleClose(); }}>
-          <ListItemIcon><ChatBubbleOutlineRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="Quick Message" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
-        </MenuItem>
         <Divider sx={{ my: 1 }} />
         <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(row.transactionCode || (type === 'Request' ? `SR-${row.requestId}` : `SD-${row.orderId}`)); }}>
-          <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} /></ListItemIcon>
-          <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }} />
+          <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: '#64748B' }} /></ListItemIcon>
+          <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#64748B' }} />
         </MenuItem>
       </Menu>
     </>
