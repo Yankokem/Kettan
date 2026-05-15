@@ -75,6 +75,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         }
 
         var orders = await query
+            .Where(o => o.SupplyRequest == null || o.SupplyRequest.RequestType != RequestType.Replacement)
             .OrderByDescending(o => o.PushedToFulfillmentAt)
             .ToListAsync();
 
@@ -594,7 +595,10 @@ public class OrderWorkflowService : IOrderWorkflowService
             query = query.Where(o => o.Status == parsedStatus);
         }
 
-        var orders = await query.OrderByDescending(o => o.PushedToFulfillmentAt).ToListAsync();
+        var orders = await query
+            .Where(o => o.SupplyRequest == null || o.SupplyRequest.RequestType != RequestType.Replacement)
+            .OrderByDescending(o => o.PushedToFulfillmentAt)
+            .ToListAsync();
         return orders.Select(MapToBranchOrderDto).ToList();
     }
 
@@ -618,7 +622,10 @@ public class OrderWorkflowService : IOrderWorkflowService
             query = query.Where(o => o.Status == parsedStatus);
         }
 
-        var orders = await query.OrderByDescending(o => o.PushedToFulfillmentAt).ToListAsync();
+        var orders = await query
+            .Where(o => o.SupplyRequest == null || o.SupplyRequest.RequestType != RequestType.Replacement)
+            .OrderByDescending(o => o.PushedToFulfillmentAt)
+            .ToListAsync();
         return orders.Select(MapToBranchOrderDto).ToList();
     }
 

@@ -38,6 +38,19 @@ public class SupplyRequestService : ISupplyRequestService
 
     public async Task<List<SupplyRequestDto>> ListAsync(string? status = null)
     {
+        // ── ONE-TIME BACKFILL ──
+        // Migrate old '2' values to HqInitiated (8) for SP- prefixed codes
+        // and Replacement (7) for return-linked records.
+        await _context.Database.ExecuteSqlRawAsync(@"
+            UPDATE SupplyRequests 
+            SET RequestType = 8 
+            WHERE RequestType = 2 AND TransactionCode LIKE 'SP%';
+            
+            UPDATE SupplyRequests 
+            SET RequestType = 7 
+            WHERE RequestType = 2 AND (Notes LIKE '%replacement%' OR ReferenceNumber LIKE 'RT-%');
+        ");
+
         if (!_currentUser.TenantId.HasValue)
         {
             return [];
@@ -71,6 +84,7 @@ public class SupplyRequestService : ISupplyRequestService
         }
 
         var requests = await query
+            .Where(r => r.RequestType != RequestType.Replacement)
             .OrderByDescending(r => r.UpdatedAt)
             .AsSplitQuery()
             .ToListAsync();

@@ -82,6 +82,10 @@ export function ConsumptionPage() {
 
   useEffect(() => {
     void loadLogs();
+    
+    // Auto-refresh when window regains focus (e.g. returning from another tab)
+    window.addEventListener('focus', () => void loadLogs());
+    return () => window.removeEventListener('focus', () => void loadLogs());
   }, [loadLogs]);
 
   const safeRows = useMemo(() => {
@@ -173,7 +177,7 @@ export function ConsumptionPage() {
                   <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
                     <Typography sx={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>{item.name}</Typography>
                     <Typography sx={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
-                      {item.quantity}
+                      {Math.floor(item.quantity)}
                     </Typography>
                   </Box>
                 ))}
@@ -204,7 +208,18 @@ export function ConsumptionPage() {
       align: 'center',
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#2E7D32' }}>
-          {row.totalQuantity?.toFixed(1) ?? '0.0'}
+          {Math.floor(row.totalQuantity)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'totalValue',
+      label: 'TOTAL PRICE SOLD',
+      width: 150,
+      align: 'right',
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#15803D' }}>
+          ₱{row.totalValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}
         </Typography>
       ),
     },

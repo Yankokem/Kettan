@@ -91,6 +91,9 @@ public class ReturnDto
     public bool HasVehicleScheduleConflict { get; set; }
     public string? SubmittedByName { get; set; }
     public List<ReturnScheduleConflictDto> VehicleScheduleConflicts { get; set; } = [];
+    public int? ReplacementOrderId { get; set; }
+    public string? ReplacementOrderCode { get; set; }
+    public string? ReplacementOrderStatus { get; set; }
     public List<ReturnItemDto> Items { get; set; } = [];
 }
 

@@ -316,20 +316,23 @@ export function SupplyRequestsPage() {
     {
       key: 'type',
       label: 'TYPE',
-      width: 100,
+      width: 130,
       sortable: true,
-      render: (row) => (
-        <Typography 
-          sx={{ 
-            fontSize: 13, 
-            fontWeight: 700, 
-            color: row.type === 'Request' ? '#6B4C2A' : '#546B3F',
-            letterSpacing: '0.02em'
-          }} 
-        >
-          {row.type}
-        </Typography>
-      ),
+      render: (row) => {
+        const isPush = row.displayId.startsWith('SP') || row.raw.requestType === 'HqInitiated';
+        return (
+          <Typography 
+            sx={{ 
+              fontSize: 13, 
+              fontWeight: 700, 
+              color: isPush ? '#546B3F' : '#6B4C2A',
+              letterSpacing: '0.02em'
+            }} 
+          >
+            {isPush ? 'HQ Initiated' : 'Request'}
+          </Typography>
+        );
+      },
     },
     {
       key: 'branchName',

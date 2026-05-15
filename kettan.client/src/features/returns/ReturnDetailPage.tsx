@@ -93,6 +93,11 @@ function statusStyle(status: string): StatusStyle {
     case 'Restock':     return { bg: '#E8F5E9', color: '#16a34a', label: 'Restock' };
     case 'WriteOff':    return { bg: '#FFEBEE', color: '#B91C1C', label: 'Write-off' };
     case 'Pending':     return { bg: '#FFF8E1', color: '#F57F17', label: 'Pending' };
+    case 'Processing':  return { bg: '#FFF8E1', color: '#F57F17', label: 'Processing' };
+    case 'Picking':     return { bg: '#E3F2FD', color: '#1D4ED8', label: 'Picking' };
+    case 'Packed':      return { bg: '#F3F4F6', color: '#374151', label: 'Packed' };
+    case 'InTransit':   return { bg: '#DBEAFE', color: '#1E40AF', label: 'In Transit' };
+    case 'Delivered':   return { bg: '#DCFCE7', color: '#166534', label: 'Delivered' };
     default:            return { bg: '#F5F5F5', color: '#616161', label: status };
   }
 }
@@ -1466,6 +1471,62 @@ export function ReturnDetailPage() {
             )}
             </Box>
           </Paper>
+
+          {/* ── Replacement Fulfillment Tracking ── */}
+          {row.resolution === 'Replaced' && row.replacementOrderCode && (
+            <Paper sx={{ p: 0, borderRadius: '14px', border: '1px solid', borderColor: '#C9A84C', overflow: 'hidden', bgcolor: '#FDFCFB' }} elevation={0}>
+                <Box sx={{ 
+                    p: 2, 
+                    background: 'linear-gradient(170deg, #F0E6D3 0%, #FAF5EF 100%)', 
+                    borderBottom: '1px solid', 
+                    borderColor: 'rgba(201, 168, 76, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                        <LocalShippingRoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
+                        <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Replacement Fulfillment</Typography>
+                    </Box>
+                    <Box sx={{ 
+                        px: 1.2, 
+                        py: 0.4, 
+                        borderRadius: '6px', 
+                        fontSize: 11, 
+                        fontWeight: 700, 
+                        textTransform: 'uppercase',
+                        bgcolor: statusStyle(row.replacementOrderStatus ?? 'Processing').bg,
+                        color: statusStyle(row.replacementOrderStatus ?? 'Processing').color,
+                        border: '1px solid',
+                        borderColor: alpha(statusStyle(row.replacementOrderStatus ?? 'Processing').color, 0.2)
+                    }}>
+                        {statusStyle(row.replacementOrderStatus ?? 'Processing').label}
+                    </Box>
+                </Box>
+                <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                    <Box>
+                        <Typography sx={{ fontSize: 16, fontWeight: 800, color: '#6B4C2A' }}>{row.replacementOrderCode}</Typography>
+                        <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.2 }}>
+                            This replacement order was auto-generated to replenish the branch's stock.
+                        </Typography>
+                    </Box>
+                    {isHq && (
+                        <Button 
+                            variant="contained" 
+                            size="small"
+                            onClick={() => window.open(`/layout/orders/${row.replacementOrderId}`, '_blank')}
+                            sx={{ 
+                                whiteSpace: 'nowrap',
+                                bgcolor: '#6B4C2A',
+                                '&:hover': { bgcolor: '#543B21' }
+                            }}
+                        >
+                            Manage Fulfillment
+                        </Button>
+                    )}
+                </Box>
+            </Paper>
+          )}
         </Box>
       </Box>
 

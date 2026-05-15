@@ -54,6 +54,7 @@ export function ConsumptionCreatePage() {
   const [salesLines, setSalesLines] = useState<SalesLine[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [menuItems, setMenuItems] = useState<SoldMenuItemOption[]>([]);
 
@@ -154,11 +155,13 @@ export function ConsumptionCreatePage() {
           quantitySold: line.quantitySold,
         })),
       });
-
-      navigate({ to: '/consumption' });
+      
+      setIsSuccess(true);
+      setTimeout(() => {
+        navigate({ to: '/consumption' });
+      }, 1500);
     } catch (saveError) {
       setError(getErrorMessage(saveError));
-    } finally {
       setIsSaving(false);
     }
   };
@@ -288,6 +291,12 @@ export function ConsumptionCreatePage() {
           {error ? (
             <Typography sx={{ color: 'error.main', fontSize: 12.5, mt: 2, p: 1.5, bgcolor: 'rgba(185, 28, 28, 0.05)', borderRadius: 2 }}>
               {error}
+            </Typography>
+          ) : null}
+
+          {isSuccess ? (
+            <Typography sx={{ color: 'success.main', fontSize: 12.5, mt: 2, p: 1.5, bgcolor: 'rgba(21, 128, 61, 0.05)', borderRadius: 2, fontWeight: 700 }}>
+              ✓ Consumption logged successfully! Redirecting...
             </Typography>
           ) : null}
         </Paper>

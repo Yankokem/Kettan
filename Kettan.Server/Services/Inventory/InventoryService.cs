@@ -216,7 +216,7 @@ public class InventoryService : IInventoryService
             _context.InventoryTransactions.Add(new InventoryTransaction
             {
                 TenantId = tenantId,
-                TransactionCode = transCode,
+                TransactionCode = batches.Count > 1 ? $"{transCode}-{deductions.Count + 1}" : transCode,
                 BatchId = batch.BatchId,
                 UserId = userId,
                 QuantityChange = -consume,
@@ -387,7 +387,7 @@ public class InventoryService : IInventoryService
         _context.InventoryTransactions.Add(new InventoryTransaction
         {
             TenantId = tenantId,
-            TransactionCode = transCode,
+            TransactionCode = $"{transCode}-OUT",
             BatchId = sourceBatch.BatchId,
             UserId = userId,
             QuantityChange = -quantity,
@@ -401,7 +401,7 @@ public class InventoryService : IInventoryService
         _context.InventoryTransactions.Add(new InventoryTransaction
         {
             TenantId = tenantId,
-            TransactionCode = transCode,
+            TransactionCode = $"{transCode}-IN",
             BatchId = targetBatch.BatchId,
             UserId = userId,
             QuantityChange = quantity,

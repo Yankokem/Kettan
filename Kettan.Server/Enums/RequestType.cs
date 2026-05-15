@@ -6,10 +6,10 @@ public enum RequestType : byte
     Manual = 0,         // Alias for Regular
     Emergency = 1,
     Scheduled = 2,
-    HqInitiated = 2,    // Alias for Scheduled
-    Auto = 2,           // Alias for Scheduled
-    Replacement = 2,    // Alias for Scheduled
     Replenishment = 3,
     EventLoadout = 4,
-    NewBranchSetup = 5
+    NewBranchSetup = 5,
+    Auto = 6,
+    Replacement = 7,
+    HqInitiated = 8
 }

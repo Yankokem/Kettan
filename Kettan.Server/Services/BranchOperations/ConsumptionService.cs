@@ -239,7 +239,15 @@ public class ConsumptionService : IConsumptionService
                 CreatedAt = c.CreatedAt,
                 ItemsCount = c.Items.Count,
                 TotalQuantity = c.Items.Sum(i => i.Quantity),
-                LoggedByName = c.LoggedBy_User != null ? c.LoggedBy_User.Name : "System",
+                TotalValue = c.Items
+                    .GroupBy(i => i.MenuItemId)
+                    .Select(g => g.Key == null 
+                        ? g.Sum(i => i.Quantity * (i.Item != null ? i.Item.UnitCost : 0)) // Direct
+                        : (g.FirstOrDefault()!.MenuItem != null 
+                            ? (g.First().MenuItem!.BasePrice * (g.First().Quantity / (g.First().MenuItem!.Ingredients.Any() ? g.First().MenuItem!.Ingredients.First(mi => mi.ItemId == g.First().ItemId).QuantityPerUnit : 1)))
+                            : 0))
+                    .Sum(),
+                LoggedByName = c.LoggedBy_User != null ? c.LoggedBy_User.FirstName + " " + c.LoggedBy_User.LastName : "System",
                 SummaryItems = c.Items.Select(i => new ConsumptionLogSummaryItemDto
                 {
                     Name = i.MenuItem != null ? i.MenuItem.Name : (i.Item != null ? i.Item.Name : "Unknown"),

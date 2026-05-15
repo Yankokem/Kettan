@@ -78,6 +78,7 @@ export interface ConsumptionLog {
   createdAt: string;
   itemsCount: number;
   totalQuantity: number;
+  totalValue: number;
   loggedByName: string;
   summaryItems: ConsumptionLogSummaryItem[];
 }
@@ -141,6 +142,9 @@ export interface ReturnRecord {
   hasVehicleScheduleConflict: boolean;
   vehicleScheduleConflicts: ReturnScheduleConflict[];
   items: ReturnItemDto[];
+  replacementOrderId: number | null;
+  replacementOrderCode: string | null;
+  replacementOrderStatus: string | null;
   submittedByName?: string | null;
 }
 

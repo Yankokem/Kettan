@@ -46,6 +46,7 @@ public class ConsumptionLogDto
     public DateTime CreatedAt { get; set; }
     public int ItemsCount { get; set; }
     public decimal TotalQuantity { get; set; }
+    public decimal TotalValue { get; set; }
     public string LoggedByName { get; set; } = string.Empty;
     public List<ConsumptionLogSummaryItemDto> SummaryItems { get; set; } = [];
 }

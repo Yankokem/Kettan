@@ -79,7 +79,19 @@ public class ReturnService : IReturnService
             .OrderByDescending(r => r.LoggedAt)
             .ToListAsync();
 
-        return rows.Select(MapToDto).ToList();
+        var returnCodes = rows.Where(r => r.Resolution == ReturnResolution.Replaced).Select(r => r.TransactionCode).ToList();
+        var replacements = await _context.Orders
+            .Include(o => o.SupplyRequest)
+            .Where(o => o.SupplyRequest!.RequestType == RequestType.Replacement && 
+                        o.SupplyRequest.ReferenceNumber != null &&
+                        returnCodes.Contains(o.SupplyRequest.ReferenceNumber))
+            .ToDictionaryAsync(o => o.SupplyRequest!.ReferenceNumber!);
+        
+        return rows.Select(r => 
+        {
+            replacements.TryGetValue(r.TransactionCode, out var replacement);
+            return MapToDto(r, replacement);
+        }).ToList();
     }
 
     public async Task<ReturnDto?> GetByIdAsync(int returnId)
@@ -90,7 +102,15 @@ public class ReturnService : IReturnService
             return null;
         }
 
-        return MapToDto(row);
+        Order? replacementOrder = null;
+        if (row.Resolution == ReturnResolution.Replaced)
+        {
+            replacementOrder = await _context.Orders
+                .FirstOrDefaultAsync(o => o.SupplyRequest!.ReferenceNumber == row.TransactionCode && 
+                                          o.SupplyRequest.RequestType == RequestType.Replacement);
+        }
+
+        return MapToDto(row, replacementOrder);
     }
 
     public async Task<List<ReturnEligibleOrderDto>> GetEligibleOrdersAsync()
@@ -1169,6 +1189,7 @@ public class ReturnService : IReturnService
         {
             TenantId = returnEntry.TenantId,
             TransactionCode = await _sequenceService.GenerateNextCodeAsync(returnEntry.TenantId, "SupplyRequest", "SR"),
+            ReferenceNumber = returnEntry.TransactionCode,
             BranchId = returnEntry.BranchId,
             RequestedBy_UserId = userId,
             Status = SupplyRequestStatus.Approved,
@@ -1231,9 +1252,9 @@ public class ReturnService : IReturnService
         };
     }
 
-    private static ReturnDto MapToDto(Return row)
+    private static ReturnDto MapToDto(Return row, Order? replacementOrder = null)
     {
-        return new ReturnDto
+        var dto = new ReturnDto
         {
             TransactionCode = row.TransactionCode,
             ReturnId = row.ReturnId,
@@ -1265,6 +1286,9 @@ public class ReturnService : IReturnService
             PickupVehiclePlateNumber = row.PickupVehicle?.PlateNumber,
             PickupScheduledAt = row.PickupScheduledAt,
             PickupLastUpdatedAt = row.PickupLastUpdatedAt,
+            ReplacementOrderId = replacementOrder?.OrderId,
+            ReplacementOrderCode = replacementOrder?.TransactionCode,
+            ReplacementOrderStatus = replacementOrder?.Status.ToString(),
             Items = row.Items.Select(i => new ReturnItemDto
             {
                 ReturnItemId = i.ReturnItemId,
@@ -1282,6 +1306,8 @@ public class ReturnService : IReturnService
                 PhotoUrls = i.PhotoUrls
             }).ToList()
         };
+
+        return dto;
     }
 
     private static void RecalculateReturnValues(Return row)
