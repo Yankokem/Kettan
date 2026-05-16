@@ -317,8 +317,6 @@ export function DashboardPage() {
                       closeDetail();
                       if (detailModal.title === 'Low Stock Items') {
                         navigate({ to: '/hq-inventory' });
-                      } else if (item.id.startsWith('RET-')) {
-                         navigate({ to: '/returns' });
                       } else if (item.id.startsWith('ORD-')) {
                          navigate({ to: `/orders/${item.id.replace('ORD-', '')}` });
                       } else {

@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { StaticMotionDiv } from "../marketing/noMotion";
-import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { api } from "../../utils/api";
 import logo from "../../assets/logo.png";
@@ -34,8 +34,30 @@ export function LoginPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // MFA state
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
+  const searchParams = useSearch({ from: '/login' });
+
+  // If user was redirected due to timeout, set the submit error
+  useState(() => {
+    if (searchParams.reason === 'timeout') {
+      setSubmitError("You were logged out due to inactivity. Please sign in again.");
+    }
+  });
+
+  // Focus the first OTP input when MFA screen shows
+  useEffect(() => {
+    if (mfaRequired && otpRefs.current[0]) {
+      otpRefs.current[0].focus();
+    }
+  }, [mfaRequired]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -44,6 +66,43 @@ export function LoginPage() {
     if (!password || password.length < 8)
       errs.password = "Password must be at least 8 characters.";
     return errs;
+  };
+
+  const completeLogin = async (loginRes: { data: { token?: string; userId?: number; email?: string; name?: string; role?: string; tenantId?: number; branchId?: number; imageUrl?: string } }) => {
+    const token = loginRes.data?.token;
+    if (token) {
+      useAuthStore.setState({ token });
+    }
+
+    const meResponse = await api.get<AuthMeResponse>("/api/auth/me");
+    const me = meResponse.data;
+
+    login(
+      {
+        id: String(me.user.id),
+        email: me.user.email,
+        name: me.user.name,
+        role: me.user.role,
+        branchId: me.user.branchId,
+        imageUrl: me.user.imageUrl,
+        tenant: me.tenant
+          ? {
+              id: String(me.tenant.id),
+              name: me.tenant.name,
+              subscriptionTier: me.tenant.subscriptionTier,
+              subscriptionStatus: me.tenant.subscriptionStatus,
+              isActive: me.tenant.isActive,
+              profileComplete: me.tenant.profileComplete,
+              logoUrl: me.tenant.logoUrl,
+            }
+          : null,
+      },
+      token || null
+    );
+
+    const isTenantAdmin = me.user.role === 'TenantAdmin';
+    const isProfileComplete = me.tenant?.profileComplete ?? true;
+    navigate({ to: isTenantAdmin && !isProfileComplete ? '/company-profile' : '/' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,42 +115,16 @@ export function LoginPage() {
 
     try {
       const loginRes = await api.post("/api/auth/login", { email, password });
-      
-      // Store the token immediately so the next requests can use it if the cookie wasn't set
-      const token = loginRes.data?.token;
-      if (token) {
-        useAuthStore.setState({ token });
+
+      // Check if MFA is required
+      if (loginRes.data?.requiresMfa) {
+        setMfaRequired(true);
+        setMfaToken(loginRes.data.mfaToken);
+        setSubmitError(null);
+        return;
       }
 
-      const meResponse = await api.get<AuthMeResponse>("/api/auth/me");
-      const me = meResponse.data;
-
-      login(
-        {
-          id: String(me.user.id),
-          email: me.user.email,
-          name: me.user.name,
-          role: me.user.role,
-          branchId: me.user.branchId,
-          imageUrl: me.user.imageUrl,
-          tenant: me.tenant
-            ? {
-                id: String(me.tenant.id),
-                name: me.tenant.name,
-                subscriptionTier: me.tenant.subscriptionTier,
-                subscriptionStatus: me.tenant.subscriptionStatus,
-                isActive: me.tenant.isActive,
-                profileComplete: me.tenant.profileComplete,
-                logoUrl: me.tenant.logoUrl,
-              }
-            : null,
-        },
-        token || null
-      );
-
-      const isTenantAdmin = me.user.role === 'TenantAdmin';
-      const isProfileComplete = me.tenant?.profileComplete ?? true;
-      navigate({ to: isTenantAdmin && !isProfileComplete ? '/company-profile' : '/' });
+      await completeLogin(loginRes);
     } catch (error) {
       const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message
         ?? "Unable to sign in. Please verify your credentials and try again.";
@@ -99,6 +132,73 @@ export function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return; // Only digits
+    const newDigits = [...otpDigits];
+    newDigits[index] = value.slice(-1); // Only keep last digit
+    setOtpDigits(newDigits);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const newDigits = [...otpDigits];
+    for (let i = 0; i < 6; i++) {
+      newDigits[i] = pasted[i] || "";
+    }
+    setOtpDigits(newDigits);
+    // Focus the next empty or last input
+    const nextEmpty = newDigits.findIndex(d => !d);
+    otpRefs.current[nextEmpty >= 0 ? nextEmpty : 5]?.focus();
+  };
+
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const otpCode = otpDigits.join("");
+    if (otpCode.length !== 6) {
+      setSubmitError("Please enter the full 6-digit code.");
+      return;
+    }
+    setSubmitError(null);
+    setLoading(true);
+
+    try {
+      const verifyRes = await api.post("/api/auth/verify-mfa", {
+        mfaToken,
+        otpCode,
+      });
+
+      await completeLogin(verifyRes);
+    } catch (error) {
+      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        ?? "Invalid or expired verification code. Please try again.";
+      setSubmitError(errorMessage);
+      setOtpDigits(["", "", "", "", "", ""]);
+      otpRefs.current[0]?.focus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setMfaRequired(false);
+    setMfaToken(null);
+    setOtpDigits(["", "", "", "", "", ""]);
+    setSubmitError(null);
+    setPassword("");
   };
 
   return (
@@ -175,158 +275,275 @@ export function LoginPage() {
             <img src={logo} alt="Kettan" width="120" />
           </div>
 
-          <Link
-            to="/market"
-            className="inline-flex items-center gap-1.5 mb-8 text-sm"
-            style={{ color: "#8C6B43", fontWeight: 500 }}
-          >
-            <ArrowLeft size={14} />
-            Back to home
-          </Link>
-
-          <div className="mb-8">
-            <h1
-              style={{
-                fontSize: "1.8rem",
-                fontWeight: 800,
-                color: "#2C1A0E",
-                marginBottom: "8px",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Sign in to Kettan
-            </h1>
-            <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "6px" }}>
-              Access your coffee chain management dashboard
-            </p>
-            <p style={{ fontSize: "13px", color: "#8C6B43" }}>
-              Don't have an account?{" "}
-              <Link to="/market/pricing" style={{ color: "#6B4C2A", fontWeight: 600 }}>
-                Sign up →
-              </Link>
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {submitError && (
-              <div
-                className="rounded-xl px-4 py-3"
-                style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
+          {!mfaRequired ? (
+            <>
+              <Link
+                to="/market"
+                className="inline-flex items-center gap-1.5 mb-8 text-sm"
+                style={{ color: "#8C6B43", fontWeight: 500 }}
               >
-                <p style={{ fontSize: "13px", color: "#B91C1C", fontWeight: 600 }}>{submitError}</p>
-              </div>
-            )}
+                <ArrowLeft size={14} />
+                Back to home
+              </Link>
 
-            {/* Email */}
-            <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2C1A0E", marginBottom: "8px" }}>
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <Mail size={16} style={{ color: "#8C6B43" }} />
-                </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@coffeeco.ph"
-                  maxLength={256}
-                  className="w-full pl-11 pr-4 py-3.5 rounded-xl outline-none"
+              <div className="mb-8">
+                <h1
                   style={{
-                    border: errors.email ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.15)",
-                    backgroundColor: "#FDFAF5",
-                    fontSize: "14px",
+                    fontSize: "1.8rem",
+                    fontWeight: 800,
                     color: "#2C1A0E",
-                    transition: "border-color 0.2s, box-shadow 0.2s",
-                    boxShadow: "0 1px 3px rgba(107,76,42,0.05)",
+                    marginBottom: "8px",
+                    letterSpacing: "-0.02em",
                   }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#6B4C2A";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08), 0 1px 3px rgba(107,76,42,0.05)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = errors.email ? "#EF4444" : "rgba(107,76,42,0.15)";
-                    e.target.style.boxShadow = "0 1px 3px rgba(107,76,42,0.05)";
-                  }}
-                />
-              </div>
-              {errors.email && <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "6px" }}>{errors.email}</p>}
-            </div>
-
-            {/* Password */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label style={{ fontSize: "13px", fontWeight: 600, color: "#2C1A0E" }}>Password</label>
-                <button
-                  type="button"
-                  style={{ fontSize: "12px", color: "#6B4C2A", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}
                 >
-                  Forgot password?
-                </button>
+                  Sign in to Kettan
+                </h1>
+                <p style={{ fontSize: "14px", color: "#5C4A37", marginBottom: "6px" }}>
+                  Access your coffee chain management dashboard
+                </p>
+                <p style={{ fontSize: "13px", color: "#8C6B43" }}>
+                  Don't have an account?{" "}
+                  <Link to="/market/pricing" style={{ color: "#6B4C2A", fontWeight: 600 }}>
+                    Sign up →
+                  </Link>
+                </p>
               </div>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <Lock size={16} style={{ color: "#8C6B43" }} />
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {submitError && (
+                  <div
+                    className="rounded-xl px-4 py-3"
+                    style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
+                  >
+                    <p style={{ fontSize: "13px", color: "#B91C1C", fontWeight: 600 }}>{submitError}</p>
+                  </div>
+                )}
+
+                {/* Email */}
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2C1A0E", marginBottom: "8px" }}>
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <Mail size={16} style={{ color: "#8C6B43" }} />
+                    </div>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@coffeeco.ph"
+                      maxLength={256}
+                      className="w-full pl-11 pr-4 py-3.5 rounded-xl outline-none"
+                      style={{
+                        border: errors.email ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.15)",
+                        backgroundColor: "#FDFAF5",
+                        fontSize: "14px",
+                        color: "#2C1A0E",
+                        transition: "border-color 0.2s, box-shadow 0.2s",
+                        boxShadow: "0 1px 3px rgba(107,76,42,0.05)",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#6B4C2A";
+                        e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08), 0 1px 3px rgba(107,76,42,0.05)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = errors.email ? "#EF4444" : "rgba(107,76,42,0.15)";
+                        e.target.style.boxShadow = "0 1px 3px rgba(107,76,42,0.05)";
+                      }}
+                    />
+                  </div>
+                  {errors.email && <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "6px" }}>{errors.email}</p>}
                 </div>
-                <input
-                  type={showPw ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  maxLength={64}
-                  className="w-full pl-11 pr-12 py-3.5 rounded-xl outline-none"
-                  style={{
-                    border: errors.password ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.15)",
-                    backgroundColor: "#FDFAF5",
-                    fontSize: "14px",
-                    color: "#2C1A0E",
-                    transition: "border-color 0.2s, box-shadow 0.2s",
-                    boxShadow: "0 1px 3px rgba(107,76,42,0.05)",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#6B4C2A";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08), 0 1px 3px rgba(107,76,42,0.05)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = errors.password ? "#EF4444" : "rgba(107,76,42,0.15)";
-                    e.target.style.boxShadow = "0 1px 3px rgba(107,76,42,0.05)";
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                >
-                  {showPw ? <EyeOff size={16} style={{ color: "#8C6B43" }} /> : <Eye size={16} style={{ color: "#8C6B43" }} />}
-                </button>
-              </div>
-              {errors.password && <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "6px" }}>{errors.password}</p>}
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white transition-all duration-200 mt-6"
-              style={{
-                backgroundColor: loading ? "#8C6B43" : "#6B4C2A",
-                fontWeight: 700,
-                fontSize: "15px",
-                boxShadow: loading ? "none" : "0 4px 20px rgba(107,76,42,0.25)",
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In to Dashboard →"
-              )}
-            </button>
-          </form>
+                {/* Password */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label style={{ fontSize: "13px", fontWeight: 600, color: "#2C1A0E" }}>Password</label>
+                    <Link
+                      to="/forgot-password"
+                      style={{ fontSize: "12px", color: "#6B4C2A", fontWeight: 600, textDecoration: "none" }}
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <Lock size={16} style={{ color: "#8C6B43" }} />
+                    </div>
+                    <input
+                      type={showPw ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      maxLength={64}
+                      className="w-full pl-11 pr-12 py-3.5 rounded-xl outline-none"
+                      style={{
+                        border: errors.password ? "1.5px solid #EF4444" : "1.5px solid rgba(107,76,42,0.15)",
+                        backgroundColor: "#FDFAF5",
+                        fontSize: "14px",
+                        color: "#2C1A0E",
+                        transition: "border-color 0.2s, box-shadow 0.2s",
+                        boxShadow: "0 1px 3px rgba(107,76,42,0.05)",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#6B4C2A";
+                        e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08), 0 1px 3px rgba(107,76,42,0.05)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = errors.password ? "#EF4444" : "rgba(107,76,42,0.15)";
+                        e.target.style.boxShadow = "0 1px 3px rgba(107,76,42,0.05)";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2"
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                    >
+                      {showPw ? <EyeOff size={16} style={{ color: "#8C6B43" }} /> : <Eye size={16} style={{ color: "#8C6B43" }} />}
+                    </button>
+                  </div>
+                  {errors.password && <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "6px" }}>{errors.password}</p>}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white transition-all duration-200 mt-6"
+                  style={{
+                    backgroundColor: loading ? "#8C6B43" : "#6B4C2A",
+                    fontWeight: 700,
+                    fontSize: "15px",
+                    boxShadow: loading ? "none" : "0 4px 20px rgba(107,76,42,0.25)",
+                    cursor: loading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign In to Dashboard →"
+                  )}
+                </button>
+              </form>
+            </>
+          ) : (
+            /* MFA OTP Verification Screen */
+            <>
+              <button
+                onClick={handleBackToLogin}
+                className="inline-flex items-center gap-1.5 mb-8 text-sm"
+                style={{ color: "#8C6B43", fontWeight: 500, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+              >
+                <ArrowLeft size={14} />
+                Back to login
+              </button>
+
+              <div className="mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: "rgba(107,76,42,0.1)" }}
+                  >
+                    <ShieldCheck size={24} style={{ color: "#6B4C2A" }} />
+                  </div>
+                  <div>
+                    <h1
+                      style={{
+                        fontSize: "1.5rem",
+                        fontWeight: 800,
+                        color: "#2C1A0E",
+                        letterSpacing: "-0.02em",
+                      }}
+                    >
+                      Verify your identity
+                    </h1>
+                  </div>
+                </div>
+                <p style={{ fontSize: "14px", color: "#5C4A37", lineHeight: 1.6 }}>
+                  We've sent a 6-digit verification code to <strong style={{ color: "#2C1A0E" }}>{email}</strong>. 
+                  Please enter it below.
+                </p>
+              </div>
+
+              <form onSubmit={handleMfaSubmit} className="space-y-6">
+                {submitError && (
+                  <div
+                    className="rounded-xl px-4 py-3"
+                    style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
+                  >
+                    <p style={{ fontSize: "13px", color: "#B91C1C", fontWeight: 600 }}>{submitError}</p>
+                  </div>
+                )}
+
+                {/* OTP Input Boxes */}
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2C1A0E", marginBottom: "12px" }}>
+                    Verification Code
+                  </label>
+                  <div className="flex gap-3 justify-center" onPaste={handleOtpPaste}>
+                    {otpDigits.map((digit, i) => (
+                      <input
+                        key={i}
+                        ref={(el) => { otpRefs.current[i] = el; }}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(i, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                        className="w-12 h-14 text-center rounded-xl outline-none text-xl font-bold"
+                        style={{
+                          border: "1.5px solid rgba(107,76,42,0.15)",
+                          backgroundColor: "#FDFAF5",
+                          color: "#2C1A0E",
+                          transition: "border-color 0.2s, box-shadow 0.2s",
+                          boxShadow: "0 1px 3px rgba(107,76,42,0.05)",
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#6B4C2A";
+                          e.target.style.boxShadow = "0 0 0 3px rgba(107,76,42,0.08), 0 1px 3px rgba(107,76,42,0.05)";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "rgba(107,76,42,0.15)";
+                          e.target.style.boxShadow = "0 1px 3px rgba(107,76,42,0.05)";
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white transition-all duration-200"
+                  style={{
+                    backgroundColor: loading ? "#8C6B43" : "#6B4C2A",
+                    fontWeight: 700,
+                    fontSize: "15px",
+                    boxShadow: loading ? "none" : "0 4px 20px rgba(107,76,42,0.25)",
+                    cursor: loading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    "Verify & Sign In →"
+                  )}
+                </button>
+
+                <p style={{ fontSize: "12px", color: "#8C6B43", textAlign: "center", marginTop: "16px" }}>
+                  The code expires in 5 minutes. Check your spam folder if you don't see the email.
+                </p>
+              </form>
+            </>
+          )}
         </StaticMotionDiv>
       </div>
       </div>

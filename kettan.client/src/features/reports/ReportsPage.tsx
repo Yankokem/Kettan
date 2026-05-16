@@ -13,7 +13,6 @@ import { IconButton, Dialog, DialogTitle, DialogContent, List, ListItem, ListIte
 import { HqOverviewTab } from './components/HqOverviewTab';
 import { HqInventoryReportsTab } from './components/HqInventoryReportsTab';
 import { HqBranchPerformanceTab } from './components/HqBranchPerformanceTab';
-import { HqReturnsLossTab } from './components/HqReturnsLossTab';
 import { BranchPerformanceTab } from './components/BranchPerformanceTab';
 import { InventoryAnalyticsTab } from './components/InventoryAnalyticsTab';
 import { ExportModal } from './components/ExportModal';
@@ -32,7 +31,6 @@ import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
 import DeleteSweepRoundedIcon from '@mui/icons-material/DeleteSweepRounded';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
-import AssignmentReturnRoundedIcon from '@mui/icons-material/AssignmentReturnRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 
@@ -67,7 +65,7 @@ function toPeso(v: number) {
 
 // ── HQ View ───────────────────────────────────────────────────────────────────
 
-type HqTab = 'overview' | 'inventory' | 'performance' | 'returns';
+type HqTab = 'overview' | 'inventory' | 'performance';
 
 function HqReportsView({
   startDate, endDate, onExportClick,
@@ -149,15 +147,6 @@ function HqReportsView({
             accent: 'stat-accent-sage',
             onClick: () => openDetail('Total Wastage Loss', financeStats?.totalWastageLoss, <DeleteSweepRoundedIcon />)
           },
-          { 
-            label: 'Returns Credit Loss', 
-            value: toPeso(financeStats?.returnsCreditLoss.currentValue ?? ov.totalReturnLoss), 
-            trend: financeStats?.returnsCreditLoss.trend ?? 'neutral',
-            sub: `${financeStats?.returnsCreditLoss.percentageChange ?? 0}% vs last week`,
-            icon: <AssignmentReturnRoundedIcon />, 
-            accent: 'stat-accent-rust',
-            onClick: () => openDetail('Returns Credit Loss', financeStats?.returnsCreditLoss, <AssignmentReturnRoundedIcon />)
-          },
         ];
       case 'inventory':
         return [
@@ -172,13 +161,6 @@ function HqReportsView({
           { label: 'Top Performer', value: ov.topPerformerName || '—', trend: 'neutral', sub: 'Highest scoring branch', icon: <EmojiEventsRoundedIcon />, accent: 'stat-accent-gold' },
           { label: 'Total Orders', value: ov.totalOrders.toLocaleString(), trend: 'neutral', sub: 'Volume this period', icon: <CategoryRoundedIcon />, accent: 'stat-accent-brown' },
           { label: 'Top Score', value: `${ov.topPerformerScore.toFixed(1)}%`, trend: 'neutral', sub: 'Leaderboard benchmark', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-gold' },
-        ];
-      case 'returns':
-        return [
-          { label: 'Total Return Loss', value: toPeso(ov.totalReturnLoss), trend: 'neutral', sub: 'Monetary credits issued', icon: <AssignmentReturnRoundedIcon />, accent: 'stat-accent-rust' },
-          { label: 'Total Wastage Loss', value: toPeso(ov.totalWastageLoss), trend: 'neutral', sub: 'Spoilage valuation', icon: <DeleteSweepRoundedIcon />, accent: 'stat-accent-sage' },
-          { label: 'Return Rate', value: '2.4%', trend: 'neutral', sub: 'Avg vs total orders', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-brown' },
-          { label: 'Total Monetary Loss', value: toPeso(ov.totalReturnLoss + ov.totalWastageLoss), trend: 'neutral', sub: 'Combined risk value', icon: <MonetizationOnRoundedIcon />, accent: 'stat-accent-rust' },
         ];
       default:
         return [];
@@ -284,8 +266,6 @@ function HqReportsView({
                         navigate({ to: '/hq-inventory' });
                       } else if (item.id.startsWith('LOG-')) {
                         navigate({ to: '/hq-inventory' });
-                      } else if (item.id.startsWith('RET-')) {
-                        navigate({ to: '/returns' });
                       }
                     }}
                   >
@@ -324,7 +304,6 @@ function HqReportsView({
           <Tab label="Overview" value="overview" />
           <Tab label="Inventory Reports" value="inventory" />
           <Tab label="Branch Performance" value="performance" />
-          <Tab label="Returns & Losses" value="returns" />
         </Tabs>
 
         <Box sx={{ pb: 0.5 }}>
@@ -348,9 +327,6 @@ function HqReportsView({
         )}
         {tab === 'performance' && (
           <HqBranchPerformanceTab startDate={startDate} endDate={endDate} />
-        )}
-        {tab === 'returns' && (
-          <HqReturnsLossTab startDate={startDate} endDate={endDate} />
         )}
       </Box>
     </Box>

@@ -27,7 +27,11 @@ api.interceptors.response.use(
     // Skip this for the login endpoint itself so the user can see the "Invalid credentials" error
     if (error.response?.status === 401 && 
         !error.config.url?.endsWith('/api/auth/login') &&
-        !window.location.pathname.startsWith('/market/register')) {
+        !error.config.url?.endsWith('/api/auth/verify-mfa') &&
+        !error.config.url?.endsWith('/api/auth/forgot-password') &&
+        !error.config.url?.endsWith('/api/auth/reset-password') &&
+        !window.location.pathname.startsWith('/market/register') &&
+        !window.location.pathname.startsWith('/forgot-password')) {
       useAuthStore.getState().logout();
       window.location.href = '/login';
     }

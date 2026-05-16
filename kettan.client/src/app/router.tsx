@@ -33,9 +33,6 @@ import { SupplyRequestDetailPage } from '../features/supply-requests/SupplyReque
 import { SupplyRequestEditDraftPage } from '../features/supply-requests/SupplyRequestEditDraftPage';
 import { ConsumptionPage } from '../features/consumption/ConsumptionPage';
 import { ConsumptionCreatePage } from '../features/consumption/ConsumptionCreatePage';
-import { ReturnsPage } from '../features/returns/ReturnsPage';
-import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
-import { ReturnCreatePage } from '../features/returns/ReturnCreatePage';
 import { HomePage } from '../features/marketing/HomePage';
 import { FeaturesPage } from '../features/marketing/FeaturesPage';
 import { PricingPage } from '../features/marketing/PricingPage';
@@ -53,6 +50,7 @@ import { HelpPage } from '../features/support/HelpPage';
 import { MarketingLayout } from '../components/Marketing/MarketingLayout';
 import { UserProfilePage } from '../features/auth/UserProfilePage';
 import { UserProfileEditPage } from '../features/auth/UserProfileEditPage';
+import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 
 // ── Router Setup ───────────────────────────────────────────────────────────
 // Base root route, just rendering children
@@ -334,23 +332,6 @@ const consumptionCreateRoute = createRoute({
   component: ConsumptionCreatePage,
 });
 
-const returnsRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: '/returns',
-  component: ReturnsPage,
-});
-
-const returnCreateRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: '/returns/new',
-  component: ReturnCreatePage,
-});
-
-const returnDetailRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: '/returns/$returnId',
-  component: ReturnDetailPage,
-});
 
 const auditLogsRoute = createRoute({
   getParentRoute: () => layoutRoute,
@@ -434,7 +415,23 @@ const userProfileEditRoute = createRoute({
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      reason: (search.reason as string) || undefined,
+    } as { reason?: string };
+  },
   component: LoginPage,
+  beforeLoad: () => {
+    if (useAuthStore.getState().isAuthenticated) {
+      throw redirect({ to: '/' });
+    }
+  },
+});
+
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/forgot-password',
+  component: ForgotPasswordPage,
   beforeLoad: () => {
     if (useAuthStore.getState().isAuthenticated) {
       throw redirect({ to: '/' });
@@ -480,9 +477,6 @@ const routeTree = rootRoute.addChildren([
     supplyRequestDetailRoute,
     consumptionRoute,
     consumptionCreateRoute,
-    returnsRoute,
-    returnCreateRoute,
-    returnDetailRoute,
     auditLogsRoute,
     menuRoute,
     addMenuItemRoute,
@@ -497,7 +491,8 @@ const routeTree = rootRoute.addChildren([
     userProfileEditRoute,
     branchInfoRoute,
   ]),
-  loginRoute
+  loginRoute,
+  forgotPasswordRoute,
 ]);
 
 export const router = createRouter({ routeTree });

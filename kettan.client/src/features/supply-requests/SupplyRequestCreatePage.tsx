@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Box, Divider, Grid, Paper, Typography } from '@mui/material';
 import AddShoppingCartRoundedIcon from '@mui/icons-material/AddShoppingCartRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import TagRoundedIcon from '@mui/icons-material/TagRounded';
 import PriorityHighRoundedIcon from '@mui/icons-material/PriorityHighRounded';
 import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
@@ -58,7 +57,7 @@ export function SupplyRequestCreatePage() {
 
   const canCreateRequests = role === 'BranchManager' || role === 'BranchOwner';
 
-  const [nextRequestId, setNextRequestId] = useState<number | null>(null);
+  const [, setNextRequestId] = useState<number | null>(null);
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [requestLines, setRequestLines] = useState<RequestLineItem[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);

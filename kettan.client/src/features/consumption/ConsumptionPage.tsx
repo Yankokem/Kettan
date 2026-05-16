@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Grid, Paper, Typography, Tooltip, Stack, Divider } from '@mui/material';
+import { Box, Grid, Paper, Typography, Tooltip, Stack, Divider } from '@mui/material';
 import ScaleRoundedIcon from '@mui/icons-material/ScaleRounded';
 import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
 import TodayRoundedIcon from '@mui/icons-material/TodayRounded';

@@ -2,11 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Divider, Grid, Paper, TextField as MuiTextField, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import ScheduleSendRoundedIcon from '@mui/icons-material/ScheduleSendRounded';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
-import PriorityHighRoundedIcon from '@mui/icons-material/PriorityHighRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
@@ -57,9 +55,9 @@ export function NewOrderRequestPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedBranch, setSelectedBranch] = useState(BRANCHES[0].value);
-  const [selectedPriority, setSelectedPriority] = useState(REQUEST_PRIORITIES[0].value);
+  const [selectedPriority] = useState(REQUEST_PRIORITIES[0].value);
   const [requestType, setRequestType] = useState(REQUEST_TYPES[0].value);
-  const [dispatchWindow, setDispatchWindow] = useState(DISPATCH_WINDOWS[1].value);
+  const [dispatchWindow] = useState(DISPATCH_WINDOWS[1].value);
   const [dispatchDate, setDispatchDate] = useState(new Date().toISOString().split('T')[0]);
   const [subject, setSubject] = useState('');
   const [requestNotes, setRequestNotes] = useState('');
@@ -81,8 +79,6 @@ export function NewOrderRequestPage() {
     () => selectedItems.reduce((sum, line) => sum + line.quantity * (line.item.unitCost ?? 0), 0),
     [selectedItems]
   );
-
-  const requesterLabel = user ? `${user.name} (${user.role})` : 'Current User (Admin)';
 
   useEffect(() => {
     const loadContext = async () => {

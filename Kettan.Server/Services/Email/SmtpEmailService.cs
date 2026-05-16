@@ -134,6 +134,27 @@ public class SmtpEmailService : IEmailService
         await SendEmailAsync(email, "Kettan Subscription Receipt", htmlContent, cancellationToken);
     }
 
+    public async Task SendMfaOtpEmailAsync(
+        string email,
+        string otpCode,
+        int expiryMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        var htmlContent = $@"
+            <div style='font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;'>
+                <h2>Login Verification Code</h2>
+                <p>A sign-in attempt was detected from an unrecognized device. Please use the code below to verify your identity:</p>
+                <div style='background-color: #f4f4f4; padding: 15px; text-align: center; border-radius: 5px; margin: 20px 0;'>
+                    <span style='font-size: 28px; font-weight: bold; letter-spacing: 8px;'>{otpCode}</span>
+                </div>
+                <p>This code will expire in {expiryMinutes} minutes.</p>
+                <p>If you did not attempt to sign in, please change your password immediately.</p>
+                <p>Regards,<br>The Kettan Team</p>
+            </div>";
+
+        await SendEmailAsync(email, "Kettan Login Verification Code", htmlContent, cancellationToken);
+    }
+
     private async Task SendEmailAsync(string toEmail, string subject, string htmlContent, CancellationToken cancellationToken)
     {
         try

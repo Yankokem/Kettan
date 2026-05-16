@@ -60,4 +60,15 @@ public class ConsoleEmailService : IEmailService
         Console.WriteLine($"[EMAIL][INVOICE_PAID] To: {email} | Tenant: {tenantName} | Amount: {amount} | Invoice: {invoiceNumber}");
         return Task.CompletedTask;
     }
+
+    public Task SendMfaOtpEmailAsync(
+        string email,
+        string otpCode,
+        int expiryMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        Console.WriteLine($"[EMAIL][MFA_OTP] To: {email} | Code: {otpCode} | ExpiresIn: {expiryMinutes}m");
+        return Task.CompletedTask;
+    }
 }
+

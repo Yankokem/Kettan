@@ -117,7 +117,6 @@ export function ExportModal({ open, onClose, defaultStartDate, defaultEndDate }:
               >
                 <MenuItem value="inventory">Inventory Valuation</MenuItem>
                 <MenuItem value="orders">Sales & Orders</MenuItem>
-                <MenuItem value="returns">Returns & Losses</MenuItem>
                 <MenuItem value="staff">Staff Performance</MenuItem>
                 {!isBranch && <MenuItem value="audit-logs">System Audit Logs</MenuItem>}
                 {isBranch && <MenuItem value="consumption">Consumption Record</MenuItem>}

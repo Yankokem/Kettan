@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { Box, Typography, Alert, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import { 
   fetchSupplyRequestById, 
@@ -104,7 +104,6 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
 
 export function SupplyRequestDetailPage() {
   const { requestId } = useParams({ strict: false });
-  const navigate = useNavigate();
   const { user } = useAuthStore();
   
   const [request, setRequest] = useState<SupplyRequestDetailViewModel | null>(null);
@@ -255,7 +254,7 @@ export function SupplyRequestDetailPage() {
 
   const onCancel = () => handleAction(() => cancelSupplyRequest(Number(requestId), { reason: 'Cancelled by branch' }));
 
-  const handleFileReturn = () => navigate({ to: '/returns/new' });
+  const handleFileReturn = () => { /* navigate({ to: '/returns/new' }); */ };
 
   const handleConfirmArrival = async () => {
     if (!request?.linkedOrderId) return;

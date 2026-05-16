@@ -36,4 +36,10 @@ public interface IEmailService
         decimal amount,
         string invoiceNumber,
         CancellationToken cancellationToken = default);
+
+    Task SendMfaOtpEmailAsync(
+        string email,
+        string otpCode,
+        int expiryMinutes,
+        CancellationToken cancellationToken = default);
 }

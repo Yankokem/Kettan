@@ -65,6 +65,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<OrderMessage> OrderMessages { get; set; } = null!;
     public DbSet<ReturnMessage> ReturnMessages { get; set; } = null!;
     public DbSet<DocumentSequence> DocumentSequences { get; set; } = null!;
+    public DbSet<UserDevice> UserDevices { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -101,6 +102,10 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
+
+        // UserDevice: index on DeviceToken for fast lookup during login
+        modelBuilder.Entity<UserDevice>()
+            .HasIndex(ud => ud.DeviceToken);
 
         modelBuilder.Entity<User>()
             .HasIndex(u => new { u.TenantId, u.BranchId, u.IsActive, u.IsDeleted });

@@ -61,4 +61,12 @@ public class User
     public string? ImageUrl { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // MFA / Forgot Password OTP fields
+    [MaxLength(100)]
+    public string? OtpHash { get; set; }
+    public DateTime? OtpExpiry { get; set; }
+
+    // Navigation: trusted devices for MFA
+    public ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();
 }

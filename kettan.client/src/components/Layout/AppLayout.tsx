@@ -4,6 +4,7 @@ import { Outlet } from '@tanstack/react-router';
 import { Sidebar, DRAWER_WIDTH } from './Sidebar';
 import { Header } from './Header';
 import { PageTransitionWrapper } from './PageTransitionWrapper';
+import { SessionTimeout } from '../Auth/SessionTimeout';
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -26,6 +27,7 @@ export function AppLayout() {
         bgcolor: 'background.default',
       }}
     >
+      <SessionTimeout />
       <Header onDrawerToggle={handleDrawerToggle} drawerWidth={effectiveWidth} />
 
       <Sidebar
