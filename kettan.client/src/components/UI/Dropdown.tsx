@@ -1,16 +1,19 @@
-import { Select, MenuItem, FormControl } from '@mui/material';
+import { Select, MenuItem, FormControl, FormHelperText } from '@mui/material';
 import type { SelectProps } from '@mui/material';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 
-export interface DropdownProps extends Omit<SelectProps, 'variant'> {
+export interface DropdownProps extends Omit<SelectProps, 'variant' | 'error'> {
   options: { value: string | number; label: string }[];
+  error?: boolean;
+  helperText?: React.ReactNode;
 }
 
-export function Dropdown({ options, sx, ...props }: DropdownProps) {
+export function Dropdown({ options, sx, error, helperText, ...props }: DropdownProps) {
   return (
-    <FormControl size="small" sx={{ minWidth: 160 }}>
+    <FormControl size="small" sx={{ minWidth: 160 }} error={error}>
       <Select
         {...props}
+        error={error}
         displayEmpty
         IconComponent={KeyboardArrowDownRoundedIcon}
         sx={{
@@ -38,6 +41,7 @@ export function Dropdown({ options, sx, ...props }: DropdownProps) {
           </MenuItem>
         ))}
       </Select>
+      {helperText && <FormHelperText>{helperText}</FormHelperText>}
     </FormControl>
   );
 }

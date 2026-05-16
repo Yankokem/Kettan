@@ -52,6 +52,7 @@ export function AddStaffPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<keyof StaffFormData, string>>>({});
 
   useEffect(() => {
     fetchBranches().then(setBranches).catch(console.error);
@@ -70,61 +71,54 @@ export function AddStaffPage() {
 
   const handleSubmit = async () => {
     // Validation
+    const newErrors: Partial<Record<keyof StaffFormData, string>> = {};
+
     if (!formData.firstName.trim()) {
-      alert('Please enter first name.');
-      return;
+      newErrors.firstName = 'Please enter first name.';
     }
 
     if (!formData.lastName.trim()) {
-      alert('Please enter last name.');
-      return;
+      newErrors.lastName = 'Please enter last name.';
     }
 
     if (!formData.email.trim()) {
-      alert('Please enter email address.');
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      alert('Please enter a valid email address.');
-      return;
+      newErrors.email = 'Please enter email address.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = 'Please enter a valid email address.';
     }
 
     if (!formData.password) {
-      alert('Please enter a password.');
-      return;
-    }
+      newErrors.password = 'Please enter a password.';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match.';
+    } else {
+      // Password strength check
+      let score = 0;
+      const pwd = formData.password;
+      if (pwd.length >= 8) score += 1;
+      if (/[A-Z]/.test(pwd)) score += 1;
+      if (/[0-9]/.test(pwd)) score += 1;
+      if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
 
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match.');
-      return;
-    }
-
-    // Password strength check
-    let score = 0;
-    const pwd = formData.password;
-    if (pwd.length >= 8) score += 1;
-    if (/[A-Z]/.test(pwd)) score += 1;
-    if (/[0-9]/.test(pwd)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
-
-    if (score < 4) {
-      alert('Password must be at least 8 characters and include uppercase, number, and special character.');
-      return;
+      if (score < 4) {
+        newErrors.password = 'Password must be at least 8 characters and include uppercase, number, and special character.';
+      }
     }
 
     if (!formData.role) {
-      alert('Please select a role.');
-      return;
+      newErrors.role = 'Please select a role.';
     }
 
-    if (formData.contactNo && !/^\+?[0-9\s\-()]+$/.test(formData.contactNo)) {
-      alert('Please enter a valid contact number.');
-      return;
+    if (formData.contactNo) {
+      if (!/^\+?[0-9\s\-()]+$/.test(formData.contactNo)) {
+        newErrors.contactNo = 'Please enter a valid contact number.';
+      } else if (formData.contactNo.replace(/\D/g, '').length < 7) {
+        newErrors.contactNo = 'Contact number must contain at least 7 digits.';
+      }
     }
 
-    if (formData.contactNo && formData.contactNo.replace(/\D/g, '').length < 7) {
-      alert('Contact number must contain at least 7 digits.');
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
@@ -164,8 +158,16 @@ export function AddStaffPage() {
       void navigate({ to: '/staff' });
     } catch (err: any) {
       console.error('Failed to create staff member:', err);
-      // Check if backend returned a nicely formatted 400 error message (like "Email already in use")
-      if (err.response?.data?.message) {
+      if (err.response?.status === 400 && err.response?.data?.errors) {
+        // Map backend validation errors to inline fields
+        const backendErrors = err.response.data.errors;
+        const mappedErrors: Partial<Record<keyof StaffFormData, string>> = {};
+        for (const key in backendErrors) {
+          const lowerKey = (key.charAt(0).toLowerCase() + key.slice(1)) as keyof StaffFormData;
+          mappedErrors[lowerKey] = backendErrors[key][0];
+        }
+        setErrors(mappedErrors);
+      } else if (err.response?.data?.message) {
         alert(`Error: ${err.response.data.message}`);
       } else {
         alert('An error occurred while creating the staff member. Please try again.');
@@ -245,7 +247,12 @@ export function AddStaffPage() {
                   label="First Name"
                   placeholder="e.g. Juan"
                   value={formData.firstName}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, firstName: event.target.value }))}
+                  onChange={(event) => {
+                    setFormData((prev) => ({ ...prev, firstName: event.target.value }));
+                    if (errors.firstName) setErrors((prev) => ({ ...prev, firstName: undefined }));
+                  }}
+                  error={!!errors.firstName}
+                  helperText={errors.firstName}
                   fullWidth
                 />
               </Box>
@@ -256,7 +263,12 @@ export function AddStaffPage() {
                   label="Last Name"
                   placeholder="e.g. Dela Cruz"
                   value={formData.lastName}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, lastName: event.target.value }))}
+                  onChange={(event) => {
+                    setFormData((prev) => ({ ...prev, lastName: event.target.value }));
+                    if (errors.lastName) setErrors((prev) => ({ ...prev, lastName: undefined }));
+                  }}
+                  error={!!errors.lastName}
+                  helperText={errors.lastName}
                   fullWidth
                 />
               </Box>
@@ -280,7 +292,12 @@ export function AddStaffPage() {
                   label="Contact Number"
                   placeholder="e.g. +63 917 123 4567"
                   value={formData.contactNo}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, contactNo: event.target.value }))}
+                  onChange={(event) => {
+                    setFormData((prev) => ({ ...prev, contactNo: event.target.value }));
+                    if (errors.contactNo) setErrors((prev) => ({ ...prev, contactNo: undefined }));
+                  }}
+                  error={!!errors.contactNo}
+                  helperText={errors.contactNo}
                   fullWidth
                 />
               </Box>
@@ -313,7 +330,12 @@ export function AddStaffPage() {
                   placeholder="juan@kettan.co"
                   type="email"
                   value={formData.email}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))}
+                  onChange={(event) => {
+                    setFormData((prev) => ({ ...prev, email: event.target.value }));
+                    if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                  }}
+                  error={!!errors.email}
+                  helperText={errors.email}
                   fullWidth
                   autoComplete="off"
                 />
@@ -327,13 +349,15 @@ export function AddStaffPage() {
                   type="password"
                   placeholder="Minimum 8 characters"
                   value={formData.password}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
+                  onChange={(event) => {
+                    setFormData((prev) => ({ ...prev, password: event.target.value }));
+                    if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                  }}
+                  error={!!errors.password}
+                  helperText={errors.password || "Must be at least 8 chars (upper, num, special)"}
                   fullWidth
                   autoComplete="new-password"
                 />
-                <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
-                  Must be at least 8 characters with uppercase, number, and special character.
-                </Typography>
               </Box>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -343,7 +367,12 @@ export function AddStaffPage() {
                   type="password"
                   placeholder="Confirm password"
                   value={formData.confirmPassword}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                  onChange={(event) => {
+                    setFormData((prev) => ({ ...prev, confirmPassword: event.target.value }));
+                    if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                  }}
+                  error={!!errors.confirmPassword}
+                  helperText={errors.confirmPassword}
                   fullWidth
                   autoComplete="new-password"
                 />
@@ -374,7 +403,10 @@ export function AddStaffPage() {
                       role: newRole,
                       branchId: isHq ? '' : prev.branchId,
                     }));
+                    if (errors.role) setErrors((prev) => ({ ...prev, role: undefined }));
                   }}
+                  error={!!errors.role}
+                  helperText={errors.role}
                   fullWidth
                 />
               </Box>

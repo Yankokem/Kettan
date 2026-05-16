@@ -272,7 +272,14 @@ export function SupplyRequestsPage() {
       const branchName = (row.raw as any).branchName?.toLowerCase() ?? '';
       const subject = row.subject?.toLowerCase() ?? '';
       const filedBy = row.filedBy?.toLowerCase() ?? '';
-      const status = row.status?.toLowerCase() ?? '';
+      const status = row.status || '';
+      const normalizedStatus = status.toLowerCase();
+
+      // Only show SR specific statuses
+      const srVisibleStatuses = ['pendingapproval', 'rejected', 'cancelled', 'completed'];
+      if (!srVisibleStatuses.includes(normalizedStatus)) {
+        return false;
+      }
 
       const matchesQuery =
         !query ||
@@ -280,9 +287,9 @@ export function SupplyRequestsPage() {
         branchName.includes(query) ||
         subject.includes(query) ||
         filedBy.includes(query) ||
-        status.includes(query);
+        normalizedStatus.includes(query);
 
-      const matchesStatus = !statusFilter || row.status === statusFilter;
+      const matchesStatus = !statusFilter || status === statusFilter;
       const matchesDateRange = occurredDate >= fromDate && occurredDate <= toDate;
 
       return matchesQuery && matchesStatus && matchesDateRange;
@@ -451,7 +458,7 @@ export function SupplyRequestsPage() {
       <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
         <StatCard
           label="Total Records"
-          value={combinedRows.length}
+          value={filteredRows.length}
           icon={<AssignmentTurnedInRoundedIcon />}
           trend="up"
           trendValue="Active Pool"
@@ -459,8 +466,8 @@ export function SupplyRequestsPage() {
           iconBg="linear-gradient(135deg, #8C6B43 0%, #C9A87D 100%)"
         />
         <StatCard
-          label="Pending Review"
-          value={combinedRows.filter((row) => ['Draft', 'AutoDrafted', 'PendingApproval'].includes(row.status)).length}
+          label="Pending HQ Approval"
+          value={filteredRows.filter((row) => row.status === 'PendingApproval').length}
           icon={<PendingActionsRoundedIcon />}
           trend="up"
           trendValue="Needs action"
@@ -468,8 +475,8 @@ export function SupplyRequestsPage() {
           iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
         />
         <StatCard
-          label="Approved"
-          value={combinedRows.filter((row) => ['Approved', 'PartiallyApproved'].includes(row.status)).length}
+          label="Completed"
+          value={filteredRows.filter((row) => row.status === 'Completed').length}
           icon={<TaskAltRoundedIcon />}
           trend="up"
           trendValue="Processed"
@@ -477,8 +484,8 @@ export function SupplyRequestsPage() {
           iconBg="linear-gradient(135deg, #718F58 0%, #B9CBAA 100%)"
         />
         <StatCard
-          label="Rejected"
-          value={combinedRows.filter((row) => row.status === 'Rejected').length}
+          label="Rejected / Cancelled"
+          value={filteredRows.filter((row) => row.status === 'Rejected' || row.status === 'Cancelled').length}
           icon={<HighlightOffRoundedIcon />}
           trend="up"
           trendValue="Needs review"
@@ -533,18 +540,10 @@ export function SupplyRequestsPage() {
           minWidth={170}
           options={[
             { value: '', label: 'All Statuses' },
-            { value: 'Draft', label: 'Draft' },
-            { value: 'AutoDrafted', label: 'Auto-Drafted' },
             { value: 'PendingApproval', label: 'Awaiting HQ' },
-            { value: 'Approved', label: 'Approved' },
-            { value: 'Picking', label: 'Picking' },
-            { value: 'Packing', label: 'Packing' },
-            { value: 'Dispatched', label: 'In Transit' },
-            { value: 'Arrived', label: 'Arrived' },
             { value: 'Completed', label: 'Completed' },
             { value: 'Rejected', label: 'Rejected' },
             { value: 'Cancelled', label: 'Cancelled' },
-            { value: 'Returned', label: 'Returned' },
           ]}
         />
 

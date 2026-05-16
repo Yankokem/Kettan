@@ -59,6 +59,7 @@ export function AddBranchPage() {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<keyof BranchFormData, string>>>({});
 
   const [users, setUsers] = useState<UserDto[]>([]);
 
@@ -83,51 +84,52 @@ export function AddBranchPage() {
   ];
 
   const handleSubmit = async () => {
+    const newErrors: Partial<Record<keyof BranchFormData, string>> = {};
+
     if (!formData.name.trim()) {
-      alert('Please enter a branch name.');
-      return;
+      newErrors.name = 'Please enter a branch name.';
     }
 
     if (!formData.address.trim()) {
-      alert('Please enter a branch address.');
-      return;
+      newErrors.address = 'Please enter a branch address.';
     }
 
     if (!formData.city.trim()) {
-      alert('Please enter a city.');
-      return;
+      newErrors.city = 'Please enter a city.';
     }
 
     if (!formData.contactNumber.trim()) {
-      alert('Please enter a contact number.');
-      return;
+      newErrors.contactNumber = 'Please enter a contact number.';
+    } else if (!CONTACT_NUMBER_PATTERN.test(formData.contactNumber.trim())) {
+      newErrors.contactNumber = 'Please enter a valid contact number.';
     }
 
-    if (!CONTACT_NUMBER_PATTERN.test(formData.contactNumber.trim())) {
-      alert('Please enter a valid contact number.');
-      return;
+    if (!formData.openTime) {
+      newErrors.openTime = 'Please set an opening time.';
+    }
+    if (!formData.closeTime) {
+      newErrors.closeTime = 'Please set a closing time.';
     }
 
-    if (!formData.openTime || !formData.closeTime) {
-      alert('Please set opening and closing times.');
-      return;
-    }
+    if (formData.openTime && formData.closeTime) {
+      const openMinutes = parseTimeToMinutes(formData.openTime);
+      const closeMinutes = parseTimeToMinutes(formData.closeTime);
 
-    const openMinutes = parseTimeToMinutes(formData.openTime);
-    const closeMinutes = parseTimeToMinutes(formData.closeTime);
-
-    if (Number.isNaN(openMinutes) || Number.isNaN(closeMinutes) || openMinutes >= closeMinutes) {
-      alert('Open time must be earlier than close time.');
-      return;
+      if (Number.isNaN(openMinutes) || Number.isNaN(closeMinutes) || openMinutes >= closeMinutes) {
+        newErrors.closeTime = 'Open time must be earlier than close time.';
+      }
     }
 
     if (!formData.ownerUserId) {
-      alert('Please assign an owner.');
-      return;
+      newErrors.ownerUserId = 'Please assign an owner.';
     }
 
     if (!formData.managerUserId) {
-      alert('Please assign a manager.');
+      newErrors.managerUserId = 'Please assign a manager.';
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
@@ -166,9 +168,22 @@ export function AddBranchPage() {
 
       alert('Branch registered successfully!');
       void navigate({ to: '/branches' });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create branch:', err);
-      alert('An error occurred while registering the branch. Please try again.');
+      if (err.response?.status === 400 && err.response?.data?.errors) {
+        // Map backend validation errors to inline fields
+        const backendErrors = err.response.data.errors;
+        const mappedErrors: Partial<Record<keyof BranchFormData, string>> = {};
+        for (const key in backendErrors) {
+          const lowerKey = (key.charAt(0).toLowerCase() + key.slice(1)) as keyof BranchFormData;
+          mappedErrors[lowerKey] = backendErrors[key][0];
+        }
+        setErrors(mappedErrors);
+      } else if (err.response?.data?.message) {
+        alert(`Error: ${err.response.data.message}`);
+      } else {
+        alert('An error occurred while registering the branch. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -230,7 +245,12 @@ export function AddBranchPage() {
               label="Branch Name"
               placeholder="e.g. BGC Reserve"
               value={formData.name}
-              onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
+              onChange={(event) => {
+                setFormData((prev) => ({ ...prev, name: event.target.value }));
+                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+              }}
+              error={!!errors.name}
+              helperText={errors.name}
               fullWidth
             />
           </Box>
@@ -274,7 +294,12 @@ export function AddBranchPage() {
               label="Address"
               placeholder="e.g. 5th Avenue, Bonifacio Global City"
               value={formData.address}
-              onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
+              onChange={(event) => {
+                setFormData((prev) => ({ ...prev, address: event.target.value }));
+                if (errors.address) setErrors((prev) => ({ ...prev, address: undefined }));
+              }}
+              error={!!errors.address}
+              helperText={errors.address}
               multiline
               rows={3}
               fullWidth
@@ -287,7 +312,12 @@ export function AddBranchPage() {
                 label="City"
                 placeholder="e.g. Taguig City"
                 value={formData.city}
-                onChange={(event) => setFormData((prev) => ({ ...prev, city: event.target.value }))}
+                onChange={(event) => {
+                  setFormData((prev) => ({ ...prev, city: event.target.value }));
+                  if (errors.city) setErrors((prev) => ({ ...prev, city: undefined }));
+                }}
+                error={!!errors.city}
+                helperText={errors.city}
                 fullWidth
               />
             </Grid>
@@ -296,7 +326,12 @@ export function AddBranchPage() {
                 label="Contact Number"
                 placeholder="e.g. +63 917 123 4567"
                 value={formData.contactNumber}
-                onChange={(event) => setFormData((prev) => ({ ...prev, contactNumber: event.target.value }))}
+                onChange={(event) => {
+                  setFormData((prev) => ({ ...prev, contactNumber: event.target.value }));
+                  if (errors.contactNumber) setErrors((prev) => ({ ...prev, contactNumber: undefined }));
+                }}
+                error={!!errors.contactNumber}
+                helperText={errors.contactNumber}
                 fullWidth
               />
             </Grid>
@@ -320,7 +355,12 @@ export function AddBranchPage() {
               </Box>
               <TimePicker
                 value={formData.openTime}
-                onChange={(event) => setFormData((prev) => ({ ...prev, openTime: event.target.value }))}
+                onChange={(event) => {
+                  setFormData((prev) => ({ ...prev, openTime: event.target.value }));
+                  if (errors.openTime) setErrors((prev) => ({ ...prev, openTime: undefined }));
+                }}
+                error={!!errors.openTime}
+                helperText={errors.openTime}
                 fullWidth
               />
             </Grid>
@@ -333,7 +373,12 @@ export function AddBranchPage() {
               </Box>
               <TimePicker
                 value={formData.closeTime}
-                onChange={(event) => setFormData((prev) => ({ ...prev, closeTime: event.target.value }))}
+                onChange={(event) => {
+                  setFormData((prev) => ({ ...prev, closeTime: event.target.value }));
+                  if (errors.closeTime) setErrors((prev) => ({ ...prev, closeTime: undefined }));
+                }}
+                error={!!errors.closeTime}
+                helperText={errors.closeTime}
                 fullWidth
               />
             </Grid>
@@ -352,9 +397,12 @@ export function AddBranchPage() {
               label="Assigned Owner"
               value={formData.ownerUserId}
               options={ownerOptions}
-              onChange={(event) =>
-                setFormData((prev) => ({ ...prev, ownerUserId: String(event.target.value) }))
-              }
+              onChange={(event) => {
+                setFormData((prev) => ({ ...prev, ownerUserId: String(event.target.value) }));
+                if (errors.ownerUserId) setErrors((prev) => ({ ...prev, ownerUserId: undefined }));
+              }}
+              error={!!errors.ownerUserId}
+              helperText={errors.ownerUserId}
               fullWidth
             />
           </Box>
@@ -364,9 +412,12 @@ export function AddBranchPage() {
               label="Assigned Manager"
               value={formData.managerUserId}
               options={managerOptions}
-              onChange={(event) =>
-                setFormData((prev) => ({ ...prev, managerUserId: String(event.target.value) }))
-              }
+              onChange={(event) => {
+                setFormData((prev) => ({ ...prev, managerUserId: String(event.target.value) }));
+                if (errors.managerUserId) setErrors((prev) => ({ ...prev, managerUserId: undefined }));
+              }}
+              error={!!errors.managerUserId}
+              helperText={errors.managerUserId}
               fullWidth
             />
           </Box>

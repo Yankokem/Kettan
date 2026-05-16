@@ -288,24 +288,26 @@ export function OrdersPage() {
 
         if (statsData) setStats(statsData);
 
-        const mappedOrders: OrderItem[] = ordersRows.map((row: BranchOrder) => ({
-          id: String(row.orderId),
-          transactionCode: row.transactionCode,
-          branch: row.branchName || `Branch ${row.branchId}`,
-          subject: row.subject || row.dispatchReason || '',
-          itemsCount: Number(row.itemsCount || 0),
-          totalCost: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
-          requestedValue: Number(row.totalRequestedValue || 0),
-          approvedValue: Number(row.totalApprovedValue || 0),
-          fulfilledValue: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
-          dispatchScheduleStatus: row.dispatchScheduleStatus,
-          status: row.status as OrderActionStatus,
-          date: row.pushedToFulfillmentAt,
-          requestId: row.requestId,
-        }));
+        // SIMPLE FILTER: Show everything EXCEPT SR and Outcome statuses
+        const excludedStatuses = ['PendingApproval', 'Draft', 'AutoDrafted', 'Completed', 'Rejected', 'Cancelled', 'Returned'];
 
-        // SIMPLE FILTER: Show everything EXCEPT Pending, Draft, and AutoDrafted
-        const excludedStatuses = ['PendingApproval', 'Draft', 'AutoDrafted'];
+        const mappedOrders: OrderItem[] = ordersRows
+          .filter((row: BranchOrder) => !excludedStatuses.includes(row.status))
+          .map((row: BranchOrder) => ({
+            id: String(row.orderId),
+            transactionCode: row.transactionCode,
+            branch: row.branchName || `Branch ${row.branchId}`,
+            subject: row.subject || row.dispatchReason || '',
+            itemsCount: Number(row.itemsCount || 0),
+            totalCost: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+            requestedValue: Number(row.totalRequestedValue || 0),
+            approvedValue: Number(row.totalApprovedValue || 0),
+            fulfilledValue: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+            dispatchScheduleStatus: row.dispatchScheduleStatus,
+            status: row.status as OrderActionStatus,
+            date: row.pushedToFulfillmentAt,
+            requestId: row.requestId,
+          }));
 
         // Get IDs of requests that already have a corresponding Order record
         const existingOrderRequestIds = new Set(
@@ -343,23 +345,25 @@ export function OrdersPage() {
             // HQ needs outbound, but fetchOrders() might already have them. 
             // We use fetchHqDispatches to get explicit dispatch Reason, but deduplicate by ID.
             const dispatchRows = await fetchHqDispatches();
-            const mappedOutbound: OrderItem[] = dispatchRows.map((row: BranchOrder) => ({
-              id: String(row.orderId),
-              transactionCode: row.transactionCode,
-              branch: row.branchName || `Branch ${row.branchId}`,
-              subject: row.subject || row.dispatchReason || '',
-              itemsCount: Number(row.itemsCount || 0),
-              totalCost: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
-              requestedValue: Number(row.totalRequestedValue || 0),
-              approvedValue: Number(row.totalApprovedValue || 0),
-              fulfilledValue: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
-              dispatchScheduleStatus: row.dispatchScheduleStatus,
-              status: row.status as OrderActionStatus,
-              date: row.pushedToFulfillmentAt,
-              requestId: row.requestId,
-              isHqInitiated: true,
-              dispatchReason: row.dispatchReason,
-            }));
+            const mappedOutbound: OrderItem[] = dispatchRows
+              .filter((row: BranchOrder) => !excludedStatuses.includes(row.status))
+              .map((row: BranchOrder) => ({
+                id: String(row.orderId),
+                transactionCode: row.transactionCode,
+                branch: row.branchName || `Branch ${row.branchId}`,
+                subject: row.subject || row.dispatchReason || '',
+                itemsCount: Number(row.itemsCount || 0),
+                totalCost: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+                requestedValue: Number(row.totalRequestedValue || 0),
+                approvedValue: Number(row.totalApprovedValue || 0),
+                fulfilledValue: Number(row.totalFulfilledValue || row.fulfillmentCost || 0),
+                dispatchScheduleStatus: row.dispatchScheduleStatus,
+                status: row.status as OrderActionStatus,
+                date: row.pushedToFulfillmentAt,
+                requestId: row.requestId,
+                isHqInitiated: true,
+                dispatchReason: row.dispatchReason,
+              }));
             
             const mergedList = [...finalMerged, ...mappedOutbound];
             const uniqueOrders = new Map<string, OrderItem>();
@@ -589,9 +593,6 @@ export function OrdersPage() {
             { value: 'Picking', label: 'Picking' },
             { value: 'Packed', label: 'Packed' },
             { value: 'Dispatched', label: 'In Transit' },
-            { value: 'Completed', label: 'Completed' },
-            { value: 'Rejected', label: 'Rejected' },
-            { value: 'Cancelled', label: 'Cancelled' },
           ]}
         />
 

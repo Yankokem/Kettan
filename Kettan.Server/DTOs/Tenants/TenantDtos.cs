@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Kettan.Server.DTOs.Tenants;
 
 public class TenantDto
@@ -22,15 +24,35 @@ public class TenantDto
 
 public class UpdateTenantDto
 {
+    [Required]
+    [StringLength(120, MinimumLength = 2)]
     public required string Name { get; set; }
+
     public string? LegalName { get; set; }
+
+    [StringLength(32)]
     public string? TaxId { get; set; }
+
+    [Url]
+    [StringLength(255)]
     public string? Website { get; set; }
+
     public string SubscriptionTier { get; set; } = "Starter";
+
+    [EmailAddress]
+    [StringLength(254)]
     public string? Email { get; set; }
+
+    [EmailAddress]
+    [StringLength(254)]
     public string? SupportEmail { get; set; }
+
+    [RegularExpression(@"^[+]?[-()\d\s]{7,20}$", ErrorMessage = "Invalid phone number format.")]
     public string? Phone { get; set; }
+
+    [RegularExpression(@"^[+]?[-()\d\s]{7,20}$", ErrorMessage = "Invalid phone number format.")]
     public string? Telephone { get; set; }
+
     public string? Address { get; set; }
     public string? LogoUrl { get; set; }
 }
