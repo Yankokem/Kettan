@@ -316,7 +316,7 @@ export function SupplyRequestsPage() {
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          {row.displayId}
+          {row.displayId.replace(/^[A-Z]+-/, '')}
         </Typography>
       ),
     },

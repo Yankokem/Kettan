@@ -127,17 +127,17 @@ function getColumns(
   return [
     {
       key: 'id',
-      label: 'Order ID',
+      label: 'ORDER ID',
       width: 100,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          {row.transactionCode || (row.id.startsWith('SR-') ? row.id : `ORD-${row.id}`)}
+          {(row.transactionCode || (row.id.startsWith('SR-') ? row.id : `ORD-${row.id}`)).replace(/^[A-Z]+-/, '')}
         </Typography>
       ),
     },
     {
       key: 'date',
-      label: 'Date Requested',
+      label: 'DATE REQUESTED',
       width: 155,
       sortable: true,
       render: (row) => (
@@ -154,7 +154,7 @@ function getColumns(
     },
     {
       key: 'branch',
-      label: 'Branch',
+      label: 'BRANCH',
       width: 140,
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600 }}>
@@ -164,7 +164,7 @@ function getColumns(
     },
     {
       key: 'subject',
-      label: 'Subject',
+      label: 'SUBJECT',
       render: (row) => (
         <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
           {row.subject || '—'}
@@ -173,7 +173,7 @@ function getColumns(
     },
     {
       key: 'itemsCount',
-      label: 'Items',
+      label: 'ITEMS',
       width: 80,
       sortable: true,
       render: (row) => (
@@ -184,7 +184,7 @@ function getColumns(
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'STATUS',
       width: 120,
       render: (row) => {
         const st = STATUS_MAP[row.status] || { color: '#6B4C2A', bg: 'rgba(107,76,42,0.12)' };
@@ -204,7 +204,7 @@ function getColumns(
     },
     {
       key: 'dispatchScheduleStatus',
-      label: 'Dispatch SLA',
+      label: 'DISPATCH SLA',
       width: 130,
       render: (row) => (
         <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
@@ -214,7 +214,7 @@ function getColumns(
     },
     {
       key: 'totalCost',
-      label: 'Fulfilled Value',
+      label: 'FULFILLED VALUE',
       width: 130,
       align: 'right',
       sortable: true,
@@ -226,7 +226,7 @@ function getColumns(
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: 'ACTIONS',
       width: 80,
       align: 'right',
       render: (row) => (

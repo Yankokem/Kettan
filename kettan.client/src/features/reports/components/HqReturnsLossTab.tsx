@@ -61,7 +61,7 @@ export function HqReturnsLossTab({ startDate, endDate }: Props) {
       key: 'returnId', label: 'Return ID', width: 100,
       render: (row) => (
         <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          RET-{row.returnId}
+          {String(row.returnId).replace(/^[A-Z]+-/, '')}
         </Typography>
       )
     },
@@ -69,7 +69,7 @@ export function HqReturnsLossTab({ startDate, endDate }: Props) {
       key: 'orderId', label: 'Order', width: 90,
       render: (row) => (
         <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontFamily: 'monospace' }}>
-          ORD-{row.orderId}
+          {String(row.orderId).replace(/^[A-Z]+-/, '')}
         </Typography>
       )
     },

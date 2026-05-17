@@ -30,7 +30,7 @@ public class AuditLogInterceptor : SaveChangesInterceptor
     // Properties that are too noisy or sensitive to log value changes for
     private static readonly HashSet<string> ExcludedProperties = new(StringComparer.OrdinalIgnoreCase)
     {
-        "PasswordHash", "PasswordSalt", "OtpCode", "OtpExpiresAt",
+        "PasswordHash", "PasswordSalt", "OtpHash", "OtpExpiry", "Email",
         "CreatedAt", "DeletedAt", "IsDeleted"
     };
 
@@ -200,7 +200,7 @@ public class AuditLogInterceptor : SaveChangesInterceptor
         var result = new Dictionary<string, object?>();
 
         // Grab a few identifying fields for new records
-        var interestingProps = new[] { "Name", "Email", "Status", "Action", "SubscriptionTier", "Role" };
+        var interestingProps = new[] { "Name", "Status", "Action", "SubscriptionTier", "Role" };
         foreach (var propName in interestingProps)
         {
             var prop = entry.Properties.FirstOrDefault(p => p.Metadata.Name == propName);

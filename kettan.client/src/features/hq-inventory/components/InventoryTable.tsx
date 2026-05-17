@@ -438,7 +438,7 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
       sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
-          {row.sku}
+          {row.sku.replace(/^[A-Z]+-/, '')}
         </Typography>
       ),
     },
@@ -520,7 +520,7 @@ export function InventoryTable({ items, transactions = [], isBranchView = false,
       render: (row) => (
         <Box>
           <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
-            {row.referenceId ? `REF-${row.referenceId}` : row.id.substring(0, 12)}
+            {row.referenceId ? row.referenceId.toString().replace(/^[A-Z]+-/, '') : row.id.replace(/^(TX|REF)-/, '').substring(0, 12)}
           </Typography>
           {row.remarks && (
             <Typography noWrap sx={{ fontSize: 11, color: 'text.secondary', maxWidth: 180 }}>
