@@ -41,19 +41,12 @@ public class UploadsController : ControllerBase
             _context.AuditLogs.Add(new Entities.AuditLog
             {
                 Action = "ImageUploaded",
-                ActionCode = "UPLOAD_IMAGE",
-                EventCategory = "Media",
-                Outcome = "Success",
-                Severity = "Info",
-                Source = "API",
                 EntityName = "File",
                 EntityId = publicId,
                 TenantId = _currentUserService.TenantId,
                 UserId = _currentUserService.UserId,
                 BranchId = _currentUserService.BranchId,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = HttpContext.Request.Headers.UserAgent.ToString().Substring(0, Math.Min(HttpContext.Request.Headers.UserAgent.ToString().Length, 512)),
-                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { url = secureUrl, folder })
+                OldValues = System.Text.Json.JsonSerializer.Serialize(new { url = secureUrl, folder })
             });
             await _context.SaveChangesAsync();
 

@@ -162,7 +162,6 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<SubscriptionCheckMiddleware>();
-app.UseMiddleware<Kettan.Server.Middleware.AuditRequestMiddleware>();
 
 app.MapControllers();
 app.MapHub<Kettan.Server.Hubs.ReturnHub>("/hub/returns");

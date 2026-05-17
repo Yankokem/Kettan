@@ -9,7 +9,7 @@ namespace Kettan.Server.Middleware;
 
 /// <summary>
 /// EF Core SaveChanges interceptor that automatically writes AuditLog entries
-/// for every significant entity change across the platform.
+/// for Created, Updated, and Deleted entity changes.
 /// </summary>
 public class AuditLogInterceptor : SaveChangesInterceptor
 {
@@ -52,27 +52,16 @@ public class AuditLogInterceptor : SaveChangesInterceptor
         // Resolve current user from request scope
         int? userId = null;
         int? tenantId = null;
-        string? ipAddress = null;
-        string? userAgent = null;
 
         try
         {
             using var scope = _serviceProvider.CreateScope();
             var currentUser = scope.ServiceProvider.GetService<ICurrentUserService>();
-            var httpContextAccessor = scope.ServiceProvider.GetService<IHttpContextAccessor>();
 
             if (currentUser is not null)
             {
                 userId = currentUser.UserId;
                 tenantId = currentUser.TenantId;
-            }
-
-            if (httpContextAccessor?.HttpContext is not null)
-            {
-                var httpContext = httpContextAccessor.HttpContext;
-                ipAddress = httpContext.Connection.RemoteIpAddress?.ToString();
-                userAgent = httpContext.Request.Headers.UserAgent.ToString();
-                if (userAgent?.Length > 512) userAgent = userAgent[..512];
             }
         }
         catch
@@ -153,11 +142,8 @@ public class AuditLogInterceptor : SaveChangesInterceptor
                 Action = action,
                 EntityName = typeName,
                 EntityId = entityId,
-                EventCategory = "Application",
                 OldValues = oldValues,
                 NewValues = newValues,
-                IpAddress = ipAddress,
-                UserAgent = userAgent,
                 OccurredAt = DateTime.UtcNow
             });
 

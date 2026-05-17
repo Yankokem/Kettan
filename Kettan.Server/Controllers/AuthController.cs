@@ -45,16 +45,8 @@ public class AuthController : ControllerBase
                 _context.AuditLogs.Add(new Entities.AuditLog
                 {
                     Action = "LoginFailed",
-                    ActionCode = "AUTH_LOGIN_FAIL",
-                    EventCategory = "Auth",
-                    Outcome = "Failure",
-                    Severity = "Medium",
-                    Source = "API",
                     EntityName = "User",
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    UserAgent = HttpContext.Request.Headers.UserAgent.ToString().Substring(0, Math.Min(HttpContext.Request.Headers.UserAgent.ToString().Length, 512)),
-                    ErrorMessage = "Invalid credentials",
-                    MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { email = request.Email })
+                    OldValues = System.Text.Json.JsonSerializer.Serialize(new { email = request.Email, reason = "Invalid credentials" })
                 });
                 await _context.SaveChangesAsync();
 
@@ -67,16 +59,9 @@ public class AuthController : ControllerBase
                 _context.AuditLogs.Add(new Entities.AuditLog
                 {
                     Action = "MfaRequired",
-                    ActionCode = "AUTH_MFA_REQUIRED",
-                    EventCategory = "Auth",
-                    Outcome = "Pending",
-                    Severity = "Info",
-                    Source = "API",
                     EntityName = "User",
                     EntityId = response.UserId.ToString(),
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    UserAgent = HttpContext.Request.Headers.UserAgent.ToString().Substring(0, Math.Min(HttpContext.Request.Headers.UserAgent.ToString().Length, 512)),
-                    MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { email = request.Email })
+                    OldValues = System.Text.Json.JsonSerializer.Serialize(new { email = request.Email })
                 });
                 await _context.SaveChangesAsync();
 
@@ -91,19 +76,12 @@ public class AuthController : ControllerBase
             _context.AuditLogs.Add(new Entities.AuditLog
             {
                 Action = "LoginSuccess",
-                ActionCode = "AUTH_LOGIN_SUCCESS",
-                EventCategory = "Auth",
-                Outcome = "Success",
-                Severity = "Info",
-                Source = "API",
                 EntityName = "User",
                 EntityId = response.UserId.ToString(),
                 TenantId = response.TenantId,
                 UserId = response.UserId,
                 BranchId = response.BranchId,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = HttpContext.Request.Headers.UserAgent.ToString().Substring(0, Math.Min(HttpContext.Request.Headers.UserAgent.ToString().Length, 512)),
-                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { email = request.Email })
+                OldValues = System.Text.Json.JsonSerializer.Serialize(new { email = request.Email })
             });
             await _context.SaveChangesAsync();
 
@@ -139,15 +117,8 @@ public class AuthController : ControllerBase
             _context.AuditLogs.Add(new Entities.AuditLog
             {
                 Action = "MfaVerifyFailed",
-                ActionCode = "AUTH_MFA_FAIL",
-                EventCategory = "Auth",
-                Outcome = "Failure",
-                Severity = "Medium",
-                Source = "API",
                 EntityName = "User",
-                IpAddress = ipAddress,
-                UserAgent = userAgent.Length > 512 ? userAgent[..512] : userAgent,
-                ErrorMessage = "Invalid or expired MFA code"
+                OldValues = System.Text.Json.JsonSerializer.Serialize(new { reason = "Invalid or expired MFA code" })
             });
             await _context.SaveChangesAsync();
 
@@ -157,19 +128,12 @@ public class AuthController : ControllerBase
         _context.AuditLogs.Add(new Entities.AuditLog
         {
             Action = "MfaVerifySuccess",
-            ActionCode = "AUTH_MFA_SUCCESS",
-            EventCategory = "Auth",
-            Outcome = "Success",
-            Severity = "Info",
-            Source = "API",
             EntityName = "User",
             EntityId = response.UserId.ToString(),
             TenantId = response.TenantId,
             UserId = response.UserId,
             BranchId = response.BranchId,
-            IpAddress = ipAddress,
-            UserAgent = userAgent.Length > 512 ? userAgent[..512] : userAgent,
-            MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { email = response.Email })
+            OldValues = System.Text.Json.JsonSerializer.Serialize(new { email = response.Email })
         });
         await _context.SaveChangesAsync();
 
@@ -233,18 +197,11 @@ public class AuthController : ControllerBase
             _context.AuditLogs.Add(new Entities.AuditLog
             {
                 Action = "Logout",
-                ActionCode = "AUTH_LOGOUT",
-                EventCategory = "Auth",
-                Outcome = "Success",
-                Severity = "Info",
-                Source = "API",
                 EntityName = "User",
                 EntityId = _currentUserService.UserId.Value.ToString(),
                 TenantId = _currentUserService.TenantId,
                 UserId = _currentUserService.UserId,
-                BranchId = _currentUserService.BranchId,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = HttpContext.Request.Headers.UserAgent.ToString().Substring(0, Math.Min(HttpContext.Request.Headers.UserAgent.ToString().Length, 512))
+                BranchId = _currentUserService.BranchId
             });
             await _context.SaveChangesAsync();
         }

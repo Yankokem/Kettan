@@ -27,10 +27,6 @@ public class AuditLogsController : ControllerBase
     public async Task<IActionResult> GetAuditLogs(
         [FromQuery] string? search,
         [FromQuery] string? action,
-        [FromQuery] string? module,
-        [FromQuery] string? outcome,
-        [FromQuery] string? actionCode,
-        [FromQuery] string? correlationId,
         [FromQuery] int? actorId,
         [FromQuery] string? startDate,
         [FromQuery] string? endDate,
@@ -63,6 +59,10 @@ public class AuditLogsController : ControllerBase
         }
 
         var query = _context.AuditLogs.AsNoTracking().AsQueryable();
+
+        // Only show entity mutations (Created/Updated/Deleted), skip HTTP request noise
+        var mutationActions = new[] { "Created", "Updated", "Deleted" };
+        query = query.Where(a => mutationActions.Contains(a.Action));
 
         // 2. Tenant isolation
         if (!isSuperAdmin && tenantId.HasValue)
@@ -106,30 +106,10 @@ public class AuditLogsController : ControllerBase
                 (a.EntityId != null && a.EntityId.Contains(q)));
         }
 
-        // Action filter
+        // Action filter (Created / Updated / Deleted)
         if (!string.IsNullOrWhiteSpace(action))
         {
             query = query.Where(a => a.Action == action);
-        }
-
-        if (!string.IsNullOrWhiteSpace(module))
-        {
-            query = query.Where(a => a.Module == module);
-        }
-
-        if (!string.IsNullOrWhiteSpace(outcome))
-        {
-            query = query.Where(a => a.Outcome == outcome);
-        }
-
-        if (!string.IsNullOrWhiteSpace(actionCode))
-        {
-            query = query.Where(a => a.ActionCode == actionCode);
-        }
-
-        if (!string.IsNullOrWhiteSpace(correlationId))
-        {
-            query = query.Where(a => a.CorrelationId == correlationId);
         }
 
         if (actorId.HasValue)
@@ -159,31 +139,15 @@ public class AuditLogsController : ControllerBase
             {
                 Id = a.AuditLogId,
                 a.Action,
-                a.ActionCode,
-                a.Outcome,
-                a.Severity,
-                a.Source,
-                a.HttpMethod,
-                a.Route,
-                a.StatusCode,
-                a.CorrelationId,
-                BranchId = a.BranchId ?? (a.User != null ? a.User.BranchId : null),
-                a.Module,
-                a.ReferenceType,
-                a.ReferenceId,
-                a.ErrorCode,
-                a.ErrorMessage,
                 a.EntityName,
                 a.EntityId,
-                a.EventCategory,
                 ActorName = a.User != null
                     ? a.User.FirstName + " " + a.User.LastName
                     : "System",
                 ActorRole = a.User != null ? a.User.Role.ToString() : "System",
-                a.TenantId,
-                TenantName = a.Tenant != null ? a.Tenant.Name : null,
                 a.OccurredAt,
-                a.IpAddress
+                a.OldValues,
+                a.NewValues
             })
             .ToListAsync(ct);
 
@@ -194,33 +158,5 @@ public class AuditLogsController : ControllerBase
             pageSize,
             data = logs
         });
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetAuditLogDetails(int id, CancellationToken ct = default)
-    {
-        var userRole = _currentUserService.Role;
-        var tenantId = _currentUserService.TenantId;
-        var isSuperAdmin = userRole == UserRole.SuperAdmin.ToString();
-
-        var query = _context.AuditLogs.AsNoTracking().Where(a => a.AuditLogId == id);
-
-        if (!isSuperAdmin && tenantId.HasValue)
-        {
-            query = query.Where(a => a.TenantId == tenantId.Value);
-        }
-
-        var log = await query.Select(a => new
-        {
-            Id = a.AuditLogId,
-            a.MetadataJson,
-            a.OldValues,
-            a.NewValues
-        }).FirstOrDefaultAsync(ct);
-
-        if (log == null)
-            return NotFound();
-
-        return Ok(log);
     }
 }

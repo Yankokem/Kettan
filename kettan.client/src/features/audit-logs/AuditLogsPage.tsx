@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { api } from '../../utils/api';
-import { Box, Typography, useTheme, Dialog, DialogTitle, DialogContent, IconButton, CircularProgress } from '@mui/material';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import { Box, Typography, useTheme, Chip } from '@mui/material';
 import FeedRoundedIcon from '@mui/icons-material/FeedRounded';
 import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
 import SortRoundedIcon from '@mui/icons-material/SortRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 
 import { DataTable, type ColumnDef } from '../../components/UI/DataTable';
 import { DateRangePicker } from '../../components/UI/DateRangePicker';
@@ -16,16 +18,10 @@ import { SearchInput } from '../../components/UI/SearchInput';
 import { StatCard } from '../../components/UI/StatCard';
 import { Button } from '../../components/UI/Button';
 import { 
-  humanizeRoute, 
-  humanizeEntityAction, 
-  parseChanges, 
-  humanizeRequestDetails,
-  type AuditLogEntry as UtilityAuditLogEntry
+  buildEventDescription,
+  type AuditLogEntry
 } from './utils/auditLogUtils';
 import { fetchAuditStats, type AuditStatsDto } from '../reports/reportsApi';
-
-// Update local interface to match utility if needed, or just use the utility one
-type AuditLogEntry = UtilityAuditLogEntry;
 
 interface AuditLogResponse {
   totalCount: number;
@@ -34,22 +30,22 @@ interface AuditLogResponse {
   data: AuditLogEntry[];
 }
 
-function getActionColor(action: string, theme: any) {
-  const normalized = action.toLowerCase();
-
-  if (normalized.includes('deleted') || normalized.includes('deactivat')) {
-    return theme.palette.error.main;
+function getActionIcon(action: string) {
+  switch (action) {
+    case 'Created': return <AddCircleOutlineRoundedIcon sx={{ fontSize: 16 }} />;
+    case 'Updated': return <EditRoundedIcon sx={{ fontSize: 16 }} />;
+    case 'Deleted': return <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />;
+    default: return <FeedRoundedIcon sx={{ fontSize: 16 }} />;
   }
+}
 
-  if (normalized.includes('created') || normalized.includes('activat')) {
-    return theme.palette.success.main;
+function getActionChipColor(action: string): 'success' | 'primary' | 'error' | 'default' {
+  switch (action) {
+    case 'Created': return 'success';
+    case 'Updated': return 'primary';
+    case 'Deleted': return 'error';
+    default: return 'default';
   }
-
-  if (normalized.includes('updated')) {
-    return theme.palette.primary.main;
-  }
-
-  return theme.palette.info.main;
 }
 
 function defaultStartDate() {
@@ -75,13 +71,9 @@ export function AuditLogsPage() {
   const [startDate, setStartDate] = useState(defaultStartDate());
   const [endDate, setEndDate] = useState(defaultEndDate());
   const [page] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(25);
   const [auditStats, setAuditStats] = useState<AuditStatsDto | null>(null);
   const fetching = useRef(false);
-
-  const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
-  const [logDetails, setLogDetails] = useState<any>(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -125,24 +117,6 @@ export function AuditLogsPage() {
       .catch(err => console.error('Failed to load audit stats:', err));
   }, []);
 
-  useEffect(() => {
-    if (selectedLog) {
-      setLoadingDetails(true);
-      setLogDetails(null);
-      api.get(`/api/audit-logs/${selectedLog.id}`)
-        .then(res => setLogDetails(res.data))
-        .catch(err => console.error(err))
-        .finally(() => setLoadingDetails(false));
-    } else {
-      setLogDetails(null);
-    }
-  }, [selectedLog]);
-
-  const actionOptions = useMemo(() => {
-    const actions = Array.from(new Set(rows.map((row) => row.action)));
-    return actions.map((action) => ({ value: action, label: action.toUpperCase() }));
-  }, [rows]);
-
   const roleOptions = useMemo(() => {
     const roles = Array.from(new Set(rows.map((row) => row.actorRole)));
     return roles.map((role) => ({ value: role, label: role }));
@@ -150,17 +124,11 @@ export function AuditLogsPage() {
 
   const filteredRows = useMemo(() => {
     let result = rows;
-    
-    // Default filter: Remove navigation noise (GET requests) unless searching or filtered by action
-    if (!debouncedSearch && !actionFilter) {
-      result = result.filter(row => row.httpMethod !== 'GET' || row.entityName !== 'Request');
-    }
-
     if (roleFilter) {
       result = result.filter((row) => row.actorRole === roleFilter);
     }
     return result;
-  }, [rows, roleFilter, debouncedSearch, actionFilter]);
+  }, [rows, roleFilter]);
 
   const sortedRows = useMemo(() => {
     if (sortBy === 'newest') return filteredRows;
@@ -180,7 +148,7 @@ export function AuditLogsPage() {
         return right.actorName.localeCompare(left.actorName);
       }
 
-      return 0; // Default already newest
+      return 0;
     });
 
     return copy;
@@ -189,105 +157,69 @@ export function AuditLogsPage() {
   const columns: ColumnDef<AuditLogEntry>[] = [
     {
       key: 'occurredAt',
-      label: 'DATE AND TIME',
-      width: '1.5fr',
+      label: 'DATE & TIME',
+      width: '1.2fr',
       sortable: true,
       sortAccessor: (row) => new Date(row.occurredAt).getTime(),
       render: (row) => (
-        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500, whiteSpace: 'nowrap' }}>
           {new Date(row.occurredAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
         </Typography>
       ),
     },
     {
-      key: 'entityName',
-      label: 'EVENT',
-      width: '4fr',
-      sortable: true,
-      render: (row) => {
-        const isRequest = row.action === 'HttpRequest' || row.entityName === 'Request';
-        const title = isRequest 
-          ? humanizeRoute(row.route || '', row.httpMethod || 'GET')
-          : humanizeEntityAction(row.action, row.entityName, row.entityId);
-        
-        return (
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: 'text.primary', letterSpacing: '0.01em' }}>
-                {title}
-              </Typography>
-            </Box>
-          </Box>
-        );
-      },
-    },
-    {
-      key: 'context',
-      label: 'CONTEXT & CHANGES',
-      width: '4fr',
-      sortable: false,
-      render: (row) => {
-        const isRequest = row.action === 'HttpRequest' || row.entityName === 'Request';
-        const hasOutcome = row.outcome && row.outcome !== 'Unknown';
-        
-        const badgeText = (!isRequest && !hasOutcome) ? row.action : (row.outcome || 'Unknown');
-        const badgeColor = (!isRequest && !hasOutcome) 
-          ? getActionColor(row.action, theme) 
-          : (row.outcome === 'Success' ? theme.palette.success.main : theme.palette.error.main);
-
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, py: 0.8 }}>
-               <Typography 
-                 sx={{ 
-                   fontSize: 13, 
-                   fontWeight: 600, 
-                   color: badgeColor,
-                   display: 'inline-block'
-                 }}
-               >
-                 {badgeText}
-               </Typography>
-               {row.outcome !== 'Success' && row.errorMessage && (
-                 <Typography sx={{ fontSize: 11, fontWeight: 500, color: 'error.main', opacity: 0.8 }}>
-                   {row.errorCode ? `[${row.errorCode}] ` : ''}{row.errorMessage}
-                 </Typography>
-               )}
-
-            {!isRequest ? (
-              <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 500, mt: 0.5, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}>
-                Click row to view details
-              </Typography>
-            ) : row.route ? (
-              <Typography sx={{ fontSize: 11.5, color: 'text.secondary', fontWeight: 400, opacity: 0.9 }}>
-                {humanizeRequestDetails(row)}
-              </Typography>
-            ) : null}
-          </Box>
-        );
-      },
-    },
-    {
       key: 'actorName',
       label: 'USER',
-      width: '2fr',
-      sortable: true,
-      render: (row) => (
-        <Typography sx={{ fontSize: 13.5, fontWeight: 500, color: 'text.primary' }}>
-          {row.actorName}
-        </Typography>
-      ),
-    },
-    {
-      key: 'actorRole',
-      label: 'ROLE',
-      width: '1.2fr',
+      width: '1.3fr',
       sortable: true,
       render: (row) => {
-        const roleStyle = theme.custom.roles[row.actorRole] || { text: theme.palette.text.secondary };
+        const roleStyle = theme.custom?.roles?.[row.actorRole] || { text: theme.palette.text.secondary };
         return (
-          <Typography sx={{ fontSize: 13, fontWeight: 500, color: roleStyle.text }}>
-            {row.actorRole}
-          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: 'text.primary', lineHeight: 1.3 }}>
+              {row.actorName}
+            </Typography>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 500, color: roleStyle.text, opacity: 0.85 }}>
+              {row.actorRole}
+            </Typography>
+          </Box>
+        );
+      },
+    },
+    {
+      key: 'event',
+      label: 'EVENT',
+      width: '4.5fr',
+      sortable: false,
+      render: (row) => {
+        const description = buildEventDescription(row);
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.2 }}>
+            <Chip
+              icon={getActionIcon(row.action)}
+              label={row.action}
+              color={getActionChipColor(row.action)}
+              size="small"
+              variant="outlined"
+              sx={{ 
+                fontSize: 11, 
+                fontWeight: 600, 
+                height: 24,
+                mt: 0.2,
+                flexShrink: 0,
+                '& .MuiChip-icon': { fontSize: 14 }
+              }}
+            />
+            <Typography sx={{ 
+              fontSize: 13, 
+              fontWeight: 500, 
+              color: 'text.primary', 
+              lineHeight: 1.55,
+              wordBreak: 'break-word'
+            }}>
+              {description}
+            </Typography>
+          </Box>
         );
       },
     },
@@ -295,12 +227,7 @@ export function AuditLogsPage() {
 
   const uniqueActors = new Set(rows.map((row) => row.actorName)).size;
   const createdEvents = rows.filter((row) => row.action === 'Created').length;
-  const archiveInactiveEvents = rows.filter((row) => 
-    row.action.toLowerCase().includes('delete') || 
-    row.action.toLowerCase().includes('archive') || 
-    row.action.toLowerCase().includes('inactivate') ||
-    row.action.toLowerCase().includes('deactivate')
-  ).length;
+  const archiveInactiveEvents = rows.filter((row) => row.action === 'Deleted').length;
 
   return (
     <Box sx={{ pb: 3 }}>
@@ -333,7 +260,7 @@ export function AuditLogsPage() {
           iconBg="linear-gradient(135deg, #B08B5A 0%, #DEC9A8 100%)"
         />
         <StatCard
-          label="Archive/Inactive Events"
+          label="Deleted Events"
           value={auditStats?.archivalEvents.currentValue ?? archiveInactiveEvents}
           icon={<HighlightOffRoundedIcon />}
           trend={auditStats?.archivalEvents.trend ?? 'up'}
@@ -353,7 +280,7 @@ export function AuditLogsPage() {
         }}
       >
         <SearchInput
-          placeholder="Search action, entity, actor..."
+          placeholder="Search entity, action, user..."
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           sx={{ 
@@ -381,8 +308,8 @@ export function AuditLogsPage() {
           options={[
             { value: 'newest', label: 'Newest First' },
             { value: 'oldest', label: 'Oldest First' },
-            { value: 'actor-asc', label: 'Actor A-Z' },
-            { value: 'actor-desc', label: 'Actor Z-A' },
+            { value: 'actor-asc', label: 'User A-Z' },
+            { value: 'actor-desc', label: 'User Z-A' },
           ]}
         />
 
@@ -392,7 +319,11 @@ export function AuditLogsPage() {
           value={actionFilter}
           onChange={setActionFilter}
           minWidth={160}
-          options={actionOptions}
+          options={[
+            { value: 'Created', label: 'Created' },
+            { value: 'Updated', label: 'Updated' },
+            { value: 'Deleted', label: 'Deleted' },
+          ]}
         />
 
         <FilterDropdown
@@ -413,60 +344,12 @@ export function AuditLogsPage() {
         data={sortedRows}
         columns={columns}
         keyExtractor={(row) => String(row.id)}
-        defaultRowsPerPage={10}
+        defaultRowsPerPage={25}
         pageSizes={[10, 25, 50]}
         emptyTitle={search ? 'No matches found' : 'No audit logs yet'}
         emptyMessage={loading ? 'Loading audit logs…' : search ? 'We couldn\'t find any log entries matching your search.' : 'There are no activities recorded in the audit log for this period.'}
         emptyIcon={<FeedRoundedIcon />}
-        onRowClick={(row) => setSelectedLog(row)}
       />
-
-      <Dialog open={!!selectedLog} onClose={() => setSelectedLog(null)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Event Details
-          <IconButton onClick={() => setSelectedLog(null)} size="small">
-            <CloseRoundedIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          {loadingDetails ? (
-             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-               <CircularProgress size={30} />
-             </Box>
-          ) : logDetails ? (
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>Changes</Typography>
-              {(() => {
-                const changes = parseChanges(logDetails.oldValues, logDetails.newValues);
-                if (changes.length === 0) return <Typography sx={{ fontSize: 13 }}>No recorded field changes.</Typography>;
-                
-                return (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {changes.map((change: any, idx: number) => (
-                      <Box key={idx} sx={{ display: 'flex', gap: 2, fontSize: 13, p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
-                        <Typography sx={{ fontWeight: 600, minWidth: 100 }}>{change.field}</Typography>
-                        <Typography sx={{ color: 'text.secondary', textDecoration: 'line-through' }}>{String(change.oldValue ?? '-')}</Typography>
-                        <Typography sx={{ color: 'primary.main', fontWeight: 500 }}>{String(change.newValue ?? '-')}</Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                );
-              })()}
-
-              {logDetails.metadataJson && (
-                <>
-                  <Typography variant="subtitle2" sx={{ mt: 3, mb: 1, color: 'text.secondary' }}>Metadata</Typography>
-                  <Box component="pre" sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, fontSize: 12, overflowX: 'auto' }}>
-                    {JSON.stringify(JSON.parse(logDetails.metadataJson), null, 2)}
-                  </Box>
-                </>
-              )}
-            </Box>
-          ) : (
-            <Typography sx={{ p: 2 }}>Could not load details.</Typography>
-          )}
-        </DialogContent>
-      </Dialog>
     </Box>
   );
 }
