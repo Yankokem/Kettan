@@ -2,6 +2,7 @@ import { Box, Typography, Paper, Grid, CircularProgress, Alert } from '@mui/mate
 import { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
 import { useNavigate, useParams } from '@tanstack/react-router';
+import { useAuthStore } from '../../store/useAuthStore';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import { FormTextField } from '../../components/Form/FormTextField';
@@ -37,6 +38,10 @@ const ROLE_OPTIONS: Array<{ value: StaffFormData['role']; label: string }> = [
 export function EditStaffPage() {
   const navigate = useNavigate();
   const { staffId } = useParams({ from: '/layout/staff/$staffId/edit' });
+  const { user: currentUser } = useAuthStore();
+  
+  const canEditCredentials = currentUser?.role === 'TenantAdmin';
+
   const [formData, setFormData] = useState<StaffFormData>({
     firstName: '',
     lastName: '',
@@ -134,11 +139,6 @@ export function EditStaffPage() {
 
     // Password validation (only if changing password)
     if (formData.newPassword || formData.confirmPassword) {
-      if (!formData.currentPassword) {
-        alert('Please enter current password to change password.');
-        return;
-      }
-
       if (formData.newPassword !== formData.confirmPassword) {
         alert('New password and confirmation do not match.');
         return;
@@ -201,16 +201,15 @@ export function EditStaffPage() {
       await api.put(`/api/users/${staffId}`, {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
         birthday: formData.birthday || null,
         contactNo: formData.contactNo.trim() || null,
         role: formData.role,
         branchId: formData.branchId ? parseInt(formData.branchId) : null,
         isActive: true,
-        imageUrl: imageUrl !== null ? imageUrl : undefined
+        imageUrl: imageUrl !== null ? imageUrl : undefined,
+        password: formData.newPassword || undefined,
       });
-
-      // TODO: Handle password change if needed
-      // This would require a separate endpoint on the backend
 
       alert('Staff member updated successfully!');
       void navigate({ to: `/staff/${staffId}` });
@@ -344,17 +343,44 @@ export function EditStaffPage() {
               value={formData.email}
               onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))}
               fullWidth
-              disabled
+              disabled={!canEditCredentials}
             />
-            <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
-              Email cannot be changed. Contact your administrator if you need to update it.
-            </Typography>
+            {!canEditCredentials && (
+              <Typography sx={{ fontSize: 11, color: 'text.secondary', mt: 0.75, ml: 0.5 }}>
+                Email cannot be changed. Contact your administrator if you need to update it.
+              </Typography>
+            )}
           </Box>
+
+          {canEditCredentials && (
+            <Grid container spacing={2.5} sx={{ mb: 3 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormTextField
+                  label="New Password"
+                  placeholder="Leave blank to keep current"
+                  type="password"
+                  value={formData.newPassword}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, newPassword: event.target.value }))}
+                  fullWidth
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormTextField
+                  label="Confirm Password"
+                  placeholder="Re-enter new password"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                  fullWidth
+                />
+              </Grid>
+            </Grid>
+          )}
 
           <Grid container spacing={2.5} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormTextField
-                label="Birthday (Optional)"
+                label="Birthday"
                 type="date"
                 value={formData.birthday}
                 onChange={(event) => setFormData((prev) => ({ ...prev, birthday: event.target.value }))}
@@ -364,7 +390,7 @@ export function EditStaffPage() {
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormTextField
-                label="Contact Number (Optional)"
+                label="Contact Number"
                 placeholder="e.g. +63 917 123 4567"
                 value={formData.contactNo}
                 onChange={(event) => setFormData((prev) => ({ ...prev, contactNo: event.target.value }))}
@@ -385,7 +411,7 @@ export function EditStaffPage() {
 
           <Box sx={{ mb: 3 }}>
             <FormDropdown
-              label="Branch (Optional)"
+              label="Branch"
               value={formData.branchId}
               options={[
                 { value: '', label: 'Select a branch...' },

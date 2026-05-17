@@ -74,4 +74,10 @@ public class UpdateUserDto
     public bool IsActive { get; set; }
     public EmployeeStatus Status { get; set; }
     public string? ImageUrl { get; set; }
+
+    [EmailAddress]
+    [StringLength(254)]
+    public string? Email { get; set; }
+
+    public string? Password { get; set; }
 }

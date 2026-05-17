@@ -249,6 +249,18 @@ public class UsersController : ControllerBase
         user.IsActive = nextIsActive;
         user.Status = dto.Status;
         
+        if (!string.IsNullOrWhiteSpace(dto.Email) && user.Email != dto.Email)
+        {
+            var existingEmail = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == dto.Email, cancellationToken);
+            if (existingEmail != null) return BadRequest(new { message = "Email is already in use by another account." });
+            user.Email = dto.Email;
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.Password))
+        {
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        }
+
         // Only update ImageUrl if a new one is provided. Or if explicitly nulling? Usually it's if not null. 
         // For project scope, allow it to be updated to whatever is sent, except in partial updates.
         // If frontend doesn't send it, maybe it shouldn't overwrite. But UpdateUserDto is full update.
