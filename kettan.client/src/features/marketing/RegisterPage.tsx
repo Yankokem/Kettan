@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { StaticMotionDiv } from "./noMotion";
-import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Mail, X } from "lucide-react";
 import { api } from "../../utils/api";
 import { MarketingAuthInput } from "./components/MarketingAuthInput";
 import { resolvePlan } from "./registerPlans";
@@ -21,6 +21,7 @@ export function RegisterPage() {
 
   const [email, setEmail] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -166,9 +167,9 @@ export function RegisterPage() {
                 </div>
                 <span style={{ fontSize: "13px", color: "#5C4A37", lineHeight: 1.6 }}>
                   I agree to Kettan's{" "}
-                  <span style={{ color: "#6B4C2A", fontWeight: 600, cursor: "pointer" }}>Terms of Service</span>
+                  <span onClick={(e) => { e.preventDefault(); setShowPolicyModal(true); }} style={{ color: "#6B4C2A", fontWeight: 600, cursor: "pointer" }}>Terms of Service</span>
                   {" "}and{" "}
-                  <span style={{ color: "#6B4C2A", fontWeight: 600, cursor: "pointer" }}>Privacy Policy</span>
+                  <span onClick={(e) => { e.preventDefault(); setShowPolicyModal(true); }} style={{ color: "#6B4C2A", fontWeight: 600, cursor: "pointer" }}>Privacy Policy</span>
                 </span>
               </label>
               {errors.agreeToTerms ? (
@@ -204,6 +205,104 @@ export function RegisterPage() {
           </p>
         </StaticMotionDiv>
       </div>
+
+      {/* Security Policy Modal */}
+      {showPolicyModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+          <div style={{ backgroundColor: "#FFFFFF", borderRadius: "16px", width: "100%", maxWidth: "600px", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}>
+            
+            {/* Header */}
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(139,115,85,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#3D3122", margin: 0 }}>Security Compliance & Terms</h2>
+              <button 
+                onClick={() => setShowPolicyModal(false)}
+                style={{ padding: "8px", background: "none", border: "none", cursor: "pointer", color: "#8B7355" }}
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content (Scrollable) */}
+            <div style={{ padding: "24px", overflowY: "auto", color: "#5C4A37", fontSize: "14px", lineHeight: 1.6, display: "flex", flexDirection: "column", gap: "20px" }}>
+              
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#3D3122", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Password Policy</h3>
+                <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <li>Users must create a password with a minimum of 8 characters.</li>
+                  <li>Passwords are hashed using BCrypt before storage in the database.</li>
+                  <li>Plaintext passwords are never stored or logged by the system.</li>
+                  <li>Password reset requires email OTP verification.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#3D3122", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Login Attempt Policy</h3>
+                <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <li>Users are rate limited to five (5) login attempts per minute per IP address.</li>
+                  <li>After exceeding the limit, the system returns HTTP 429 and blocks further attempts for the remainder of the 1-minute window.</li>
+                  <li>All failed login attempts are logged in the AuditLogs table with the user's IP address, user agent, and timestamp.</li>
+                  <li>Multi-Factor Authentication (OTP via email) is required when logging in from an unrecognized device.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#3D3122", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Data Handling Policy</h3>
+                <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <li>Personal information (passwords, OTP codes) is hashed before storage using BCrypt.</li>
+                  <li>Data is encrypted during transmission via HTTPS/TLS.</li>
+                  <li>JWT tokens are stored in HttpOnly, Secure, SameSite=Strict cookies to prevent XSS and CSRF attacks.</li>
+                  <li>Only authorized users within the same tenant can access tenant-specific records.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#3D3122", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Access Control Policy</h3>
+                <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <li>Only TenantAdmin users can access system configuration pages.</li>
+                  <li>Branch-level users are restricted to branch-specific features.</li>
+                  <li>All API endpoints require JWT authentication.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#3D3122", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Logging and Monitoring Policy</h3>
+                <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <li>All entity changes (Create, Update, Delete) are automatically recorded.</li>
+                  <li>Sensitive fields (PasswordHash, OtpCode) are excluded from audit log tracking.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#3D3122", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Compliance Declaration</h3>
+                <p style={{ margin: 0, fontStyle: "italic" }}>
+                  By submitting this form and checking the box, you confirm that you have read and agreed to the security policies properly implemented in the Kettan system.
+                </p>
+              </div>
+
+            </div>
+
+            {/* Footer Action */}
+            <div style={{ padding: "20px 24px", borderTop: "1px solid rgba(139,115,85,0.15)", backgroundColor: "#FAFAFA", borderBottomLeftRadius: "16px", borderBottomRightRadius: "16px", display: "flex", justifyContent: "flex-end" }}>
+              <button 
+                onClick={() => {
+                  setAgreeToTerms(true);
+                  if (errors.agreeToTerms) {
+                    const newErrors = { ...errors };
+                    delete newErrors.agreeToTerms;
+                    setErrors(newErrors);
+                  }
+                  setShowPolicyModal(false);
+                }}
+                style={{ backgroundColor: "#6B4C2A", color: "white", padding: "10px 24px", borderRadius: "8px", fontWeight: 600, fontSize: "14px", border: "none", cursor: "pointer", boxShadow: "0 2px 8px rgba(107,76,42,0.25)" }}
+              >
+                I Agree & Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
