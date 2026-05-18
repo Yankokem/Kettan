@@ -8,5 +8,4 @@ public enum UserRole : byte
     HqStaff = 3,
     BranchOwner = 4,
     BranchManager = 5,
-    StoreStaff = 6
 }
