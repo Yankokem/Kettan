@@ -6,6 +6,6 @@ public class ForgotPasswordRequest
 {
     [Required]
     [EmailAddress]
-    [StringLength(256)]
+    [StringLength(100)]
     public required string Email { get; set; }
 }

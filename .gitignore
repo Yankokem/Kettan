@@ -18,6 +18,9 @@ yarn-error.log*
 
 # Kettan Specific
 Kettan.Server/tmp-*/
+Kettan.Server/appsettings.json
+Kettan.Server/appsettings.Development.json
+Kettan.Server/appsettings.Production.json
 kettan.client/dist/
 kettan.client/build/
 kettan.client/.env.development
