@@ -77,7 +77,7 @@ public class AuthService : IAuthService
             }
         }
 
-        if (!isDeviceRecognized)
+        if (!isDeviceRecognized && user.Role != UserRole.SuperAdmin)
         {
             // New/unrecognized device → require MFA OTP
             var otpCode = GenerateOtp();
