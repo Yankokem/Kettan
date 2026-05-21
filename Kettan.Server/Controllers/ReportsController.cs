@@ -121,6 +121,14 @@ public class ReportsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("hq/inventory-by-category")]
+    [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
+    public async Task<ActionResult<List<CategoryInventoryValuationDto>>> GetInventoryByCategory()
+    {
+        var result = await _service.GetInventoryByCategoryAsync();
+        return Ok(result);
+    }
+
     [HttpGet("hq/wastage")]
     [Authorize(Roles = "TenantAdmin,HqManager,HqStaff")]
     public async Task<ActionResult<List<WastageRecordDto>>> GetWastage([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? branchId = null)

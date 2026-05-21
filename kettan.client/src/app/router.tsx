@@ -33,6 +33,9 @@ import { SupplyRequestDetailPage } from '../features/supply-requests/SupplyReque
 import { SupplyRequestEditDraftPage } from '../features/supply-requests/SupplyRequestEditDraftPage';
 import { ConsumptionPage } from '../features/consumption/ConsumptionPage';
 import { ConsumptionCreatePage } from '../features/consumption/ConsumptionCreatePage';
+import { ReturnsPage } from '../features/returns/ReturnsPage';
+import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
+import { ReturnCreatePage } from '../features/returns/ReturnCreatePage';
 import { HomePage } from '../features/marketing/HomePage';
 import { FeaturesPage } from '../features/marketing/FeaturesPage';
 import { PricingPage } from '../features/marketing/PricingPage';
@@ -268,6 +271,11 @@ const ordersRoute = createRoute({
 const newOrderRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/orders/new',
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      fromReturnId: (search.fromReturnId as string) || undefined,
+    } as { fromReturnId?: string };
+  },
   component: NewOrderRequestPage,
   beforeLoad: () => {
     const role = useAuthStore.getState().user?.role;
@@ -330,6 +338,24 @@ const consumptionCreateRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: '/consumption/new',
   component: ConsumptionCreatePage,
+});
+
+const returnsRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/returns',
+  component: ReturnsPage,
+});
+
+const returnCreateRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/returns/new',
+  component: ReturnCreatePage,
+});
+
+const returnDetailRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: '/returns/$returnId',
+  component: ReturnDetailPage,
 });
 
 
@@ -477,6 +503,9 @@ const routeTree = rootRoute.addChildren([
     supplyRequestDetailRoute,
     consumptionRoute,
     consumptionCreateRoute,
+    returnsRoute,
+    returnCreateRoute,
+    returnDetailRoute,
     auditLogsRoute,
     menuRoute,
     addMenuItemRoute,

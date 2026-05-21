@@ -70,9 +70,14 @@ export interface SupplyRequestDetailViewModel {
   items: SupplyRequestDetailItem[];
   timeline: SupplyRequestTimelineEntry[];
 
+  // Rejection & cancellation reasons
+  rejectionReason?: string;
+  cancellationReason?: string;
+
   // Arrival / Completion tracking
   arrivedAt?: string | null;
   arrivedConfirmedByName?: string | null;
   completedAt?: string | null;
   completedByName?: string | null;
 }
+

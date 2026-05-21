@@ -11,7 +11,7 @@ import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import LocalCafeRoundedIcon from '@mui/icons-material/LocalCafeRounded';
+
 import type {
   Branch,
   BranchActivityLog,
@@ -44,7 +44,6 @@ interface BranchKpiContext {
   activityLogs: BranchActivityLog[];
   transactions: BranchTransactionRow[];
   inventoryItems: BranchInventoryItem[];
-  menuItems: { status: string }[];
 }
 
 export const BRANCH_PROFILE_TABS: BranchTabDefinition[] = [
@@ -53,7 +52,6 @@ export const BRANCH_PROFILE_TABS: BranchTabDefinition[] = [
   { key: 'activity', label: 'Activity Logs', icon: AnalyticsRoundedIcon },
   { key: 'transactions', label: 'Transactions', icon: ReceiptLongRoundedIcon },
   { key: 'inventory', label: 'Inventory', icon: Inventory2RoundedIcon },
-  { key: 'menu', label: 'Menu', icon: LocalCafeRoundedIcon },
 ];
 
 export const toBranchFormData = (branch: Branch): BranchFormData => ({
@@ -128,15 +126,40 @@ export const mapInventoryItem = (dto: any): BranchInventoryItem => ({
   lastRestocked: dto.updatedAt,
 });
 
-export const mapTransaction = (dto: any): BranchTransactionRow => ({
-  id: String(dto.consumptionLogId || dto.orderId || Math.random()),
+export const mapSupplyRequestToTransaction = (dto: any): BranchTransactionRow => ({
+  id: `sr-${dto.requestId}`,
   branchId: dto.branchId,
-  reference: dto.method === 'Sales' ? `Order #${dto.consumptionLogId}` : dto.reference || `Log #${dto.consumptionLogId}`,
-  type: dto.method === 'Direct' ? 'Stock-Out' : dto.method === 'Sales' ? 'Adjustment' : 'Transfer',
+  reference: dto.transactionCode || `SR-${dto.requestId}`,
+  type: 'Supply Request',
+  status: dto.status,
   lineItems: dto.items?.length || 0,
-  netChange: 0, // Summation would require detailed items
-  postedBy: 'Branch Manager',
-  timestamp: dto.logDate || dto.createdAt,
+  totalValue: dto.totalRequestedValue || 0,
+  postedBy: dto.requestedByName || 'Branch Staff',
+  timestamp: dto.createdAt,
+});
+
+export const mapOrderToTransaction = (dto: any): BranchTransactionRow => ({
+  id: `ord-${dto.orderId}`,
+  branchId: dto.branchId,
+  reference: dto.transactionCode || `ORD-${dto.orderId}`,
+  type: 'Supply Push',
+  status: dto.status,
+  lineItems: dto.itemsCount || 0,
+  totalValue: dto.totalFulfilledValue || dto.totalApprovedValue || 0,
+  postedBy: dto.isHqInitiated ? 'HQ Dispatch' : 'Branch Request',
+  timestamp: dto.pushedToFulfillmentAt || dto.createdAt,
+});
+
+export const mapReturnToTransaction = (dto: any): BranchTransactionRow => ({
+  id: `ret-${dto.returnId}`,
+  branchId: dto.branchId,
+  reference: dto.transactionCode || `RT-${dto.returnId}`,
+  type: 'Return',
+  status: dto.status,
+  lineItems: dto.items?.length || 0,
+  totalValue: dto.totalReturnedValue || 0,
+  postedBy: dto.submittedByName || 'Branch Staff',
+  timestamp: dto.loggedAt || dto.submittedAt,
 });
 
 export const formatDateTime = (timestamp: string) => {
@@ -309,9 +332,9 @@ const buildActivityKpis = ({ activityLogs }: BranchKpiContext): BranchProfileKpi
 };
 
 const buildTransactionKpis = ({ transactions }: BranchKpiContext): BranchProfileKpi[] => {
-  const stockIn = transactions.filter((transaction) => transaction.type === 'Stock-In').length;
-  const stockOut = transactions.filter((transaction) => transaction.type === 'Stock-Out').length;
-  const netMovement = transactions.reduce((total, transaction) => total + transaction.netChange, 0);
+  const supplyRequests = transactions.filter((t) => t.type === 'Supply Request').length;
+  const supplyPushes = transactions.filter((t) => t.type === 'Supply Push').length;
+  const returns = transactions.filter((t) => t.type === 'Return').length;
 
   return [
     {
@@ -323,28 +346,28 @@ const buildTransactionKpis = ({ transactions }: BranchKpiContext): BranchProfile
       iconBg: 'rgba(107,76,42,0.16)',
     },
     {
-      id: 'transactions-stock-in',
-      label: 'Stock-In',
-      value: stockIn.toString(),
+      id: 'transactions-requests',
+      label: 'Supply Requests',
+      value: supplyRequests.toString(),
       icon: TrendingUpRoundedIcon,
       iconColor: '#166534',
       iconBg: '#DCFCE7',
     },
     {
-      id: 'transactions-stock-out',
-      label: 'Stock-Out',
-      value: stockOut.toString(),
+      id: 'transactions-pushes',
+      label: 'Supply Pushes',
+      value: supplyPushes.toString(),
+      icon: Inventory2RoundedIcon,
+      iconColor: '#1D4ED8',
+      iconBg: '#DBEAFE',
+    },
+    {
+      id: 'transactions-returns',
+      label: 'Returns',
+      value: returns.toString(),
       icon: WarningAmberRoundedIcon,
       iconColor: '#B91C1C',
       iconBg: '#FEE2E2',
-    },
-    {
-      id: 'transactions-net',
-      label: 'Net Qty Movement',
-      value: `${netMovement >= 0 ? '+' : ''}${netMovement}`,
-      icon: AnalyticsRoundedIcon,
-      iconColor: '#1D4ED8',
-      iconBg: '#DBEAFE',
     },
   ];
 };
@@ -390,47 +413,6 @@ const buildInventoryKpis = ({ inventoryItems }: BranchKpiContext): BranchProfile
   ];
 };
 
-const buildMenuKpis = ({ menuItems }: BranchKpiContext): BranchProfileKpi[] => {
-  const active = menuItems.filter((m) => m.status === 'Active').length;
-  const inactive = menuItems.filter((m) => m.status === 'Inactive').length;
-  const outOfStock = menuItems.filter((m) => m.status === 'Out of Stock').length;
-
-  return [
-    {
-      id: 'menu-total',
-      label: 'Total Menu Items',
-      value: menuItems.length.toString(),
-      icon: LocalCafeRoundedIcon,
-      iconColor: '#6B4C2A',
-      iconBg: 'rgba(107,76,42,0.16)',
-    },
-    {
-      id: 'menu-active',
-      label: 'Active',
-      value: active.toString(),
-      icon: CheckCircleRoundedIcon,
-      iconColor: '#166534',
-      iconBg: '#DCFCE7',
-    },
-    {
-      id: 'menu-inactive',
-      label: 'Inactive',
-      value: inactive.toString(),
-      icon: BlockRoundedIcon,
-      iconColor: '#991B1B',
-      iconBg: '#FEE2E2',
-    },
-    {
-      id: 'menu-oos',
-      label: 'Out of Stock',
-      value: outOfStock.toString(),
-      icon: WarningAmberRoundedIcon,
-      iconColor: '#B45309',
-      iconBg: '#FEF3C7',
-    },
-  ];
-};
-
 export const getKpisForTab = (activeTab: BranchProfileTabKey, context: BranchKpiContext): BranchProfileKpi[] => {
   switch (activeTab) {
     case 'staff':
@@ -441,8 +423,6 @@ export const getKpisForTab = (activeTab: BranchProfileTabKey, context: BranchKpi
       return buildTransactionKpis(context);
     case 'inventory':
       return buildInventoryKpis(context);
-    case 'menu':
-      return buildMenuKpis(context);
     case 'details':
     default:
       return buildDetailsKpis(context);

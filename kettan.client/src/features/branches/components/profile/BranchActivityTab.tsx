@@ -11,6 +11,7 @@ import { formatDateTime } from '../../branchProfileData';
 
 interface BranchActivityTabProps {
   logs: BranchActivityLog[];
+  loading?: boolean;
 }
 
 const SORT_OPTIONS = [
@@ -25,7 +26,7 @@ const OUTCOME_FILTER_OPTIONS: Array<{ value: BranchActivityLog['outcome']; label
   { value: 'flagged', label: 'Flagged' },
 ];
 
-export function BranchActivityTab({ logs }: BranchActivityTabProps) {
+export function BranchActivityTab({ logs, loading = false }: BranchActivityTabProps) {
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState(SORT_OPTIONS[0].value);
@@ -223,8 +224,9 @@ export function BranchActivityTab({ logs }: BranchActivityTabProps) {
         data={filteredLogs}
         columns={columns}
         keyExtractor={(log) => log.id}
-        defaultPageSize={5}
-        pageSizes={[5, 10, 25]}
+        defaultPageSize={10}
+        pageSizes={[10, 25, 50]}
+        isLoading={loading}
         emptyMessage="No activity logs match your filters."
       />
     </Box>

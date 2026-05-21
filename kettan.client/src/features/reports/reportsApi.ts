@@ -78,6 +78,14 @@ export interface BranchInventoryValuationDto {
   totalValuation: number;
 }
 
+export interface CategoryInventoryValuationDto {
+  categoryId: number;
+  categoryName: string;
+  totalItems: number;
+  totalVolume: number;
+  totalValuation: number;
+}
+
 export interface WastageRecordDto {
   transactionId: number;
   itemName: string;
@@ -236,6 +244,10 @@ export async function fetchBranchSpend(
 
 export async function fetchBranchValuations(): Promise<BranchInventoryValuationDto[]> {
   return get<BranchInventoryValuationDto[]>('/api/reports/hq/branch-valuations');
+}
+
+export async function fetchInventoryByCategory(): Promise<CategoryInventoryValuationDto[]> {
+  return get<CategoryInventoryValuationDto[]>('/api/reports/hq/inventory-by-category');
 }
 
 export async function fetchWastageRecords(

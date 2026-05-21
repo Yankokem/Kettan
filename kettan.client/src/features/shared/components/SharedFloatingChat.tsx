@@ -12,8 +12,11 @@ import {
     sendReturnMessage, 
     fetchOrderMessages, 
     sendOrderMessage,
+    fetchSupplyRequestMessages,
+    sendSupplyRequestMessage,
     type ReturnMessage,
-    type OrderMessage
+    type OrderMessage,
+    type SupplyRequestMessage
 } from '../../branch-operations/api';
 
 // --- Types ---
@@ -130,6 +133,8 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
             let data: SharedMessage[] = [];
             if (contextType === 'return') {
                 data = await fetchReturnMessages(id);
+            } else if (contextType === 'supply-request') {
+                data = await fetchSupplyRequestMessages(id);
             } else {
                 data = await fetchOrderMessages(id);
             }
@@ -217,6 +222,17 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                     });
                 }
             });
+            // Listen for supply request messages
+            connection.on('ReceiveSupplyRequestMessage', (pId: number, dto: SupplyRequestMessage) => {
+                if (pId === id) {
+                    setMessages(prev => {
+                        if (prev.some(m => m.messageId === dto.messageId)) return prev;
+                        if (!open && dto.senderUserId !== currentUserId) setUnreadCount(c => c + 1);
+                        if (open) scrollToBottom();
+                        return [...prev, dto];
+                    });
+                }
+            });
         }
 
         connection.start()
@@ -274,8 +290,10 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                 setUploadingImage(true);
                 const formData = new FormData();
                 formData.append('file', pendingImage);
-                const folderId = contextType === 'return' ? `RET-${id.toString().padStart(5, '0')}` : `ORD-${id.toString().padStart(5, '0')}`;
-                formData.append('folder', `${contextType === 'return' ? 'Returns' : 'Orders'}/Messages/${folderId}`);
+                const folderPrefix = contextType === 'return' ? 'RET' : contextType === 'supply-request' ? 'SR' : 'ORD';
+                const folderName = contextType === 'return' ? 'Returns' : contextType === 'supply-request' ? 'SupplyRequests' : 'Orders';
+                const folderId = `${folderPrefix}-${id.toString().padStart(5, '0')}`;
+                formData.append('folder', `${folderName}/Messages/${folderId}`);
                 
                 try {
                     const uploadRes = await api.post('/api/uploads/image', formData, {
@@ -296,6 +314,8 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
             if (finalContent) {
                 if (contextType === 'return') {
                     await sendReturnMessage(id, finalContent);
+                } else if (contextType === 'supply-request') {
+                    await sendSupplyRequestMessage(id, finalContent);
                 } else {
                     await sendOrderMessage(id, { content: finalContent });
                 }
@@ -396,7 +416,7 @@ export function SharedFloatingChat({ contextType, id, open: externalOpen, onOpen
                             </Box>
                             <Box>
                                 <Typography sx={{ fontWeight: 800, fontSize: 14, color: '#6B4C2A', letterSpacing: '-0.01em' }}>
-                                    {contextType === 'return' ? 'Return Discussion' : 'Order Discussion'}
+                                    {contextType === 'return' ? 'Return Discussion' : contextType === 'supply-request' ? 'Request Discussion' : 'Order Discussion'}
                                 </Typography>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                     <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#4ade80' }} />

@@ -114,5 +114,23 @@ export async function fetchBranchInventory(branchId: number) {
 }
 
 export async function fetchBranchTransactions(branchId: number) {
-  return request<any[]>(`/api/consumption?branchId=${branchId}`);
+  // Fetch all three data sources in parallel, then filter by branchId client-side
+  const [supplyRequests, orders, returns] = await Promise.all([
+    request<any[]>('/api/SupplyRequests').catch(() => []),
+    request<any[]>('/api/Orders').catch(() => []),
+    request<any[]>('/api/Returns').catch(() => []),
+  ]);
+
+  // Normalize: Returns API may return { items: [...] } or an array
+  const normalizeArray = (data: any): any[] => {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object' && Array.isArray(data.items)) return data.items;
+    return [];
+  };
+
+  return {
+    supplyRequests: normalizeArray(supplyRequests).filter((r: any) => r.branchId === branchId),
+    orders: normalizeArray(orders).filter((o: any) => o.branchId === branchId),
+    returns: normalizeArray(returns).filter((r: any) => r.branchId === branchId),
+  };
 }

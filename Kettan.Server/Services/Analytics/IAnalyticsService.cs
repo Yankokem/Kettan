@@ -16,6 +16,7 @@ public interface IAnalyticsService
     Task<List<CostTrendPointDto>> GetCostTrendAsync(DateTime startDate, DateTime endDate);
     Task<List<BranchSpendDto>> GetBranchSpendAsync(DateTime startDate, DateTime endDate);
     Task<List<BranchInventoryValuationDto>> GetAllBranchInventoryValuationsAsync();
+    Task<List<CategoryInventoryValuationDto>> GetInventoryByCategoryAsync();
     Task<List<WastageRecordDto>> GetWastageRecordsAsync(DateTime startDate, DateTime endDate, int? branchId = null);
     Task<List<EoqSuggestionDto>> GetEoqSuggestionsAsync(int? branchId = null);
     Task<ReturnsLossOverviewDto> GetReturnsLossOverviewAsync(DateTime startDate, DateTime endDate);

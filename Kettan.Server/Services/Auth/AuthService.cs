@@ -4,6 +4,8 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Kettan.Server.Data;
 using Kettan.Server.DTOs.Auth;
 using Kettan.Server.Entities;
@@ -18,6 +20,7 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
     private readonly ILogger<AuthService> _logger;
+    private readonly IWebHostEnvironment _env;
 
     private const int OtpExpiryMinutes = 5;
 
@@ -25,12 +28,14 @@ public class AuthService : IAuthService
         ApplicationDbContext context,
         IConfiguration configuration,
         IEmailService emailService,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        IWebHostEnvironment env)
     {
         _context = context;
         _configuration = configuration;
         _emailService = emailService;
         _logger = logger;
+        _env = env;
     }
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request, string? deviceToken, string? userAgent, string? ipAddress)
@@ -77,7 +82,11 @@ public class AuthService : IAuthService
             }
         }
 
-        if (!isDeviceRecognized && user.Role != UserRole.SuperAdmin)
+        bool mfaEnabled = _configuration.GetValue<bool>("MfaSettings:Enabled", true);
+        bool isLocalhost = ipAddress == "127.0.0.1" || ipAddress == "::1" || ipAddress == "localhost";
+        bool bypassMfa = !mfaEnabled || _env.IsDevelopment() || isLocalhost;
+
+        if (!bypassMfa && !isDeviceRecognized && user.Role != UserRole.SuperAdmin)
         {
             // New/unrecognized device → require MFA OTP
             var otpCode = GenerateOtp();

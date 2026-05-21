@@ -46,6 +46,7 @@ export interface DataTableProps<T> {
   isLoading?: boolean;
   fulfillment?: boolean;
   columnGap?: number;
+  sx?: any;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -75,6 +76,7 @@ export function DataTable<T>({
   isLoading = false,
   fulfillment = false,
   columnGap = 2,
+  sx,
 }: DataTableProps<T>) {
   const effectiveDefaultPageSize = defaultRowsPerPage ?? defaultPageSize;
   const effectivePageSizes = rowsPerPageOptions ?? pageSizes;
@@ -242,6 +244,7 @@ export function DataTable<T>({
     <Box
       sx={{
         minWidth: 0,
+        ...sx,
       }}
     >
       {toolbar ? <Box sx={{ mb: 2.5 }}>{toolbar}</Box> : null}
@@ -249,7 +252,8 @@ export function DataTable<T>({
       <Box
         className={fulfillment ? undefined : (className || 'glass-card')}
         sx={{
-          height: fulfillment ? 'auto' : '100%',
+          height: sx?.height === '100%' ? '100%' : 'auto',
+          flexGrow: sx?.height === '100%' ? 1 : 0,
           display: 'flex',
           flexDirection: 'column',
           borderRadius: '14px',
@@ -356,8 +360,8 @@ export function DataTable<T>({
       ) : null}
 
       {/* Scrollable table content area */}
-      <Box sx={{ overflowX: 'auto', flexGrow: 1, minHeight: 0 }}>
-        <Box sx={{ width: 'fit-content', minWidth: '100%' }}>
+      <Box sx={{ overflowX: 'auto', overflowY: 'hidden', flexGrow: 1, minHeight: 0 }}>
+        <Box sx={{ width: '100%' }}>
           {/* Table header */}
           <Box
             sx={{

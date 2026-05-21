@@ -53,7 +53,7 @@ export interface BranchEmployee {
   isActive: boolean;
 }
 
-export type BranchProfileTabKey = 'details' | 'staff' | 'activity' | 'transactions' | 'inventory' | 'menu';
+export type BranchProfileTabKey = 'details' | 'staff' | 'activity' | 'transactions' | 'inventory';
 
 export interface BranchActivityLog {
   id: string;
@@ -71,9 +71,10 @@ export interface BranchTransactionRow {
   id: string;
   branchId: number;
   reference: string;
-  type: 'Stock-In' | 'Stock-Out' | 'Transfer' | 'Adjustment';
+  type: 'Supply Request' | 'Supply Push' | 'Return';
+  status: string;
   lineItems: number;
-  netChange: number;
+  totalValue: number;
   postedBy: string;
   timestamp: string;
 }

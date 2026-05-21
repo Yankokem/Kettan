@@ -34,7 +34,7 @@ interface Vehicle {
 interface DispatchDialogProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (data: { vehicleId: number; trackingNumber: string; estimatedArrival: string }) => void;
+  onConfirm: (data: { vehicleId: number; trackingNumber: string; estimatedArrival: string; remarks?: string }) => void;
   isSaving?: boolean;
 }
 
@@ -56,12 +56,14 @@ export function DispatchDialog({ open, onClose, onConfirm, isSaving }: DispatchD
   // Form State
   const [selectedVehicle, setSelectedVehicle] = useState<number | ''>('');
   const [trackingNumber, setTrackingNumber] = useState('');
+  const [remarks, setRemarks] = useState('');
 
   useEffect(() => {
     if (open) {
       loadVehicles();
       generateTracking();
       setSelectedVehicle('');
+      setRemarks('');
     }
   }, [open]);
 
@@ -93,7 +95,8 @@ export function DispatchDialog({ open, onClose, onConfirm, isSaving }: DispatchD
       onConfirm({
         vehicleId: Number(selectedVehicle),
         trackingNumber,
-        estimatedArrival: new Date(Date.now() + 86400000).toISOString() 
+        estimatedArrival: new Date(Date.now() + 86400000).toISOString(),
+        remarks: remarks.trim() || undefined
       });
     }
   };
@@ -226,6 +229,34 @@ export function DispatchDialog({ open, onClose, onConfirm, isSaving }: DispatchD
             <Typography sx={{ fontSize: 11, color: alpha('#3E2723', 0.4), mt: 1.5, fontStyle: 'italic' }}>
               * Estimated arrival is automatically set to 24 hours from dispatch.
             </Typography>
+          </Box>
+
+          <Box>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: BRAND_TAN, textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5 }}>
+              Dispatch Notes (Optional)
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              multiline
+              rows={2}
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              disabled={isSaving}
+              placeholder="Any dispatch notes or driver details..."
+              InputProps={{
+                sx: { 
+                  borderRadius: '8px', 
+                  bgcolor: BASE_TAN,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(BRAND_TAN, 0.1),
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: BRAND_TAN,
+                  },
+                }
+              }}
+            />
           </Box>
         </Box>
       </DialogContent>

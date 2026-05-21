@@ -57,6 +57,7 @@ function formatStatusLabel(status: string) {
     case 'PartiallyApproved': return 'Partially Approved';
     case 'InTransit':
     case 'Dispatched': return 'In Transit';
+    case 'Fulfilled': return 'Completed';
     default: return status;
   }
 }
@@ -65,7 +66,7 @@ function statusColor(status: string): string {
   const normalized = status.toLowerCase();
   if (normalized === 'draft' || normalized.includes('autodrafted')) return '#757575'; // Neutral
   if (normalized === 'pendingapproval') return '#ED6C02'; // Pending
-  if (['approved', 'completed', 'delivered'].includes(normalized)) return '#2E7D32'; // Success
+  if (['approved', 'completed', 'delivered', 'fulfilled'].includes(normalized)) return '#2E7D32'; // Success
   if (['picking', 'packing', 'processing', 'dispatched', 'intransit', 'arrived'].includes(normalized)) return '#0288D1'; // Info
   if (normalized.includes('rejected') || normalized.includes('cancelled')) return '#D32F2F'; // Error
   return '#6B7280';
@@ -147,7 +148,7 @@ function ActionsMenu({ row, type }: { row: any; type: 'Request' | 'Dispatch' }) 
         )}
 
         <Divider sx={{ my: 1 }} />
-        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText(row.transactionCode || (type === 'Request' ? `SR-${row.requestId}` : `SD-${row.orderId}`)); }}>
+        <MenuItem onClick={() => { handleClose(); navigator.clipboard.writeText((row.transactionCode || (type === 'Request' ? `SR-${row.requestId}` : `SD-${row.orderId}`)).replace(/^[A-Z]+-/, '')); }}>
           <ListItemIcon><ContentCopyRoundedIcon fontSize="small" sx={{ color: '#64748B' }} /></ListItemIcon>
           <ListItemText primary="Copy ID" primaryTypographyProps={{ fontSize: 13, fontWeight: 500, color: '#64748B' }} />
         </MenuItem>
@@ -261,7 +262,7 @@ export function SupplyRequestsPage() {
     return [...requests, ...dispatches];
   }, [rows, incomingShipments]);
 
-  const filteredRows = useMemo(() => {
+  const baseFilteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
 
     return combinedRows.filter((row) => {
@@ -275,8 +276,24 @@ export function SupplyRequestsPage() {
       const status = row.status || '';
       const normalizedStatus = status.toLowerCase();
 
-      // Only show SR specific statuses
-      const srVisibleStatuses = ['pendingapproval', 'rejected', 'cancelled', 'completed'];
+      // Show SR specific and all relevant ongoing status states
+      const srVisibleStatuses = [
+        'pendingapproval',
+        'approved',
+        'partiallyapproved',
+        'processing',
+        'picking',
+        'packing',
+        'packed',
+        'dispatched',
+        'intransit',
+        'delivered',
+        'arrived',
+        'completed',
+        'fulfilled',
+        'rejected',
+        'cancelled'
+      ];
       if (!srVisibleStatuses.includes(normalizedStatus)) {
         return false;
       }
@@ -289,12 +306,37 @@ export function SupplyRequestsPage() {
         filedBy.includes(query) ||
         normalizedStatus.includes(query);
 
-      const matchesStatus = !statusFilter || status === statusFilter;
       const matchesDateRange = occurredDate >= fromDate && occurredDate <= toDate;
 
-      return matchesQuery && matchesStatus && matchesDateRange;
+      return matchesQuery && matchesDateRange;
     });
-  }, [combinedRows, search, startDate, endDate, statusFilter]);
+  }, [combinedRows, search, startDate, endDate]);
+
+  const filteredRows = useMemo(() => {
+    return baseFilteredRows.filter((row) => {
+      const status = row.status || '';
+      const normalizedStatus = status.toLowerCase();
+      const isCompleted = normalizedStatus === 'completed' || normalizedStatus === 'fulfilled';
+
+      if (!statusFilter) {
+        return !isCompleted;
+      }
+
+      if (statusFilter === 'Completed') {
+        return isCompleted;
+      }
+
+      if (statusFilter === 'Processing') {
+        return ['processing', 'picking', 'packing', 'packed'].includes(normalizedStatus);
+      }
+
+      if (statusFilter === 'InTransit') {
+        return ['intransit', 'dispatched', 'arrived'].includes(normalizedStatus);
+      }
+
+      return status === statusFilter;
+    });
+  }, [baseFilteredRows, statusFilter]);
 
   const sortedRows = useMemo(() => {
     const copy = [...filteredRows];
@@ -458,7 +500,10 @@ export function SupplyRequestsPage() {
       <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
         <StatCard
           label="Total Records"
-          value={filteredRows.length}
+          value={baseFilteredRows.filter((row) => {
+            const normalizedStatus = (row.status || '').toLowerCase();
+            return normalizedStatus !== 'completed' && normalizedStatus !== 'fulfilled';
+          }).length}
           icon={<AssignmentTurnedInRoundedIcon />}
           trend="up"
           trendValue="Active Pool"
@@ -467,7 +512,7 @@ export function SupplyRequestsPage() {
         />
         <StatCard
           label="Pending HQ Approval"
-          value={filteredRows.filter((row) => row.status === 'PendingApproval').length}
+          value={baseFilteredRows.filter((row) => row.status === 'PendingApproval').length}
           icon={<PendingActionsRoundedIcon />}
           trend="up"
           trendValue="Needs action"
@@ -476,7 +521,7 @@ export function SupplyRequestsPage() {
         />
         <StatCard
           label="Completed"
-          value={filteredRows.filter((row) => row.status === 'Completed').length}
+          value={baseFilteredRows.filter((row) => row.status === 'Completed' || row.status === 'Fulfilled').length}
           icon={<TaskAltRoundedIcon />}
           trend="up"
           trendValue="Processed"
@@ -485,7 +530,7 @@ export function SupplyRequestsPage() {
         />
         <StatCard
           label="Rejected / Cancelled"
-          value={filteredRows.filter((row) => row.status === 'Rejected' || row.status === 'Cancelled').length}
+          value={baseFilteredRows.filter((row) => row.status === 'Rejected' || row.status === 'Cancelled').length}
           icon={<HighlightOffRoundedIcon />}
           trend="up"
           trendValue="Needs review"
@@ -541,6 +586,8 @@ export function SupplyRequestsPage() {
           options={[
             { value: '', label: 'All Statuses' },
             { value: 'PendingApproval', label: 'Awaiting HQ' },
+            { value: 'Processing', label: 'Processing' },
+            { value: 'InTransit', label: 'In Transit' },
             { value: 'Completed', label: 'Completed' },
             { value: 'Rejected', label: 'Rejected' },
             { value: 'Cancelled', label: 'Cancelled' },
@@ -554,7 +601,7 @@ export function SupplyRequestsPage() {
               sx={{ whiteSpace: 'nowrap' }}
               onClick={() => navigate({ to: '/supply-requests/new' })}
             >
-              File Request
+              New Supply Request
             </Button>
           )}
 

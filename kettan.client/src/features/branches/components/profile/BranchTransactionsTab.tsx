@@ -10,23 +10,29 @@ import { formatDate } from '../../branchProfileData';
 
 interface BranchTransactionsTabProps {
   transactions: BranchTransactionRow[];
+  loading?: boolean;
 }
 
 const SORT_OPTIONS = [
   { value: 'date-desc', label: 'Latest First' },
   { value: 'date-asc', label: 'Oldest First' },
-  { value: 'net-desc', label: 'Net Qty: High to Low' },
-  { value: 'net-asc', label: 'Net Qty: Low to High' },
+  { value: 'value-desc', label: 'Value: High to Low' },
+  { value: 'value-asc', label: 'Value: Low to High' },
 ];
 
 const TYPE_FILTER_OPTIONS: Array<{ value: BranchTransactionRow['type']; label: string }> = [
-  { value: 'Stock-In', label: 'Stock-In' },
-  { value: 'Stock-Out', label: 'Stock-Out' },
-  { value: 'Transfer', label: 'Transfer' },
-  { value: 'Adjustment', label: 'Adjustment' },
+  { value: 'Supply Request', label: 'Supply Requests' },
+  { value: 'Supply Push', label: 'Supply Pushes' },
+  { value: 'Return', label: 'Returns' },
 ];
 
-export function BranchTransactionsTab({ transactions }: BranchTransactionsTabProps) {
+const TYPE_CHIP_STYLES: Record<BranchTransactionRow['type'], { bg: string; color: string }> = {
+  'Supply Request': { bg: 'rgba(201,168,76,0.14)', color: '#6B4C2A' },
+  'Supply Push': { bg: 'rgba(22,101,52,0.1)', color: '#166534' },
+  'Return': { bg: 'rgba(185,28,28,0.08)', color: '#991B1B' },
+};
+
+export function BranchTransactionsTab({ transactions, loading = false }: BranchTransactionsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState(SORT_OPTIONS[0].value);
   const [typeFilter, setTypeFilter] = useState('');
@@ -39,6 +45,7 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
         !normalizedQuery ||
         transaction.reference.toLowerCase().includes(normalizedQuery) ||
         transaction.type.toLowerCase().includes(normalizedQuery) ||
+        transaction.status.toLowerCase().includes(normalizedQuery) ||
         transaction.postedBy.toLowerCase().includes(normalizedQuery);
 
       const matchesType = !typeFilter || transaction.type === typeFilter;
@@ -50,10 +57,10 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
       switch (sortBy) {
         case 'date-asc':
           return new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime();
-        case 'net-desc':
-          return right.netChange - left.netChange;
-        case 'net-asc':
-          return left.netChange - right.netChange;
+        case 'value-desc':
+          return right.totalValue - left.totalValue;
+        case 'value-asc':
+          return left.totalValue - right.totalValue;
         case 'date-desc':
         default:
           return new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime();
@@ -68,7 +75,7 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
       {
         key: 'reference',
         label: 'Reference',
-        width: '22%',
+        width: '2fr',
         render: (transaction) => (
           <Typography sx={{ fontSize: 12.5, color: 'text.primary', fontWeight: 700, fontFamily: 'monospace' }}>
             {transaction.reference}
@@ -78,40 +85,39 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
       {
         key: 'type',
         label: 'Type',
-        width: '18%',
+        width: '1.6fr',
+        render: (transaction) => {
+          const style = TYPE_CHIP_STYLES[transaction.type];
+          return (
+            <Chip
+              label={transaction.type}
+              size="small"
+              sx={{
+                height: 24,
+                borderRadius: 1.5,
+                bgcolor: style.bg,
+                color: style.color,
+                fontSize: 11,
+                fontWeight: 700,
+              }}
+            />
+          );
+        },
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        width: '1.6fr',
         render: (transaction) => (
-          <Chip
-            label={transaction.type}
-            size="small"
-            sx={{
-              height: 24,
-              borderRadius: 1.5,
-              bgcolor:
-                transaction.type === 'Stock-In'
-                  ? 'success.light'
-                  : transaction.type === 'Stock-Out'
-                    ? 'error.light'
-                    : transaction.type === 'Transfer'
-                      ? 'info.light'
-                      : 'warning.light',
-              color:
-                transaction.type === 'Stock-In'
-                  ? 'success.dark'
-                  : transaction.type === 'Stock-Out'
-                    ? 'error.dark'
-                    : transaction.type === 'Transfer'
-                      ? 'info.dark'
-                      : 'warning.dark',
-              fontSize: 11,
-              fontWeight: 700,
-            }}
-          />
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 600 }}>
+            {transaction.status}
+          </Typography>
         ),
       },
       {
         key: 'lineItems',
-        label: 'Line Items',
-        width: '14%',
+        label: 'Items',
+        width: '1fr',
         align: 'right',
         render: (transaction) => (
           <Typography sx={{ fontSize: 12.5, color: 'text.primary', fontWeight: 600 }}>
@@ -120,27 +126,20 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
         ),
       },
       {
-        key: 'netChange',
-        label: 'Net Qty',
-        width: '14%',
+        key: 'totalValue',
+        label: 'Value',
+        width: '1.4fr',
         align: 'right',
         render: (transaction) => (
-          <Typography
-            sx={{
-              fontSize: 12.5,
-              color: transaction.netChange >= 0 ? 'success.main' : 'error.main',
-              fontWeight: 700,
-            }}
-          >
-            {transaction.netChange >= 0 ? '+' : ''}
-            {transaction.netChange}
+          <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'text.primary' }}>
+            ₱{Number(transaction.totalValue).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </Typography>
         ),
       },
       {
         key: 'postedBy',
-        label: 'Posted By',
-        width: '18%',
+        label: 'Source',
+        width: '1.4fr',
         render: (transaction) => (
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{transaction.postedBy}</Typography>
         ),
@@ -148,7 +147,7 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
       {
         key: 'timestamp',
         label: 'Date',
-        width: '14%',
+        width: '1fr',
         render: (transaction) => (
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{formatDate(transaction.timestamp)}</Typography>
         ),
@@ -163,7 +162,7 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
         <SearchInput
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Search by reference, type, or posted by"
+          placeholder="Search by reference, type, status, or source"
           sx={{ minWidth: 240, maxWidth: 380, flex: 1 }}
         />
 
@@ -182,7 +181,7 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
           options={TYPE_FILTER_OPTIONS}
           label="Type"
           icon={<TuneRoundedIcon sx={{ fontSize: 16 }} />}
-          minWidth={160}
+          minWidth={175}
         />
       </Box>
 
@@ -190,8 +189,9 @@ export function BranchTransactionsTab({ transactions }: BranchTransactionsTabPro
         data={filteredTransactions}
         columns={columns}
         keyExtractor={(transaction) => transaction.id}
-        defaultPageSize={5}
-        pageSizes={[5, 10, 25]}
+        defaultPageSize={10}
+        pageSizes={[10, 25, 50]}
+        isLoading={loading}
         emptyMessage="No transactions match your filters."
       />
     </Box>

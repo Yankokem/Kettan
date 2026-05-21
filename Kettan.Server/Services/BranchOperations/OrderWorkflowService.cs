@@ -5,6 +5,8 @@ using Kettan.Server.Entities;
 using Kettan.Server.Services.Common;
 using Kettan.Server.Services.Inventory;
 using Kettan.Server.Enums;
+using Microsoft.AspNetCore.SignalR;
+using Kettan.Server.Hubs;
 
 namespace Kettan.Server.Services.BranchOperations;
 
@@ -16,6 +18,7 @@ public class OrderWorkflowService : IOrderWorkflowService
     private readonly IInventoryService _inventoryService;
     private readonly ILogger<OrderWorkflowService> _logger;
     private readonly IDocumentSequenceService _sequenceService;
+    private readonly IHubContext<WorkflowHub> _hubContext;
 
     public OrderWorkflowService(
         ApplicationDbContext context,
@@ -23,7 +26,8 @@ public class OrderWorkflowService : IOrderWorkflowService
         INotificationService notificationService,
         IInventoryService inventoryService,
         IDocumentSequenceService sequenceService,
-        ILogger<OrderWorkflowService> logger)
+        ILogger<OrderWorkflowService> logger,
+        IHubContext<WorkflowHub> hubContext)
     {
         _context = context;
         _currentUser = currentUser;
@@ -31,6 +35,7 @@ public class OrderWorkflowService : IOrderWorkflowService
         _inventoryService = inventoryService;
         _sequenceService = sequenceService;
         _logger = logger;
+        _hubContext = hubContext;
     }
 
     public async Task<List<BranchOrderDto>> ListBranchOrdersAsync(string? status = null, int? branchId = null)
@@ -317,8 +322,36 @@ public class OrderWorkflowService : IOrderWorkflowService
                 Timestamp = now
             });
 
+            OrderMessage? createdMsg = null;
+            var normalizedRemarks = NormalizeOptional(dto.Remarks);
+            if (!string.IsNullOrWhiteSpace(normalizedRemarks))
+            {
+                createdMsg = new OrderMessage
+                {
+                    TenantId = _currentUser.TenantId.Value,
+                    OrderId = order.OrderId,
+                    SenderUserId = _currentUser.UserId.Value,
+                    Content = normalizedRemarks,
+                    SentAt = now
+                };
+                _context.OrderMessages.Add(createdMsg);
+            }
+
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            if (createdMsg != null)
+            {
+                var hydrated = await _context.OrderMessages
+                    .Include(m => m.SenderUser)
+                    .FirstAsync(m => m.MessageId == createdMsg.MessageId);
+                await BroadcastOrderMessageAsync(orderId, hydrated);
+            }
+            else
+            {
+                await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+                await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
+            }
         }
         catch
         {
@@ -482,6 +515,7 @@ public class OrderWorkflowService : IOrderWorkflowService
             throw new InvalidOperationException($"Only {expectedStatus} orders can be moved to {nextStatus}.");
         }
 
+        var now = DateTime.UtcNow;
         order.Status = nextStatus;
 
         _context.OrderStatusHistories.Add(new OrderStatusHistory
@@ -491,10 +525,38 @@ public class OrderWorkflowService : IOrderWorkflowService
             Status = nextStatus,
             ChangedBy_UserId = _currentUser.UserId.Value,
             Remarks = NormalizeOptional(remarks),
-            Timestamp = DateTime.UtcNow
+            Timestamp = now
         });
 
+        OrderMessage? createdMsg = null;
+        var normalizedRemarks = NormalizeOptional(remarks);
+        if (!string.IsNullOrWhiteSpace(normalizedRemarks))
+        {
+            createdMsg = new OrderMessage
+            {
+                TenantId = _currentUser.TenantId.Value,
+                OrderId = order.OrderId,
+                SenderUserId = _currentUser.UserId.Value,
+                Content = normalizedRemarks,
+                SentAt = now
+            };
+            _context.OrderMessages.Add(createdMsg);
+        }
+
         await _context.SaveChangesAsync();
+
+        if (createdMsg != null)
+        {
+            var hydrated = await _context.OrderMessages
+                .Include(m => m.SenderUser)
+                .FirstAsync(m => m.MessageId == createdMsg.MessageId);
+            await BroadcastOrderMessageAsync(orderId, hydrated);
+        }
+        else
+        {
+            await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+            await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
+        }
 
         await NotifyBranchAsync(
             order,
@@ -938,7 +1000,36 @@ public class OrderWorkflowService : IOrderWorkflowService
             Remarks = "Picking confirmed. Moved to packing checklist."
         });
 
+        OrderMessage? createdMsg = null;
+        var normalizedRemarks = NormalizeOptional(dto.Remarks);
+        if (!string.IsNullOrWhiteSpace(normalizedRemarks))
+        {
+            createdMsg = new OrderMessage
+            {
+                TenantId = tenantId,
+                OrderId = orderId,
+                SenderUserId = _currentUser.UserId!.Value,
+                Content = normalizedRemarks,
+                SentAt = now
+            };
+            _context.OrderMessages.Add(createdMsg);
+        }
+
         await _context.SaveChangesAsync();
+
+        if (createdMsg != null)
+        {
+            var hydrated = await _context.OrderMessages
+                .Include(m => m.SenderUser)
+                .FirstAsync(m => m.MessageId == createdMsg.MessageId);
+            await BroadcastOrderMessageAsync(orderId, hydrated);
+        }
+        else
+        {
+            await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+            await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
+        }
+
         return await GetOrderDetailAsync(orderId);
     }
 
@@ -1045,7 +1136,36 @@ public class OrderWorkflowService : IOrderWorkflowService
             Remarks = allPacked ? "All items packed. Ready for dispatch." : "Packing in progress."
         });
 
+        OrderMessage? createdMsg = null;
+        var normalizedRemarks = NormalizeOptional(dto.Remarks);
+        if (!string.IsNullOrWhiteSpace(normalizedRemarks))
+        {
+            createdMsg = new OrderMessage
+            {
+                TenantId = tenantId,
+                OrderId = orderId,
+                SenderUserId = _currentUser.UserId!.Value,
+                Content = normalizedRemarks,
+                SentAt = now
+            };
+            _context.OrderMessages.Add(createdMsg);
+        }
+
         await _context.SaveChangesAsync();
+
+        if (createdMsg != null)
+        {
+            var hydrated = await _context.OrderMessages
+                .Include(m => m.SenderUser)
+                .FirstAsync(m => m.MessageId == createdMsg.MessageId);
+            await BroadcastOrderMessageAsync(orderId, hydrated);
+        }
+        else
+        {
+            await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+            await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
+        }
+
         return await GetOrderDetailAsync(orderId);
     }
 
@@ -1145,11 +1265,40 @@ public class OrderWorkflowService : IOrderWorkflowService
         shipment.DispatchDate = now;
         shipment.EstimatedArrival = dto.EstimatedArrival;
 
+        OrderMessage? createdMsg = null;
+        var normalizedRemarks = NormalizeOptional(dto.Remarks);
+        if (!string.IsNullOrWhiteSpace(normalizedRemarks))
+        {
+            createdMsg = new OrderMessage
+            {
+                TenantId = tenantId,
+                OrderId = orderId,
+                SenderUserId = _currentUser.UserId!.Value,
+                Content = normalizedRemarks,
+                SentAt = now
+            };
+            _context.OrderMessages.Add(createdMsg);
+        }
+
         await _context.SaveChangesAsync();
+
+        if (createdMsg != null)
+        {
+            var hydrated = await _context.OrderMessages
+                .Include(m => m.SenderUser)
+                .FirstAsync(m => m.MessageId == createdMsg.MessageId);
+            await BroadcastOrderMessageAsync(orderId, hydrated);
+        }
+        else
+        {
+            await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+            await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
+        }
+
         return await GetOrderDetailAsync(orderId);
     }
 
-    public async Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId)
+    public async Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId, ConfirmArrivalDto dto)
     {
         var tenantId = EnsureTenantContext();
 
@@ -1184,10 +1333,39 @@ public class OrderWorkflowService : IOrderWorkflowService
             Status = OrderStatus.Arrived,
             ChangedBy_UserId = _currentUser.UserId,
             Timestamp = now,
-            Remarks = "Package arrived."
+            Remarks = string.IsNullOrWhiteSpace(dto.Remarks) ? "Package arrived." : dto.Remarks
         });
 
+        OrderMessage? createdMsg = null;
+        var normalizedRemarks = NormalizeOptional(dto.Remarks);
+        if (!string.IsNullOrWhiteSpace(normalizedRemarks))
+        {
+            createdMsg = new OrderMessage
+            {
+                TenantId = tenantId,
+                OrderId = orderId,
+                SenderUserId = _currentUser.UserId!.Value,
+                Content = normalizedRemarks,
+                SentAt = now
+            };
+            _context.OrderMessages.Add(createdMsg);
+        }
+
         await _context.SaveChangesAsync();
+
+        if (createdMsg != null)
+        {
+            var hydrated = await _context.OrderMessages
+                .Include(m => m.SenderUser)
+                .FirstAsync(m => m.MessageId == createdMsg.MessageId);
+            await BroadcastOrderMessageAsync(orderId, hydrated);
+        }
+        else
+        {
+            await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+            await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
+        }
+
         return await GetOrderDetailAsync(orderId);
     }
 
@@ -1317,10 +1495,39 @@ public class OrderWorkflowService : IOrderWorkflowService
             Status = OrderStatus.Completed,
             ChangedBy_UserId = _currentUser.UserId,
             Timestamp = now,
-            Remarks = "Transaction completed."
+            Remarks = string.IsNullOrWhiteSpace(dto.Remarks) ? "Transaction completed." : dto.Remarks
         });
 
+        OrderMessage? createdMsg = null;
+        var normalizedRemarks = NormalizeOptional(dto.Remarks);
+        if (!string.IsNullOrWhiteSpace(normalizedRemarks))
+        {
+            createdMsg = new OrderMessage
+            {
+                TenantId = tenantId,
+                OrderId = orderId,
+                SenderUserId = _currentUser.UserId!.Value,
+                Content = normalizedRemarks,
+                SentAt = now
+            };
+            _context.OrderMessages.Add(createdMsg);
+        }
+
         await _context.SaveChangesAsync();
+
+        if (createdMsg != null)
+        {
+            var hydrated = await _context.OrderMessages
+                .Include(m => m.SenderUser)
+                .FirstAsync(m => m.MessageId == createdMsg.MessageId);
+            await BroadcastOrderMessageAsync(orderId, hydrated);
+        }
+        else
+        {
+            await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+            await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
+        }
+
         return await GetOrderDetailAsync(orderId);
     }
 
@@ -1396,7 +1603,36 @@ public class OrderWorkflowService : IOrderWorkflowService
             Timestamp = now
         });
 
+        OrderMessage? createdMsg = null;
+        var normalizedReason = NormalizeOptional(dto.Reason);
+        if (!string.IsNullOrWhiteSpace(normalizedReason))
+        {
+            createdMsg = new OrderMessage
+            {
+                TenantId = tenantId,
+                OrderId = orderId,
+                SenderUserId = _currentUser.UserId!.Value,
+                Content = $"Cancelled: {normalizedReason}",
+                SentAt = now
+            };
+            _context.OrderMessages.Add(createdMsg);
+        }
+
         await _context.SaveChangesAsync();
+
+        if (createdMsg != null)
+        {
+            var hydrated = await _context.OrderMessages
+                .Include(m => m.SenderUser)
+                .FirstAsync(m => m.MessageId == createdMsg.MessageId);
+            await BroadcastOrderMessageAsync(orderId, hydrated);
+        }
+        else
+        {
+            await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+            await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
+        }
+
         return await GetOrderDetailAsync(orderId);
     }
 
@@ -1492,6 +1728,29 @@ public class OrderWorkflowService : IOrderWorkflowService
         }
 
         return validIds.ToDictionary(i => i.ItemId, i => i.UnitCost);
+    }
+
+    private async Task BroadcastOrderMessageAsync(int orderId, OrderMessage message)
+    {
+        var dto = new OrderMessageDto
+        {
+            MessageId = message.MessageId,
+            OrderId = message.OrderId,
+            SenderUserId = message.SenderUserId,
+            SenderName = message.SenderUser != null 
+                ? $"{message.SenderUser.FirstName} {message.SenderUser.LastName}".Trim() 
+                : string.Empty,
+            SenderRole = message.SenderUser?.Role.ToString() ?? string.Empty,
+            Content = message.Content,
+            SentAt = message.SentAt
+        };
+
+        // Broadcast to specific order group
+        await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveOrderMessage", orderId, dto);
+        
+        // Also broadcast generic status update to force refresh
+        await _hubContext.Clients.Group($"Order_{orderId}").SendAsync("ReceiveStatusUpdate", orderId);
+        await _hubContext.Clients.Group("Orders_All").SendAsync("ReceiveStatusUpdate", orderId);
     }
 
     private int EnsureTenantContext()

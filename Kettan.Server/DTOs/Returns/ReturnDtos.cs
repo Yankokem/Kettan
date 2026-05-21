@@ -63,6 +63,7 @@ public class ReturnDto
     public int ReturnId { get; set; }
     public int OrderId { get; set; }
     public string OrderTransactionCode { get; set; } = string.Empty;
+    public bool IsOrderHqInitiated { get; set; }
     public string? Subject { get; set; }
     public int BranchId { get; set; }
     public string BranchName { get; set; } = string.Empty;

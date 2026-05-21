@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { PageHeader } from '../../components/UI/PageHeader';
-import { Chip } from '@mui/material';
 import { Button } from '../../components/UI/Button';
 import {
   BRANCHES_MOCK,
@@ -11,12 +10,13 @@ import { api } from '../../utils/api';
 import {
   BRANCH_PROFILE_TABS,
   getKpisForTab,
-  isOpenNow,
   mapActivityLog,
   mapBranch,
   mapEmployee,
   mapInventoryItem,
-  mapTransaction,
+  mapSupplyRequestToTransaction,
+  mapOrderToTransaction,
+  mapReturnToTransaction,
   toBranchFormData,
 } from './branchProfileData';
 import {
@@ -35,9 +35,7 @@ import { BranchStaffTab } from './components/profile/BranchStaffTab';
 import { BranchActivityTab } from './components/profile/BranchActivityTab';
 import { BranchTransactionsTab } from './components/profile/BranchTransactionsTab';
 import { BranchInventoryTab } from './components/profile/BranchInventoryTab';
-import { BranchMenuTab } from './components/profile/BranchMenuTab';
 import { BranchEditModal } from './components/profile/BranchEditModal.tsx';
-import { fetchMenuItems, type MenuItemDto } from '../menu/menuItemsApi';
 import type {
   Branch,
   BranchActivityLog,
@@ -64,7 +62,6 @@ export function BranchProfilePage() {
   const [activityLogs, setActivityLogs] = useState<BranchActivityLog[]>([]);
   const [transactions, setTransactions] = useState<BranchTransactionRow[]>([]);
   const [inventoryItems, setInventoryItems] = useState<BranchInventoryItem[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItemDto[]>([]);
   const [users, setUsers] = useState<Array<{ userId: number; firstName: string; lastName: string; role: string }>>([]);
   
   const [branchLoading, setBranchLoading] = useState(true);
@@ -120,21 +117,19 @@ export function BranchProfilePage() {
           setActivityLogs(activityDto.map(mapActivityLog));
           break;
         case 'transactions':
-          const transDto = await fetchBranchTransactions(parsedBranchId);
-          setTransactions(transDto.map(mapTransaction));
+          const transData = await fetchBranchTransactions(parsedBranchId);
+          const allTransactions: BranchTransactionRow[] = [
+            ...transData.supplyRequests.map(mapSupplyRequestToTransaction),
+            ...transData.orders.map(mapOrderToTransaction),
+            ...transData.returns.map(mapReturnToTransaction),
+          ];
+          // Sort by date, newest first
+          allTransactions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          setTransactions(allTransactions);
           break;
         case 'inventory':
           const invDto = await fetchBranchInventory(parsedBranchId);
           setInventoryItems(invDto.map(mapInventoryItem));
-          break;
-        case 'menu':
-          const menuDto = await fetchMenuItems();
-          setMenuItems(menuDto);
-          // Also load inventory if not already loaded, needed for availability check
-          if (inventoryItems.length === 0) {
-            const invDtoForMenu = await fetchBranchInventory(parsedBranchId);
-            setInventoryItems(invDtoForMenu.map(mapInventoryItem));
-          }
           break;
       }
     } catch (error) {
@@ -166,9 +161,6 @@ export function BranchProfilePage() {
     return () => clearTimeout(timeoutHandle);
   }, [showSavedNotice]);
 
-  const branchCode = selectedBranch ? `BR-${selectedBranch.id.toString().padStart(5, '0')}` : '';
-  const branchOpen = formData ? isOpenNow(formData.openTime, formData.closeTime) : false;
-
   const ownerOptions = useMemo(() => [
     { value: '', label: 'Unassigned (Optional)' },
     ...users
@@ -192,17 +184,6 @@ export function BranchProfilePage() {
     return knownCities.map((city) => ({ value: city, label: city }));
   }, [editDraft?.city]);
 
-  const tabBadges = useMemo(
-    () => ({
-      staff: staffMembers.filter((e) => e.position !== 'BranchOwner').length,
-      activity: activityLogs.length,
-      transactions: transactions.length,
-      inventory: inventoryItems.length,
-      menu: menuItems.length,
-    }),
-    [activityLogs.length, inventoryItems.length, menuItems.length, staffMembers, transactions.length]
-  );
-
   const kpis = useMemo(
     () =>
       selectedBranch ? getKpisForTab(activeTab, {
@@ -211,9 +192,8 @@ export function BranchProfilePage() {
         activityLogs,
         transactions,
         inventoryItems,
-        menuItems: menuItems.map((m) => ({ status: m.status })),
       }) : [],
-    [activeTab, activityLogs, inventoryItems, menuItems, selectedBranch, staffMembers, transactions]
+    [activeTab, activityLogs, inventoryItems, selectedBranch, staffMembers, transactions]
   );
 
   // if (branchLoading) removed to prevent jarring "Connecting" text
@@ -308,32 +288,13 @@ export function BranchProfilePage() {
         title={formData?.name || 'Loading Branch...'}
         description="Manage branch operations, network details, and network growth."
         backTo="/branches"
-        action={
-          <Chip
-            label={branchCode}
-            size="small"
-            sx={{
-              height: 24,
-              borderRadius: '6px',
-              bgcolor: 'rgba(201,168,76,0.12)',
-              color: '#5C4518',
-              fontSize: 11,
-              fontWeight: 800,
-              fontFamily: 'monospace',
-              border: '1px solid rgba(201,168,76,0.2)'
-            }}
-          />
-        }
       />
 
       <BranchProfileHero
         branch={selectedBranch}
         formData={formData}
-        branchCode={branchCode}
-        branchOpen={branchOpen}
         kpis={kpis}
         showSavedNotice={showSavedNotice}
-        onViewInventory={() => setActiveTab('inventory')}
         onEnableEdit={handleOpenEditModal}
         loading={branchLoading}
       />
@@ -343,7 +304,6 @@ export function BranchProfilePage() {
           tabs={BRANCH_PROFILE_TABS}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          badgeMap={tabBadges}
           loading={tabLoading}
         />
 
@@ -360,6 +320,7 @@ export function BranchProfilePage() {
         {activeTab === 'staff' ? (
           <BranchStaffTab
             employees={staffMembers}
+            loading={tabLoading}
             onOpenStaffProfile={(employee) =>
               navigate({
                 to: '/staff/$staffId',
@@ -369,13 +330,11 @@ export function BranchProfilePage() {
           />
         ) : null}
 
-        {activeTab === 'activity' ? <BranchActivityTab logs={activityLogs} /> : null}
+        {activeTab === 'activity' ? <BranchActivityTab logs={activityLogs} loading={tabLoading} /> : null}
 
-        {activeTab === 'transactions' ? <BranchTransactionsTab transactions={transactions} /> : null}
+        {activeTab === 'transactions' ? <BranchTransactionsTab transactions={transactions} loading={tabLoading} /> : null}
 
-        {activeTab === 'inventory' ? <BranchInventoryTab items={inventoryItems} /> : null}
-
-        {activeTab === 'menu' ? <BranchMenuTab menuItems={menuItems} branchInventoryItems={inventoryItems} /> : null}
+        {activeTab === 'inventory' ? <BranchInventoryTab items={inventoryItems} loading={tabLoading} /> : null}
 
       </Paper>
 

@@ -402,6 +402,18 @@ public class SupplyRequestService : ISupplyRequestService
             Timestamp = now
         });
 
+        if (!string.IsNullOrWhiteSpace(normalizedNotes))
+        {
+            _context.OrderMessages.Add(new OrderMessage
+            {
+                TenantId = request.TenantId,
+                Order = order,
+                SenderUserId = userId,
+                Content = normalizedNotes,
+                SentAt = now
+            });
+        }
+
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
         await BroadcastSupplyRequestUpdateAsync(request.RequestId);

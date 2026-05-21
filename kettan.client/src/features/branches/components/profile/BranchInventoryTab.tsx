@@ -13,6 +13,7 @@ import { formatDate } from '../../branchProfileData';
 
 interface BranchInventoryTabProps {
   items: BranchInventoryItem[];
+  loading?: boolean;
 }
 
 const SORT_OPTIONS = [
@@ -36,7 +37,7 @@ const STATUS_LABEL_MAP: Record<BranchInventoryStatus, string> = {
   'out-of-stock': 'Out of Stock',
 };
 
-export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
+export function BranchInventoryTab({ items, loading = false }: BranchInventoryTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('risk-desc');
   const [statusFilter, setStatusFilter] = useState('');
@@ -105,7 +106,7 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
       {
         key: 'item',
         label: 'Item',
-        width: '28%',
+        width: '2.8fr',
         render: (item) => (
           <Box>
             <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>{item.name}</Typography>
@@ -116,19 +117,19 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
       {
         key: 'category',
         label: 'Category',
-        width: '14%',
+        width: '1.4fr',
         render: (item) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{item.category}</Typography>,
       },
       {
         key: 'supplier',
         label: 'Supplier',
-        width: '16%',
+        width: '1.6fr',
         render: (item) => <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{item.supplier}</Typography>,
       },
       {
         key: 'stock',
         label: 'Stock',
-        width: '14%',
+        width: '1.4fr',
         align: 'right',
         render: (item) => (
           <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary' }}>
@@ -139,7 +140,7 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
       {
         key: 'status',
         label: 'Status',
-        width: '14%',
+        width: '1.4fr',
         align: 'center',
         render: (item) => (
           <Chip
@@ -159,7 +160,7 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
       {
         key: 'restocked',
         label: 'Last Restocked',
-        width: '14%',
+        width: '1.4fr',
         render: (item) => (
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{formatDate(item.lastRestocked)}</Typography>
         ),
@@ -233,8 +234,9 @@ export function BranchInventoryTab({ items }: BranchInventoryTabProps) {
         data={filteredItems}
         columns={tableColumns}
         keyExtractor={(item) => item.id}
-        defaultPageSize={20}
-        pageSizes={[20, 40, 80]}
+        defaultPageSize={10}
+        pageSizes={[10, 25, 50]}
+        isLoading={loading}
         emptyIcon={<Inventory2RoundedIcon />}
         emptyTitle="No inventory items found"
         emptyMessage={

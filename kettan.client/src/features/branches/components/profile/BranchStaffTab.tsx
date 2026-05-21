@@ -11,6 +11,7 @@ import { formatDate } from '../../branchProfileData';
 
 interface BranchStaffTabProps {
   employees: BranchEmployee[];
+  loading?: boolean;
   onOpenStaffProfile: (employee: BranchEmployee) => void;
 }
 
@@ -26,7 +27,7 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'inactive', label: 'Inactive' },
 ];
 
-export function BranchStaffTab({ employees, onOpenStaffProfile }: BranchStaffTabProps) {
+export function BranchStaffTab({ employees, loading = false, onOpenStaffProfile }: BranchStaffTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState(SORT_OPTIONS[0].value);
   const [statusFilter, setStatusFilter] = useState('');
@@ -83,7 +84,7 @@ export function BranchStaffTab({ employees, onOpenStaffProfile }: BranchStaffTab
       {
         key: 'employee',
         label: 'Employee',
-        width: '24%',
+        width: '2.5fr',
         render: (employee) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Avatar
@@ -110,7 +111,7 @@ export function BranchStaffTab({ employees, onOpenStaffProfile }: BranchStaffTab
       {
         key: 'email',
         label: 'Email Address',
-        width: '20%',
+        width: '2.5fr',
         render: (employee) => (
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
             {employee.email}
@@ -120,7 +121,7 @@ export function BranchStaffTab({ employees, onOpenStaffProfile }: BranchStaffTab
       {
         key: 'position',
         label: 'Position',
-        width: '20%',
+        width: '2fr',
         render: (employee) => (
           <Chip
             label={employee.position}
@@ -139,7 +140,7 @@ export function BranchStaffTab({ employees, onOpenStaffProfile }: BranchStaffTab
       {
         key: 'contact',
         label: 'Contact',
-        width: '19%',
+        width: '2fr',
         render: (employee) => (
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
             {employee.contactNumber}
@@ -149,7 +150,7 @@ export function BranchStaffTab({ employees, onOpenStaffProfile }: BranchStaffTab
       {
         key: 'dateHired',
         label: 'Date Hired',
-        width: '18%',
+        width: '2fr',
         render: (employee) => (
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary', fontWeight: 500 }}>
             {formatDate(employee.dateHired)}
@@ -159,7 +160,7 @@ export function BranchStaffTab({ employees, onOpenStaffProfile }: BranchStaffTab
       {
         key: 'status',
         label: 'Status',
-        width: '15%',
+        width: '1.5fr',
         align: 'center',
         render: (employee) => (
           <Chip
@@ -224,8 +225,9 @@ export function BranchStaffTab({ employees, onOpenStaffProfile }: BranchStaffTab
         data={filteredEmployees}
         columns={staffColumns}
         keyExtractor={(employee) => String(employee.id)}
-        defaultPageSize={5}
-        pageSizes={[5, 10, 25]}
+        defaultPageSize={10}
+        pageSizes={[10, 25, 50]}
+        isLoading={loading}
         emptyMessage="No staff members match your filters."
         onRowClick={onOpenStaffProfile}
       />

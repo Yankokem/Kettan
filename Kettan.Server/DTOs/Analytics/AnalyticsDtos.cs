@@ -100,6 +100,18 @@ public class BranchInventoryValuationDto
 }
 
 /// <summary>
+/// Inventory valuation per item category
+/// </summary>
+public class CategoryInventoryValuationDto
+{
+    public int CategoryId { get; set; }
+    public string CategoryName { get; set; } = string.Empty;
+    public int TotalItems { get; set; }
+    public decimal TotalVolume { get; set; }
+    public decimal TotalValuation { get; set; }
+}
+
+/// <summary>
 /// Wastage / spoilage line item
 /// </summary>
 public class WastageRecordDto

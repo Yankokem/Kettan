@@ -127,7 +127,7 @@ function getColumns(
   return [
     {
       key: 'id',
-      label: 'ORDER ID',
+      label: 'ID',
       width: 100,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', fontFamily: 'monospace' }}>
@@ -137,7 +137,7 @@ function getColumns(
     },
     {
       key: 'date',
-      label: 'DATE REQUESTED',
+      label: 'DATE',
       width: 155,
       sortable: true,
       render: (row) => (
@@ -204,7 +204,7 @@ function getColumns(
     },
     {
       key: 'dispatchScheduleStatus',
-      label: 'DISPATCH SLA',
+      label: 'SLA',
       width: 130,
       render: (row) => (
         <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: scheduleColor(row.dispatchScheduleStatus) }}>
@@ -214,7 +214,7 @@ function getColumns(
     },
     {
       key: 'totalCost',
-      label: 'FULFILLED VALUE',
+      label: 'VALUE',
       width: 130,
       align: 'right',
       sortable: true,
@@ -610,7 +610,7 @@ export function OrdersPage() {
               onClick={() => navigate({ to: '/orders/new' })}
               sx={{ whiteSpace: 'nowrap' }}
             >
-              Supply Push
+              New Supply Push
             </Button>
           )}
         </Box>

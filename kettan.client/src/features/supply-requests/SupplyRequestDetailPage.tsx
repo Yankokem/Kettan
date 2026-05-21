@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
-import { Box, Typography, Alert, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { useParams } from '@tanstack/react-router';
+import { Box, Typography, Alert, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
+import { WorkflowActionModal } from '../../components/UI/WorkflowActionModal';
+import { useParams, useNavigate } from '@tanstack/react-router';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import { 
   fetchSupplyRequestById, 
@@ -32,12 +34,15 @@ import type { SupplyRequestDetailViewModel, SupplyRequestDetailItem, SupplyReque
 
 
 
+const stripPrefix = (code: string) => code.replace(/^[A-Z]+-/, '');
+
 function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewModel {
-  const requestNumber = request.transactionCode || request.referenceNumber || `SR-${String(request.requestId).padStart(5, '0')}`;
+  const rawNumber = request.transactionCode || request.referenceNumber || `SR-${String(request.requestId).padStart(5, '0')}`;
+  const requestNumber = stripPrefix(rawNumber);
   
   return {
     requestNumber,
-    transactionCode: request.transactionCode,
+    transactionCode: stripPrefix(request.transactionCode || ''),
     subject: request.subject ?? undefined,
     status: (request.orderStatus || request.status) as SupplyRequestDetailViewModel['status'],
     branchName: request.branchName,
@@ -56,6 +61,8 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
     totalFulfilledValue: request.totalFulfilledValue,
     linkedOrderId: request.orderId?.toString(),
     orderStatus: request.orderStatus ?? undefined,
+    rejectionReason: request.rejectionReason ?? request.rejectReason ?? request.reason ?? undefined,
+    cancellationReason: request.cancellationReason ?? request.cancelReason ?? request.reason ?? undefined,
     items: request.items.map((item) => ({
       id: String(item.requestItemId),
       name: item.itemName,
@@ -104,6 +111,7 @@ function toDetailViewModel(request: ApiSupplyRequest): SupplyRequestDetailViewMo
 
 export function SupplyRequestDetailPage() {
   const { requestId } = useParams({ strict: false });
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   
   const [request, setRequest] = useState<SupplyRequestDetailViewModel | null>(null);
@@ -114,6 +122,13 @@ export function SupplyRequestDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+
+  // ── Modal states ──
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [submitModalOpen, setSubmitModalOpen] = useState(false);
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [arrivalModalOpen, setArrivalModalOpen] = useState(false);
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null); // Kept for legacy if needed, but primary is SignalR
 
@@ -243,21 +258,22 @@ export function SupplyRequestDetailPage() {
     }
   };
 
-  const onSubmitDraft = () => handleAction(() => submitSupplyRequest(Number(requestId), request?.notes));
+  const onSubmitDraft = (message: string) => handleAction(() => submitSupplyRequest(Number(requestId), message || request?.notes));
   
-  const onApprove = () => handleAction(() => approveSupplyRequest(Number(requestId), {
-    notes: request?.notes,
+  const onApprove = (message: string) => handleAction(() => approveSupplyRequest(Number(requestId), {
+    notes: message || request?.notes,
     items: localItems.map(i => ({ requestItemId: Number(i.id), quantityApproved: i.approvedQty ?? i.requestedQty }))
   }));
 
-  const onReject = () => handleAction(() => rejectSupplyRequest(Number(requestId), { reason: 'Rejected by HQ' }));
+  const onReject = (reason: string) => handleAction(() => rejectSupplyRequest(Number(requestId), { reason }));
 
-  const onCancel = () => handleAction(() => cancelSupplyRequest(Number(requestId), { reason: 'Cancelled by branch' }));
+  const onCancel = (reason: string) => handleAction(() => cancelSupplyRequest(Number(requestId), { reason }));
 
-  const handleFileReturn = () => { /* navigate({ to: '/returns/new' }); */ };
+  const handleFileReturn = () => { navigate({ to: '/returns/new' }); };
 
-  const handleConfirmArrival = async () => {
+  const handleConfirmArrival = async (_message?: string) => {
     if (!request?.linkedOrderId) return;
+    // _message is captured from the modal but confirmArrival API doesn't accept it yet—future-proof
     await handleAction(() => confirmArrival(Number(request.linkedOrderId)));
   };
 
@@ -281,11 +297,7 @@ export function SupplyRequestDetailPage() {
   };
 
   if (loading && !request) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress size={32} thickness={5} sx={{ color: '#C9A84C' }} />
-      </Box>
-    );
+    return <LoadingOverlay open={true} />;
   }
 
   if (error && !request) {
@@ -319,6 +331,7 @@ export function SupplyRequestDetailPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
+      <LoadingOverlay open={actionLoading} />
       {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
       
       <SupplyRequestDetailHeader
@@ -328,12 +341,12 @@ export function SupplyRequestDetailPage() {
         branchName={request.branchName}
         role={user?.role || ''}
         isSubmitting={actionLoading}
-        onSubmitDraft={onSubmitDraft}
-        onApprove={onApprove}
-        onReject={onReject}
-        onCancel={onCancel}
+        onSubmitDraft={() => setSubmitModalOpen(true)}
+        onApprove={() => setApproveModalOpen(true)}
+        onReject={() => setRejectModalOpen(true)}
+        onCancel={() => setCancelModalOpen(true)}
         onFileReturn={handleFileReturn}
-        onConfirmArrival={handleConfirmArrival}
+        onConfirmArrival={() => setArrivalModalOpen(true)}
         onCompleteTransaction={() => setIsSummaryModalOpen(true)}
       />
 
@@ -351,7 +364,10 @@ export function SupplyRequestDetailPage() {
           variant="error"
           icon={<CancelIcon sx={{ fontSize: 22 }} />}
           title="Supply Request Rejected"
-          description="Your request has been rejected by HQ. Please check the chat or request history for more information."
+          description={request.rejectionReason
+            ? `Reason: ${request.rejectionReason}`
+            : 'Your request has been rejected by HQ. Please check the chat or request history for more information.'
+          }
         />
       )}
 
@@ -360,7 +376,10 @@ export function SupplyRequestDetailPage() {
           variant="error"
           icon={<CancelIcon sx={{ fontSize: 22 }} />}
           title="Supply Request Cancelled"
-          description="This request has been cancelled and is no longer being processed."
+          description={request.cancellationReason
+            ? `Reason: ${request.cancellationReason}`
+            : 'This request has been cancelled and is no longer being processed.'
+          }
         />
       )}
 
@@ -561,11 +580,8 @@ export function SupplyRequestDetailPage() {
         </DialogActions>
       </Dialog>
 
-      {/* ── Messages Modal ──
-          NOTE: We guard with linkedOrderIdNum. When a branch user opens this page
-          immediately after approval (before the order is fully propagated), linkedOrderId
-          may momentarily cause a 403 — passing null lets the modal show empty state
-          instead of throwing an error at the page level. */}
+      {/* ── Messages / Chat ──
+          Only available when an order is linked (during order processing). */}
       {request.linkedOrderId && (
         <SharedFloatingChat 
           contextType="order"
@@ -574,6 +590,74 @@ export function SupplyRequestDetailPage() {
           onOpenChange={setChatOpen}
         />
       )}
+
+      {/* ── Workflow Action Modals ── */}
+      <WorkflowActionModal
+        open={rejectModalOpen}
+        title="Reject Supply Request"
+        description="Are you sure you want to reject this supply request? The branch will be notified of your decision."
+        inputLabel="Rejection Reason"
+        inputPlaceholder="Explain why this request is being rejected..."
+        confirmLabel="Reject Request"
+        severity="danger"
+        requireInput
+        loading={actionLoading}
+        onConfirm={(reason) => { setRejectModalOpen(false); void onReject(reason); }}
+        onCancel={() => setRejectModalOpen(false)}
+      />
+
+      <WorkflowActionModal
+        open={cancelModalOpen}
+        title="Cancel Supply Request"
+        description="Are you sure you want to cancel this request? This action cannot be undone."
+        inputLabel="Cancellation Reason"
+        inputPlaceholder="Explain why you are cancelling this request..."
+        confirmLabel="Cancel Request"
+        severity="warning"
+        requireInput
+        loading={actionLoading}
+        onConfirm={(reason) => { setCancelModalOpen(false); void onCancel(reason); }}
+        onCancel={() => setCancelModalOpen(false)}
+      />
+
+      <WorkflowActionModal
+        open={submitModalOpen}
+        title="Submit to HQ"
+        description="Your request will be sent to HQ for review and approval. You can add any notes below."
+        inputLabel="Notes (Optional)"
+        inputPlaceholder="Any additional details for the HQ team..."
+        confirmLabel="Submit Request"
+        severity="info"
+        loading={actionLoading}
+        onConfirm={(message) => { setSubmitModalOpen(false); void onSubmitDraft(message); }}
+        onCancel={() => setSubmitModalOpen(false)}
+      />
+
+      <WorkflowActionModal
+        open={approveModalOpen}
+        title="Approve Supply Request"
+        description="This will approve the request and generate a fulfillment order. You can add any remarks below."
+        inputLabel="Remarks (Optional)"
+        inputPlaceholder="Any notes for the fulfillment team..."
+        confirmLabel="Approve & Generate Order"
+        severity="success"
+        loading={actionLoading}
+        onConfirm={(message) => { setApproveModalOpen(false); void onApprove(message); }}
+        onCancel={() => setApproveModalOpen(false)}
+      />
+
+      <WorkflowActionModal
+        open={arrivalModalOpen}
+        title="Confirm Package Arrival"
+        description="Confirm that the package has arrived at your branch. You can add any arrival notes below."
+        inputLabel="Arrival Notes (Optional)"
+        inputPlaceholder="Any remarks about the delivery condition..."
+        confirmLabel="Confirm Arrival"
+        severity="success"
+        loading={actionLoading}
+        onConfirm={(message) => { setArrivalModalOpen(false); void handleConfirmArrival(message); }}
+        onCancel={() => setArrivalModalOpen(false)}
+      />
     </Box>
   );
 }

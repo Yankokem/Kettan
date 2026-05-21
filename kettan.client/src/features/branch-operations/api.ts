@@ -45,6 +45,11 @@ export interface SupplyRequest {
   arrivedConfirmedByName?: string | null;
   completedAt?: string | null;
   completedByName?: string | null;
+  rejectionReason?: string | null;
+  cancellationReason?: string | null;
+  cancelReason?: string | null;
+  rejectReason?: string | null;
+  reason?: string | null;
   items: SupplyRequestItem[];
 }
 
@@ -114,6 +119,7 @@ export interface ReturnRecord {
   returnId: number;
   orderId: number;
   orderTransactionCode: string;
+  isOrderHqInitiated?: boolean;
   subject: string | null;
   branchId: number;
   branchName: string;
@@ -641,31 +647,31 @@ export async function getPickingSuggestions(orderId: number): Promise<PickingSug
   return response.data;
 }
 
-export async function submitPicking(orderId: number, items: PickingItemPayload[]): Promise<OrderDetail> {
-  const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/pick`, { items });
+export async function submitPicking(orderId: number, items: PickingItemPayload[], remarks?: string): Promise<OrderDetail> {
+  const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/pick`, { items, remarks });
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 
-export async function submitPacking(orderId: number, items: PackingItemPayload[]): Promise<OrderDetail> {
-  const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/pack`, { items });
+export async function submitPacking(orderId: number, items: PackingItemPayload[], remarks?: string): Promise<OrderDetail> {
+  const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/pack`, { items, remarks });
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 
 export async function submitDispatch(
   orderId: number,
-  payload: { vehicleId: number; trackingNumber: string; estimatedArrival: string },
+  payload: { vehicleId: number; trackingNumber: string; estimatedArrival: string; remarks?: string },
 ): Promise<OrderDetail> {
   const response = await api.put<OrderDetail>(`/api/Orders/${orderId}/workflow/dispatch`, payload);
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 
-export async function confirmArrival(orderId: number): Promise<OrderDetail> {
-  const response = await api.post<OrderDetail>(`/api/Orders/${orderId}/workflow/arrive`, {});
+export async function confirmArrival(orderId: number, remarks?: string): Promise<OrderDetail> {
+  const response = await api.post<OrderDetail>(`/api/Orders/${orderId}/workflow/arrive`, { remarks });
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 
-export async function completeTransaction(orderId: number, items: BranchCheckItemPayload[]): Promise<OrderDetail> {
-  const response = await api.post<OrderDetail>(`/api/Orders/${orderId}/workflow/complete`, { items });
+export async function completeTransaction(orderId: number, items: BranchCheckItemPayload[], remarks?: string): Promise<OrderDetail> {
+  const response = await api.post<OrderDetail>(`/api/Orders/${orderId}/workflow/complete`, { items, remarks });
   return { ...response.data, status: normalizeOrderStatus(response.data.status) };
 }
 
@@ -747,3 +753,26 @@ export async function markNotificationRead(id: number): Promise<void> {
 export async function markAllNotificationsRead(): Promise<void> {
   await api.post('/api/Notifications/read-all');
 }
+
+// ── SUPPLY REQUEST MESSAGING APIs ──
+
+export interface SupplyRequestMessage {
+  messageId: number;
+  requestId: number;
+  senderUserId: number;
+  senderName: string;
+  senderRole: string;
+  content: string;
+  sentAt: string;
+}
+
+export async function fetchSupplyRequestMessages(requestId: number): Promise<SupplyRequestMessage[]> {
+  const response = await api.get<SupplyRequestMessage[]>(`/api/SupplyRequests/${requestId}/messages`);
+  return response.data;
+}
+
+export async function sendSupplyRequestMessage(requestId: number, content: string): Promise<SupplyRequestMessage> {
+  const response = await api.post<SupplyRequestMessage>(`/api/SupplyRequests/${requestId}/messages`, { content });
+  return response.data;
+}
+

@@ -167,11 +167,15 @@ public class AnalyticsService : IAnalyticsService
                 && o.PushedToFulfillmentAt <= endDate)
             .ToListAsync();
 
-        var delivered = orders.Count(o => o.Status == OrderStatus.Delivered);
+        var delivered = orders.Count(o => o.Status == OrderStatus.Delivered 
+                                          || o.Status == OrderStatus.Completed 
+                                          || o.Status == OrderStatus.DeliveredWithVariance);
         decimal rate = orders.Count > 0 ? ((decimal)delivered / orders.Count) * 100 : 0;
 
         decimal totalCost = orders
-            .Where(o => o.Status == OrderStatus.Delivered)
+            .Where(o => o.Status == OrderStatus.Delivered 
+                        || o.Status == OrderStatus.Completed 
+                        || o.Status == OrderStatus.DeliveredWithVariance)
             .SelectMany(o => o.Allocations)
             .Sum(a => a.QuantityPicked * (a.Batch?.Item?.UnitCost ?? 0));
 
@@ -403,6 +407,55 @@ public class AnalyticsService : IAnalyticsService
         .ToList();
     }
 
+    public async Task<List<CategoryInventoryValuationDto>> GetInventoryByCategoryAsync()
+    {
+        var tenantId = RequireTenantId();
+
+        var batches = await _context.Batches
+            .Include(b => b.Item)
+                .ThenInclude(i => i != null ? i.ItemCategory : null)
+            .Where(b => b.TenantId == tenantId && b.CurrentQuantity > 0)
+            .ToListAsync();
+
+        var categories = await _context.ItemCategories
+            .Where(c => c.TenantId == tenantId && !c.IsDeleted)
+            .ToListAsync();
+
+        var batchesByCategory = batches
+            .GroupBy(b => b.Item?.ItemCategoryId ?? 0)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var result = new List<CategoryInventoryValuationDto>();
+
+        foreach (var category in categories)
+        {
+            var categoryBatches = batchesByCategory.TryGetValue(category.ItemCategoryId, out var cb) ? cb : [];
+            
+            result.Add(new CategoryInventoryValuationDto
+            {
+                CategoryId = category.ItemCategoryId,
+                CategoryName = category.Name,
+                TotalItems = categoryBatches.Select(x => x.ItemId).Distinct().Count(),
+                TotalVolume = categoryBatches.Sum(x => x.CurrentQuantity),
+                TotalValuation = categoryBatches.Sum(x => x.CurrentQuantity * (x.Item?.UnitCost ?? 0))
+            });
+        }
+
+        if (batchesByCategory.TryGetValue(0, out var uncategorizedBatches) && uncategorizedBatches.Any())
+        {
+            result.Add(new CategoryInventoryValuationDto
+            {
+                CategoryId = 0,
+                CategoryName = "Uncategorized",
+                TotalItems = uncategorizedBatches.Select(x => x.ItemId).Distinct().Count(),
+                TotalVolume = uncategorizedBatches.Sum(x => x.CurrentQuantity),
+                TotalValuation = uncategorizedBatches.Sum(x => x.CurrentQuantity * (x.Item?.UnitCost ?? 0))
+            });
+        }
+
+        return result.OrderByDescending(c => c.TotalValuation).ToList();
+    }
+
     public async Task<List<WastageRecordDto>> GetWastageRecordsAsync(
         DateTime startDate, DateTime endDate, int? branchId = null)
     {
@@ -604,7 +657,9 @@ public class AnalyticsService : IAnalyticsService
                     .ThenInclude(b => b.Item)
             .Include(o => o.SupplyRequest)
             .Where(o => o.TenantId == tenantId
-                && o.Status == OrderStatus.Delivered
+                && (o.Status == OrderStatus.Delivered 
+                    || o.Status == OrderStatus.Completed 
+                    || o.Status == OrderStatus.DeliveredWithVariance)
                 && o.SupplyRequest != null
                 && o.SupplyRequest.BranchId == branchId
                 && o.PushedToFulfillmentAt >= startDate
@@ -715,7 +770,9 @@ public class AnalyticsService : IAnalyticsService
             .ToListAsync();
 
         int totalOrders = orders.Count;
-        int deliveredOrders = orders.Count(o => o.Status == OrderStatus.Delivered);
+        int deliveredOrders = orders.Count(o => o.Status == OrderStatus.Delivered 
+                                                || o.Status == OrderStatus.Completed 
+                                                || o.Status == OrderStatus.DeliveredWithVariance);
         decimal fulfillmentRate = totalOrders > 0
             ? Math.Round(((decimal)deliveredOrders / totalOrders) * 100, 1)
             : 0;
@@ -728,7 +785,9 @@ public class AnalyticsService : IAnalyticsService
 
         // Average delivery speed (hours from approval to delivery)
         var deliveredWithDates = orders
-            .Where(o => o.Status == OrderStatus.Delivered
+            .Where(o => (o.Status == OrderStatus.Delivered 
+                         || o.Status == OrderStatus.Completed 
+                         || o.Status == OrderStatus.DeliveredWithVariance)
                 && o.ArrivedAt.HasValue)
             .ToList();
 

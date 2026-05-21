@@ -16,6 +16,7 @@ import icon from '../../assets/icon.png';
 import DashboardRoundedIcon         from '@mui/icons-material/DashboardRounded';
 import Inventory2RoundedIcon        from '@mui/icons-material/Inventory2Rounded';
 import StoreRoundedIcon             from '@mui/icons-material/StoreRounded';
+import AssignmentReturnRoundedIcon  from '@mui/icons-material/AssignmentReturnRounded';
 
 import CategoryRoundedIcon          from '@mui/icons-material/CategoryRounded';
 import BarChartRoundedIcon          from '@mui/icons-material/BarChartRounded';
@@ -54,6 +55,7 @@ interface NavItem {
 const MAIN_NAV: NavItem[] = [
   { text: 'Dashboard',          icon: <DashboardRoundedIcon />,          path: '/', module: 'dashboard' },
   { text: 'Supply Requests',    icon: <ShoppingCartRoundedIcon />,       path: '/supply-requests', module: 'supply-requests' },
+  { text: 'Returns',            icon: <AssignmentReturnRoundedIcon />,    path: '/returns', module: 'returns' },
   { text: 'Order Processing',   icon: <CategoryRoundedIcon />,            path: '/orders', module: 'order-processing' },
   { text: 'Branches',           icon: <StoreRoundedIcon />,            path: '/branches', module: 'branches' },
 

@@ -196,7 +196,34 @@ export default function SRItemTable({ items, mode, suggestions = [], onItemsChan
         const suggestion = suggestions.find((s) => s.requestItemId.toString() === row.id);
         if (!suggestion) return <Typography variant="body2" color="text.secondary">-</Typography>;
         return (
-          <Tooltip title={`Branch Stock: ${suggestion.branchCurrentStock} | Threshold: ${suggestion.branchThreshold}`}>
+          <Tooltip
+            title={
+              <Box sx={{ p: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography sx={{ fontSize: 12.5, fontWeight: 700, mb: 0.5, borderBottom: '1px solid rgba(255,255,255,0.2)', pb: 0.5, color: '#fff' }}>
+                  Why Suggest {suggestion.suggestedSendQty}?
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
+                  The system calculates the recommendation to bring branch stock up to the minimum threshold, limited by what is approved and physically available in HQ:
+                </Typography>
+                <Box sx={{ mt: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5, pl: 0.5 }}>
+                  <Typography sx={{ fontSize: 11, color: '#F5E6B3' }}>
+                    • <strong>Needed to Threshold:</strong> {Math.max(0, suggestion.branchThreshold - suggestion.branchCurrentStock)} ({suggestion.branchThreshold} Threshold - {suggestion.branchCurrentStock} Stock)
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, color: '#F5E6B3' }}>
+                    • <strong>Approved Limit:</strong> {suggestion.approvedQty}
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, color: '#F5E6B3' }}>
+                    • <strong>HQ Stock:</strong> {suggestion.hqStock}
+                  </Typography>
+                </Box>
+                <Typography sx={{ fontSize: 11.5, fontWeight: 800, mt: 0.75, color: '#4ADE80', textAlign: 'right' }}>
+                  Min(Need, Approved, HQ) = {suggestion.suggestedSendQty}
+                </Typography>
+              </Box>
+            }
+            arrow
+            placement="top"
+          >
             <Box
               sx={{
                 display: 'inline-flex',

@@ -22,12 +22,21 @@ export function SelectedItemsTable({ items, onRemoveItem, onUpdateQuantity, bran
       key: 'item',
       label: 'Item',
       width: 'minmax(140px, 1.8fr)',
-      render: (row) => (
-        <Box>
-          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13.5 }}>{row.item.name}</Typography>
-          <Chip label={row.item.category} size="small" sx={{ height: 16, fontSize: '0.65rem', mt: 0.5 }} />
-        </Box>
-      ),
+      render: (row) => {
+        const totalNeeded = row.quantity * branchCount;
+        const shortage = totalNeeded > row.item.hqStock;
+        return (
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13.5 }}>{row.item.name}</Typography>
+            <Chip label={row.item.category} size="small" sx={{ height: 16, fontSize: '0.65rem', mt: 0.5 }} />
+            {shortage && (
+              <Typography sx={{ color: '#D32F2F', fontSize: 11, fontWeight: 700, mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                ⚠️ Quantity exceeds available HQ stock ({row.item.hqStock} available)
+              </Typography>
+            )}
+          </Box>
+        );
+      },
     },
     {
       key: 'unit',

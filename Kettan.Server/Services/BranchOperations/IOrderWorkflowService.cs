@@ -18,7 +18,7 @@ public interface IOrderWorkflowService
     Task<OrderDetailDto?> SavePickingAsync(int orderId, PickingSubmitDto dto);
     Task<OrderDetailDto?> SavePackingAsync(int orderId, PackingSubmitDto dto);
     Task<OrderDetailDto?> SubmitDispatchAsync(int orderId, DispatchOrderDto dto);
-    Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId);
+    Task<OrderDetailDto?> ConfirmArrivalAsync(int orderId, ConfirmArrivalDto dto);
     Task<OrderDetailDto?> CompleteTransactionAsync(int orderId, BranchCheckSubmitDto dto);
     Task<OrderDetailDto?> CancelOrderAsync(int orderId, CancelOrderDto dto);
     Task<List<OrderMessageDto>> GetMessagesAsync(int orderId);

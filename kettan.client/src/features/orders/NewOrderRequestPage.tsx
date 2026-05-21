@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Divider, Grid, Paper, TextField as MuiTextField, Typography } from '@mui/material';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import ScheduleSendRoundedIcon from '@mui/icons-material/ScheduleSendRounded';
@@ -17,7 +17,7 @@ import { Dropdown } from '../../components/UI/Dropdown';
 import { useAuthStore } from '../../store/useAuthStore';
 import { fetchInventoryItems } from '../hq-inventory/hqInventoryApi';
 import { fetchBranches } from '../branches/branchesApi';
-import { createOrder } from '../branch-operations/api';
+import { createOrder, fetchReturnById } from '../branch-operations/api';
 
 import { SelectedItemsTable } from './components/SelectedItemsTable';
 import { InventorySelectionModal } from './components/InventorySelectionModal';
@@ -48,6 +48,9 @@ export function NewOrderRequestPage() {
   const navigate = useNavigate({ from: '/orders/new' });
   const { user } = useAuthStore();
   const isHqRole = user?.role === 'TenantAdmin' || user?.role === 'HqManager' || user?.role === 'HqStaff';
+
+  const search = useSearch({ strict: false }) as { fromReturnId?: string };
+  const fromReturnId = search.fromReturnId ? Number(search.fromReturnId) : undefined;
 
   const [branchOptions, setBranchOptions] = useState(BRANCHES);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -94,12 +97,9 @@ export function NewOrderRequestPage() {
           }));
 
         setBranchOptions(mappedBranches.length > 0 ? mappedBranches : [{ value: '', label: 'No active branches' }]);
-        if (mappedBranches.length > 0) {
-          setSelectedBranch((prev) => (prev ? prev : mappedBranches[0].value));
-        }
 
         const mappedInventory: InventoryItem[] = items.map((item) => ({
-          id: item.id,
+          id: String(item.id),
           name: item.name,
           sku: item.sku,
           category: item.category?.name ?? 'Uncategorized',
@@ -109,13 +109,46 @@ export function NewOrderRequestPage() {
         }));
 
         setInventory(mappedInventory);
+
+        if (fromReturnId) {
+          try {
+            const returnRecord = await fetchReturnById(fromReturnId);
+            setSelectedBranch(String(returnRecord.branchId));
+            setRequestType('replenishment');
+            setSubject(`Replacement for Return #${returnRecord.transactionCode}`);
+            setRequestNotes(`Auto-populated replacement for completed return transaction #${returnRecord.transactionCode}.`);
+            
+            const prefilledItems = returnRecord.items
+              .map((ri) => {
+                const matchedItem = mappedInventory.find((i) => Number(i.id) === ri.itemId);
+                if (matchedItem) {
+                  return {
+                    item: matchedItem,
+                    quantity: ri.quantityReturned,
+                    notes: ri.notes || `Replacement for RT-${returnRecord.transactionCode}`,
+                  };
+                }
+                return null;
+              })
+              .filter((item): item is { item: InventoryItem; quantity: number; notes: string } => item !== null);
+
+            setSelectedItems(prefilledItems);
+          } catch (err) {
+            console.error('Failed to pre-populate from return', err);
+            setError('Failed to load linked return details for pre-population.');
+          }
+        } else {
+          if (mappedBranches.length > 0) {
+            setSelectedBranch((prev) => (prev ? prev : mappedBranches[0].value));
+          }
+        }
       } catch {
         setError('Failed to load branches or inventory items.');
       }
     };
 
     void loadContext();
-  }, []);
+  }, [fromReturnId]);
 
   const handleItemsSelected = (newItems: { item: InventoryItem; quantity: number; notes: string }[]) => {
     setSelectedItems((prev) => {
@@ -404,8 +437,8 @@ export function NewOrderRequestPage() {
             />
 
             {atRiskLines > 0 && (
-              <Alert severity="warning" sx={{ mt: 3, borderRadius: '12px' }} icon={<ScheduleSendRoundedIcon fontSize="inherit" />}>
-                {atRiskLines} line item(s) exceed available HQ stock.
+              <Alert severity="error" sx={{ mt: 3, borderRadius: '12px' }} icon={<ScheduleSendRoundedIcon fontSize="inherit" />}>
+                Cannot proceed: {atRiskLines} line item(s) exceed available HQ stock. Please adjust quantities.
               </Alert>
             )}
 
@@ -423,7 +456,7 @@ export function NewOrderRequestPage() {
             <Button
               onClick={handleSubmit}
               variant="contained"
-              disabled={isSaving || selectedItems.length === 0}
+              disabled={isSaving || selectedItems.length === 0 || atRiskLines > 0}
               sx={{ 
                 bgcolor: '#6B4C2A', 
                 color: 'white',

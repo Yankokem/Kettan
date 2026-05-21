@@ -1,4 +1,4 @@
-import { Box, Typography, Tooltip, Alert } from '@mui/material';
+import { Box, Typography, Tooltip, Alert, TextField } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import AccessTimeFilledRoundedIcon from '@mui/icons-material/AccessTimeFilledRounded';
@@ -12,6 +12,8 @@ import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import WhereToVoteRoundedIcon from '@mui/icons-material/WhereToVoteRounded';
 import { WorkflowStatusBanner } from '../shared/components/WorkflowStatusBanner';
+import { LoadingOverlay } from '../../components/UI/LoadingOverlay';
+import { WorkflowActionModal } from '../../components/UI/WorkflowActionModal';
 
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -36,7 +38,7 @@ import {
 import SRItemTable, { type SRTableMode } from '../supply-requests/components/SRItemTable';
 import type { SupplyRequestDetailItem } from '../supply-requests/components/SupplyRequestDetail.types';
 import { SharedFloatingChat } from '../shared/components/SharedFloatingChat';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { Dialog, DialogContent, DialogActions } from '@mui/material';
 
 // How often to silently re-fetch the order for status changes (ms)
 const POLL_INTERVAL_MS = 10_000;
@@ -73,11 +75,12 @@ export function OrderDetailPage() {
 
   const [chatOpen, setChatOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState('');
   const [pickingModalOpen, setPickingModalOpen] = useState(false);
   const [packingModalOpen, setPackingModalOpen] = useState(false);
   const [dispatchModalOpen, setDispatchModalOpen] = useState(false);
   const [summaryModalOpen, setSummaryModalOpen] = useState(false);
+  const [arrivalModalOpen, setArrivalModalOpen] = useState(false);
+  const [completionRemarks, setCompletionRemarks] = useState('');
 
   // Track whether user has made local changes (to avoid blowing them away during poll)
   const isHq = ['TenantAdmin', 'HqManager', 'HqStaff'].includes(user?.role || '');
@@ -162,7 +165,8 @@ export function OrderDetailPage() {
 
   const handleWorkflowAction = async (
     action: 'save-pick' | 'save-pack' | 'dispatch',
-    dispatchData?: { vehicleId: number; trackingNumber: string; estimatedArrival: string }
+    dispatchData?: { vehicleId: number; trackingNumber: string; estimatedArrival: string; remarks?: string },
+    remarks?: string
   ) => {
     if (!orderId) return;
 
@@ -187,13 +191,13 @@ export function OrderDetailPage() {
           isRejected: i.isRejectedDuringPicking ?? false,
           rejectionReason: i.pickingRejectionReason ?? null,
         }));
-        await submitPicking(Number(orderId), payload);
+        await submitPicking(Number(orderId), payload, remarks);
       } else if (action === 'save-pack') {
         const payload = localItems.map((i) => ({
           requestItemId: Number(i.id),
           isPacked: i.isPacked ?? false,
         }));
-        await submitPacking(Number(orderId), payload);
+        await submitPacking(Number(orderId), payload, remarks);
       } else if (action === 'dispatch') {
         if (!dispatchData) return;
         const unpackedCount = localItems.filter(
@@ -223,12 +227,12 @@ export function OrderDetailPage() {
     }
   };
 
-  const handleCancelOrder = async () => {
-    if (!orderId || !cancelReason.trim()) return;
+  const handleCancelOrder = async (reason: string) => {
+    if (!orderId || !reason.trim()) return;
     try {
       setIsSaving(true);
       setError(null);
-      await cancelOrder(Number(orderId), { reason: cancelReason });
+      await cancelOrder(Number(orderId), { reason });
       setCancelModalOpen(false);
       hasPendingChanges.current = false;
       await loadOrder(false);
@@ -239,12 +243,13 @@ export function OrderDetailPage() {
     }
   };
 
-  const handleConfirmArrival = async () => {
+  const handleConfirmArrival = async (remarks?: string) => {
     if (!orderId) return;
     try {
       setIsSaving(true);
       setError(null);
-      await confirmArrival(Number(orderId));
+      await confirmArrival(Number(orderId), remarks);
+      setArrivalModalOpen(false);
       hasPendingChanges.current = false;
       await loadOrder(false);
     } catch (err: any) {
@@ -256,6 +261,7 @@ export function OrderDetailPage() {
 
   const handleCompleteTransaction = async () => {
     if (!orderId) return;
+    setCompletionRemarks('');
     setSummaryModalOpen(true);
   };
 
@@ -267,7 +273,7 @@ export function OrderDetailPage() {
         requestItemId: Number(i.id),
         isChecked: i.isBranchChecked ?? false,
       }));
-      await completeTransaction(Number(orderId), payload);
+      await completeTransaction(Number(orderId), payload, completionRemarks);
       hasPendingChanges.current = false;
       
       setSummaryModalOpen(false);
@@ -311,7 +317,7 @@ export function OrderDetailPage() {
         {error ? (
           <Alert severity="error">{error}</Alert>
         ) : (
-          <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>Loading order…</Typography>
+          <LoadingOverlay open={true} />
         )}
       </Box>
     );
@@ -319,6 +325,7 @@ export function OrderDetailPage() {
 
   return (
     <Box sx={{ pb: 3 }}>
+      <LoadingOverlay open={isSaving} />
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
@@ -437,7 +444,7 @@ export function OrderDetailPage() {
             <Button
               startIcon={<CheckCircleRoundedIcon />}
               color="success"
-              onClick={() => void handleConfirmArrival()}
+              onClick={() => setArrivalModalOpen(true)}
               loading={isSaving}
               disabled={isSaving}
             >
@@ -597,121 +604,61 @@ export function OrderDetailPage() {
       </Box>
 
       {/* ── Cancel Order Modal ── */}
-      <Dialog open={cancelModalOpen} onClose={() => setCancelModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700, color: 'error.main' }}>Cancel Order</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Are you sure you want to cancel this order? All allocated inventory will be returned to HQ
-            stock. The branch will be notified.
-          </Typography>
-          <TextField
-            autoFocus
-            fullWidth
-            label="Cancellation Reason (Required)"
-            multiline
-            rows={3}
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setCancelModalOpen(false)} color="inherit" disabled={isSaving}>
-            Close
-          </Button>
-          <Button
-            onClick={() => void handleCancelOrder()}
-            color="error"
-            variant="contained"
-            disabled={!cancelReason.trim() || isSaving}
-            loading={isSaving}
-          >
-            Confirm Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <WorkflowActionModal
+        open={cancelModalOpen}
+        title="Cancel Order"
+        description="Are you sure you want to cancel this order? All allocated inventory will be returned to HQ stock. The branch will be notified."
+        inputLabel="Cancellation Reason"
+        inputPlaceholder="Explain why this order is being cancelled..."
+        confirmLabel="Confirm Cancel"
+        severity="danger"
+        requireInput
+        loading={isSaving}
+        onConfirm={(reason) => { void handleCancelOrder(reason); }}
+        onCancel={() => setCancelModalOpen(false)}
+      />
 
       {/* ── Picking Confirm Modal ── */}
-      <Dialog open={pickingModalOpen} onClose={() => setPickingModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Confirm Picking Progress</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            You have marked <strong>{localItems.filter((i) => i.isPicked).length}</strong> item(s) as
-            picked and <strong>{localItems.filter((i) => i.isRejectedDuringPicking).length}</strong>{' '}
-            item(s) as rejected.
-          </Typography>
-          {localItems.filter((i) => i.isRejectedDuringPicking).length > 0 && (
-            <Box sx={{ bgcolor: 'rgba(244,67,54,0.05)', p: 2, borderRadius: 2, mb: 2 }}>
-              <Typography variant="body2" fontWeight={600} color="error.main" sx={{ mb: 1 }}>
-                Rejected Items:
-              </Typography>
-              {localItems
-                .filter((i) => i.isRejectedDuringPicking)
-                .map((i) => (
-                  <Typography key={i.id} variant="caption" display="block" color="text.secondary">
-                    • {i.name} — {i.pickingRejectionReason || 'No reason provided'}
-                  </Typography>
-                ))}
-            </Box>
-          )}
-          {thresholdWarnings.length > 0 && (
-            <Alert severity="warning" sx={{ mt: 1 }}>
-              {thresholdWarnings.map((i) => i.name).join(', ')} exceed{thresholdWarnings.length === 1 ? 's' : ''}{' '}
-              available HQ stock. Please reduce send quantities before confirming.
-            </Alert>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setPickingModalOpen(false)} color="inherit" disabled={isSaving}>
-            Close
-          </Button>
-          <Button
-            onClick={() => void handleWorkflowAction('save-pick')}
-            variant="contained"
-            loading={isSaving}
-            disabled={thresholdWarnings.length > 0}
-          >
-            Confirm &amp; Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <WorkflowActionModal
+        open={pickingModalOpen}
+        title="Confirm Picking Progress"
+        description={`You have marked ${localItems.filter((i) => i.isPicked).length} item(s) as picked and ${localItems.filter((i) => i.isRejectedDuringPicking).length} item(s) as rejected.${thresholdWarnings.length > 0 ? ' Warning: Some send quantities exceed available HQ stock.' : ''}`}
+        inputLabel="Picking Notes (Optional)"
+        inputPlaceholder="Any notes about the picking process..."
+        confirmLabel="Confirm & Save"
+        severity="info"
+        loading={isSaving}
+        onConfirm={(remarks) => { setPickingModalOpen(false); void handleWorkflowAction('save-pick', undefined, remarks); }}
+        onCancel={() => setPickingModalOpen(false)}
+      />
 
       {/* ── Packing Confirm Modal ── */}
-      <Dialog open={packingModalOpen} onClose={() => setPackingModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Confirm Packing Complete</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            You have marked all{' '}
-            <strong>{localItems.filter((i) => !i.isRejectedDuringPicking && i.isPacked).length}</strong>{' '}
-            valid item(s) as packed and ready for dispatch.
-          </Typography>
-          {localItems.filter((i) => i.isRejectedDuringPicking).length > 0 && (
-            <Box sx={{ bgcolor: 'rgba(244,67,54,0.05)', p: 2, borderRadius: 2 }}>
-              <Typography variant="body2" fontWeight={600} color="error.main" sx={{ mb: 1 }}>
-                The following items were rejected during picking and will NOT be dispatched:
-              </Typography>
-              {localItems
-                .filter((i) => i.isRejectedDuringPicking)
-                .map((i) => (
-                  <Typography key={i.id} variant="caption" display="block" color="text.secondary">
-                    • {i.name} — {i.pickingRejectionReason || 'No reason provided'}
-                  </Typography>
-                ))}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setPackingModalOpen(false)} color="inherit" disabled={isSaving}>
-            Close
-          </Button>
-          <Button
-            onClick={() => void handleWorkflowAction('save-pack')}
-            variant="contained"
-            loading={isSaving}
-          >
-            Confirm Packed
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <WorkflowActionModal
+        open={packingModalOpen}
+        title="Confirm Packing Complete"
+        description={`You have marked all ${localItems.filter((i) => !i.isRejectedDuringPicking && i.isPacked).length} valid item(s) as packed and ready for dispatch.`}
+        inputLabel="Packing Notes (Optional)"
+        inputPlaceholder="Any notes about the packing process..."
+        confirmLabel="Confirm Packed"
+        severity="info"
+        loading={isSaving}
+        onConfirm={(remarks) => { setPackingModalOpen(false); void handleWorkflowAction('save-pack', undefined, remarks); }}
+        onCancel={() => setPackingModalOpen(false)}
+      />
+
+      {/* ── Confirm Arrival Modal ── */}
+      <WorkflowActionModal
+        open={arrivalModalOpen}
+        title="Confirm Shipment Arrival"
+        description="Are you sure this shipment has arrived at your branch? You will be able to reconcile the items once confirmed."
+        inputLabel="Arrival Notes (Optional)"
+        inputPlaceholder="Any notes about the delivery or package condition..."
+        confirmLabel="Confirm Arrived"
+        severity="info"
+        loading={isSaving}
+        onConfirm={(remarks) => { void handleConfirmArrival(remarks); }}
+        onCancel={() => setArrivalModalOpen(false)}
+      />
 
       {/* ── Order Messages Modal ── */}
       <SharedFloatingChat contextType="order" id={Number(orderId)} open={chatOpen} onOpenChange={setChatOpen} />
@@ -836,6 +783,38 @@ export function OrderDetailPage() {
               ))}
             </Box>
           )}
+
+          {/* Completion Remarks */}
+          <Box sx={{ mt: 3 }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#8C6B43', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1 }}>
+              Completion Notes (Optional)
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
+              placeholder="Add any final notes or observations about this shipment..."
+              value={completionRemarks}
+              onChange={(e) => setCompletionRemarks(e.target.value)}
+              disabled={isSaving}
+              InputProps={{
+                sx: {
+                  borderRadius: '8px',
+                  bgcolor: '#FAF5EF',
+                  fontSize: 13,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(140, 107, 67, 0.15)',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#8C6B43',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#8C6B43',
+                  }
+                }
+              }}
+            />
+          </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, gap: 1.5 }}>
           <Button variant="outlined" onClick={() => setSummaryModalOpen(false)} disabled={isSaving}>

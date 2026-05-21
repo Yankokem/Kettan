@@ -10,7 +10,7 @@ interface BranchProfileTabHeaderProps {
   loading?: boolean;
 }
 
-export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap, loading = false }: BranchProfileTabHeaderProps) {
+export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, loading = false }: BranchProfileTabHeaderProps) {
   return (
     <Box
       sx={{
@@ -27,7 +27,6 @@ export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap,
       {tabs.map((tab) => {
         const active = activeTab === tab.key;
         const Icon = tab.icon;
-        const badge = badgeMap?.[tab.key];
 
         return (
           <button
@@ -51,7 +50,6 @@ export function BranchProfileTabHeader({ tabs, activeTab, onTabChange, badgeMap,
           >
             <Icon sx={{ fontSize: 15 }} />
             {tab.label}
-            {typeof badge !== 'undefined' ? ` (${badge})` : ''}
 
             {active ? (
               <span

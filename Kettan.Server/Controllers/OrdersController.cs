@@ -201,9 +201,9 @@ public class OrdersController : ControllerBase
 
     [HttpPost("{id:int}/workflow/arrive")]
     [Authorize(Roles = "BranchManager,BranchOwner")]
-    public async Task<ActionResult<OrderDetailDto>> ConfirmArrival(int id)
+    public async Task<ActionResult<OrderDetailDto>> ConfirmArrival(int id, [FromBody] ConfirmArrivalDto dto)
     {
-        var result = await _service.ConfirmArrivalAsync(id);
+        var result = await _service.ConfirmArrivalAsync(id, dto);
         if (result == null) return NotFound();
         return Ok(result);
     }

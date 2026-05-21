@@ -29,6 +29,7 @@ public class PickingItemDto
 public class PickingSubmitDto
 {
     public List<PickingItemDto> Items { get; set; } = [];
+    public string? Remarks { get; set; }
 }
 
 // ── Packing Submit ──
@@ -42,6 +43,7 @@ public class PackingItemDto
 public class PackingSubmitDto
 {
     public List<PackingItemDto> Items { get; set; } = [];
+    public string? Remarks { get; set; }
 }
 
 // ── Branch Check Submit ──
@@ -55,6 +57,14 @@ public class BranchCheckItemDto
 public class BranchCheckSubmitDto
 {
     public List<BranchCheckItemDto> Items { get; set; } = [];
+    public string? Remarks { get; set; }
+}
+
+// ── Confirm Arrival ──
+
+public class ConfirmArrivalDto
+{
+    public string? Remarks { get; set; }
 }
 
 // ── Cancel Order ──

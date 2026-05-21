@@ -43,7 +43,7 @@ export function OrderDetailsPanel({ order }: OrderDetailsPanelProps) {
           <DescriptionRoundedIcon sx={{ color: '#6B4C2A', fontSize: 18 }} />
           <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Order Details</Typography>
         </Box>
-        <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>{order.transactionCode}</Typography>
+        <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>{(order.transactionCode || '').replace(/^[A-Z]+-/, '')}</Typography>
         <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.secondary', mt: -0.5 }}>Destination: {order.branchName}</Typography>
       </Box>
       

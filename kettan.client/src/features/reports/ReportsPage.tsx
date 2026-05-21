@@ -12,7 +12,6 @@ import { IconButton, Dialog, DialogTitle, DialogContent, List, ListItem, ListIte
 // ── Components ───────────────────────────────────────────────────────────────
 import { HqOverviewTab } from './components/HqOverviewTab';
 import { HqInventoryReportsTab } from './components/HqInventoryReportsTab';
-import { HqBranchPerformanceTab } from './components/HqBranchPerformanceTab';
 import { BranchPerformanceTab } from './components/BranchPerformanceTab';
 import { InventoryAnalyticsTab } from './components/InventoryAnalyticsTab';
 import { ExportModal } from './components/ExportModal';
@@ -65,7 +64,7 @@ function toPeso(v: number) {
 
 // ── HQ View ───────────────────────────────────────────────────────────────────
 
-type HqTab = 'overview' | 'inventory' | 'performance';
+type HqTab = 'overview' | 'inventory';
 
 function HqReportsView({
   startDate, endDate, onExportClick,
@@ -147,6 +146,15 @@ function HqReportsView({
             accent: 'stat-accent-sage',
             onClick: () => openDetail('Total Wastage Loss', financeStats?.totalWastageLoss, <DeleteSweepRoundedIcon />)
           },
+          { 
+            label: 'Returns Credit Loss', 
+            value: toPeso(financeStats?.returnsCreditLoss.currentValue ?? ov.totalReturnLoss), 
+            trend: financeStats?.returnsCreditLoss.trend ?? 'neutral',
+            sub: `${financeStats?.returnsCreditLoss.percentageChange ?? 0}% vs last week`,
+            icon: <TrendingUpRoundedIcon />, 
+            accent: 'stat-accent-rust',
+            onClick: () => openDetail('Returns Credit Loss', financeStats?.returnsCreditLoss, <TrendingUpRoundedIcon />)
+          },
         ];
       case 'inventory':
         return [
@@ -154,13 +162,6 @@ function HqReportsView({
           { label: 'Fulfillment Rate', value: `${ov.fulfillmentRate.toFixed(1)}%`, trend: 'neutral', sub: 'Order success percentage', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-sage' },
           { label: 'Total Orders', value: ov.totalOrders.toLocaleString(), trend: 'neutral', sub: 'Fulfillment volume', icon: <CategoryRoundedIcon />, accent: 'stat-accent-brown' },
           { label: 'Wastage Loss', value: toPeso(ov.totalWastageLoss), trend: 'neutral', sub: 'Inventory write-offs', icon: <DeleteSweepRoundedIcon />, accent: 'stat-accent-rust' },
-        ];
-      case 'performance':
-        return [
-          { label: 'Avg Fulfillment Rate', value: `${ov.fulfillmentRate.toFixed(1)}%`, trend: 'neutral', sub: 'Chain-wide efficiency', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-sage' },
-          { label: 'Top Performer', value: ov.topPerformerName || '—', trend: 'neutral', sub: 'Highest scoring branch', icon: <EmojiEventsRoundedIcon />, accent: 'stat-accent-gold' },
-          { label: 'Total Orders', value: ov.totalOrders.toLocaleString(), trend: 'neutral', sub: 'Volume this period', icon: <CategoryRoundedIcon />, accent: 'stat-accent-brown' },
-          { label: 'Top Score', value: `${ov.topPerformerScore.toFixed(1)}%`, trend: 'neutral', sub: 'Leaderboard benchmark', icon: <TrendingUpRoundedIcon />, accent: 'stat-accent-gold' },
         ];
       default:
         return [];
@@ -303,7 +304,6 @@ function HqReportsView({
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={TAB_SX}>
           <Tab label="Overview" value="overview" />
           <Tab label="Inventory Reports" value="inventory" />
-          <Tab label="Branch Performance" value="performance" />
         </Tabs>
 
         <Box sx={{ pb: 0.5 }}>
@@ -324,9 +324,6 @@ function HqReportsView({
         )}
         {tab === 'inventory' && (
           <HqInventoryReportsTab startDate={startDate} endDate={endDate} />
-        )}
-        {tab === 'performance' && (
-          <HqBranchPerformanceTab startDate={startDate} endDate={endDate} />
         )}
       </Box>
     </Box>

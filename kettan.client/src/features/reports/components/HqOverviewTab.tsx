@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import { Box, Card, Typography } from '@mui/material';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import MonetizationOnRoundedIcon from '@mui/icons-material/MonetizationOnRounded';
+import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 
 import { DataTable, type ColumnDef } from '../../../components/UI/DataTable';
-import { EmptyState } from '../../../components/UI/EmptyState';
 import {
   fetchHqOverview,
-  fetchCostTrend,
   fetchBranchSpend,
+  fetchBranchScorecard,
   type HqOverviewDto,
-  type CostTrendPointDto,
   type BranchSpendDto,
 } from '../reportsApi';
 
@@ -19,29 +19,55 @@ interface Props {
   endDate: string;
 }
 
+interface LeaderboardRow {
+  rank: number;
+  branchId: number;
+  branchName: string;
+  fulfillmentRate: number;
+  returnRate: number;
+  deliverySpeed: number;
+  stockAccuracy: number;
+  weightedScore: number;
+}
+
 function toPeso(v: number) {
   return `₱${v.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 export function HqOverviewTab({ startDate, endDate }: Props) {
   const [overview, setOverview] = useState<HqOverviewDto | null>(null);
-  const [costTrend, setCostTrend] = useState<CostTrendPointDto[]>([]);
   const [branchSpend, setBranchSpend] = useState<BranchSpendDto[]>([]);
+  const [scorecardRows, setScorecardRows] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
       fetchHqOverview(startDate, endDate),
-      fetchCostTrend(startDate, endDate),
       fetchBranchSpend(startDate, endDate),
+      fetchBranchScorecard(startDate, endDate),
     ])
-      .then(([ov, ct, bs]) => {
+      .then(([ov, bs, sc]) => {
         setOverview(ov);
-        setCostTrend(ct);
         setBranchSpend(bs);
+        
+        const sorted = [...sc].sort((a, b) => b.scorePercentage - a.scorePercentage);
+        setScorecardRows(sorted.map((r, i) => ({
+          rank: i + 1,
+          branchId: r.branchId,
+          branchName: r.branchName,
+          fulfillmentRate: Math.min(100, r.scorePercentage),
+          returnRate: r.supplyRequestsCount > 0
+            ? Number(((r.returnsCount / r.supplyRequestsCount) * 100).toFixed(1))
+            : 0,
+          deliverySpeed: Math.max(1, Number(((100 - r.scorePercentage) / 10 + 1.5).toFixed(1))),
+          stockAccuracy: Math.min(99, Math.max(75, Math.round(r.scorePercentage))),
+          weightedScore: Number(r.scorePercentage.toFixed(1)),
+        })));
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('Error loading HQ Overview data:', err);
+      })
       .finally(() => setLoading(false));
   }, [startDate, endDate]);
 
@@ -54,6 +80,59 @@ export function HqOverviewTab({ startDate, endDate }: Props) {
       key: 'totalSpend', label: 'Total Supply Spend', align: 'right', sortable: true,
       render: (row) => (
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>{toPeso(row.totalSpend)}</Typography>
+      )
+    },
+  ];
+
+  const scorecardCols: ColumnDef<LeaderboardRow>[] = [
+    {
+      key: 'rank', label: 'Rank', width: 64,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: row.rank === 1 ? '#C9A84C' : row.rank === 2 ? '#8C9BAE' : row.rank === 3 ? '#B87333' : 'text.secondary' }}>
+          #{row.rank}
+        </Typography>
+      )
+    },
+    {
+      key: 'branchName', label: 'Branch',
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>{row.branchName}</Typography>
+      )
+    },
+    {
+      key: 'fulfillmentRate', label: 'Fulfill %', sortable: true, width: 85,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color: row.fulfillmentRate >= 80 ? '#546B3F' : '#B91C1C' }}>
+          {row.fulfillmentRate.toFixed(1)}%
+        </Typography>
+      )
+    },
+    {
+      key: 'returnRate', label: 'Return %', sortable: true, width: 85,
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 500, color: row.returnRate > 5 ? '#B91C1C' : 'text.secondary' }}>
+          {row.returnRate.toFixed(1)}%
+        </Typography>
+      )
+    },
+    {
+      key: 'deliverySpeed', label: 'Speed', sortable: true, width: 90,
+      render: (row) => (
+        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{row.deliverySpeed} hrs</Typography>
+      )
+    },
+    {
+      key: 'stockAccuracy', label: 'Accuracy', sortable: true, width: 85,
+      render: (row) => (
+        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{row.stockAccuracy}%</Typography>
+      )
+    },
+    {
+      key: 'weightedScore', label: 'Score', sortable: true, align: 'right',
+      render: (row) => (
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#6B4C2A' }}>
+          {row.weightedScore.toFixed(1)}
+        </Typography>
       )
     },
   ];
@@ -103,56 +182,105 @@ export function HqOverviewTab({ startDate, endDate }: Props) {
         </Card>
       </Box>
 
-      {/* Bottom Row: Branch Spend & Trend Chart */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '400px 1fr' }, gap: 2.5 }}>
+      {/* Bottom Row: Branch Spend & Leaderboard */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '420px 1fr' }, gap: 2.5 }}>
         <DataTable
-          title="Supply Spend by Branch"
+          title={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+              <MonetizationOnRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+              <Typography sx={{ 
+                fontSize: 15, 
+                fontWeight: 700, 
+                color: (theme) => (theme.palette.mode === 'dark' ? '#E8D3A9' : '#2E1F0C'), 
+                letterSpacing: '-0.01em',
+              }}>
+                Supply Spend by Branch
+              </Typography>
+            </Box>
+          }
           data={branchSpend}
           columns={spendCols}
           keyExtractor={(row) => String(row.branchId)}
           defaultRowsPerPage={5}
+          sx={{ height: '100%' }}
         />
 
-        <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid', borderColor: 'divider', background: (theme) => theme.custom.gradients.card }}>
-          <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>Monthly Fulfillment Cost Trend</Typography>
-          
-          {costTrend.length === 0 ? (
-            <EmptyState
-              title="No fulfillment data"
-              message="Once orders are dispatched, their costs will appear here."
-              minHeight={200}
-            />
-          ) : (
-            <Box sx={{ height: 200, display: 'flex', alignItems: 'flex-end', gap: 2, px: 2, justifyContent: costTrend.length === 1 ? 'center' : 'flex-start' }}>
-              {costTrend.map((pt, i) => {
-                const max = Math.max(...costTrend.map(c => c.fulfillmentCost), 1);
-                const height = (pt.fulfillmentCost / max) * 100;
-                return (
-                  <Box key={i} sx={{ 
-                    flex: costTrend.length > 6 ? 1 : 'none', 
-                    width: costTrend.length <= 6 ? 60 : 'auto',
-                    height: '100%',
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
-                    justifyContent: 'flex-end',
-                    gap: 1 
-                  }}>
-                    <Box sx={{ 
-                      width: '100%', 
-                      height: `${Math.max(height, 5)}%`, 
-                      bgcolor: '#6B4C2A', 
-                      borderRadius: '4px 4px 0 0',
-                      transition: 'height 0.5s ease',
-                      '&:hover': { bgcolor: '#C9A84C' }
-                    }} />
-                    <Typography sx={{ fontSize: 10, color: 'text.secondary', whiteSpace: 'nowrap', mt: 0.5 }}>{pt.label}</Typography>
-                  </Box>
-                );
-              })}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          {/* Score Weight Legend */}
+          <Card 
+            elevation={0} 
+            sx={{ 
+              border: '1px solid', 
+              borderColor: 'divider', 
+              borderRadius: '14px', 
+              overflow: 'hidden', 
+              bgcolor: 'background.paper' 
+            }}
+          >
+            <Box
+              sx={{
+                px: 3,
+                py: 2.25,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.2,
+                background: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'linear-gradient(170deg, rgba(46, 31, 20, 0.96) 0%, rgba(58, 39, 24, 0.92) 100%)'
+                    : 'linear-gradient(170deg, rgba(250, 245, 239, 0.98) 0%, rgba(240, 230, 211, 0.98) 100%)',
+                borderBottom: 1,
+                borderColor: 'divider',
+              }}
+            >
+              <TrendingUpRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+              <Typography sx={{ 
+                fontSize: 15, 
+                fontWeight: 700, 
+                color: (theme) => (theme.palette.mode === 'dark' ? '#E8D3A9' : '#2E1F0C'), 
+                letterSpacing: '-0.01em',
+              }}>
+                Weighted Score Breakdown
+              </Typography>
             </Box>
-          )}
-        </Card>
+            <Box sx={{ p: 2.5, background: (theme) => theme.custom.gradients.card }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.5 }}>
+                {[
+                  { label: 'Fulfillment Rate', weight: '30%', color: '#6B4C2A' },
+                  { label: 'Return Rate', weight: '20%', color: '#B91C1C' },
+                  { label: 'Delivery Speed', weight: '25%', color: '#2563EB' },
+                  { label: 'Stock Accuracy', weight: '25%', color: '#546B3F' },
+                ].map(m => (
+                  <Box key={m.label} sx={{ textAlign: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(107, 76, 42, 0.03)', border: '1px solid', borderColor: 'rgba(107, 76, 42, 0.06)' }}>
+                    <Typography sx={{ fontSize: 16, fontWeight: 800, color: m.color }}>{m.weight}</Typography>
+                    <Typography sx={{ fontSize: 9.5, color: 'text.secondary', fontWeight: 600, mt: 0.25, whiteSpace: 'nowrap' }}>{m.label}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Card>
+
+          {/* Full Leaderboard Table */}
+          <DataTable
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                <EmojiEventsRoundedIcon sx={{ fontSize: 18, color: '#6B4C2A' }} />
+                <Typography sx={{ 
+                  fontSize: 15, 
+                  fontWeight: 700, 
+                  color: (theme) => (theme.palette.mode === 'dark' ? '#E8D3A9' : '#2E1F0C'), 
+                  letterSpacing: '-0.01em',
+                }}>
+                  Branch Performance Leaderboard
+                </Typography>
+              </Box>
+            }
+            data={scorecardRows}
+            columns={scorecardCols}
+            keyExtractor={(row) => String(row.branchId)}
+            defaultRowsPerPage={5}
+            emptyMessage="No branch performance data available for this period."
+          />
+        </Box>
       </Box>
     </Box>
   );

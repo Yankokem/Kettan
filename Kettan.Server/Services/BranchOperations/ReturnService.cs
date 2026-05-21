@@ -1260,6 +1260,7 @@ public class ReturnService : IReturnService
             ReturnId = row.ReturnId,
             OrderId = row.OrderId,
             OrderTransactionCode = row.Order?.TransactionCode ?? string.Empty,
+            IsOrderHqInitiated = row.Order?.IsHqInitiated ?? false,
             Subject = row.Subject,
             BranchId = row.BranchId,
             BranchName = row.Branch?.Name ?? string.Empty,
