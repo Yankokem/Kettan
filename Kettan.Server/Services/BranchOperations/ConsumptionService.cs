@@ -40,6 +40,38 @@ public class ConsumptionService : IConsumptionService
             .Where(i => menuItemIds.Contains(i.MenuItemId))
             .ToListAsync();
 
+        // Also load variant-level ingredients for menu items that have no direct ingredient mapping
+        var menuItemIdsWithDirectIngredients = ingredients.Select(i => i.MenuItemId).Distinct().ToList();
+        var menuItemIdsMissingIngredients = menuItemIds.Except(menuItemIdsWithDirectIngredients).ToList();
+
+        var variantIngredients = menuItemIdsMissingIngredients.Count == 0
+            ? []
+            : await _context.VariantIngredients
+                .Include(vi => vi.Item)
+                .Include(vi => vi.Variant)
+                .Where(vi => vi.Variant != null
+                    && menuItemIdsMissingIngredients.Contains(vi.Variant.MenuItemId)
+                    && !vi.Variant.IsDeleted)
+                .ToListAsync();
+
+        // Build a lookup: MenuItemId → list of (ItemId, QuantityPerUnit) from variant ingredients
+        // When multiple variants exist, we pick the first active variant's ingredients as the default recipe
+        var variantIngredientsByMenuItem = variantIngredients
+            .Where(vi => vi.Variant != null)
+            .GroupBy(vi => vi.Variant!.MenuItemId)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    // Use the first active variant's ingredient set as the canonical recipe
+                    var firstVariantId = g
+                        .Where(vi => vi.Variant!.IsActive)
+                        .Select(vi => vi.VariantId)
+                        .DefaultIfEmpty(g.First().VariantId)
+                        .First();
+                    return g.Where(vi => vi.VariantId == firstVariantId).ToList();
+                });
+
         var log = new ConsumptionLog
         {
             TenantId = _currentUser.TenantId!.Value,
@@ -64,6 +96,38 @@ public class ConsumptionService : IConsumptionService
                 if (salesLine.QuantitySold <= 0) continue;
 
                 var ingredientRows = ingredients.Where(i => i.MenuItemId == salesLine.MenuItemId).ToList();
+
+                // If no direct MenuItemIngredients, fall back to variant-level ingredients
+                if (ingredientRows.Count == 0 && variantIngredientsByMenuItem.TryGetValue(salesLine.MenuItemId, out var vIngredients))
+                {
+                    // Process variant ingredients directly
+                    foreach (var vi in vIngredients)
+                    {
+                        var requiredQty = vi.Quantity * salesLine.QuantitySold;
+                        if (requiredQty <= 0) continue;
+
+                        await _inventoryService.DeductStockAsync(
+                            itemId: vi.ItemId,
+                            branchId: _currentUser.BranchId.Value,
+                            quantity: requiredQty,
+                            transactionType: TransactionType.SalesAuto,
+                            remarks: $"Auto deduction from menu item {vi.Variant?.MenuItem?.Name ?? salesLine.MenuItemId.ToString()} (variant)",
+                            referenceType: ReferenceType.ConsumptionLog,
+                            referenceId: log.ConsumptionLogId);
+
+                        log.Items.Add(new ConsumptionLogItem
+                        {
+                            TenantId = _currentUser.TenantId.Value,
+                            ConsumptionLogId = log.ConsumptionLogId,
+                            MenuItemId = salesLine.MenuItemId,
+                            ItemId = vi.ItemId,
+                            Quantity = requiredQty,
+                            Reason = "Sales_Auto"
+                        });
+                    }
+                    continue;
+                }
+
                 if (ingredientRows.Count == 0)
                 {
                     throw new InvalidOperationException($"Menu item {salesLine.MenuItemId} has no ingredient mapping.");
@@ -267,6 +331,35 @@ public class ConsumptionService : IConsumptionService
             .Where(i => menuItemIds.Contains(i.MenuItemId))
             .ToListAsync();
 
+        // Also load variant-level ingredients for menu items that have no direct ingredient mapping
+        var menuItemIdsWithDirectIngredients = ingredients.Select(i => i.MenuItemId).Distinct().ToList();
+        var menuItemIdsMissingIngredients = menuItemIds.Except(menuItemIdsWithDirectIngredients).ToList();
+
+        var variantIngredients = menuItemIdsMissingIngredients.Count == 0
+            ? new List<VariantIngredient>()
+            : await _context.VariantIngredients
+                .Include(vi => vi.Item)
+                .Include(vi => vi.Variant)
+                .Where(vi => vi.Variant != null
+                    && menuItemIdsMissingIngredients.Contains(vi.Variant.MenuItemId)
+                    && !vi.Variant.IsDeleted)
+                .ToListAsync();
+
+        var variantIngredientsByMenuItem = variantIngredients
+            .Where(vi => vi.Variant != null)
+            .GroupBy(vi => vi.Variant!.MenuItemId)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var firstVariantId = g
+                        .Where(vi => vi.Variant!.IsActive)
+                        .Select(vi => vi.VariantId)
+                        .DefaultIfEmpty(g.First().VariantId)
+                        .First();
+                    return g.Where(vi => vi.VariantId == firstVariantId).ToList();
+                });
+
         var consolidated = new Dictionary<int, PreviewDeductionDto>();
 
         foreach (var salesLine in sales)
@@ -275,23 +368,48 @@ public class ConsumptionService : IConsumptionService
 
             var itemIngredients = ingredients.Where(i => i.MenuItemId == salesLine.MenuItemId).ToList();
 
-            foreach (var ingredient in itemIngredients)
+            if (itemIngredients.Count > 0)
             {
-                var requiredQty = ingredient.QuantityPerUnit * salesLine.QuantitySold;
+                foreach (var ingredient in itemIngredients)
+                {
+                    var requiredQty = ingredient.QuantityPerUnit * salesLine.QuantitySold;
                 
-                if (consolidated.TryGetValue(ingredient.ItemId, out var existing))
-                {
-                    existing.RequiredQuantity += requiredQty;
-                }
-                else
-                {
-                    consolidated[ingredient.ItemId] = new PreviewDeductionDto
+                    if (consolidated.TryGetValue(ingredient.ItemId, out var existing))
                     {
-                        ItemId = ingredient.ItemId,
-                        ItemName = ingredient.Item?.Name ?? "Unknown Item",
-                        RequiredQuantity = requiredQty,
-                        CurrentStock = 0 // Will populate next
-                    };
+                        existing.RequiredQuantity += requiredQty;
+                    }
+                    else
+                    {
+                        consolidated[ingredient.ItemId] = new PreviewDeductionDto
+                        {
+                            ItemId = ingredient.ItemId,
+                            ItemName = ingredient.Item?.Name ?? "Unknown Item",
+                            RequiredQuantity = requiredQty,
+                            CurrentStock = 0 // Will populate next
+                        };
+                    }
+                }
+            }
+            else if (variantIngredientsByMenuItem.TryGetValue(salesLine.MenuItemId, out var vIngredients))
+            {
+                foreach (var vi in vIngredients)
+                {
+                    var requiredQty = vi.Quantity * salesLine.QuantitySold;
+
+                    if (consolidated.TryGetValue(vi.ItemId, out var existing))
+                    {
+                        existing.RequiredQuantity += requiredQty;
+                    }
+                    else
+                    {
+                        consolidated[vi.ItemId] = new PreviewDeductionDto
+                        {
+                            ItemId = vi.ItemId,
+                            ItemName = vi.Item?.Name ?? "Unknown Item",
+                            RequiredQuantity = requiredQty,
+                            CurrentStock = 0
+                        };
+                    }
                 }
             }
         }
