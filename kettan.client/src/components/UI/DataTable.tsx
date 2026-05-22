@@ -181,7 +181,9 @@ export function DataTable<T>({
       return widthToken || '1fr';
     })
     .join(' ');
-  const paginatedData = sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const paginatedData = fulfillment
+    ? sortedData
+    : sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   const showPagination = sortedData.length > 0;
 
   const getAlign = (align?: ColumnDef<T>['align']) => {
