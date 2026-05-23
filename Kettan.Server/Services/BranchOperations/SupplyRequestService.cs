@@ -250,6 +250,8 @@ public class SupplyRequestService : ISupplyRequestService
 
         var request = await _context.SupplyRequests
             .Include(r => r.Branch)
+            .Include(r => r.Items)
+                .ThenInclude(i => i.Item)
             .FirstOrDefaultAsync(r => r.RequestId == requestId && r.TenantId == tenantId);
 
         if (request == null)

@@ -233,31 +233,42 @@ export function SupplyRequestsPage() {
   }, []);
 
   const combinedRows = useMemo(() => {
-    const requests = Array.isArray(rows) ? rows.map(r => ({
-      ...r,
-      id: r.transactionCode || `SR-${r.requestId}`,
-      type: 'Request' as const,
-      displayId: r.transactionCode || `SR-${r.requestId}`,
-      date: r.updatedAt,
-      itemsCount: r.items.length,
-      filedBy: r.requestedByName || `User ${r.requestedByUserId}`,
-      value: r.totalFulfilledValue ?? r.totalRequestedValue ?? 0,
-      sla: r.dispatchScheduleStatus,
-      raw: r
-    })) : [];
+    const requests = Array.isArray(rows) ? rows.map(r => {
+      // Use the linked order's active status if present (e.g. Processing, In Transit)
+      const displayStatus = r.orderStatus || r.status;
+      const isCompleted = displayStatus && (displayStatus.toLowerCase() === 'completed' || displayStatus.toLowerCase() === 'fulfilled');
+      const displayValue = isCompleted ? (r.totalFulfilledValue ?? r.totalRequestedValue ?? 0) : (r.totalRequestedValue ?? 0);
+      return {
+        ...r,
+        status: displayStatus,
+        id: r.transactionCode || `SR-${r.requestId}`,
+        type: 'Request' as const,
+        displayId: r.transactionCode || `SR-${r.requestId}`,
+        date: r.updatedAt,
+        itemsCount: r.items.length,
+        filedBy: r.requestedByName || `User ${r.requestedByUserId}`,
+        value: displayValue,
+        sla: r.dispatchScheduleStatus,
+        raw: r
+      };
+    }) : [];
 
-    const dispatches = Array.isArray(incomingShipments) ? incomingShipments.map(o => ({
-      ...o,
-      id: o.transactionCode || `SD-${o.orderId}`,
-      type: 'Dispatch' as const,
-      displayId: o.transactionCode || `SD-${o.orderId}`,
-      date: o.pushedToFulfillmentAt,
-      itemsCount: o.itemsCount,
-      filedBy: 'HQ Dispatch',
-      value: o.totalFulfilledValue || o.fulfillmentCost || 0,
-      sla: o.dispatchScheduleStatus,
-      raw: o
-    })) : [];
+    const requestIds = new Set(requests.map(r => r.requestId));
+
+    const dispatches = Array.isArray(incomingShipments) ? incomingShipments
+      .filter(o => !requestIds.has(o.requestId)) // Deduplicate shipments already loaded as requests
+      .map(o => ({
+        ...o,
+        id: o.transactionCode || `SD-${o.orderId}`,
+        type: 'Dispatch' as const,
+        displayId: o.transactionCode || `SD-${o.orderId}`,
+        date: o.pushedToFulfillmentAt,
+        itemsCount: o.itemsCount,
+        filedBy: 'HQ Dispatch',
+        value: o.totalFulfilledValue || o.fulfillmentCost || 0,
+        sla: o.dispatchScheduleStatus,
+        raw: o
+      })) : [];
 
     return [...requests, ...dispatches];
   }, [rows, incomingShipments]);
