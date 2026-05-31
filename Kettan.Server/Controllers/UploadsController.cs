@@ -58,7 +58,7 @@ public class UploadsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { Message = "An error occurred while uploading the image.", Error = ex.Message });
+            return StatusCode(500, new { Message = "An error occurred while uploading the image." });
         }
     }
 
@@ -84,7 +84,7 @@ public class UploadsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { Message = "An error occurred while deleting the image.", Error = ex.Message });
+            return StatusCode(500, new { Message = "An error occurred while deleting the image." });
         }
     }
 }

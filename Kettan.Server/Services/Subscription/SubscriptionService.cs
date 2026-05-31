@@ -422,10 +422,24 @@ public class SubscriptionService : ISubscriptionService
             throw new InvalidOperationException("ProviderReference is required.");
         }
 
-        // Placeholder verification while PayMongo signature integration is still pending.
+        var webhookSecret = _configuration["PayMongo:WebhookSecret"];
         if (string.IsNullOrWhiteSpace(signature))
         {
-            Console.WriteLine("[WEBHOOK] Signature missing. Proceeding in development mode.");
+            _logger.LogWarning("[WEBHOOK] Signature missing — rejecting request.");
+            throw new InvalidOperationException("Webhook signature is required.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(webhookSecret))
+        {
+            if (!signature.Equals(webhookSecret, StringComparison.Ordinal))
+            {
+                _logger.LogWarning("[WEBHOOK] Signature mismatch — rejecting request.");
+                throw new InvalidOperationException("Invalid webhook signature.");
+            }
+        }
+        else
+        {
+            _logger.LogWarning("[WEBHOOK] WebhookSecret not configured — skipping signature verification. Configure PayMongo:WebhookSecret in production.");
         }
 
         var invoice = await _context.SubscriptionInvoices

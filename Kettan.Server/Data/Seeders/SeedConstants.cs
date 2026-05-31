@@ -15,5 +15,5 @@ public static class SeedConstants
     public const string BranchOwnerEmail = "owner_main@dummycorp.local";
     public const string BranchManagerEmail = "manager_main@dummycorp.local";
 
-    public const string DefaultSeedPassword = "password123";
+    public const string DefaultSeedPassword = "K3ttan!Seed#2026";
 }

@@ -119,18 +119,14 @@ public class SubscriptionController : ControllerBase
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Registration failed with DbUpdateException.");
-            var detail = _environment.IsDevelopment()
-                ? ex.InnerException?.Message ?? ex.Message
-                : "A database error occurred while completing registration.";
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = detail });
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "A database error occurred while completing registration." });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected registration failure.");
-            var detail = _environment.IsDevelopment()
-                ? ex.InnerException?.Message ?? ex.Message
-                : "Unable to complete registration right now.";
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = detail });
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Unable to complete registration right now." });
         }
     }
 
