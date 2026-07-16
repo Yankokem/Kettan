@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Kettan.Server.DTOs.SupplyRequests;
 
 public class SupplyRequestItemDto
@@ -56,30 +58,61 @@ public class SupplyRequestDto
 public class CreateSupplyRequestItemDto
 {
     public int ItemId { get; set; }
+
+    [Range(0.0001, double.MaxValue, ErrorMessage = "Quantity requested must be greater than zero.")]
     public decimal QuantityRequested { get; set; }
 }
 
 public class CreateSupplyRequestDto
 {
     public int? BranchId { get; set; }
+
+    [StringLength(100)]
     public string? ReferenceNumber { get; set; }
+
+    [StringLength(80)]
     public string? Subject { get; set; }
+
+    [Required]
+    [StringLength(20)]
     public string RequestType { get; set; } = "manual";
+
+    [Required]
+    [StringLength(20)]
     public string Priority { get; set; } = "normal";
+
+    [Required]
+    [StringLength(20)]
     public string DispatchWindow { get; set; } = "today";
     public DateTime? DispatchDate { get; set; }
+
+    [StringLength(1000)]
     public string? Notes { get; set; }
     public List<CreateSupplyRequestItemDto> Items { get; set; } = [];
 }
 
 public class UpdateSupplyRequestDto
 {
+    [StringLength(100)]
     public string? ReferenceNumber { get; set; }
+
+    [StringLength(80)]
     public string? Subject { get; set; }
+
+    [Required]
+    [StringLength(20)]
     public string RequestType { get; set; } = "manual";
+
+    [Required]
+    [StringLength(20)]
     public string Priority { get; set; } = "normal";
+
+    [Required]
+    [StringLength(20)]
     public string DispatchWindow { get; set; } = "today";
     public DateTime? DispatchDate { get; set; }
+
+    [StringLength(1000)]
     public string? Notes { get; set; }
     public List<CreateSupplyRequestItemDto> Items { get; set; } = [];
 }
@@ -87,28 +120,38 @@ public class UpdateSupplyRequestDto
 public class ApproveSupplyRequestItemDto
 {
     public int RequestItemId { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Quantity approved cannot be negative.")]
     public decimal QuantityApproved { get; set; }
 }
 
 public class ApproveSupplyRequestDto
 {
+    [StringLength(1000)]
     public string? Notes { get; set; }
     public List<ApproveSupplyRequestItemDto> Items { get; set; } = [];
 }
 
 public class RejectSupplyRequestDto
 {
+    [StringLength(200)]
     public string? Reason { get; set; }
+
+    [StringLength(1000)]
     public string? Notes { get; set; }
 }
 
 public class CancelSupplyRequestDto
 {
+    [StringLength(200)]
     public string? Reason { get; set; }
+
+    [StringLength(1000)]
     public string? Notes { get; set; }
 }
 
 public class SubmitSupplyRequestDto
 {
+    [StringLength(1000)]
     public string? Notes { get; set; }
 }

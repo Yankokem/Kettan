@@ -29,7 +29,7 @@ public class BranchDto
 public class CreateBranchDto
 {
     [Required]
-    [StringLength(100, MinimumLength = 2)]
+    [StringLength(50, MinimumLength = 2)]
     public required string Name { get; set; }
 
     [StringLength(200)]
@@ -53,13 +53,15 @@ public class CreateBranchDto
     public int? OwnerUserId { get; set; }
     public int? ManagerUserId { get; set; }
     public string? CustomThresholds { get; set; }
+
+    [StringLength(300)]
     public string? ImageUrl { get; set; }
 }
 
 public class UpdateBranchDto
 {
     [Required]
-    [StringLength(100, MinimumLength = 2)]
+    [StringLength(50, MinimumLength = 2)]
     public required string Name { get; set; }
 
     [StringLength(200)]
@@ -83,6 +85,8 @@ public class UpdateBranchDto
     public int? OwnerUserId { get; set; }
     public int? ManagerUserId { get; set; }
     public string? CustomThresholds { get; set; }
+
+    [StringLength(300)]
     public string? ImageUrl { get; set; }
     public bool IsActive { get; set; }
 }

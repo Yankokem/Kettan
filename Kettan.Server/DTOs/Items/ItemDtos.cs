@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Kettan.Server.DTOs.Items;
 
 public class ItemDto
@@ -34,49 +36,97 @@ public class ItemDetailDto : ItemDto
 
 public class CreateItemDto
 {
+    [Required]
+    [StringLength(100, MinimumLength = 1)]
     public string SKU { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(50, MinimumLength = 1)]
     public string Name { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(20, MinimumLength = 1)]
     public string Unit { get; set; } = string.Empty;
+
     public int? InventoryCategoryId { get; set; }
     public int? ItemCategoryId { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Default threshold cannot be negative.")]
     public decimal DefaultThreshold { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Unit cost cannot be negative.")]
     public decimal UnitCost { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Selling price cannot be negative.")]
     public decimal? SellingPrice { get; set; }
+
     public bool IsBundle { get; set; }
     public int? SupplierId { get; set; }
-
 }
 
 public class UpdateItemDto
 {
+    [Required]
+    [StringLength(100, MinimumLength = 1)]
     public string SKU { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(50, MinimumLength = 1)]
     public string Name { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(20, MinimumLength = 1)]
     public string Unit { get; set; } = string.Empty;
+
     public int? InventoryCategoryId { get; set; }
     public int? ItemCategoryId { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Default threshold cannot be negative.")]
     public decimal DefaultThreshold { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Unit cost cannot be negative.")]
     public decimal UnitCost { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Selling price cannot be negative.")]
     public decimal? SellingPrice { get; set; }
+
     public bool IsBundle { get; set; }
     public int? SupplierId { get; set; }
-
 }
 
 public class StockInDto
 {
+    [Range(0.0001, double.MaxValue, ErrorMessage = "Quantity must be greater than zero.")]
     public decimal Quantity { get; set; }
+
+    [Required]
+    [StringLength(100)]
     public string BatchNumber { get; set; } = string.Empty;
+
     public DateTime ExpiryDate { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Unit cost cannot be negative.")]
     public decimal? UnitCost { get; set; }
+
     public int? SupplierId { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Default threshold cannot be negative.")]
     public decimal? DefaultThreshold { get; set; }
+
+    [StringLength(500)]
     public string? Remarks { get; set; }
 }
 
 public class StockOutDto
 {
+    [Range(0.0001, double.MaxValue, ErrorMessage = "Quantity must be greater than zero.")]
     public decimal Quantity { get; set; }
+
+    [Required]
+    [StringLength(100)]
     public string Reason { get; set; } = "Adjustment";
+
+    [StringLength(500)]
     public string? Remarks { get; set; }
 }
 
@@ -129,5 +179,7 @@ public class FifoBatchDeductionDto
 public class SetBranchThresholdRequest
 {
     public int ItemId { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Threshold cannot be negative.")]
     public decimal Threshold { get; set; }
 }

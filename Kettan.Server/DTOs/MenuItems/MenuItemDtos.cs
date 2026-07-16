@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Kettan.Server.DTOs.MenuItems;
 
 public class MenuTagDto
@@ -58,21 +60,36 @@ public class MenuItemDto
 public class CreateMenuItemIngredientDto
 {
     public int ItemId { get; set; }
+
+    [Range(0.0001, double.MaxValue, ErrorMessage = "Quantity per unit must be greater than zero.")]
     public decimal QuantityPerUnit { get; set; }
+
+    [StringLength(20)]
     public string? UnitOfMeasure { get; set; }
 }
 
 public class CreateMenuVariantIngredientDto
 {
     public int ItemId { get; set; }
+
+    [Range(0.0001, double.MaxValue, ErrorMessage = "Quantity must be greater than zero.")]
     public decimal Quantity { get; set; }
 }
 
 public class CreateVariantDto
 {
+    [Required]
+    [StringLength(50)]
     public string Name { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(20)]
     public string PricingMode { get; set; } = "absolute";
+
+    [Range(0, double.MaxValue, ErrorMessage = "Price cannot be negative.")]
     public decimal Price { get; set; }
+
+    [Range(0, int.MaxValue)]
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
     public List<CreateMenuVariantIngredientDto> Ingredients { get; set; } = [];
@@ -80,12 +97,26 @@ public class CreateVariantDto
 
 public class CreateMenuItemDto
 {
+    [Required]
+    [StringLength(50)]
     public string Name { get; set; } = string.Empty;
+
+    [Required]
     public int CategoryId { get; set; }
+
+    [StringLength(500)]
     public string? Description { get; set; }
+
+    [StringLength(300)]
     public string? ImageUrl { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Base price cannot be negative.")]
     public decimal BasePrice { get; set; }
+
+    [Required]
+    [StringLength(20)]
     public string Status { get; set; } = "Active";
+
     public List<CreateMenuItemIngredientDto> Ingredients { get; set; } = [];
     public List<CreateVariantDto> Variants { get; set; } = [];
     public List<int> TagIds { get; set; } = [];
@@ -93,12 +124,26 @@ public class CreateMenuItemDto
 
 public class UpdateMenuItemDto
 {
+    [Required]
+    [StringLength(50)]
     public string Name { get; set; } = string.Empty;
+
+    [Required]
     public int CategoryId { get; set; }
+
+    [StringLength(500)]
     public string? Description { get; set; }
+
+    [StringLength(300)]
     public string? ImageUrl { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Base price cannot be negative.")]
     public decimal BasePrice { get; set; }
+
+    [Required]
+    [StringLength(20)]
     public string Status { get; set; } = "Active";
+
     public List<CreateMenuItemIngredientDto> Ingredients { get; set; } = [];
     public List<CreateVariantDto> Variants { get; set; } = [];
     public List<int> TagIds { get; set; } = [];

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Kettan.Server.DTOs.Orders;
 
 public class BranchOrderDto
@@ -78,44 +80,68 @@ public class OrderDetailDto : BranchOrderDto
 public class CreateOrderItemDto
 {
     public int ItemId { get; set; }
+
+    [Range(0.0001, double.MaxValue, ErrorMessage = "Quantity requested must be greater than zero.")]
     public decimal QuantityRequested { get; set; }
 }
 
 public class CreateOrderDto
 {
+    [Required]
     public int BranchId { get; set; }
+
+    [StringLength(80)]
     public string? Subject { get; set; }
+
+    [Required]
+    [StringLength(20)]
     public string RequestType { get; set; } = "hq_initiated";
+
+    [Required]
+    [StringLength(20)]
     public string Priority { get; set; } = "normal";
+
+    [Required]
+    [StringLength(20)]
     public string DispatchWindow { get; set; } = "today";
     public DateTime? DispatchDate { get; set; }
+
+    [StringLength(1000)]
     public string? Notes { get; set; }
     public List<CreateOrderItemDto> Items { get; set; } = [];
 }
 
 public class UpdateOrderStatusDto
 {
+    [StringLength(500)]
     public string? Remarks { get; set; }
 }
 
 public class DispatchOrderDto
 {
-
     public int? VehicleId { get; set; }
+
+    [StringLength(100)]
     public string? TrackingNumber { get; set; }
     public DateTime? EstimatedArrival { get; set; }
+
+    [StringLength(500)]
     public string? Remarks { get; set; }
 }
 
 public class ConfirmDeliveryLineDto
 {
     public int ItemId { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Quantity received cannot be negative.")]
     public decimal QuantityReceived { get; set; }
 }
 
 public class ConfirmDeliveryDto
 {
     public bool ReceivedInFull { get; set; } = true;
+
+    [StringLength(500)]
     public string? Remarks { get; set; }
     public List<ConfirmDeliveryLineDto> Lines { get; set; } = [];
 }
