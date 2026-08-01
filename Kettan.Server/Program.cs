@@ -126,8 +126,8 @@ builder.Services.AddCors(options =>
             "https://localhost:61643",
             "http://localhost:61643"
         )
-        .AllowAnyHeader()
-        .AllowAnyMethod()
+        .WithHeaders("Content-Type", "Authorization", "X-Requested-With", "Accept")
+        .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
         .AllowCredentials();
     });
 });
@@ -190,48 +190,25 @@ if (app.Environment.IsDevelopment())
     {
         var path = Path.Combine(env.ContentRootPath, "seed_error.txt");
         return File.Exists(path) ? Results.Text(File.ReadAllText(path)) : Results.Ok("No error");
-    });
+    }).RequireAuthorization(policy => policy.RequireRole("SuperAdmin"));
 
     app.MapGet("/api/debug/auth-diag", async (string email, ApplicationDbContext db, IConfiguration config) =>
     {
-        var connString = config.GetConnectionString("DefaultConnection");
-        var maskedConn = connString?.Contains("Password=") == true
-            ? System.Text.RegularExpressions.Regex.Replace(connString, @"Password=[^;]+", "Password=***")
-            : connString ?? "NULL_OR_EMPTY";
-
         bool canConnect = false;
         try { canConnect = await db.Database.CanConnectAsync(); } catch { }
 
         var user = await db.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == email);
 
-        bool passwordMatches = false;
-        if (user != null && !string.IsNullOrEmpty(user.PasswordHash))
-        {
-            try { passwordMatches = BCrypt.Net.BCrypt.Verify("password123", user.PasswordHash); } catch { }
-        }
-
-        if (user != null && !passwordMatches)
-        {
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123");
-            await db.SaveChangesAsync();
-            passwordMatches = true;
-        }
-
-        var jwtKey = config.GetSection("JwtSettings")["SecretKey"];
-
         return Results.Ok(new
         {
             Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
-            ConnectionStringMasked = maskedConn,
             CanConnectToDb = canConnect,
             UserFound = user != null,
             IsActive = user?.IsActive,
             IsDeleted = user?.IsDeleted,
             HasPasswordHash = !string.IsNullOrEmpty(user?.PasswordHash),
-            PasswordMatches = passwordMatches,
-            JwtSecretConfigured = !string.IsNullOrEmpty(jwtKey)
         });
-    });
+    }).RequireAuthorization(policy => policy.RequireRole("SuperAdmin"));
 
     app.MapGet("/api/debug/fix-database", async (ApplicationDbContext db) =>
     {
@@ -345,9 +322,9 @@ if (app.Environment.IsDevelopment())
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Failed to fix database: {ex.Message}");
+        return Results.Problem("Failed to fix database. Check server logs for details.");
     }
-});
+}).RequireAuthorization(policy => policy.RequireRole("SuperAdmin"));
 
 app.MapGet("/api/debug/apply-migrations", async (ApplicationDbContext db) =>
 {
@@ -462,9 +439,9 @@ app.MapGet("/api/debug/apply-migrations", async (ApplicationDbContext db) =>
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Failed to apply migrations: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}");
+        return Results.Problem("Failed to apply migrations. Check server logs for details.");
     }
-});
+}).RequireAuthorization(policy => policy.RequireRole("SuperAdmin"));
 }
 
 app.Run();

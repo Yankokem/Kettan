@@ -7,7 +7,7 @@ namespace Kettan.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-// [Authorize(Roles = "SuperAdmin")] // Temporarily disable to run easily via browser
+[Authorize(Roles = "SuperAdmin")]
 public class DebugController : ControllerBase
 {
     private readonly IWebHostEnvironment _env;
